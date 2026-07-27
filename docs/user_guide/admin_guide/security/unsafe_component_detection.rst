@@ -1,27 +1,27 @@
 .. _unsafe_component_detection:
 
-**************************
-Unsafe Component Detection
-**************************
-NVFLARE is based on a componentized architecture in that FL jobs are performed by components that are configured in configuration
-files. These components are created at the beginning of job execution. To address the issue of components potentially being unsafe
-and leaking sensitive information, NVFLARE uses an event based solution.
+********************************
+安全でないコンポーネントの検出
+********************************
+NVFLARE はコンポーネント化されたアーキテクチャに基づいており、FL ジョブは設定ファイルで構成された
+コンポーネントによって実行されます。これらのコンポーネントは、ジョブ実行の開始時に作成されます。コンポーネントが
+安全でなく、機微な情報を漏洩する可能性があるという問題に対処するため、NVFLARE はイベントベースの解決策を採用しています。
 
-NVFLARE has a very powerful and flexible event mechanism that allows custom code to be plugged into defined moments of system
-workflow (e.g. start/end of the job, before/after a task is executed, etc.). At such moments, NVFLARE fires events and invokes
-:ref:`fl_component` objects that handle these events. 
+NVFLARE は非常に強力で柔軟なイベントの仕組みを備えており、システムワークフローの定められた時点 (例: ジョブの開始 / 終了、
+タスク実行の前 / 後など) にカスタムコードを差し込むことができます。そうした時点で、NVFLARE はイベントを発火し、
+それらのイベントを処理する :ref:`fl_component` オブジェクトを呼び出します。
 
-The ``BEFORE_BUILD_COMPONENT`` event type can allow a custom FLComponent to detect unsafe job components during the time of
-configuration processing. This event type is fired before the configuration processor starts to build a job component
-(executor, filter, etc.). It is also fired for component configs that are nested recursively inside another component's
-``args``.
+``BEFORE_BUILD_COMPONENT`` イベント型を使うと、カスタムの FLComponent が、設定処理の時点で安全でないジョブ
+コンポーネントを検出できるようになります。このイベント型は、設定プロセッサーがジョブコンポーネント
+(エグゼキューター、フィルターなど) の構築を開始する前に発火されます。また、別のコンポーネントの ``args`` の中に
+再帰的にネストされたコンポーネント設定に対しても発火されます。
 
-Detect Unsafe Job Components
-============================
-To detect unsafe job components, the user simply needs to create a custom FLComponent object that handles this event,
-as shown in the following ComponentChecker example. This example is intentionally minimal: it demonstrates the event
-handling pattern and how to raise ``UnsafeComponentError`` when a problem is found. It is not a complete production
-implementation of component safety policy.
+安全でないジョブコンポーネントの検出
+====================================
+安全でないジョブコンポーネントを検出するには、次の ComponentChecker の例のように、このイベントを処理する
+カスタムの FLComponent オブジェクトを作成するだけです。この例は意図的に最小限のものです。イベント処理の
+パターンと、問題が見つかったときに ``UnsafeComponentError`` を送出する方法を示しています。コンポーネントの
+安全性ポリシーの、本番向けの完全な実装ではありません。
 
 .. code-block:: python
 
@@ -47,82 +47,88 @@ implementation of component safety policy.
                     raise UnsafeComponentError(f"component is not allowed: {component_path}")
 
 
-The important points are:
+重要な点は次のとおりです。
 
-    - The class must extend FLComponent
-    - It defines the handle_event method, following the exact signature
-    - It checks if the event_type is ``EventType.BEFORE_BUILD_COMPONENT``. 
-    - It checks the component being built based on the information provided in the fl_ctx. There are many properties in fl_ctx. The most important ones are the ``COMPONENT_CONFIG`` that is a dict of the component's configuration data. The fl_ctx also has ``WORKSPACE_OBJECT`` which allows access to any file in the job's workspace.
-    - If any issue is detected with the component to be built, you raise the ``UnsafeComponentError`` exception with a meaningful text.
+    - クラスは FLComponent を継承しなければなりません
+    - まったく同じシグネチャに従って handle_event メソッドを定義します
+    - event_type が ``EventType.BEFORE_BUILD_COMPONENT`` かどうかを確認します
+    - fl_ctx で提供される情報に基づいて、構築されようとしているコンポーネントを確認します。fl_ctx には多くのプロパティがあります。最も重要なのは、コンポーネントの設定データの dict である ``COMPONENT_CONFIG`` です。fl_ctx には ``WORKSPACE_OBJECT`` もあり、これによりジョブのワークスペース内の任意のファイルにアクセスできます。
+    - 構築されようとしているコンポーネントに何らかの問題が検出された場合は、意味のあるテキストを添えて ``UnsafeComponentError`` 例外を送出します。
 
-The following properties in the fl_ctx could be helpful too:
+fl_ctx の以下のプロパティも役立つ可能性があります。
 
-``FLContextKey.COMPONENT_NODE`` - This gives you the information about the component's location in the config structure
-(which could be viewed as a tree). For nested component configs inside ``args``, this path contains each nesting level,
-for example ``component.args.child.args.worker``.
+``FLContextKey.COMPONENT_NODE`` - 設定構造 (ツリーと見なすことができます) の中でのコンポーネントの位置に関する情報を
+提供します。 ``args`` の中にネストされたコンポーネント設定の場合、このパスには各ネストレベルが含まれます。
+例えば ``component.args.child.args.worker`` のようになります。
 
-``FLContextKey.CONFIG_CTX`` - This gives you information about the entire config structure.
+``FLContextKey.CONFIG_CTX`` - 設定構造全体に関する情報を提供します。
 
-``FLContextKey.CURRENT_JOB_ID`` - The ID of the current job.
+``FLContextKey.CURRENT_JOB_ID`` - 現在のジョブの ID です。
 
-``FLContextKey.JOB_META`` - This is a dict that contains meta information (e.g. job submitter's name, org and role) about the current job.
+``FLContextKey.JOB_META`` - 現在のジョブに関するメタ情報 (例: ジョブ投入者の名前、組織、ロール) を含む dict です。
 
-``FLContextKey.WORKSPACE_OBJECT`` - This object provides many convenience methods to determine the paths of files in the workspace
+``FLContextKey.WORKSPACE_OBJECT`` - このオブジェクトは、ワークスペース内のファイルのパスを判定するための便利なメソッドを多数提供します
 
-Use the Built-in Component Path Authorizer
-------------------------------------------
-When BYOC is disabled, NVFLARE runs a built-in component path authorization check while parsing job
-configuration. Sites get this protection without installing an authorizer component in ``resources.json``. The policy
-allows only class paths that match ``class_allow_list`` in the site's top-level ``resources.json`` or
-``resources.json.default``. Standard provisioning installs a curated list of built-in components. If
-``class_allow_list`` is not configured, NVFLARE uses the curated built-in default shown below and records an audit
-event for the implicit policy decision. An explicitly configured list replaces that default.
+組み込みのコンポーネントパス認可機能を使用する
+------------------------------------------------
+BYOC が無効の場合、NVFLARE はジョブ設定の解析中に、組み込みのコンポーネントパス認可チェックを実行します。サイトは
+``resources.json`` に認可コンポーネントをインストールしなくても、この保護を受けられます。このポリシーは、
+サイトのトップレベルの ``resources.json`` または ``resources.json.default`` にある ``class_allow_list`` に
+一致するクラスパスのみを許可します。標準のプロビジョニングでは、精選された組み込みコンポーネントのリストがインストールされます。
+``class_allow_list`` が設定されていない場合、NVFLARE は以下に示す精選された組み込みのデフォルトを使用し、その暗黙の
+ポリシー判断について監査イベントを記録します。明示的に設定されたリストは、そのデフォルトを置き換えます。
 
-``SimEnv`` also installs this curated list in new simulation workspaces without changing POC or production authorization.
+``SimEnv`` も、POC や本番の認可を変更することなく、新しいシミュレーションワークスペースにこの精選されたリストをインストールします。
 
-Migration note for upgrades: startup kits created before this policy may not contain ``class_allow_list``. Such sites use
-the built-in default automatically. Add a top-level ``class_allow_list`` to each site's ``resources.json`` or
-``resources.json.default`` only when the site needs to replace the default, for example to authorize reviewed site-local
-classes for non-BYOC jobs.
+アップグレード時の移行に関する注意: このポリシー導入以前に作成されたスタートアップキットには ``class_allow_list`` が
+含まれていない場合があります。そのようなサイトは、自動的に組み込みのデフォルトを使用します。サイトがデフォルトを置き換える
+必要がある場合 (例えば、BYOC を使わないジョブのためにレビュー済みのサイトローカルなクラスを認可する場合) にのみ、
+各サイトの ``resources.json`` または ``resources.json.default`` にトップレベルの ``class_allow_list`` を追加してください。
 
-The check is applied to every component config built through the NVFLARE JSON configuration flow, including component configs
-nested at any depth inside another component's ``args``. It also checks component configs inside dictionaries and lists before
-they can be built later by runtime builders such as the multi-process executor or ``engine.build_component()``. The
-multi-process executor's ``components`` entries are checked even if an entry sets ``"config_type": "dict"``, because those
-entries are still built as components later. The authorizer can also be called directly with
-``authorize_component_config(...)`` by code that wants to validate a component config without firing an event.
+このチェックは、NVFLARE の JSON 設定フローを通じて構築されるすべてのコンポーネント設定に適用されます。これには、別の
+コンポーネントの ``args`` の中に任意の深さでネストされたコンポーネント設定も含まれます。また、マルチプロセス
+エグゼキューターや ``engine.build_component()`` のようなランタイムのビルダーによって後から構築される可能性のある、
+辞書やリストの中のコンポーネント設定も、構築前にチェックします。マルチプロセスエグゼキューターの ``components``
+エントリは、エントリに ``"config_type": "dict"`` が設定されていてもチェックされます。それらのエントリも後で
+コンポーネントとして構築されるためです。イベントを発火せずにコンポーネント設定を検証したいコードからは、
+``authorize_component_config(...)`` を直接呼び出すこともできます。
 
-When BYOC is enabled for the job, this built-in class allow-list check is skipped because BYOC authorization already permits
-loading job-provided custom code.
+ジョブで BYOC が有効になっている場合、この組み込みのクラス許可リストのチェックはスキップされます。BYOC の認可が、
+ジョブが提供するカスタムコードの読み込みをすでに許可しているためです。
 
-Under this policy, component configs must use either ``path`` or ``class_path`` as the fully qualified class path key.
-If both are present, ``path`` takes precedence. Key presence is used, not truthiness: if ``path`` is present but empty or
-invalid, it is rejected instead of falling through to ``class_path``. Component configs that include ``name`` are rejected
-by the built-in path authorizer; non-BYOC jobs should use ``path`` or ``class_path`` so the fully qualified class path can
-be checked against ``class_allow_list``.
+このポリシーのもとでは、コンポーネント設定は完全修飾クラスパスのキーとして ``path`` または ``class_path`` の
+いずれかを使用しなければなりません。両方が存在する場合は ``path`` が優先されます。判定にはキーの存在が使われ、
+値の真偽値は使われません。 ``path`` が存在していても空または不正な場合は、 ``class_path`` にフォールバックせずに
+拒否されます。 ``name`` を含むコンポーネント設定は、組み込みのパス認可機能によって拒否されます。BYOC を使わない
+ジョブでは、完全修飾クラスパスを ``class_allow_list`` と照合できるように ``path`` または ``class_path`` を
+使用してください。
 
-``class_allow_list`` is a list of allowed component path prefixes. Package prefixes should end with ``.`` to match on a
-Python package boundary, for example ``"nvflare."``. Entries without a trailing ``.`` must be fully qualified dotted paths
-and are matched exactly or on a ``.`` boundary. For example, ``"nvflare"`` is rejected as ambiguous, and ``"nvflare."`` does
-not match ``"nvflareevil.module.Component"``.
+``class_allow_list`` は、許可されたコンポーネントパスのプレフィックスのリストです。パッケージのプレフィックスは、
+Python のパッケージ境界で一致させるために ``.`` で終わるようにしてください。例えば ``"nvflare."`` のようにします。
+末尾に ``.`` がないエントリは完全修飾のドット区切りパスでなければならず、完全一致または ``.`` の境界で照合されます。
+例えば ``"nvflare"`` はあいまいであるとして拒否され、 ``"nvflare."`` は ``"nvflareevil.module.Component"`` に
+一致しません。
 
-The adjacent ``class_list_enforcement_mode`` setting accepts ``"enforce"`` (the default) or ``"warn"``. In ``"warn"``
-mode, a component outside ``class_allow_list`` is allowed to load, a context-rich warning is logged, and one audit event is
-recorded per job and unmatched class path. If ``"*"`` appears anywhere in ``class_allow_list``, all component classes are
-allowed, the remaining entries are ignored, and an audit event records the policy source and that the allow-list check was
-bypassed; the enforcement mode has no effect in this case. Failed audit writes are retried on later matching component
-checks without repeating the wildcard warning. Simulator runs use warning logs because their auditor is a no-op. Use
-``"warn"`` and ``"*"`` only as temporary migration aids in trusted environments.
+隣接する ``class_list_enforcement_mode`` 設定は、 ``"enforce"`` (デフォルト) または ``"warn"`` を受け付けます。
+``"warn"`` モードでは、 ``class_allow_list`` の範囲外のコンポーネントも読み込みが許可され、文脈を含む警告が
+ログに記録され、ジョブおよび一致しなかったクラスパスごとに 1 件の監査イベントが記録されます。
+``class_allow_list`` のどこかに ``"*"`` が現れる場合、すべてのコンポーネントクラスが許可され、残りのエントリは
+無視され、監査イベントにはポリシーの出所と、許可リストのチェックが迂回されたことが記録されます。この場合、
+強制モードは効果を持ちません。監査書き込みに失敗した場合は、ワイルドカードの警告を繰り返すことなく、後続の該当する
+コンポーネントチェック時に再試行されます。シミュレーターの実行では、監査機構が何もしないため警告ログが使用されます。
+``"warn"`` と ``"*"`` は、信頼できる環境における一時的な移行手段としてのみ使用してください。
 
-Provisioned ``resources.json.default`` Results
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When provisioning generates startup kits, the server and client ``resources.json.default`` files include the following
-top-level ``class_allow_list``. It is also the built-in fallback when the setting is omitted. Operators can replace it in
-``resources.json`` or ``resources.json.default`` to match the classes their non-BYOC jobs are allowed to load.
+プロビジョニングされた ``resources.json.default`` の結果
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+プロビジョニングがスタートアップキットを生成する際、サーバーおよびクライアントの ``resources.json.default``
+ファイルには、以下のトップレベルの ``class_allow_list`` が含まれます。これは、この設定が省略された場合の組み込みの
+フォールバックでもあります。運用者は、BYOC を使わないジョブが読み込みを許可されるクラスに合わせて、
+``resources.json`` または ``resources.json.default`` でこれを置き換えることができます。
 
-Every class in ``DEFAULT_CLASS_ALLOW_LIST`` must remain safe to import and construct with untrusted, job-controlled
-arguments. Future additions to the default list require review under this security bar, including constructor side effects
-and any argument values that could trigger file, process, network, deserialization, or other privileged operations.
+``DEFAULT_CLASS_ALLOW_LIST`` に含まれるすべてのクラスは、信頼できないジョブ制御の引数を与えられても、安全に
+インポートおよび構築できるものでなければなりません。デフォルトリストへの今後の追加は、このセキュリティ基準のもとでの
+レビューが必要であり、コンストラクタの副作用や、ファイル、プロセス、ネットワーク、デシリアライゼーション、その他の
+特権的な操作を引き起こす可能性のある引数値も対象となります。
 
 .. code-block:: json
 
@@ -195,24 +201,25 @@ and any argument values that could trigger file, process, network, deserializati
         ]
     }
 
-With the policy above, a non-BYOC job component configured with ``"path": "subprocess.Popen"`` is rejected because it does
-not match any entry in ``class_allow_list``. The same rule applies to ``"class_path": "subprocess.Popen"``.
-The provisioned list intentionally excludes framework optimizer, scheduler, and model classes. If a job configures those
-classes, each site must add the reviewed class paths or package prefixes to
-``class_allow_list`` before running the job with BYOC disabled.
+上記のポリシーのもとでは、 ``"path": "subprocess.Popen"`` と設定された非 BYOC のジョブコンポーネントは、
+``class_allow_list`` のどのエントリにも一致しないため拒否されます。 ``"class_path": "subprocess.Popen"`` にも
+同じルールが適用されます。
+プロビジョニングされるリストは、フレームワークのオプティマイザー、スケジューラー、モデルのクラスを意図的に除外して
+います。ジョブがそれらのクラスを設定する場合、各サイトは BYOC を無効にしてジョブを実行する前に、レビュー済みの
+クラスパスまたはパッケージのプレフィックスを ``class_allow_list`` に追加しなければなりません。
 
-This is an allow-list baseline. It is not a replacement for secure job review, least-privilege runtime environments, container or
-process sandboxing, and other controls appropriate to your deployment.
+これは許可リストによるベースラインです。安全なジョブレビュー、最小権限のランタイム環境、コンテナまたはプロセスの
+サンドボックス化、その他デプロイ環境に適した各種の制御を置き換えるものではありません。
 
-Install Your Component Checker
-------------------------------
-Once you define your component checker (you can name your class any way you want - does not have to be ComponentChecker), you need
-to install it to your FL site(s).
+コンポーネントチェッカーのインストール
+----------------------------------------
+コンポーネントチェッカーを定義したら (クラス名は自由に付けられます。ComponentChecker である必要はありません)、
+それを FL サイトにインストールする必要があります。
 
-First of all, your custom code could be included as part of your FL docker, depending on how you manage the docker. If this is not
-possible, then you can include it in the FL site's ``<workspace_root>/local/custom`` folder.
+まず、docker の管理方法によっては、カスタムコードを FL docker の一部として含めることができます。それが不可能な
+場合は、FL サイトの ``<workspace_root>/local/custom`` フォルダに含めることができます。
 
-Second, include this custom component in your site's ``resources.json``, as shown here:
+次に、以下のように、このカスタムコンポーネントをサイトの ``resources.json`` に記載します。
 
 .. code-block:: json
 
@@ -226,7 +233,7 @@ Second, include this custom component in your site's ``resources.json``, as show
         ]
     }
 
-Your site's workspace should look like this:
+サイトのワークスペースは次のようになります。
 
 .. code-block::
 

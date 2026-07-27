@@ -1,204 +1,204 @@
 .. _cc_architecture:
 
 ##########################################################################
-IP Protection Security Architecture with FLARE and Confidential Computing
+FLARE と機密コンピューティングによる IP 保護セキュリティアーキテクチャ
 ##########################################################################
 
-.. admonition:: CVM on-prem with AMD CPU + NVIDIA GPU
+.. admonition:: AMD CPU + NVIDIA GPU によるオンプレミス CVM
 
-    The current architecture is based on Confidential VMs with AMD CPUs and NVIDIA GPUs for on-premise deployment.
-    While the design principles are the same for Intel TDX CPUs with NVIDIA GPUs, the current implementation targets
-    on-premise AMD/NVIDIA systems. TDX support and cloud-based deployment will be available soon.
+    現在のアーキテクチャは、オンプレミス展開向けの AMD CPU と NVIDIA GPU を用いた Confidential VM (CVM) を前提としています。
+    設計原則は Intel TDX CPU と NVIDIA GPU の組み合わせでも同じですが、現在の実装はオンプレミスの AMD/NVIDIA システムを対象としています。
+    TDX のサポートおよびクラウドベースの展開は近日中に提供される予定です。
 
 
 .. contents::
    :local:
    :depth: 2
 
-Introduction
-============
+はじめに
+========
 
-In an era where artificial intelligence drives critical decisions across industries, safeguarding the intellectual property (IP) of machine learning models has become paramount, particularly during inference and federated learning. These models, often the culmination of years of research, proprietary algorithms, and significant data investments, represent highly valuable assets. Both inference, typically executed on edge or client devices, and federated learning, which involves distributing model training across decentralized nodes, expose models to untrusted environments, creating substantial risks of IP theft or reverse engineering. Without robust IP protection, organizations face not only financial losses but also threats to their competitive advantage and compliance. Therefore, ensuring model confidentiality throughout both training and inference is crucial for secure deployment, responsible innovation, and sustained trust in AI systems.
+人工知能が各業界で重要な意思決定を担う時代において、機械学習モデルの知的財産 (IP) を保護することは、特に推論および連合学習の場面できわめて重要になっています。これらのモデルは、多くの場合、長年の研究、独自アルゴリズム、そして多大なデータ投資の結晶であり、非常に価値の高い資産です。エッジデバイスやクライアントデバイス上で実行されることが多い推論と、分散したノード間でモデル学習を行う連合学習は、いずれもモデルを信頼できない環境にさらすことになり、IP の窃取やリバースエンジニアリングという重大なリスクを生みます。堅牢な IP 保護がなければ、組織は金銭的損失だけでなく、競争優位性やコンプライアンスへの脅威にも直面します。したがって、学習と推論の全体を通じてモデルの機密性を確保することは、安全な展開、責任あるイノベーション、そして AI システムへの継続的な信頼のために不可欠です。
 
-The risks to model IP stem from multiple critical phases in the deployment time and runtime lifecycle.
+モデル IP に対するリスクは、展開時およびランタイムのライフサイクルにおける複数の重要なフェーズから生じます。
 
-Deployment-Time Risks
----------------------
+展開時のリスク
+--------------
 
-At deployment time, the model IP is particularly vulnerable if introduced into an untrusted or unverified environment. An untrusted host or malicious host owner can intercept the model by modifying the application code, tampering with the execution environment, or delaying the activation of security mechanisms such as attestation and encryption. Without strict controls over when and how the model is decrypted or loaded, attackers can gain early access before protections are in place. This makes the deployment phase a critical point of exposure, especially in environments where hosts are not fully controlled or are operated by third parties.
+展開時には、信頼できない環境や検証されていない環境にモデル IP が持ち込まれると、特に脆弱な状態になります。信頼できないホスト、あるいは悪意のあるホスト所有者は、アプリケーションコードを改変したり、実行環境を改ざんしたり、アテステーションや暗号化といったセキュリティメカニズムの有効化を遅らせたりすることで、モデルを傍受できます。モデルがいつどのように復号され、ロードされるのかを厳格に制御しなければ、攻撃者は保護が有効になる前に早期アクセスを得られてしまいます。このため、特にホストが完全には管理されていない環境や、第三者によって運用されている環境では、展開フェーズが重大な露出点となります。
 
-Runtime Risks
--------------
-
-Even after deployment, model IP remains exposed to runtime threats. A host system—whether trusted or compromised—can still leak the model if sufficient safeguards are not maintained. Attackers may exploit vulnerabilities to gain remote access, copy the model from memory, intercept it over the network, or extract it from disk-based checkpoints. Insider threats or physical access to a machine can also lead to data exfiltration. While VM-based Trusted Execution Environments (TEEs) provided by Confidential Computing offer strong isolation guarantees, these mechanisms are not infallible. If the attacker can directly access the CVM TEE or modify the application inside the TEE, then the TEE protection doesn't help the IP protection: here are a few possible ways that model IP can be leaked out at runtime:
-
-- Compromised participant machines
-- Unauthorized access to the remote training machine (via direct access or network access)
-- Remote access or a leak from the network
-- Leak from storage (such as a model checkpoint)
-
-Design Proposal & Solution Overview
-====================================
-
-Challenge
----------
-
-Simply deploying applications in a Confidential VM (CVM) is insufficient to protect model IP. A comprehensive security architecture is required.
-
-Proposed Solution
------------------
-
-A secure deployment architecture combining:
-
-- Specialized CVM Image
-    - Hardware-backed chain of trust from hardware to application
-    - Enhanced security controls for network, storage, and access
-    - Measured boot and runtime attestation
-- Pre-packaged Workload Container
-    - FLARE training applications or inference services
-    - Model weights and proprietary code
-
-Security Guarantee
+ランタイムのリスク
 ------------------
 
-Our Minimum Viable Product (MVP) design ensures model IP remains protected throughout the entire lifecycle, from deployment through execution, even in potentially compromised environments.
+展開後であっても、モデル IP はランタイムの脅威にさらされ続けます。ホストシステムは、信頼されているか侵害されているかにかかわらず、十分な防御策が維持されていなければモデルを流出させる可能性があります。攻撃者は脆弱性を悪用してリモートアクセスを取得し、メモリからモデルをコピーしたり、ネットワーク上で傍受したり、ディスク上のチェックポイントから抽出したりする恐れがあります。内部関係者による脅威やマシンへの物理アクセスもデータ流出につながり得ます。機密コンピューティングが提供する VM ベースの Trusted Execution Environment (TEE) は強力な分離保証を提供しますが、これらのメカニズムも万全ではありません。攻撃者が CVM の TEE に直接アクセスできる場合や、TEE 内部のアプリケーションを改変できる場合には、TEE による保護は IP 保護の役に立ちません。ランタイムでモデル IP が流出し得る経路の例を以下に示します。
+
+- 侵害された参加者マシン
+- リモート学習マシンへの不正アクセス (直接アクセスまたはネットワークアクセス経由)
+- リモートアクセスまたはネットワークからの漏洩
+- ストレージからの漏洩 (モデルチェックポイントなど)
+
+設計案とソリューションの概要
+============================
+
+課題
+----
+
+アプリケーションを Confidential VM (CVM) 上に展開するだけでは、モデル IP を保護するには不十分です。包括的なセキュリティアーキテクチャが必要です。
+
+提案するソリューション
+----------------------
+
+以下を組み合わせた安全な展開アーキテクチャです。
+
+- 専用の CVM イメージ
+    - ハードウェアからアプリケーションまでのハードウェア裏付けによる信頼の連鎖
+    - ネットワーク、ストレージ、アクセスに対する強化されたセキュリティ制御
+    - 計測付きブートおよびランタイムアテステーション
+- 事前パッケージ化されたワークロードコンテナ
+    - FLARE の学習アプリケーションまたは推論サービス
+    - モデルの重みと独自コード
+
+セキュリティ保証
+----------------
+
+私たちの Minimum Viable Product (MVP) 設計は、展開から実行に至るライフサイクル全体を通じて、侵害された可能性のある環境においてもモデル IP が保護され続けることを保証します。
 
 
-Security Architecture Components
-=================================
+セキュリティアーキテクチャのコンポーネント
+==========================================
 
-IP Protection Architecture
---------------------------
+IP 保護アーキテクチャ
+---------------------
 
-The high-level approach for generating a Confidential VM (CVM) image involves embedding the application workload within a secure virtual machine that leverages VM-based Trusted Execution Environment (TEE) architecture. To ensure strong security guarantees, the CVM is fully locked down—no shell access, no open ports except for explicitly whitelisted ones, and all data access restricted to encrypted disk partitions.
+Confidential VM (CVM) イメージを生成する高レベルのアプローチは、VM ベースの Trusted Execution Environment (TEE) アーキテクチャを活用したセキュアな仮想マシン内に、アプリケーションワークロードを埋め込むというものです。強力なセキュリティ保証を確保するため、CVM は完全にロックダウンされます。シェルアクセスは不可、明示的にホワイトリスト化されたポート以外は開放せず、すべてのデータアクセスは暗号化されたディスクパーティションに限定されます。
 
-To protect against tampering during deployment, the boot process is anchored in Confidential Computing's chain of trust, extending from hardware up to the application layer. Critical disk partitions are encrypted, and decryption keys are withheld until remote attestations are successfully completed. This attestation verifies both the base system and the application against expected measurements at a remote trustee service. Only after passing this check does the trustee's key broker service release the decryption key, allowing the CVM to proceed securely.
+展開時の改ざんから保護するため、ブートプロセスは機密コンピューティングの信頼の連鎖に基づき、ハードウェアからアプリケーション層まで拡張されます。重要なディスクパーティションは暗号化され、リモートアテステーションが正常に完了するまで復号鍵は保留されます。このアテステーションでは、ベースシステムとアプリケーションの双方が、リモートの trustee サービスにある期待される計測値と照合されます。このチェックに合格して初めて、trustee の key broker サービスが復号鍵をリリースし、CVM は安全に処理を続行できます。
 
-The attestations will be completed in two stages. Once the kernel is booted normally, the attestation service will perform second-stage attestation (both CPU and GPU attestation). If the attestation is verified, the normal workload will be started.
+アテステーションは 2 段階で完了します。カーネルが正常にブートすると、アテステーションサービスが第 2 段階のアテステーション (CPU と GPU の両方のアテステーション) を実行します。アテステーションが検証されると、通常のワークロードが開始されます。
 
-Assumptions
------------
+前提条件
+--------
 
-- We fully trust the individual who builds the CVM image, as well as the host machine used during the image creation process. This ensures that the CVM is constructed in a secure and controlled environment.
-- We trust the remote trustee service, including its integrated key broker service, to be secure and reliable. This design relies on the trustee service's own protection mechanisms.
-- To verify the integrity and confidentiality of the CVM application's boot process, we assume that CPU-based attestation at boot time is sufficient. Specifically, we rely on a one-time, hardware-backed attestation during CVM startup to establish trust, without requiring ongoing or continuous runtime verification.
-- Ongoing continuous attestation will be handled at the application level (with both GPU and CPU attestation, such as NVFlare).
+- CVM イメージを構築する担当者、およびイメージ作成プロセスで使用されるホストマシンを完全に信頼します。これにより、CVM が安全かつ管理された環境で構築されることが保証されます。
+- リモートの trustee サービスは、統合された key broker サービスも含めて、安全かつ信頼できるものとします。この設計は trustee サービス自身の保護メカニズムに依存します。
+- CVM アプリケーションのブートプロセスの完全性と機密性を検証するにあたり、ブート時の CPU ベースのアテステーションで十分であると仮定します。具体的には、CVM 起動時の一度きりのハードウェア裏付けによるアテステーションで信頼を確立し、継続的なランタイム検証は必要としません。
+- 継続的なアテステーションは、アプリケーションレベル (NVFlare のように GPU と CPU の両方のアテステーションを行う) で処理されます。
 
-Architecture Design
--------------------
+アーキテクチャ設計
+------------------
 
 .. image:: ../../../resources/flare_on_prem_cvm_ip_protection.png
    :height: 300px
 
-Key Challenges in Securing Application-Level Integrity
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+アプリケーションレベルの完全性確保における主要な課題
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**By Default, Chain of Trust Stops at the Kernel:**
-Confidential Computing's hardware-backed chain of trust typically ends at the kernel. User-level application code is not included in the default measurement and attestation process.
+**既定では信頼の連鎖はカーネルで途切れる:**
+機密コンピューティングのハードウェア裏付けによる信頼の連鎖は、通常カーネルで終わります。ユーザーレベルのアプリケーションコードは、既定の計測およびアテステーションのプロセスに含まれません。
 
-**Application Integrity Risk:**
-Without extending the chain of trust to cover the application, malicious modifications can occur at boot time. This risks compromising both the application's integrity and the overall confidentiality of the system, even if kernel-level attestation is successful.
+**アプリケーション完全性のリスク:**
+信頼の連鎖をアプリケーションまで拡張しなければ、ブート時に悪意のある改変が行われる可能性があります。これは、カーネルレベルのアテステーションが成功していたとしても、アプリケーションの完全性とシステム全体の機密性の両方を損なう危険をもたらします。
 
-**Necessity of Application Measurement:**
-To ensure end-to-end trust, application-level measurements must be automatically calculated by the kernel and cryptographically signed by CC-enabled hardware. Relying on external or manual hash values creates potential attack vectors.
+**アプリケーション計測の必要性:**
+エンドツーエンドの信頼を確保するには、アプリケーションレベルの計測値がカーネルによって自動的に算出され、CC 対応ハードウェアによって暗号学的に署名される必要があります。外部の値や手動のハッシュ値に依存すると、攻撃経路を生み出す恐れがあります。
 
-**Use Case Consideration – Disk Content Not Measured:**
-Confidential Computing attestation is designed to measure memory-loaded components during boot. Application binaries and data stored on disk are not covered. This is not a flaw in the architecture but a challenge that must be addressed for use cases requiring full application trust.
+**ユースケース上の考慮点 — ディスク内容は計測されない:**
+機密コンピューティングのアテステーションは、ブート時にメモリへロードされるコンポーネントを計測するように設計されています。ディスク上に保存されたアプリケーションバイナリやデータは対象外です。これはアーキテクチャの欠陥ではありませんが、アプリケーション全体の信頼を必要とするユースケースでは対処すべき課題です。
 
-**Security Implication for Application Deployment:**
-If the application and its associated data are not part of the attested set, the CVM cannot ensure their integrity or confidentiality—posing a significant risk for secure deployment in sensitive scenarios.
+**アプリケーション展開におけるセキュリティ上の含意:**
+アプリケーションと関連データがアテステーション対象に含まれていない場合、CVM はそれらの完全性や機密性を保証できず、機微なシナリオでの安全な展開において重大なリスクとなります。
 
-Design Approach
-^^^^^^^^^^^^^^^
+設計アプローチ
+^^^^^^^^^^^^^^
 
-This design addresses the above challenges with the following approaches:
+本設計では、上記の課題に対して以下のアプローチで対処します。
 
-- **Encrypted Storage**: The CVM encrypts critical storage partitions to protect sensitive code and data from unauthorized access.
+- **暗号化ストレージ** : CVM は重要なストレージパーティションを暗号化し、機微なコードとデータを不正アクセスから保護します。
 
-- **Customer-Specific Key**: A unique decryption key is associated with each customer and stored securely in the remote key broker service, along with the expected attestation reference values.
+- **顧客固有の鍵** : 顧客ごとに固有の復号鍵が紐づけられ、期待されるアテステーション参照値とともにリモートの key broker サービスに安全に保管されます。
 
-- **Attestation-Bound Key Release**: The decryption key is released only upon successful CPU-based attestation, ensuring it is provided exclusively to trusted environments that match both CVM and application measurements and possess valid cryptographic signatures.
+- **アテステーションに紐づく鍵リリース** : 復号鍵は CPU ベースのアテステーションが成功した場合にのみリリースされ、CVM とアプリケーションの計測値が一致し、有効な暗号署名を持つ信頼された環境にのみ提供されることが保証されます。
 
-- **Two-Stage Attestation & Two-Stage Key Release**:
-  
-  - CPU verification → GPU verification (extending the chain of trust from CPU to GPU)
-  - Two-stage key releases with partition ``dm-verity``.
+- **2 段階アテステーションと 2 段階鍵リリース** :
 
-Additional Security Hardening
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  - CPU の検証 → GPU の検証 (信頼の連鎖を CPU から GPU へ拡張)
+  - ``dm-verity`` パーティションを用いた 2 段階の鍵リリース
 
-- **Disk Security**: Leverage both ``dm-crypt`` for encryption and ``dm-verity`` for integrity verification of disk partitions. Disable auto-mount.
-- **Access Control**: Disable login mechanisms, including SSH and console access, to prevent unauthorized entry into the CVM.
-- **Network Hardening**: Configure strict firewall rules and disable all unnecessary services and ports, allowing only explicitly whitelisted network access.
+追加のセキュリティ強化
+^^^^^^^^^^^^^^^^^^^^^^
 
-Reference Value and Key Storage
---------------------------------
+- **ディスクセキュリティ** : 暗号化には ``dm-crypt`` を、ディスクパーティションの完全性検証には ``dm-verity`` を活用します。自動マウントは無効化します。
+- **アクセス制御** : SSH やコンソールアクセスを含むログイン機構を無効化し、CVM への不正な侵入を防ぎます。
+- **ネットワーク強化** : 厳格なファイアウォールルールを設定し、不要なサービスとポートをすべて無効化して、明示的にホワイトリスト化されたネットワークアクセスのみを許可します。
 
-There are different approaches to store the reference values, leveraging:
+参照値と鍵の保管
+----------------
 
-- Trustee service with remote key broker services
+参照値の保管方法には、以下を活用する複数のアプローチがあります。
+
+- リモート key broker サービスを備えた trustee サービス
 - Trusted Platform Module (TPM)
-- Virtual TPM (vTPM)
+- 仮想 TPM (vTPM)
 
-For our most common deployment scenarios, we will build a CVM image on one trusted host (Host A), then distribute and deploy it to another untrusted host (Host B). In this design, we choose to use the remote trustee service.
+最も一般的な展開シナリオでは、信頼されたホスト (ホスト A) 上で CVM イメージを構築し、それを別の信頼できないホスト (ホスト B) に配布・展開します。この設計では、リモートの trustee サービスを使用することを選択しています。
 
-CVM Boot-Up Process Design
----------------------------
+CVM ブートアッププロセスの設計
+------------------------------
 
 .. image:: ../../../resources/cvm_bootup_process.png
    :height: 300px
 
-Here, we are leveraging the initApp in a TEE context to enable application-level attestation, using the kernel as an indirect attesting environment.
+ここでは、カーネルを間接的なアテスティング環境として利用し、TEE コンテキスト内の initApp を活用することで、アプリケーションレベルのアテステーションを実現しています。
 
 
-Kernel as an Attesting Environment – via InitApp in TEE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+アテスティング環境としてのカーネル — TEE 内の InitApp を介して
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Concept Overview
-""""""""""""""""
+コンセプト概要
+""""""""""""""
 
-In a Confidential Computing environment (e.g., AMD SEV-SNP, Intel TDX), the kernel is already measured at boot time by the hardware-backed chain of trust. Rather than modifying the kernel or injecting measurement logic earlier in the boot flow, we delegate application-level attestation to a lightweight agent called InitApp, which runs in early user space—right after the kernel, but before any application workload or sensitive data is accessed.
+機密コンピューティング環境 (AMD SEV-SNP、Intel TDX など) では、カーネルはブート時にハードウェア裏付けの信頼の連鎖によってすでに計測されています。カーネルを改変したり、ブートフローのより早い段階に計測ロジックを注入したりする代わりに、私たちはアプリケーションレベルのアテステーションを InitApp と呼ばれる軽量エージェントに委ねます。InitApp は初期ユーザー空間、すなわちカーネルの直後かつアプリケーションワークロードや機微なデータにアクセスする前に実行されます。
 
-Key Design Principles
-"""""""""""""""""""""
+主要な設計原則
+""""""""""""""
 
-**Trusted Kernel Base**
+**信頼されたカーネル基盤**
 
-The kernel serves as the base of trust. It is measured by the TEE platform during boot, forming part of the trusted launch.
+カーネルは信頼の基点として機能します。カーネルはブート時に TEE プラットフォームによって計測され、トラステッドローンチの一部を構成します。
 
-**InitApp as Attesting Agent**
+**アテスティングエージェントとしての InitApp**
 
-InitApp is responsible for:
+InitApp は以下を担当します。
 
-- Performing application-level attestation
-- Interacting with the trustee service and key broker
+- アプリケーションレベルのアテステーションの実行
+- trustee サービスおよび key broker との対話
 
-InitApp Placement and Measurement
-""""""""""""""""""""""""""""""""""
+InitApp の配置と計測
+""""""""""""""""""""
 
-For proper attestation, InitApp must be embedded within the initramfs rather than placed in external locations such as ``/oem/initapp``.
+適切なアテステーションを行うため、InitApp は ``/oem/initapp`` のような外部の場所ではなく、initramfs 内に埋め込まれている必要があります。
 
-**Measurement Scope**
+**計測の範囲**
 
-The attestation measurement must include:
+アテステーションの計測には以下を含める必要があります。
 
-- Kernel
-- Kernel arguments (command line)
+- カーネル
+- カーネル引数 (コマンドライン)
 - Initramfs
 
-With AMD SEV-SNP, this is configured using the ``kernel-hashes=on`` flag.
+AMD SEV-SNP では、これは ``kernel-hashes=on`` フラグを用いて設定します。
 
-**Design Rationale**
+**設計の根拠**
 
-Embedding InitApp within initramfs ensures:
+InitApp を initramfs 内に埋め込むことで、以下が保証されます。
 
-- InitApp is loaded into kernel memory during boot
-- InitApp is automatically measured as part of the initramfs by the attestation SDK
-- No additional measurement mechanisms are required
-- Placement outside initramfs bypasses automatic measurement and creates replay attack vulnerabilities
+- InitApp がブート時にカーネルメモリへロードされる
+- InitApp がアテステーション SDK によって initramfs の一部として自動的に計測される
+- 追加の計測メカニズムが不要になる
+- initramfs の外に配置すると自動計測が回避され、リプレイ攻撃の脆弱性が生じる
 
-QEMU Launch Example
-"""""""""""""""""""
+QEMU の起動例
+"""""""""""""
 
 .. code-block::
 
@@ -220,141 +220,140 @@ QEMU Launch Example
       <rest of command>
 
 
-In this setup,
-    - ``initrd.img`` is loaded into kernel memory and included in the TEE measurement, securing both InitApp and its logic.
-    - AMD EPYC CPU processor EPYC-v4 is used
-    - we use OVMF.amdsev.fd
-    - kernel-hashes=on
+この構成では、
+    - ``initrd.img`` がカーネルメモリへロードされ、TEE の計測に含まれることで、InitApp とそのロジックの両方が保護されます。
+    - AMD EPYC CPU プロセッサとして EPYC-v4 を使用します
+    - OVMF.amdsev.fd を使用します
+    - kernel-hashes=on を指定します
 
 
-What Needs to Be Measured
---------------------------
+計測すべき対象
+--------------
 
-When preparing a Confidential VM (CVM) image, it's crucial to ensure that key components are measured and cryptographically verified to maintain a trusted boot process.
+Confidential VM (CVM) イメージを準備する際は、信頼されたブートプロセスを維持するために、主要なコンポーネントが計測され暗号学的に検証されるようにすることがきわめて重要です。
 
-With TEE platforms like AMD SEV-SNP or Intel TDX, the firmware measures and includes the hashes of the following in the attestation report:
+AMD SEV-SNP や Intel TDX のような TEE プラットフォームでは、ファームウェアが以下のハッシュを計測し、アテステーションレポートに含めます。
 
-- Kernel binary
-- Initramfs (which includes InitApp)
-- Kernel command-line parameters
-- Firmware (UEFI/BIOS)
-- EFI boot configuration (depending on platform and setup)
+- カーネルバイナリ
+- Initramfs (InitApp を含む)
+- カーネルコマンドラインパラメータ
+- ファームウェア (UEFI/BIOS)
+- EFI ブート設定 (プラットフォームと構成による)
 
-These measurements are rooted in hardware and cannot be forged by the host. Any tampering with measured components—such as modifying InitApp—will result in a different TEE measurement hash. Consequently, the Trustee will detect the mismatch and deny key release, preventing decryption of sensitive data.
+これらの計測値はハードウェアに根ざしており、ホストが偽造することはできません。InitApp の改変など、計測対象コンポーネントに何らかの改ざんがあれば、TEE の計測ハッシュが変化します。その結果、Trustee は不一致を検出して鍵のリリースを拒否し、機微なデータの復号を防ぎます。
 
 .. note::
 
-   You do not need to sign or measure the entire CVM disk image. Focusing on these critical boot-time components is sufficient to establish a robust and verifiable chain of trust.
+   CVM のディスクイメージ全体に署名したり計測したりする必要はありません。これらの重要なブート時コンポーネントに焦点を当てるだけで、堅牢かつ検証可能な信頼の連鎖を確立するのに十分です。
 
 
-CVM Image Measurement
-^^^^^^^^^^^^^^^^^^^^^
+CVM イメージの計測
+^^^^^^^^^^^^^^^^^^
 
-The InitApp does a CVM image measurement using ``snpguest`` tool. This measurement is printed in the boot log always,
-even in case of a boot failure.
+InitApp は ``snpguest`` ツールを使用して CVM イメージの計測を行います。この計測値は、ブートに失敗した場合であっても、常にブートログに出力されます。
 
-What does it measure:
+計測される内容は次のとおりです。
 
 .. list-table::
    :header-rows: 1
 
-   * - Component
-     - Measured by Default
-     - Measured with kernel-hashes=on
+   * - コンポーネント
+     - 既定で計測される
+     - kernel-hashes=on で計測される
    * - OVMF
-     - ✅ Yes
-     - ✅ Yes
-   * - Kernel (vmlinuz)
-     - ❌ No
-     - ✅ Yes
+     - ✅ はい
+     - ✅ はい
+   * - カーネル (vmlinuz)
+     - ❌ いいえ
+     - ✅ はい
    * - initrd/initramfs
-     - ❌ No
-     - ✅ Yes
-   * - Kernel args
-     - ❌ No
-     - ✅ Yes
+     - ❌ いいえ
+     - ✅ はい
+   * - カーネル引数
+     - ❌ いいえ
+     - ✅ はい
 
-The SEV-SNP measurement is a SHA-384 hash of:
+SEV-SNP の計測値は、以下を対象とした SHA-384 ハッシュです。
 
-- OVMF + firmware state
-- Kernel
+- OVMF + ファームウェアの状態
+- カーネル
 - Initrd
-- Kernel command line
-- Platform launch policy
-- Guest-supplied report_data
-- etc.
+- カーネルコマンドライン
+- プラットフォームのローンチポリシー
+- ゲストが提供する report_data
+- その他
 
-As long as:
+以下の条件が満たされる限り、
 
-- Provide the same inputs to both sev-snp-measure and the runtime SEV-SNP launch process (i.e., QEMU/KVM with SEV-SNP enabled),
-- Don't introduce randomness between build and runtime (e.g., dynamic kernel arguments, timestamps, UUIDs),
+- sev-snp-measure と実行時の SEV-SNP ローンチプロセス (すなわち SEV-SNP を有効にした QEMU/KVM) の双方に同一の入力を与えること
+- ビルド時と実行時の間にランダム性 (動的なカーネル引数、タイムスタンプ、UUID など) を持ち込まないこと
 
-The measurement will match exactly.
+計測値は完全に一致します。
 
-Attestation Stages
-^^^^^^^^^^^^^^^^^^
+アテステーションの段階
+^^^^^^^^^^^^^^^^^^^^^^
 
-1. **Boot-Time Attestation**
-   - Scope: CPU only
-   - Ensures the integrity of the CVM and the early boot process, including initApp.
-   - Performed using the Trustee Service at startup.
+1. **ブート時アテステーション**
+   - 範囲: CPU のみ
+   - initApp を含む CVM および初期ブートプロセスの完全性を保証します。
+   - 起動時に Trustee サービスを用いて実行されます。
 
-2. **Runtime Attestation**
-   - Scope: CPU + GPU
-   - Required to protect the application workload during runtime execution.
-   - Likely involves an application-level attestation agent.
-   - FLARE integrates a Confidential Computing (CC) Manager that performs attestation at multiple stages, including runtime, to maintain trust across the system lifecycle.
+2. **ランタイムアテステーション**
+   - 範囲: CPU + GPU
+   - ランタイム実行中のアプリケーションワークロードを保護するために必要です。
+   - 通常はアプリケーションレベルのアテステーションエージェントを伴います。
+   - FLARE には機密コンピューティング (CC) マネージャーが統合されており、ランタイムを含む複数の段階でアテステーションを実行して、システムライフサイクル全体で信頼を維持します。
 
 
-Trustee Service Integration
-============================
+Trustee サービスの統合
+======================
 
-Overview
---------
+概要
+----
 
-To protect the model IP, confidential computing hardware alone is not sufficient. Additional infrastructure and services are required—most critically, the Trustee Service, which includes the following components:
+モデル IP を保護するには、機密コンピューティングのハードウェアだけでは不十分です。追加のインフラストラクチャとサービスが必要であり、なかでも最も重要なのが Trustee サービスです。これには以下のコンポーネントが含まれます。
 
-- Attestation Service
-- Key Broker Service
+- アテステーションサービス
+- Key Broker サービス
 
-The Trustee Service must support CPU-level attestation across AMD, Intel, and ARM architectures during the boot process. For this design, we adopt the CNCF Confidential Containers (CoCo) Project Trustee Service and Guest components:
+Trustee サービスは、ブートプロセス中に AMD、Intel、ARM の各アーキテクチャにまたがる CPU レベルのアテステーションをサポートしている必要があります。本設計では、CNCF Confidential Containers (CoCo) プロジェクトの Trustee サービスおよびゲストコンポーネントを採用します。
 🔗 https://github.com/confidential-containers/trustee
 
-Any other open-source or proprietary trustee service can also be used. This infrastructure is swappable.
+他のオープンソースまたは商用の trustee サービスを使用することもできます。このインフラストラクチャは差し替え可能です。
 
-Design Rationale
-----------------
+設計の根拠
+----------
 
-This design is chosen based on the following key factors:
+この設計は以下の主要な要因に基づいて選択されました。
 
-- Our main focus is on protecting the integrity and confidentiality of initApp during boot up.
-- The initApp is a small script that runs independently of the GPU, so GPU attestation is not required at this stage.
-- We need an open-source trustee service that has both key broker service and attestation, and basic configuration support. CoCo Trustee Service is the only option we can find at the moment.
+- 私たちの主眼は、ブートアップ時における initApp の完全性と機密性の保護にあります。
+- initApp は GPU とは独立して動作する小さなスクリプトであるため、この段階では GPU アテステーションは不要です。
+- key broker サービスとアテステーションの両方を備え、基本的な設定サポートを持つオープンソースの trustee サービスが必要です。現時点で見つけられる選択肢は CoCo Trustee サービスのみです。
 
-Interactions Between NVFlare and Trustee Key Broker Service (KBS)
------------------------------------------------------------------
+NVFlare と Trustee Key Broker Service (KBS) の相互作用
+------------------------------------------------------
 
-The following block diagram shows the interaction among the NVFlare CVM, Attestation Agent (AA), Key Broker Service (KBS), Trustee, and Attestation Service (AS).
+以下のブロック図は、NVFlare CVM、Attestation Agent (AA)、Key Broker Service (KBS)、Trustee、Attestation Service (AS) の間の相互作用を示しています。
 
 .. image:: ../../../resources/cvm_trustee_interaction.png
     :height: 500px
 
-Trustee Policies
-----------------
+Trustee のポリシー
+------------------
 
-The "trustee policy" refers to the rules and configurations governing how secrets are released and how the trustworthiness of a confidential workload is verified before granting access to sensitive data. It involves two main types of policies: resource policies and attestation policies.
+「trustee ポリシー」とは、シークレットがどのようにリリースされるか、また機微なデータへのアクセスを許可する前に機密ワークロードの信頼性をどのように検証するかを規定するルールと設定を指します。これは主に 2 種類のポリシー、すなわちリソースポリシーとアテステーションポリシーから構成されます。
 
-- **Resource Policies**: These policies determine which secrets are released to a specific workload, typically scoped to the container. They control what secrets are available to the workload, ensuring that only necessary information is provided.
-- **Attestation Policies**: These policies define how the claims about the Trusted Computing Base (TCB) are compared to reference values to determine the trustworthiness of the workload. They specify how the attestation process verifies that the workload is running in a trusted environment.
+- **リソースポリシー** : どのシークレットを特定のワークロードにリリースするかを決定するポリシーで、通常はコンテナ単位でスコープされます。ワークロードが利用できるシークレットを制御し、必要な情報のみが提供されるようにします。
+- **アテステーションポリシー** : Trusted Computing Base (TCB) に関するクレームを参照値とどのように比較して、ワークロードの信頼性を判定するかを定義するポリシーです。アテステーションプロセスが、ワークロードが信頼された環境で動作していることをどのように検証するかを規定します。
 
-We only need to use **resource policy** with the default attestation policy.
+私たちは、既定のアテステーションポリシーとともに **リソースポリシー** のみを使用すれば十分です。
 
-One can set the policy to the needed measurement (hash values) or referring to the reference values.
+ポリシーには、必要な計測値 (ハッシュ値) を設定することも、参照値を参照させることもできます。
 
-Set Policy
-^^^^^^^^^^
+ポリシーの設定
+^^^^^^^^^^^^^^
 
-Here is a policy example. The resource policy we set to ensure only CVM with the measurement matching the value can get the resource (the key for LUKS).
+以下はポリシーの例です。ここで設定するリソースポリシーは、計測値が指定の値に一致する CVM のみがリソース (LUKS 用の鍵) を取得できるようにするものです。
 
 .. code-block:: text
 
@@ -365,7 +364,7 @@ Here is a policy example. The resource policy we set to ensure only CVM with the
        input["submods"]["cpu0"]["ear.veraison.annotated-evidence"]["snp"]["measurement"] == "Cwa8qBJimP2freTTrrpvAZVbEQEyAhPY4fZGgSn9z4qtt0CAGmcS+Otz96qQZ92k"
    }
 
-And the command to set this policy into the Trustee service.
+そして、このポリシーを Trustee サービスに設定するコマンドは次のとおりです。
 
 .. code-block:: bash
 
@@ -377,10 +376,10 @@ And the command to set this policy into the Trustee service.
 
    sudo kbs-client --url https://$TRUSTEE_ADDRESS:$PORT --cert-file $ROOTCA config --auth-private-key private.key  set-resource-policy --policy-file resource_policy.rego
 
-Set & Get Resource
-^^^^^^^^^^^^^^^^^^
+リソースの設定と取得
+^^^^^^^^^^^^^^^^^^^^
 
-Here is the command for KBS client to set and get resources:
+KBS クライアントでリソースを設定および取得するコマンドは次のとおりです。
 
 .. code-block:: bash
 
@@ -389,124 +388,124 @@ Here is the command for KBS client to set and get resources:
 
 .. note::
 
-   ``--path $URL_PATH``: This is used for identity namespace isolation for now.
+   ``--path $URL_PATH``: 現時点では、これはアイデンティティの名前空間分離のために使用されます。
 
 
-CVM Implementation Details
-===========================
+CVM の実装詳細
+==============
 
-Disk Layout and Security
-------------------------
+ディスクレイアウトとセキュリティ
+--------------------------------
 
 .. image:: ../../../resources/cvm_disk_layout.png
     :height: 300px
 
-Disk Partitions
----------------
+ディスクパーティション
+----------------------
 
 .. list-table::
    :header-rows: 1
 
-   * - Partition
-     - Mount Point or host location
-     - Contents
-     - Encryption
-     - Notes
+   * - パーティション
+     - マウントポイントまたはホスト上の場所
+     - 内容
+     - 暗号化
+     - 備考
    * - Kernel + Initramfs
      - host
-     - Kernel image, initramfs
+     - カーネルイメージ、initramfs
      - ❌
-     - Tampering causes measurement change and boot failure
+     - 改ざんすると計測値が変化しブートに失敗します
    * - Boot Log
      - host
-     - Early boot logs from initramfs and InitApp
+     - initramfs と InitApp による初期ブートログ
      - ❌
-     - Allows monitoring boot failures from the host
+     - ホストからブート失敗を監視できます
    * - Root Filesystem
      - /root
-     - Full Ubuntu OS install
+     - Ubuntu OS のフルインストール
      - dm-crypt
-     - Encrypted root filesystem
+     - 暗号化されたルートファイルシステム
    * - App Log
      - /applog
-     - Application logs
+     - アプリケーションログ
      - ❌
-     - Separate image; readable after CVM shutdown
+     - 別イメージ。CVM 停止後も読み取り可能
    * - User Config
      - /user_config
-     - User configuration directory
+     - ユーザー設定ディレクトリ
      - ❌
-     - Modifiable before CVM launch
+     - CVM 起動前に変更可能
    * - User Data
      - /user_data
-     - User-provided data
+     - ユーザーが提供するデータ
      - ❌
-     - Attached as separate image; supports NFS mount
+     - 別イメージとして接続。NFS マウントをサポート
    * - Temporary Files
      - /tmp
-     - Runtime temporary files (RAM)
+     - ランタイムの一時ファイル (RAM)
      - TEE
-     - RAM disk protected by TEE
+     - TEE によって保護される RAM ディスク
    * - Swap
      - N/A
      - N/A
      - N/A
-     - Disabled
+     - 無効化
 
-Disk Security Measures
-----------------------
+ディスクセキュリティ対策
+------------------------
 
-**Mount Security**
+**マウントのセキュリティ**
 
-Auto-mounting is disabled to prevent unauthorized or accidental mounting of external devices.
+外部デバイスの不正または偶発的なマウントを防ぐため、自動マウントは無効化されています。
 
-**Encryption**
+**暗号化**
 
-- **Root Filesystem**: Encrypted using ``dm-crypt``; decryption key released only after successful attestation
-- **Temporary Storage**: ``/tmp`` is a RAM disk protected by TEE hardware encryption
-- **User Data**: Unencrypted by design; users control data encryption externally if needed
+- **ルートファイルシステム** : ``dm-crypt`` で暗号化されます。復号鍵はアテステーションが成功した後にのみリリースされます
+- **一時ストレージ** : ``/tmp`` は TEE のハードウェア暗号化によって保護される RAM ディスクです
+- **ユーザーデータ** : 設計上は暗号化されません。必要に応じてユーザーが外部でデータ暗号化を制御します
 
-Partition Details
------------------
+パーティションの詳細
+--------------------
 
-**Logging**
+**ロギング**
 
-``bootlog`` - File on Host Machine
+``bootlog`` - ホストマシン上のファイル
 
-This log records the boot process and is essential during setup and debugging, especially when diagnosing boot failures. The boot log is stored on the host machine (not inside the CVM) and is writable during the boot process.
+このログはブートプロセスを記録し、セットアップ時やデバッグ時、特にブート失敗の診断において不可欠です。ブートログは (CVM 内部ではなく) ホストマシンに保存され、ブートプロセス中に書き込み可能です。
 
-``/applog`` - Partition on CVM Disk
+``/applog`` - CVM ディスク上のパーティション
 
-This log captures application-level output (e.g., FLARE logs). It is writable to aid debugging—for instance, when investigating connectivity issues between clients and servers. The log is visible to the host and implemented as a separate image file. This allows log analysis to continue even after the CVM is shut down.
+このログはアプリケーションレベルの出力 (FLARE のログなど) を記録します。たとえばクライアントとサーバー間の接続問題を調査する場合など、デバッグを助けるために書き込み可能になっています。ログはホストから参照でき、独立したイメージファイルとして実装されています。これにより、CVM が停止した後もログ解析を継続できます。
 
-**Configuration**
+**設定**
 
-``/user_config`` - Partition on CVM Disk
+``/user_config`` - CVM ディスク上のパーティション
 
-The user_config partition is intended for user-specific configurations that could change the workload behavior. This partition is exposed to the host and can be changed outside the CVM.
+user_config パーティションは、ワークロードの挙動を変更し得るユーザー固有の設定を格納するためのものです。このパーティションはホストに公開されており、CVM の外部から変更できます。
 
-For example, in FLARE applications, each site will have local configurations specific to the site, such as privacy policies or authentication configurations.
+たとえば FLARE アプリケーションでは、各サイトがプライバシーポリシーや認証設定など、サイト固有のローカル設定を持ちます。
 
-User Data Volume Configuration
--------------------------------
+ユーザーデータボリュームの構成
+------------------------------
 
-User data is provided via an unencrypted drive image (``user_data.qcow2``) mounted at ``/user_data``. Users can copy required data onto this drive before launching the CVM.
+ユーザーデータは、``/user_data`` にマウントされる暗号化されていないドライブイメージ (``user_data.qcow2``) を介して提供されます。ユーザーは CVM を起動する前に、必要なデータをこのドライブにコピーできます。
 
-**NFS Mount Support**
+**NFS マウントのサポート**
 
-For remote data access, NFS mounts are supported. The CVM will automatically mount an NFS volume if an ``ext_mount.conf`` file is present in ``/user_data`` with the following format:
+リモートデータへのアクセスのために NFS マウントがサポートされています。``/user_data`` に以下の形式の ``ext_mount.conf`` ファイルが存在する場合、CVM は自動的に NFS ボリュームをマウントします。
 
 .. code-block:: text
 
    $NFS_SERVER_NAME_or_IP:$EXPORT_DIR
 
-Example:
+例:
 
 .. code-block:: text
 
    172.31.53.113:/var/tmp/nfs_export
 
-The NFS export will be mounted to ``/user_data/mnt`` using:
+NFS エクスポートは以下のコマンドで ``/user_data/mnt`` にマウントされます。
 
 .. code-block:: bash
 
@@ -514,10 +513,10 @@ The NFS export will be mounted to ``/user_data/mnt`` using:
 
 .. note::
 
-   If NAT is used in the network path, configure the NFS export as insecure:
-   
+   ネットワーク経路で NAT が使用されている場合は、NFS エクスポートを insecure として設定してください。
+
    .. code-block:: bash
-   
+
       /training_data *(rw,sync,no_subtree_check,insecure)
 
 
@@ -525,121 +524,121 @@ The NFS export will be mounted to ``/user_data/mnt`` using:
    :height: 300px
 
 
-Access and Network Security
----------------------------
+アクセスとネットワークのセキュリティ
+------------------------------------
 
-CVM Lockdown
-^^^^^^^^^^^^
+CVM のロックダウン
+^^^^^^^^^^^^^^^^^^
 
-The CVM is designed with comprehensive access restrictions to prevent unauthorized entry and manipulation:
+CVM は、不正な侵入や操作を防ぐため、包括的なアクセス制限を備えて設計されています。
 
-**Administrative Access**
+**管理者アクセス**
 
-- The system is configured to be admin-less by removing all users from the sudoers file
-- OS-level login is disabled entirely
-- SSH (sshd) is disabled
-- Serial console access is disabled
+- sudoers ファイルからすべてのユーザーを削除することで、システムは管理者不在 (admin-less) として構成されます
+- OS レベルのログインは完全に無効化されています
+- SSH (sshd) は無効化されています
+- シリアルコンソールアクセスは無効化されています
 
-**Network Restrictions**
+**ネットワーク制限**
 
-All network connections are authenticated and encrypted using TLS for secure communication with attestation services and application endpoints.
+すべてのネットワーク接続は認証され、TLS によって暗号化されることで、アテステーションサービスやアプリケーションエンドポイントとの安全な通信が確保されます。
 
-A strict firewall policy is enforced using iptables with whitelist-based port control for both inbound and outbound traffic:
+インバウンドとアウトバウンドの両方のトラフィックに対し、iptables を用いたホワイトリスト方式のポート制御による厳格なファイアウォールポリシーが適用されます。
 
-- **Default Policy**: All inbound and outbound ports are blocked
-- **Inbound Whitelist**: Only explicitly allowed ports for:
+- **既定ポリシー** : すべてのインバウンドおよびアウトバウンドのポートをブロックします
+- **インバウンドのホワイトリスト** : 以下の用途に対して明示的に許可されたポートのみを開放します
 
-  - Application communication (e.g., FLARE server accepting client connections)
+  - アプリケーション通信 (FLARE サーバーがクライアント接続を受け付ける場合など)
 
-- **Outbound Whitelist**: Only explicitly allowed ports for:
+- **アウトバウンドのホワイトリスト** : 以下の用途に対して明示的に許可されたポートのみを開放します
 
-  - DNS resolution
-  - Attestation services communication
-  - Application server connections (e.g., FLARE client to server)
-  - Experiment tracking services (e.g., MLflow)
-  - Management or monitoring services (if configured)
-  
-This defense-in-depth approach ensures that even if an attacker gains host-level access, they cannot log in, connect remotely, or communicate through unauthorized network channels.
+  - DNS 解決
+  - アテステーションサービスとの通信
+  - アプリケーションサーバーへの接続 (FLARE クライアントからサーバーへの接続など)
+  - 実験トラッキングサービス (MLflow など)
+  - 管理・監視サービス (設定されている場合)
+
+この多層防御のアプローチにより、攻撃者がホストレベルのアクセスを得たとしても、ログインしたり、リモート接続したり、許可されていないネットワーク経路で通信したりすることはできません。
 
 
-Application Level Security
-===========================
+アプリケーションレベルのセキュリティ
+====================================
 
-In addition to the basic CVM Security, we also need additional security at application level. This might be different for different type of applications.
+基本的な CVM セキュリティに加えて、アプリケーションレベルでの追加のセキュリティも必要です。これはアプリケーションの種類によって異なる場合があります。
 
-General Security Measure
+一般的なセキュリティ対策
 ------------------------
 
-For all applications, we need the following additional security measures:
-    - **Attestation service agent**:
-        - Perform the self-attestation using both CPU and GPU attestation service at start.
-        - Boot level attestation is only for CPU, we need to attest GPU as well.
-        - Perform periodical self-tests to make sure the system is not compromised.
-    - **Code Level security**:
-        - No dynamic code changes.
+すべてのアプリケーションに対して、以下の追加のセキュリティ対策が必要です。
+    - **アテステーションサービスエージェント** :
+        - 起動時に CPU と GPU の両方のアテステーションサービスを用いて自己アテステーションを実行します。
+        - ブートレベルのアテステーションは CPU のみが対象であるため、GPU についてもアテステーションが必要です。
+        - システムが侵害されていないことを確認するために、定期的な自己テストを実行します。
+    - **コードレベルのセキュリティ** :
+        - 動的なコード変更を認めません。
 
-FLARE-Specific Security
------------------------
+FLARE 固有のセキュリティ
+------------------------
 
-Federated Learning Provision Process
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+連合学習のプロビジョニングプロセス
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Federated learning provision is a process to prepare the software packages (FLARE's startup kits) for each participating organization. Clients and the server will obtain different startup kits. The package is prepared by the system owned by the project admin and then distributed to each participant. Then, FL Server needs to start first, FL Client site will start the startup kit, connect to FL server.
+連合学習のプロビジョニングとは、参加する各組織向けのソフトウェアパッケージ (FLARE のスタートアップキット) を準備するプロセスです。クライアントとサーバーは、それぞれ異なるスタートアップキットを受け取ります。パッケージはプロジェクト管理者が所有するシステムで準備され、その後各参加者に配布されます。次に、まず FL サーバーを起動し、FL クライアントサイトがスタートアップキットを起動して FL サーバーに接続します。
 
-There are three distinguished phases:
+明確に区別される 3 つのフェーズがあります。
 
-- **Provision processes** – prepare the software artifacts (the startup kits).
-- **Distribution process** – software packages are distributed to participants.
-- **Run-time processes** – At each participant's host machine, the participant deploys the package, starts the FL system, and establishes the communication between the FL server and the participant.
+- **プロビジョニングプロセス** – ソフトウェア成果物 (スタートアップキット) を準備します。
+- **配布プロセス** – ソフトウェアパッケージが参加者に配布されます。
+- **ランタイムプロセス** – 各参加者のホストマシンで、参加者がパッケージを展開し、FL システムを起動して、FL サーバーと参加者の間の通信を確立します。
 
-Terminology
-^^^^^^^^^^^
+用語
+^^^^
 
-To simplify discussions, we define the following roles:
+議論を簡潔にするため、以下の役割を定義します。
 
-- **Project Admin**: The individual responsible for initiating and managing the overall project. This includes approving participants, provisioning resources, and triggering the Confidential VM (CVM) build process.
+- **プロジェクト管理者 (Project Admin)** : プロジェクト全体の立ち上げと管理に責任を持つ個人です。参加者の承認、リソースのプロビジョニング、Confidential VM (CVM) ビルドプロセスの起動などを行います。
 
-- **Model Owner**: The entity (person or organization) that owns both the pre-trained model and the final trained model. They are primarily concerned with protecting the intellectual property of the model.
+- **モデル所有者 (Model Owner)** : 事前学習済みモデルと最終的な学習済みモデルの両方を所有する主体 (個人または組織) です。主にモデルの知的財産の保護に関心があります。
 
-- **Data Owner**: The entity that owns the private data used in training. Data privacy and security are their primary concerns.
+- **データ所有者 (Data Owner)** : 学習に使用されるプライベートデータを所有する主体です。データのプライバシーとセキュリティが主な関心事です。
 
-- **Org Admin**: An IT administrator from a participating organization. This person is responsible for setting up the local environment and launching the site-specific Federated Learning (FL) system instance (e.g., the FL client).
+- **組織管理者 (Org Admin)** : 参加組織の IT 管理者です。ローカル環境のセットアップと、サイト固有の連合学習 (FL) システムインスタンス (FL クライアントなど) の起動を担当します。
 
-The Process
-^^^^^^^^^^^
+プロセス
+^^^^^^^^
 
-- **Provision Process**: The generated CVM image will be a lockdown with no access. This is done via additional hardened security measures described above.
-- **Distribution process**: For CLI based provision, we will let customers decide the best way to distribute the CVM image file.
-- **Deploy/start**: The participant, deployed the CVM image to a CC-enabled Host, add NFS data volume need for the training, run start scripts to start the system.
+- **プロビジョニングプロセス** : 生成される CVM イメージはアクセス不可のロックダウン状態になります。これは前述の追加のセキュリティ強化策によって実現されます。
+- **配布プロセス** : CLI ベースのプロビジョニングでは、CVM イメージファイルの配布方法は顧客の判断に委ねます。
+- **展開・起動** : 参加者は CVM イメージを CC 対応ホストに展開し、学習に必要な NFS データボリュームを追加して、起動スクリプトを実行してシステムを開始します。
 
-.. note:: FLARE Dashboard Support
-    In current release, FLARE Dashboard provision is not supported for CVM provision.
+.. note:: FLARE Dashboard のサポート
+    現在のリリースでは、CVM のプロビジョニングにおいて FLARE Dashboard によるプロビジョニングはサポートされていません。
 
-FLARE Attestation Verification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLARE のアテステーション検証
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FLARE's CC manager performs three different attestations:
+FLARE の CC マネージャーは、3 種類のアテステーションを実行します。
 
-- **Self-attestation**
-- **Cross-verification among client and server**
-- **Periodical cross-verification**
+- **自己アテステーション**
+- **クライアントとサーバー間の相互検証**
+- **定期的な相互検証**
 
-FLARE Workload Execution and Access Control Policies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLARE のワークロード実行とアクセス制御ポリシー
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- All training and inference code must be pre-reviewed and approved before inclusion in the workload.
-- The application and its dependencies are pre-installed in the workload docker.
-- Job execution is triggered by submitting a predefined job configuration—no dynamic or custom or user-supplied code is allowed at runtime.
+- すべての学習コードおよび推論コードは、ワークロードに含める前に事前レビューと承認を受ける必要があります。
+- アプリケーションとその依存関係は、ワークロード用の Docker イメージに事前インストールされています。
+- ジョブの実行は、あらかじめ定義されたジョブ設定を送信することによって開始されます。ランタイムでの動的なコード、カスタムコード、ユーザー提供コードは一切許可されません。
 
-For IP Protection Use Cases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+IP 保護のユースケースについて
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Only the Project Admin is authorized to download results, including the global model and logs.
-- Download permissions are disabled for all other users and cannot be overridden at the individual site level.
+- グローバルモデルやログを含む結果をダウンロードできるのは、プロジェクト管理者のみです。
+- 他のすべてのユーザーについてはダウンロード権限が無効化されており、個々のサイトレベルで上書きすることはできません。
 
 
-References
-==========
+参考資料
+========
 
 - NVIDIA Deployment Guide for SecureAI: https://docs.nvidia.com/cc-deployment-guide-tdx.pdf
 - RATS architecture: https://www.rfc-editor.org/rfc/rfc9334.html
@@ -648,7 +647,7 @@ References
 - Confidential Container Trustee: https://github.com/confidential-containers/trustee
 - Azure confidential computing: harden the linux image to remove sudo users: https://learn.microsoft.com/en-us/azure/confidential-computing/harden-the-linux-image-to-remove-sudo-users
 - Microsoft Secure the Windows boot process. https://learn.microsoft.com/en-us/windows/security/operating-system-security/system-security/secure-the-windows-10-boot-process
-- Microsoft Secure Boot. Note these links to the above article.
+- Microsoft Secure Boot. 以下のリンクは上記の記事に関連しています。
   - https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-secure-boot
 - SEV-SNP measurement tool: https://github.com/virtee/sev-snp-measure
 

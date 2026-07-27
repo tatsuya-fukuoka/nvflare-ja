@@ -1,103 +1,105 @@
 .. _differential_privacy:
 
-##############################
-Differential Privacy in FLARE
-##############################
+##################################
+FLARE における差分プライバシー
+##################################
 
-Overview
+概要
 ========
 
-Differential Privacy (DP) provides mathematically rigorous privacy guarantees for federated learning.
-FLARE supports DP at two levels:
+差分プライバシー (DP) は、連合学習に対して数学的に厳密なプライバシー保証を提供します。
+FLARE は 2 つのレベルで DP をサポートしています。
 
-- **Local DP (client-side)** -- Privacy filters applied to model updates before sending to the server
-- **Sample-level DP (training-time)** -- DP-SGD integration via `Opacus <https://opacus.ai>`_ for per-sample gradient clipping and noise injection during training
+- **ローカル DP (クライアント側)** -- サーバーへ送信する前にモデル更新へ適用されるプライバシーフィルター
+- **サンプルレベル DP (トレーニング時)** -- トレーニング中のサンプルごとの勾配クリッピングとノイズ注入のための `Opacus <https://opacus.ai>`_ による DP-SGD 統合
 
-Both approaches can be combined with other FLARE privacy mechanisms (homomorphic encryption, secure aggregation)
-for defense-in-depth.
+いずれのアプローチも、多層防御のために他の FLARE のプライバシーメカニズム (準同型暗号、セキュアアグリゲーション) と
+組み合わせることができます。
 
-DP-SGD with Opacus (Sample-Level DP)
-=====================================
-
-For the strongest per-sample privacy guarantees, use DP-SGD during local training. The
-:doc:`Hello Differential Privacy </hello-world/hello-dp/index>` example demonstrates a complete
-federated DP workflow:
-
-- **Gradient Clipping** -- Per-sample gradients are clipped to bound sensitivity
-- **Noise Addition** -- Calibrated Gaussian noise is added to clipped gradients
-- **Privacy Accounting** -- Privacy budget (epsilon, delta) is tracked across rounds
-
-The privacy-utility trade-off is controlled by epsilon:
-
-- **Lower epsilon** = stronger privacy, more noise, lower accuracy
-- **Higher epsilon** = weaker privacy, less noise, higher accuracy
-
-See the full walkthrough: :doc:`Hello Differential Privacy </hello-world/hello-dp/index>`
-
-Privacy-Preserving Filters (Model Update DP)
+Opacus による DP-SGD (サンプルレベル DP)
 =============================================
 
-FLARE's :ref:`filter mechanism <filters>` lets you apply privacy transformations to model updates
-before they leave the client. These filters are configured in the job definition and run automatically.
+サンプルごとの最も強力なプライバシー保証を得るには、ローカルトレーニング時に DP-SGD を使用します。
+:doc:`Hello Differential Privacy </hello-world/hello-dp/index>` の例では、完全な連合 DP ワークフローを
+示しています。
 
-**Built-in privacy filters** (in ``nvflare.app_common.filters``):
+- **勾配クリッピング** -- 感度を制限するために、サンプルごとの勾配をクリッピングします
+- **ノイズ付加** -- クリッピングされた勾配に、校正されたガウスノイズを付加します
+- **プライバシー会計** -- プライバシー予算 (epsilon、delta) をラウンドをまたいで追跡します
+
+プライバシーと有用性のトレードオフは epsilon によって制御されます。
+
+- **epsilon が小さい** = プライバシーが強く、ノイズが多く、精度は低い
+- **epsilon が大きい** = プライバシーが弱く、ノイズが少なく、精度は高い
+
+完全な解説については :doc:`Hello Differential Privacy </hello-world/hello-dp/index>` を参照してください。
+
+プライバシー保護フィルター (モデル更新の DP)
+=============================================
+
+FLARE の :ref:`フィルターメカニズム <filters>` を使うと、モデル更新がクライアントから送出される前に
+プライバシー変換を適用できます。これらのフィルターはジョブ定義で設定され、自動的に実行されます。
+
+**組み込みのプライバシーフィルター** ( ``nvflare.app_common.filters`` 内):
 
 ``PercentilePrivacy``
-    Implements the "largest percentile to share" policy from
-    `Shokri & Shmatikov (CCS '15) <https://dl.acm.org/doi/10.1145/2810103.2813687>`_.
-    Only weight differences above a configurable percentile are shared; smaller values are zeroed out.
+    `Shokri & Shmatikov (CCS '15) <https://dl.acm.org/doi/10.1145/2810103.2813687>`_ による
+    「共有する最大パーセンタイル」ポリシーを実装します。
+    設定可能なパーセンタイルを超える重みの差分のみが共有され、それより小さい値はゼロにされます。
 
-    Parameters: ``percentile`` (default 10), ``gamma`` (clipping threshold, default 0.01)
+    パラメータ: ``percentile`` (デフォルト 10)、 ``gamma`` (クリッピングのしきい値、デフォルト 0.01)
 
 ``SVTPrivacy``
-    Implements the Sparse Vector Technique (SVT) for differential privacy.
-    Uses Laplace noise and a threshold mechanism to selectively share weight updates, with
-    filter-level privacy accounting for the SVT selection and release steps.
+    差分プライバシーのための Sparse Vector Technique (SVT) を実装します。
+    ラプラスノイズとしきい値メカニズムを使用して重み更新を選択的に共有し、SVT の選択ステップと
+    リリースステップに対するフィルターレベルのプライバシー会計を行います。
 
-    Parameters: ``fraction`` (default 0.1), ``epsilon`` (default 0.1), ``noise_var`` (default 0.1)
+    パラメータ: ``fraction`` (デフォルト 0.1)、 ``epsilon`` (デフォルト 0.1)、 ``noise_var`` (デフォルト 0.1)
 
     .. note::
 
-        ``SVTPrivacy`` uses a practical **filter-level** privacy accountant, which is different from the
-        sample-level accountant used by DP-SGD libraries such as Opacus.
+        ``SVTPrivacy`` は実用的な **フィルターレベル** のプライバシーアカウンタントを使用します。これは
+        Opacus などの DP-SGD ライブラリで使用されるサンプルレベルのアカウンタントとは異なります。
 
-        For stronger sample-level privacy accounting, use DP-SGD during local training. See
-        :doc:`Hello Differential Privacy </hello-world/hello-dp/index>` for the Opacus-based example.
+        より強力なサンプルレベルのプライバシー会計が必要な場合は、ローカルトレーニング時に DP-SGD を使用してください。
+        Opacus ベースの例については :doc:`Hello Differential Privacy </hello-world/hello-dp/index>` を
+        参照してください。
 
-        The current implementation models one filter invocation as the composition of three pure-DP phases:
+        現在の実装では、フィルターの 1 回の呼び出しを 3 つの純粋 DP フェーズの合成としてモデル化しています。
 
-        - threshold noise with budget ``epsilon_threshold``
-        - query/acceptance noise with budget ``epsilon_query``
-        - release noise with budget ``epsilon_release``
+        - 予算 ``epsilon_threshold`` によるしきい値ノイズ
+        - 予算 ``epsilon_query`` によるクエリ/受理ノイズ
+        - 予算 ``epsilon_release`` によるリリースノイズ
 
-        For one call, the accountant reports:
+        1 回の呼び出しについて、アカウンタントは次のように報告します。
 
         ``epsilon_call = epsilon_threshold + epsilon_query + epsilon_release``
 
-        Across repeated calls on the same filter instance, the accountant uses straight sequential composition:
+        同じフィルターインスタンスに対する複数回の呼び出しにわたっては、アカウンタントは単純な逐次合成を使用します。
 
         ``epsilon_total = sum(epsilon_call over calls)``
 
-        This is a conservative pure-DP odometer with ``delta = 0``. It is useful for tracking the cumulative
-        privacy budget spent by the filter across rounds, but it is **not** equivalent to the end-to-end
-        ``(epsilon, delta)`` privacy accounting used for DP-SGD training with Opacus. In particular:
+        これは ``delta = 0`` の保守的な純粋 DP オドメーターです。ラウンドをまたいでフィルターが消費した累積の
+        プライバシー予算を追跡するのには有用ですが、Opacus による DP-SGD トレーニングで使用されるエンドツーエンドの
+        ``(epsilon, delta)`` プライバシー会計と等価では **ありません** 。特に次の点に注意してください。
 
-        - no subsampling amplification is assumed
-        - no RDP/PRV/GDP accountant is used
-        - the guarantee is scoped to this filter mechanism, not the whole training procedure
-        - scalar passthrough values are not noise-protected by the SVT accountant and are flagged in the filter metadata
+        - サブサンプリングによる増幅は仮定されていません
+        - RDP/PRV/GDP アカウンタントは使用されていません
+        - この保証はこのフィルターメカニズムに限定されたものであり、トレーニング手順全体に対するものではありません
+        - スカラーのパススルー値は SVT アカウンタントによるノイズ保護の対象外であり、フィルターのメタデータで
+          フラグが立てられます
 
-        For backward compatibility, if ``epsilon_release`` is not specified, the filter derives it from the legacy
-        ``noise_var`` parameter so the release-noise scale remains unchanged.
+        後方互換性のため、 ``epsilon_release`` が指定されていない場合、フィルターはレガシーの ``noise_var``
+        パラメータからこれを導出し、リリースノイズのスケールが変わらないようにします。
 
 ``StatisticsPrivacyFilter``
-    Applies privacy cleansing to federated statistics computations, ensuring that
-    summary statistics shared across sites do not leak individual data points.
+    連合統計計算にプライバシークレンジングを適用し、サイト間で共有される要約統計量が個々のデータポイントを
+    漏洩しないようにします。
 
-Usage Example
+使用例
 -------------
 
-To add a privacy filter to a job, configure it as a ``task_result_filter`` on the client:
+ジョブにプライバシーフィルターを追加するには、クライアント側で ``task_result_filter`` として設定します。
 
 .. code-block:: python
 
@@ -106,25 +108,26 @@ To add a privacy filter to a job, configure it as a ``task_result_filter`` on th
     # In job configuration, add as a result filter:
     privacy_filter = PercentilePrivacy(percentile=10, gamma=0.01)
 
-For filter configuration in job configs, see :ref:`Data Privacy & Filters <data_privacy_protection>`.
+ジョブ設定でのフィルター設定については、 :ref:`データプライバシーとフィルター <data_privacy_protection>` を
+参照してください。
 
-Combining DP with Other Privacy Mechanisms
-==========================================
+DP と他のプライバシーメカニズムの組み合わせ
+==============================================
 
-FLARE supports layered privacy:
+FLARE は多層的なプライバシー保護をサポートしています。
 
-- **DP + Homomorphic Encryption**: Apply DP filters before HE-encrypted aggregation for both
-  input and output privacy
-- **DP + Confidential Computing**: Run DP-protected training inside hardware TEEs for
-  additional protection against infrastructure attacks
-- **DP + Secure Aggregation**: Combine DP noise with secure aggregation protocols
+- **DP + 準同型暗号**: 入力と出力の双方のプライバシーのために、HE で暗号化された集約の前に DP フィルターを
+  適用します
+- **DP + コンフィデンシャルコンピューティング**: インフラストラクチャへの攻撃に対する追加の保護のために、
+  ハードウェア TEE 内で DP により保護されたトレーニングを実行します
+- **DP + セキュアアグリゲーション**: DP のノイズとセキュアアグリゲーションのプロトコルを組み合わせます
 
-See :doc:`/system_architecture/security_overview` for an overview of all security mechanisms.
+すべてのセキュリティメカニズムの概要については :doc:`/system_architecture/security_overview` を参照してください。
 
-Resources
-=========
+参考リソース
+==============
 
-- :doc:`Hello Differential Privacy </hello-world/hello-dp/index>` -- Complete DP-SGD example with Opacus
-- :ref:`Data Privacy & Filters <data_privacy_protection>` -- Filter mechanism and configuration
-- :ref:`Filters Programming Guide <filters>` -- How filters work in FLARE
-- `Opacus Documentation <https://opacus.ai>`_ -- DP-SGD library for PyTorch
+- :doc:`Hello Differential Privacy </hello-world/hello-dp/index>` -- Opacus を用いた完全な DP-SGD の例
+- :ref:`データプライバシーとフィルター <data_privacy_protection>` -- フィルターメカニズムと設定
+- :ref:`フィルタープログラミングガイド <filters>` -- FLARE におけるフィルターの動作
+- `Opacus Documentation <https://opacus.ai>`_ -- PyTorch 向けの DP-SGD ライブラリ

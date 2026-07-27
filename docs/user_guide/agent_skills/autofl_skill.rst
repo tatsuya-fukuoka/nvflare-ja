@@ -1,186 +1,175 @@
 .. _autofl_skill:
 
-############################
-NVFlare Auto-FL Agent Skill
-############################
+##########################################
+NVFlare Auto-FL エージェントスキル
+##########################################
 
-The NVFlare Auto-FL agent skill optimizes an existing NVFlare ``job.py``
-through a coding agent. It is not an ``nvflare autofl`` command and does not
-add an Auto-FL command family to the NVFlare CLI.
+NVFlare Auto-FL エージェントスキルは、コーディングエージェントを通じて既存の NVFlare ``job.py``
+を最適化します。これは ``nvflare autofl`` コマンドではなく、NVFlare CLI に Auto-FL のコマンド
+ファミリーを追加するものでもありません。
 
-Install the NVFlare-owned skill set from the repository root for Codex and
-Claude Code:
+Codex および Claude Code 向けに、リポジトリのルートから NVFlare が管理するスキルセットを
+インストールします。
 
 .. code-block:: shell
 
    npx skills add ./skills -a codex -a claude-code
 
-The standard Agent Skills installer places the complete skill set, including
-Auto-FL's deterministic helper scripts, in each selected agent's managed skill
-directory. NVFlare does not provide a separate skill installation command, and
-skills are not distributed through the NVFlare Python wheel.
+標準の Agent Skills インストーラーは、Auto-FL の決定論的なヘルパースクリプトを含むスキルセット
+全体を、選択した各エージェントの管理対象スキルディレクトリに配置します。NVFlare は独自のスキル
+インストールコマンドを提供しておらず、スキルは NVFlare の Python wheel を通じて配布されません。
 
-User Experience
-===============
+ユーザー体験
+============
 
-Select the installed skill in the coding agent and provide the optimization
-intent:
+コーディングエージェントでインストール済みのスキルを選択し、最適化の意図を与えます。
 
 .. code-block:: text
 
    Select: NVFlare Auto-FL skill
    Prompt: Optimize ./job.py for accuracy in sim.
 
-An explicit candidate budget is optional. Without one, the campaign continues
-until the user interrupts it or a hard safety or runtime blocker prevents
-further comparable execution.
+候補数の明示的な上限 (バジェット) は任意です。指定しない場合、キャンペーンはユーザーが中断するか、
+または重大な安全上・実行上のブロッカーによってそれ以上比較可能な実行ができなくなるまで継続します。
 
-Users do not invoke scripts from the installed skill directory. The activated
-coding agent resolves and runs those bundled resources internally. Bundled
-scripts are private implementation details, not public NVFlare commands or
-Python APIs.
+ユーザーがインストール済みのスキルディレクトリからスクリプトを直接実行することはありません。
+有効化されたコーディングエージェントが、同梱されたリソースを内部的に解決して実行します。同梱
+スクリプトは非公開の実装詳細であり、公開された NVFlare のコマンドや Python API ではありません。
 
-Deterministic Import
+決定論的なインポート
 ====================
 
-The skill first parses ``job.py`` without importing or executing it. Its private
-importer recognizes supported NVFlare Recipe and FedJob construction patterns,
-aliases, ``SimEnv`` configuration, fixed training budgets, metrics, train
-scripts, and common argparse tunables.
+スキルはまず、 ``job.py`` をインポートしたり実行したりすることなく解析します。その非公開の
+インポーターは、サポートされている NVFlare の Recipe および FedJob の構築パターン、エイリアス、
+``SimEnv`` の設定、固定された学習バジェット、メトリクス、学習スクリプト、および一般的な argparse の
+チューニング可能パラメータを認識します。
 
-The result is a reviewable ``autofl.yaml`` containing:
+その結果として、レビュー可能な ``autofl.yaml`` が生成され、次の内容が含まれます。
 
-- the optimization metric, direction, environment, and candidate budget;
-- the fixed comparison budget that candidates must preserve;
-- ``trust_contract.allowed_edit_paths`` and allowed Python creation patterns;
-- source and importer provenance;
-- unresolved dynamic or unsupported fields requiring review.
+- 最適化メトリクス、最適化方向、環境、および候補バジェット
+- 候補が維持しなければならない固定された比較バジェット
+- ``trust_contract.allowed_edit_paths`` と許可された Python 生成パターン
+- ソースおよびインポーターの来歴 (provenance)
+- レビューが必要な、未解決の動的フィールドや未サポートのフィールド
 
-When the user does not name a metric, a deterministic ``key_metric`` extracted
-from ``job.py`` takes precedence. The default user experience does not require
-editing ``autofl.yaml``.
+ユーザーがメトリクスを指定しない場合は、 ``job.py`` から決定論的に抽出された ``key_metric`` が
+優先されます。デフォルトのユーザー体験では ``autofl.yaml`` を編集する必要はありません。
 
-Simulation Execution Permission
-===============================
+シミュレーション実行の許可
+==========================
 
-Before a simulation campaign starts, the coding agent asks once for approval
-to run the installed Auto-FL runner outside its restricted command sandbox.
-Approve only the resolved Python interpreter and runner, the ``initialize``
-and ``evaluate`` actions, and the selected absolute ``job.py``. Do not approve
-generic Python or shell execution, full access, another job, or POC/production
-commands. The skill does not create or modify agent permission configuration.
+シミュレーションキャンペーンを開始する前に、コーディングエージェントは、インストール済みの Auto-FL
+ランナーを制限付きコマンドサンドボックスの外で実行するための承認を一度だけ求めます。承認するのは、
+解決された Python インタープリターとランナー、 ``initialize`` および ``evaluate`` アクション、
+そして選択された絶対パスの ``job.py`` に限定してください。汎用的な Python やシェルの実行、フル
+アクセス、別のジョブ、あるいは POC/本番用コマンドを承認してはいけません。このスキルがエージェントの
+権限設定を作成・変更することはありません。
 
-This approval is needed because the local simulator binds sockets. It also
-means that user and agent-authored training code runs with the runner's host
-privileges. Use a disposable container or dedicated VM for autonomous
-campaigns. Declining the approval prevents local simulation but does not relax
-the sandbox or bypass normal POC/production authentication and site policy.
+この承認が必要なのは、ローカルシミュレーターがソケットをバインドするためです。またこれは、ユーザーや
+エージェントが記述した学習コードが、ランナーのホスト権限で実行されることも意味します。自律的な
+キャンペーンには、使い捨てのコンテナまたは専用の VM を使用してください。承認を拒否するとローカル
+シミュレーションは行えなくなりますが、サンドボックスが緩和されたり、通常の POC/本番の認証やサイト
+ポリシーが迂回されたりすることはありません。
 
-Candidate Lifecycle
-===================
+候補のライフサイクル
+====================
 
-The coding agent forms a hypothesis and asks the private skill runner to create
-an isolated candidate source tree. The agent may edit allowed existing files or
-add Python modules, including new client algorithms and server aggregators.
+コーディングエージェントは仮説を立て、非公開のスキルランナーに対して、隔離された候補ソースツリーの
+作成を依頼します。エージェントは、許可された既存ファイルを編集したり、新しいクライアント
+アルゴリズムやサーバー側アグリゲーターを含む Python モジュールを追加したりできます。
 
-For every candidate, NVFlare-owned helper code:
+すべての候補について、NVFlare が提供するヘルパーコードは次の処理を行います。
 
-- recomputes changed files rather than trusting agent-written manifest paths;
-- rejects edits outside the trust contract and fixed-budget drift;
-- runs simulation through the configured ``SimEnv`` or prepares standard POC
-  or production submission;
-- records the score, metric provenance, source patch, command, artifacts, and
-  failure evidence;
-- retains an improved candidate or restores the previous best source.
+- エージェントが記述したマニフェストのパスを信用せず、変更されたファイルを再計算する
+- トラストコントラクトの範囲外の編集や、固定バジェットからの逸脱を拒否する
+- 設定された ``SimEnv`` を通じてシミュレーションを実行するか、標準的な POC もしくは本番向けの
+  サブミッションを準備する
+- スコア、メトリクスの来歴、ソースパッチ、コマンド、成果物、失敗の証拠を記録する
+- 改善された候補を保持するか、以前のベストのソースを復元する
 
-POC and production candidates use the normal ``nvflare job submit``, ``job
-wait``, and ``job download`` lifecycle with configured startup-kit policy. The
-skill does not bypass authentication or site policy.
+POC および本番の候補は、設定されたスタートアップキットのポリシーのもとで、通常の
+``nvflare job submit`` 、 ``job wait`` 、 ``job download`` のライフサイクルを使用します。この
+スキルが認証やサイトポリシーを迂回することはありません。
 
-Campaign Artifacts
-==================
+キャンペーンの成果物
+====================
 
-The job directory contains the human-reviewable and reproducibility artifacts:
+ジョブディレクトリには、人間がレビューできる成果物と再現性のための成果物が含まれます。
 
-- ``autofl.yaml``: imported campaign and trust contract;
-- ``results.tsv``: atomic candidate ledger with metric provenance;
-- ``progress.png``: campaign trajectory;
-- ``autofl_report.md``: current campaign summary;
-- ``.nvflare/autofl/campaign_state.json``: next action and stop status;
-- ``.nvflare/autofl/candidates/<id>/candidate_manifest.json``: candidate
-  hypothesis, source hashes, changed files, result, and artifacts.
+- ``autofl.yaml``: インポートされたキャンペーンとトラストコントラクト
+- ``results.tsv``: メトリクスの来歴を含むアトミックな候補台帳
+- ``progress.png``: キャンペーンの推移
+- ``autofl_report.md``: 現在のキャンペーンのサマリー
+- ``.nvflare/autofl/campaign_state.json``: 次のアクションと停止ステータス
+- ``.nvflare/autofl/candidates/<id>/candidate_manifest.json``: 候補の仮説、ソースのハッシュ、
+  変更されたファイル、結果、および成果物
 
-A manual stop takes precedence over pending execution. If a candidate is
-pending, the agent abandons it safely before generating the final report.
-NVFlare serializes lifecycle actions for each job workspace. If another action
-is already active, the helper exits with code 2 and the agent retries after the
-active action finishes; separate job workspaces remain independent.
+手動での停止は、実行待ちの処理よりも優先されます。候補が実行待ちの場合、エージェントは最終レポートを
+生成する前にその候補を安全に破棄します。NVFlare は各ジョブワークスペースについてライフサイクル
+アクションを直列化します。別のアクションがすでにアクティブな場合、ヘルパーは終了コード 2 で終了し、
+エージェントはアクティブなアクションの完了後に再試行します。別々のジョブワークスペースは互いに
+独立したままです。
 
-Supported First Version
-=======================
+最初のバージョンでのサポート範囲
+================================
 
-The first version supports statically recognizable NVFlare Recipe constructors
-and NVFlare-distributed classes ending in ``Job``. Generic, local, and
-non-NVFlare job or recipe classes remain unresolved. Ambiguous scripts and
-dynamic safety-critical comparison fields block baseline execution rather than
-being guessed.
+最初のバージョンは、静的に認識可能な NVFlare Recipe のコンストラクタと、 ``Job`` で終わる
+NVFlare 配布のクラスをサポートします。汎用的なクラス、ローカルなクラス、および NVFlare 以外の
+ジョブ・レシピクラスは未解決のままとなります。あいまいなスクリプトや、安全性に関わる動的な比較
+フィールドは、推測されるのではなくベースラインの実行をブロックします。
 
-Final Report After Stop
-=======================
+停止後の最終レポート
+====================
 
-After a campaign stops cleanly, reaches its explicit cap, or ends at a hard
-blocker, select the companion report skill:
+キャンペーンが正常に停止した後、明示的な上限に到達した後、または重大なブロッカーで終了した後には、
+対になるレポートスキルを選択します。
 
 .. code-block:: text
 
    Select: NVFlare Auto-FL Report skill
    Prompt: Generate the final report for the stopped campaign in ./job.
 
-The report skill verifies that authoritative campaign state allows a final
-response and that no ledger row or candidate manifest remains pending. For an
-abrupt interruption, the human must first confirm that no campaign process is
-running; this confirmation bypasses stale stop state only and never unfinished
-candidate evidence. An available candidate manifest is complete only with
-``keep``, ``discard``, ``crash``, or ``abandoned`` status; missing, unknown, or
-unreadable status blocks reporting.
+レポートスキルは、正式なキャンペーン状態が最終応答を許可していること、および台帳の行や候補
+マニフェストが実行待ちのまま残っていないことを検証します。突然の中断が発生した場合、人間がまず
+キャンペーンのプロセスが実行されていないことを確認しなければなりません。この確認は古い停止状態の
+みを回避するものであり、未完了の候補の証拠を回避することは決してありません。利用可能な候補
+マニフェストは、 ``keep`` 、 ``discard`` 、 ``crash`` 、 ``abandoned`` のいずれかのステータスを
+持つ場合にのみ完了とみなされます。ステータスが欠落している、不明である、または読み取れない場合は、
+レポート生成がブロックされます。
 
-Report generation holds the same campaign lifecycle lock as the active Auto-FL
-runner. It refuses concurrent lifecycle activity and rejects custom plot,
-Markdown, or JSON output paths that alias campaign evidence, ``job.py``,
-trust-contract source paths, or one another. Outputs within the campaign
-directory must not match the trust contract's allowed source-creation patterns.
-The persisted POSIX lock file does not by itself mean a campaign is active, so
-a read-only campaign archive can be reported when that lock file already exists
-and the three output paths are explicitly writable.
+レポート生成は、アクティブな Auto-FL ランナーと同じキャンペーンのライフサイクルロックを保持します。
+ライフサイクルの同時実行を拒否し、キャンペーンの証拠、 ``job.py`` 、トラストコントラクトのソース
+パス、あるいは互いにエイリアスとなるようなカスタムのプロット、Markdown、JSON の出力パスを拒否
+します。キャンペーンディレクトリ内の出力は、トラストコントラクトで許可されたソース生成パターンに
+一致してはなりません。永続化された POSIX ロックファイルの存在自体はキャンペーンがアクティブである
+ことを意味しないため、そのロックファイルがすでに存在していても、3 つの出力パスが明示的に書き込み
+可能であれば、読み取り専用のキャンペーンアーカイブをレポートできます。
 
-The skill refreshes ``progress.png`` when plotting is available and generates:
+スキルは、プロットが利用可能な場合には ``progress.png`` を更新し、次のものを生成します。
 
-- ``autofl_final_report.md`` with a selected-candidate rationale, concise
-  summaries of what helped and what did not help, the major trajectory,
-  retained-best provenance, lineage, literature outcomes, grouped failures,
-  commands, and comparability warnings;
-- ``autofl_report_summary.json`` with the same evidence under the skill-local
-  ``nvflare.autofl.report.v1`` schema.
+- ``autofl_final_report.md``: 選択された候補の根拠、何が有効で何が有効でなかったかの簡潔なまとめ、
+  主要な推移、保持されたベストの来歴、系統 (lineage)、文献ベースの結果、グループ化された失敗、
+  コマンド、および比較可能性に関する警告を含みます
+- ``autofl_report_summary.json``: スキル固有の ``nvflare.autofl.report.v1`` スキーマのもとで、
+  同じ証拠を含みます
 
-Literature outcomes use the ``literature_event_id`` written by the campaign
-runner rather than inferring relationships from ledger position. Baselines are
-identified strictly by ``status=baseline``; ``best`` includes only a scored
-baseline or ``keep`` row, while a better unretained ``discard`` is reported as
-``best_observed``. If a valid plot cannot be produced, the Markdown and JSON
-reports are still generated with an explicit plot-availability warning.
+文献ベースの結果は、台帳上の位置から関係を推測するのではなく、キャンペーンランナーが書き込んだ
+``literature_event_id`` を使用します。ベースラインは厳密に ``status=baseline`` によって識別され、
+``best`` にはスコアが付いたベースラインまたは ``keep`` の行のみが含まれます。一方、保持されな
+かったものの、より良い ``discard`` は ``best_observed`` として報告されます。有効なプロットを
+生成できない場合でも、Markdown および JSON のレポートは、プロットの利用可否に関する明示的な警告と
+ともに生成されます。
 
-The concise synthesis follows the same evidence rules. "What helped" contains
-only strict improvements that were retained. "What did not help" presents
-representative scored discards by their recorded algorithm family and
-literature event, plus grouped crashes. Missing family metadata stays
-``unclassified``; the report does not guess mechanisms from candidate names.
-The trajectory keeps the first and final running best and the largest measured
-objective improvements rather than evenly sampling the campaign.
+簡潔な統合結果も同じ証拠のルールに従います。「何が有効だったか」には、保持された厳密な改善のみが
+含まれます。「何が有効でなかったか」には、記録されたアルゴリズムのファミリーと文献イベントごとに、
+スコアが付いた代表的な discard と、グループ化されたクラッシュが示されます。ファミリーのメタデータが
+欠落している場合は ``unclassified`` のままとなります。レポートが候補名からメカニズムを推測すること
+はありません。推移は、キャンペーンを均等にサンプリングするのではなく、最初と最後のランニングベスト、
+および測定された目的関数の改善幅が最も大きかったものを保持します。
 
-The product campaign and report contracts support metric maximization only.
-The report also surfaces abandoned-candidate state and warns if the state's
-ledger pointer, candidate-attempt, baseline, or improvement accounting
-disagrees with the ledger.
+製品版のキャンペーンおよびレポートの契約は、メトリクスの最大化のみをサポートします。レポートは
+破棄された候補の状態も明示し、状態の台帳ポインタ、候補試行数、ベースライン、改善の集計が台帳と
+食い違う場合には警告を出します。
 
-As with active Auto-FL, users invoke the skill through their coding agent and
-do not run scripts from the installed skill directory themselves.
+アクティブな Auto-FL と同様に、ユーザーはコーディングエージェントを通じてスキルを呼び出すのであり、
+インストール済みのスキルディレクトリからスクリプトを自分で実行することはありません。

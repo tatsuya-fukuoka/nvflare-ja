@@ -1,171 +1,171 @@
 .. _confidential_computing:
 
-###############################
-FLARE Confidential Federated AI
-###############################
+##########################################
+FLARE 機密フェデレーテッド AI
+##########################################
 
-.. admonition:: FLARE Confidential Federated AI
+.. admonition:: FLARE 機密フェデレーテッド AI
 
-   This feature is in **Technical Preview**.
-   Reach out to the NVIDIA FLARE team for CVM build scripts: federatedlearning@nvidia.com
+   この機能は **テクニカルプレビュー** です。
+   CVM ビルドスクリプトについては NVIDIA FLARE チームまでお問い合わせください: federatedlearning@nvidia.com
 
-Introduction
-============
+はじめに
+========
 
-Federated Learning faces critical trust challenges even among collaborating organizations.
+フェデレーテッドラーニングは、協力し合う組織の間であっても、信頼に関する重大な課題に直面します。
 
-- **Trust of participants** is difficult to establish
-- participants may worry about **code tampering** during execution.
-- **Model owners** are concerned about **model theft** and **model tampering** that could compromise their intellectual property.
-- **Data owners** fear **model inversion attacks** that could extract training data and
-- **data leakage** through gradients or model parameters or other accidental code changes
+- **参加者の信頼** を確立することは困難です
+- 参加者は実行中の **コードの改ざん** を懸念する可能性があります。
+- **モデル所有者** は、知的財産を損なうおそれのある **モデルの窃取** や **モデルの改ざん** を懸念しています。
+- **データ所有者** は、学習データを抽出されうる **モデル反転攻撃** を恐れており、さらに
+- 勾配やモデルパラメータ、あるいは意図しないコード変更による **データ漏洩** も懸念されます
 
-Traditional federated learning relies on organizational trust agreements, but these cannot guarantee runtime security or
-prevent malicious behavior during model training and aggregation.
+従来のフェデレーテッドラーニングは組織間の信頼合意に依存していますが、これらはランタイムのセキュリティを保証したり、
+モデルの学習および集約の最中の悪意ある振る舞いを防いだりすることはできません。
 
-Security Risks in Federated Learning
-------------------------------------
+フェデレーテッドラーニングにおけるセキュリティリスク
+----------------------------------------------------
 
-Federated learning operations face multiple security risks throughout the entire lifecycle:
+フェデレーテッドラーニングの運用は、ライフサイクル全体を通じて複数のセキュリティリスクに直面します。
 
-**Deployment-Time Risks**
+**デプロイ時のリスク**
 
-At deployment time, code is particularly vulnerable when introduced into an untrusted or unverified environment.
-An untrusted host or malicious host owner can intercept the model by:
+デプロイ時には、信頼されていない環境や検証されていない環境にコードが投入されるため、コードは特に脆弱になります。
+信頼できないホストや悪意あるホスト所有者は、次のような方法でモデルを傍受する可能性があります。
 
-- Modifying the application code before execution begins
-- Tampering with the execution environment
-- Delaying the activation of security mechanisms such as attestation and encryption
-- Injecting malicious code during the deployment phase before protections are activated
+- 実行が開始される前にアプリケーションコードを改変する
+- 実行環境を改ざんする
+- アテステーションや暗号化といったセキュリティ機構の有効化を遅延させる
+- 保護が有効になる前のデプロイ段階で悪意あるコードを注入する
 
-Without strict controls over when and how models are decrypted or loaded, attackers can gain early access before protections
-are in place, making deployment a critical point of exposure.
+モデルをいつ、どのように復号またはロードするかを厳密に制御しなければ、攻撃者は保護が整う前に早期アクセスを獲得できてしまい、
+デプロイは重大な露出点となります。
 
-**Runtime Risks**
+**ランタイムのリスク**
 
-Even after secure deployment, model Intellectual Property (IP) and training data remain exposed to runtime threats:
+安全にデプロイされた後であっても、モデルの知的財産 (IP) と学習データはランタイムの脅威にさらされ続けます。
 
-- **Compromised participant machines** - Attackers may exploit vulnerabilities to gain remote access
-- **Unauthorized access** - Direct access or network access to remote training machines
-- **Network-based leaks** - Interception of model parameters or gradients during transmission
-- **Storage-based leaks** - Extraction from disk-based model checkpoints or intermediate results
-- **Memory extraction** - Copying models or data directly from system memory
-- **Insider threats** - Malicious participants or administrators with physical or logical access
+- **参加者マシンの侵害** - 攻撃者が脆弱性を悪用してリモートアクセスを獲得する可能性があります
+- **不正アクセス** - リモートの学習マシンへの直接アクセスまたはネットワークアクセス
+- **ネットワーク経由の漏洩** - 送信中のモデルパラメータや勾配の傍受
+- **ストレージ経由の漏洩** - ディスク上のモデルチェックポイントや中間結果からの抽出
+- **メモリからの抽出** - システムメモリから直接モデルやデータをコピーすること
+- **内部関係者による脅威** - 物理的または論理的なアクセス権を持つ悪意ある参加者や管理者
 
-These risks exist regardless of organizational trust agreements and cannot be fully mitigated through traditional security measures alone.
+これらのリスクは組織間の信頼合意の有無にかかわらず存在し、従来のセキュリティ対策だけでは完全に緩和できません。
 
-What is Confidential Computing?
--------------------------------
+機密コンピューティングとは
+--------------------------------
 
-Confidential Computing leverages hardware-based Trusted Execution Environments (TEEs) to protect data and code during execution.
+機密コンピューティングは、ハードウェアベースの Trusted Execution Environment (TEE) を活用して、実行中のデータとコードを保護します。
 
-- **VM-based confidential computing** uses technologies like **AMD SEV-SNP** (Secure Encrypted Virtualization-Secure Nested Paging) and **Intel TDX** (Trust Domain Extensions) to create isolated, encrypted virtual machines where memory is protected from the host OS, hypervisor,and even administrators.
-- **NVIDIA GPU Confidential Computing** extends this protection to GPU workloads, enabling encrypted data transfer between CPU and GPU with hardware-accelerated encryption (H100 and Blackwell GPUs).
+- **VM ベースの機密コンピューティング** は、 **AMD SEV-SNP** (Secure Encrypted Virtualization-Secure Nested Paging) や **Intel TDX** (Trust Domain Extensions) といった技術を用いて、ホスト OS、ハイパーバイザー、さらには管理者からもメモリが保護された、隔離された暗号化仮想マシンを作成します。
+- **NVIDIA GPU 機密コンピューティング** は、この保護を GPU ワークロードにまで拡張し、ハードウェアアクセラレーションによる暗号化 (H100 および Blackwell GPU) を用いて CPU と GPU 間の暗号化されたデータ転送を可能にします。
 
-These technologies provide a hardware root of trust through attestation, allowing participants to verify that workloads
-are running in genuine secure environments before sharing sensitive data or models.
+これらの技術はアテステーションを通じてハードウェアの信頼の起点 (root of trust) を提供し、参加者が機密性の高いデータやモデルを共有する前に、
+ワークロードが真正な安全環境で実行されていることを検証できるようにします。
 
-Risk Mitigation with Confidential Computing
--------------------------------------------
+機密コンピューティングによるリスク軽減
+------------------------------------------
 
-FLARE's Confidential Computing solution addresses the federated learning security risks through three key mechanisms:
+FLARE の機密コンピューティングソリューションは、3 つの主要な仕組みによってフェデレーテッドラーニングのセキュリティリスクに対処します。
 
-- **Secure Aggregation on Server** - The FL server operates within a TEE to aggregate client updates securely, preventing model inversion attacks and ensuring aggregated model parameters cannot be intercepted or tampered with
-- **IP Protection on Client** - Model code and weights are protected within confidential VMs on client sites, preventing model theft and unauthorized access to proprietary algorithms or pre-trained models
-- **Data Leakage Prevention on Client** - Pre-approved, certified training code runs in isolated TEEs, ensuring that only authorized computations occur and preventing malicious code from exfiltrating training data
+- **サーバーでのセキュアアグリゲーション** - FL サーバーが TEE 内で動作してクライアントの更新を安全に集約し、モデル反転攻撃を防止するとともに、集約されたモデルパラメータが傍受・改ざんされないようにします
+- **クライアントでの IP 保護** - モデルのコードと重みがクライアントサイトの機密 VM 内で保護され、モデルの窃取や、独自アルゴリズム・事前学習済みモデルへの不正アクセスを防ぎます
+- **クライアントでのデータ漏洩防止** - 事前承認済みで認証された学習コードが隔離された TEE 内で実行されるため、許可された計算のみが行われ、悪意あるコードによる学習データの持ち出しを防ぎます
 
-FLARE's IP protection solution includes CVM lockdown features that disk encryption, disable login access, block SSH connections, and restrict
-network ports to prevent unauthorized access to the protected environment. These lockdown features apply to both server and client CVMs,
-with primary focus on client-side protection where model IP is most vulnerable.
+FLARE の IP 保護ソリューションには、ディスク暗号化、ログインアクセスの無効化、SSH 接続のブロック、ネットワークポートの制限といった CVM ロックダウン機能が含まれており、
+保護された環境への不正アクセスを防ぎます。これらのロックダウン機能はサーバー CVM とクライアント CVM の両方に適用されますが、
+モデル IP が最も脆弱となるクライアント側の保護が主眼となります。
 
-FLARE's solution provides end-to-end security throughout the entire lifecycle:
+FLARE のソリューションは、ライフサイクル全体を通じてエンドツーエンドのセキュリティを提供します。
 
-- **Deployment Protection** - Attestation-based verification ensures only certified, unmodified code packages are deployed to confidential VMs
-- **Runtime Protection** - TEEs protect model IP and training code during execution, preventing extraction or reverse engineering. CVM access is locked down with disabled login, SSH, and controlled network ports to prevent unauthorized access
-- **Storage Protection** - Integration with encrypted storage solutions and key management systems protects model checkpoints and intermediate results
-- **Trust Establishment** - Remote attestation allows model owners to verify the security posture of client environments before releasing valuable IP, ensuring compliance with confidential computing requirements
-- **Access Control Lockdown** - Comprehensive CVM hardening includes disabling interactive login, blocking SSH access, restricting network ports to only essential communication channels, and preventing unauthorized administrative access
+- **デプロイ保護** - アテステーションベースの検証により、認証済みで未改変のコードパッケージのみが機密 VM にデプロイされることを保証します
+- **ランタイム保護** - TEE が実行中のモデル IP と学習コードを保護し、抽出やリバースエンジニアリングを防ぎます。CVM へのアクセスは、ログインと SSH の無効化およびネットワークポートの制御によってロックダウンされ、不正アクセスを防止します
+- **ストレージ保護** - 暗号化ストレージソリューションおよび鍵管理システムとの統合により、モデルのチェックポイントと中間結果を保護します
+- **信頼の確立** - リモートアテステーションにより、モデル所有者は価値ある IP を提供する前にクライアント環境のセキュリティ状態を検証でき、機密コンピューティング要件への準拠を確認できます
+- **アクセス制御のロックダウン** - 包括的な CVM ハードニングには、対話型ログインの無効化、SSH アクセスのブロック、必要不可欠な通信チャネルのみへのネットワークポート制限、および不正な管理アクセスの防止が含まれます
 
-Operational Risks Even with Confidential Computing
---------------------------------------------------
+機密コンピューティングを利用しても残る運用上のリスク
+----------------------------------------------------
 
-While Confidential Computing significantly enhances security, certain operational risks remain that require additional safeguards:
+機密コンピューティングはセキュリティを大幅に強化しますが、追加の安全対策を必要とする運用上のリスクが依然として残ります。
 
-- **Deployment-time Code Injection** - If an attacker can modify the application code at deployment time before the CVM is launched, they could add code to copy encryption keys, model checkpoints, or leak data during execution
-- **Application-level Vulnerabilities** - If an attacker compromises the application running inside the TEE (through bugs, backdoors, or malicious updates), the TEE protection cannot prevent IP leakage
-- **Host-level Storage Vulnerabilities** - Model checkpoints written to host disk storage may be accessible from the host filesystem, bypassing runtime memory protection
-- **Side-channel Attacks** - Sophisticated attacks may exploit timing, power consumption, or other side channels to extract information
+- **デプロイ時のコード注入** - CVM が起動される前のデプロイ時に攻撃者がアプリケーションコードを改変できる場合、暗号鍵やモデルチェックポイントをコピーしたり、実行中にデータを漏洩させたりするコードを追加される可能性があります
+- **アプリケーションレベルの脆弱性** - 攻撃者が (バグ、バックドア、悪意あるアップデートを通じて) TEE 内で動作するアプリケーションを侵害した場合、TEE による保護では IP の漏洩を防げません
+- **ホストレベルのストレージ脆弱性** - ホストのディスクストレージに書き出されたモデルチェックポイントは、ホストのファイルシステムからアクセスできる可能性があり、ランタイムのメモリ保護を迂回されます
+- **サイドチャネル攻撃** - 高度な攻撃では、タイミング、消費電力、その他のサイドチャネルを悪用して情報を抽出される可能性があります
 
 .. warning::
 
-   **Critical Design Requirement:**
+   **重要な設計要件:**
 
-   Even with Confidential Computing, without proper design of the CVM to extend the chain of trust from hardware
-   to the application workload, confidential computing attestation will **NOT** be able to detect deployment-time
-   code modifications or tampering. The CVM must be designed to ensure that attestation verifies the entire execution
-   stack—from hardware through the application layer—to provide meaningful security guarantees.
+   機密コンピューティングを利用していても、ハードウェアからアプリケーションワークロードまで信頼の連鎖を拡張するように CVM が適切に設計されていなければ、
+   機密コンピューティングのアテステーションではデプロイ時のコード改変や改ざんを検出することは **できません** 。
+   意味のあるセキュリティ保証を提供するには、アテステーションがハードウェアからアプリケーション層に至る実行スタック全体を検証するように
+   CVM を設計しなければなりません。
 
-These risks require additional safeguards including:
+これらのリスクには、以下を含む追加の安全対策が必要です。
 
-- Secure deployment pipelines with code integrity verification through attestation before CVM activation
-- Encrypted persistent storage with proper key management
-- CVM access and network lockdown to prevent unauthorized entry points
-- Regular security audits and vulnerability assessments
+- CVM を有効化する前にアテステーションによるコード完全性検証を行う、セキュアなデプロイパイプライン
+- 適切な鍵管理を伴う暗号化された永続ストレージ
+- 不正な侵入経路を防ぐための CVM アクセスおよびネットワークのロックダウン
+- 定期的なセキュリティ監査と脆弱性評価
 
-This comprehensive approach enables organizations to collaborate on federated learning while maintaining strong IP protection guarantees.
+この包括的なアプローチにより、組織は強力な IP 保護の保証を維持しながらフェデレーテッドラーニングで協業できるようになります。
 
 
-FLARE Confidential Federated AI Overview
+FLARE 機密フェデレーテッド AI の概要
 ========================================
 
-NVIDIA FLARE provides Confidential Federated AI capabilities that enable secure, trustworthy federated learning through hardware-backed security. It includes two deployment options to address different organizational requirements:
+NVIDIA FLARE は、ハードウェアに裏付けられたセキュリティによって安全で信頼できるフェデレーテッドラーニングを可能にする機密フェデレーテッド AI 機能を提供します。組織ごとに異なる要件に対応するため、2 つのデプロイオプションが用意されています。
 
-On-Premises IP Protection Deployment
+オンプレミス IP 保護デプロイ
 ------------------------------------
 
-FLARE's on-premises Confidential Federated AI solution provides comprehensive IP protection for organizations that need to protect proprietary models and training code during federated collaboration. This solution leverages confidential virtual machines (CVMs) with:
+FLARE のオンプレミス機密フェデレーテッド AI ソリューションは、フェデレーテッドな協業の中で独自のモデルや学習コードを保護する必要がある組織に対して、包括的な IP 保護を提供します。このソリューションは、以下を備えた機密仮想マシン (CVM) を活用します。
 
-- **AMD SEV-SNP CPU + NVIDIA GPU** - Confidential VMs running on AMD processors with Secure Encrypted Virtualization, paired with NVIDIA H100 or Blackwell GPUs for GPU-accelerated confidential computing
-
-.. note::
-
-    Intel TDX support will be provided in a future release
-
-- **End-to-End IP Protection** - Model code, weights, and training algorithms are protected throughout the entire lifecycle, from deployment through execution to result storage
-- **Attestation-Based Trust** - Hardware-backed attestation verifies the integrity of execution environments before model IP is released to client sites
-- **Secure Deployment Pipeline** - Ensures only certified, unmodified training code is deployed to confidential VMs, preventing deployment-time tampering
-- **CVM Lockdown** - Comprehensive access control hardening on both server and client CVMs (primarily on client side) including disabled login, blocked SSH access, and restricted network ports to prevent unauthorized access to the protected environment
-
-This solution is ideal for organizations with high-value proprietary models collaborating with partners who may have different security postures or trust levels.
-
-
-Azure Confidential Computing Deployment
----------------------------------------
-
-For organizations seeking cloud-based confidential federated learning, FLARE supports running Federated learning workload on Azure Confidential Computing infrastructure.
-This deployment option provides:
+- **AMD SEV-SNP CPU + NVIDIA GPU** - Secure Encrypted Virtualization を備えた AMD プロセッサ上で動作する機密 VM と、GPU アクセラレーションによる機密コンピューティングのための NVIDIA H100 または Blackwell GPU を組み合わせます
 
 .. note::
 
-    Support for additional cloud service providers (CSPs) will be added in future releases.
+    Intel TDX のサポートは将来のリリースで提供される予定です
 
-**Trust Establishment Among Participants**
+- **エンドツーエンドの IP 保護** - モデルコード、重み、学習アルゴリズムが、デプロイから実行、結果の保存に至るライフサイクル全体を通じて保護されます
+- **アテステーションベースの信頼** - ハードウェアに裏付けられたアテステーションにより、モデル IP がクライアントサイトへ提供される前に実行環境の完全性が検証されます
+- **セキュアなデプロイパイプライン** - 認証済みで未改変の学習コードのみが機密 VM にデプロイされることを保証し、デプロイ時の改ざんを防ぎます
+- **CVM ロックダウン** - サーバー CVM とクライアント CVM の両方 (主にクライアント側) における包括的なアクセス制御のハードニング。ログインの無効化、SSH アクセスのブロック、ネットワークポートの制限が含まれ、保護された環境への不正アクセスを防ぎます
 
-Azure Confidential Computing enables participants to establish explicit trust through:
-
-- **Remote Attestation** - Each participant can verify that the FL server is running in a genuine confidential VM before submitting updates
-- **Hardware Root of Trust** - Azure's confidential computing infrastructure provides cryptographic proof of the execution environment's integrity
-- **Transparent Security Posture** - All participants can independently verify the security properties of the federated learning environment without relying solely on organizational agreements
-
-This deployment model is suitable for organizations that prioritize data privacy and secure aggregation, while training code and model architectures can be shared among trusted participants.
+このソリューションは、セキュリティ体制や信頼レベルが異なる可能性のあるパートナーと協業する、価値の高い独自モデルを保有する組織に最適です。
 
 
-Choosing the Right Deployment
+Azure 機密コンピューティングのデプロイ
+------------------------------------------
+
+クラウドベースの機密フェデレーテッドラーニングを求める組織向けに、FLARE は Azure の機密コンピューティングインフラストラクチャ上でフェデレーテッドラーニングのワークロードを実行することをサポートしています。
+このデプロイオプションは以下を提供します。
+
+.. note::
+
+    追加のクラウドサービスプロバイダー (CSP) のサポートは、将来のリリースで追加される予定です。
+
+**参加者間での信頼の確立**
+
+Azure の機密コンピューティングにより、参加者は以下を通じて明示的な信頼を確立できます。
+
+- **リモートアテステーション** - 各参加者は、更新を送信する前に FL サーバーが真正な機密 VM 上で動作していることを検証できます
+- **ハードウェアの信頼の起点** - Azure の機密コンピューティングインフラストラクチャが、実行環境の完全性に関する暗号学的な証明を提供します
+- **透明性のあるセキュリティ状態** - すべての参加者が、組織間の合意のみに依存することなく、フェデレーテッドラーニング環境のセキュリティ特性を独立して検証できます
+
+このデプロイモデルは、学習コードやモデルアーキテクチャを信頼できる参加者間で共有できる一方で、データプライバシーとセキュアアグリゲーションを重視する組織に適しています。
+
+
+適切なデプロイの選択
 =============================
 
-- Use **On-Premises IP Protection** when model IP is highly valuable and must be protected from all participants
-- Use **Azure Confidential Computing** when the primary concern is data privacy and secure aggregation among trusted collaborators
-- Both options can be combined in hybrid deployments where some sites require IP protection while others focus on secure aggregation
+- モデル IP の価値が非常に高く、すべての参加者から保護しなければならない場合は **オンプレミス IP 保護** を使用してください
+- 主な懸念が、信頼できる協業者間でのデータプライバシーとセキュアアグリゲーションである場合は **Azure 機密コンピューティング** を使用してください
+- 一部のサイトでは IP 保護が必要であり、他のサイトではセキュアアグリゲーションを重視するといったハイブリッドなデプロイでは、両方のオプションを組み合わせることもできます
 
 
 .. toctree::
@@ -173,4 +173,3 @@ Choosing the Right Deployment
 
    on_premises/index
    azure/index
-

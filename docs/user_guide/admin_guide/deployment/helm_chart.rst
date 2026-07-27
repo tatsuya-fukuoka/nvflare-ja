@@ -519,18 +519,18 @@ Kubernetes の場合、各データセットの ``source`` の値は PVC のク�
      study-a:
        pod_template: pod_specs/default-job-pod.yaml
 
-The following ``pod_specs/default-job-pod.yaml`` starts with the minimal Pod
-template and shows common optional fields, including a node selector for an H100
-node labeled by the NVIDIA GPU Operator or NVIDIA GPU Feature Discovery (GFD).
-Before setting the selector, verify the exact label value in your cluster:
+次の ``pod_specs/default-job-pod.yaml`` は、最小構成の Pod テンプレートを出発点として、
+NVIDIA GPU Operator または NVIDIA GPU Feature Discovery (GFD) によってラベル付けされた
+H100 ノード向けのノードセレクターを含む、よく使われる任意指定のフィールドを示しています。
+セレクターを設定する前に、お使いのクラスタでの正確なラベル値を確認してください。
 
 .. code-block:: console
 
    $ kubectl get nodes -L nvidia.com/gpu.product,nvidia.com/gpu.count,nvidia.com/gpu.present
 
-If you omit the optional fields and keep only the ``nvflare_job`` container, the
-study uses its ``pod_template`` while keeping the same effective job pod
-manifest as the built-in launcher behavior:
+任意指定のフィールドを省略して ``nvflare_job`` コンテナだけを残した場合、スタディは自身の
+``pod_template`` を使用しつつ、組み込みのランチャーの動作と同じ実効的なジョブ Pod
+マニフェストを維持します。
 
 .. code-block:: yaml
 
@@ -554,24 +554,23 @@ manifest as the built-in launcher behavior:
      containers:
        - name: nvflare_job
 
-At launch time, NVFLARE selects the ``nvflare_job`` container and overlays the
-same launcher-owned fields used by the built-in manifest: pod name, job
-container name, image, command, args, resources, workspace ``emptyDir``,
-startup-kit Secret, volume mounts, transfer environment variables, image pull
-Secrets, and ``restartPolicy: Never``. Add template fields such as
-``serviceAccountName``, ``nodeSelector``, ``affinity``, ``tolerations``, sidecar
-containers, or additional volumes only when the study needs behavior that
-differs from the original launcher manifest.
+起動時、NVFLARE は ``nvflare_job`` コンテナを選択し、組み込みマニフェストで使用されるのと
+同じランチャー管理のフィールド、すなわち Pod 名、ジョブコンテナ名、イメージ、コマンド、
+引数、リソース、ワークスペース ``emptyDir``、スタートアップキットの Secret、ボリューム
+マウント、転送用環境変数、イメージ pull Secret、``restartPolicy: Never`` を上書きします。
+``serviceAccountName``、``nodeSelector``、``affinity``、``tolerations``、サイドカー
+コンテナ、追加のボリュームといったテンプレートフィールドは、そのスタディが元のランチャー
+マニフェストとは異なる動作を必要とする場合にのみ追加してください。
 
-Use Kubernetes node labels to steer study job pods to specific nodes. On
-clusters with the NVIDIA GPU Operator or GFD, GPU nodes commonly have labels
-such as ``nvidia.com/gpu.product`` and ``nvidia.com/gpu.count``; the H100
-selector above matches the product label value NVIDIA documents for a full H100
-80GB HBM3 node. If the cluster uses MIG, GPU sharing, or a different H100 form
-factor, copy the exact ``nvidia.com/gpu.product`` value from ``kubectl get
-nodes``. For more complex placement rules, such as accepting multiple H100
-product labels, use ``spec.affinity.nodeAffinity`` instead of, or in addition
-to, ``nodeSelector``:
+Kubernetes のノードラベルを使用して、スタディのジョブ Pod を特定のノードへ誘導できます。
+NVIDIA GPU Operator または GFD を導入したクラスタでは、GPU ノードには通常
+``nvidia.com/gpu.product`` や ``nvidia.com/gpu.count`` などのラベルが付与されています。
+上記の H100 セレクターは、NVIDIA がフル構成の H100 80GB HBM3 ノードについて文書化して
+いる製品ラベルの値と一致します。クラスタで MIG や GPU 共有、あるいは異なるフォーム
+ファクタの H100 を使用している場合は、``kubectl get nodes`` から正確な
+``nvidia.com/gpu.product`` の値をコピーしてください。複数の H100 製品ラベルを許容する
+といった、より複雑な配置ルールが必要な場合は、``nodeSelector`` の代わりに、あるいはそれに
+加えて ``spec.affinity.nodeAffinity`` を使用してください。
 
 .. code-block:: yaml
 
@@ -587,17 +586,17 @@ to, ``nodeSelector``:
                      - NVIDIA-H100-80GB-HBM3
                      - NVIDIA-H100-NVL
 
-To target one named node, use a label that identifies that node, such as the
-standard ``kubernetes.io/hostname`` label, or add your own operational label and
-select it from the template. Keep in mind that strict node selection can leave a
-job pod ``Pending`` when the selected node has no available capacity.
-Pod annotations in ``metadata.annotations`` are preserved and can be used by
-admission controllers, schedulers, or monitoring integrations, but Kubernetes
-does not select nodes by annotation alone. GPU resource requests and limits are
-still launcher-owned; set them in the submitted job's
-``launcher_spec[site][k8s].num_of_gpus`` rather than in the Pod template.
+特定の名前のノードを対象にするには、標準の ``kubernetes.io/hostname`` ラベルなど、その
+ノードを識別できるラベルを使用するか、独自の運用ラベルを追加してテンプレートから選択して
+ください。厳密なノード選択を行うと、選択したノードに空き容量がない場合にジョブ Pod が
+``Pending`` のままになる可能性がある点に注意してください。
+``metadata.annotations`` の Pod アノテーションは保持され、アドミッションコントローラ、
+スケジューラ、監視連携から利用できますが、Kubernetes はアノテーションだけでノードを選択
+することはありません。GPU のリソースリクエストとリミットは引き続きランチャーの管理下に
+あります。これらは Pod テンプレートではなく、送信するジョブの
+``launcher_spec[site][k8s].num_of_gpus`` で設定してください。
 
-Example ``nvfldata-pvc.yaml``:
+``nvfldata-pvc.yaml`` の例を示します。
 
 .. code-block:: yaml
 
@@ -614,27 +613,28 @@ Example ``nvfldata-pvc.yaml``:
      # If your cluster has no default StorageClass, uncomment and set this.
      # storageClassName: <storage-class-name>
 
-Use an access mode supported by your storage backend. ``ReadWriteOnce`` is
-enough for many single-node or single-job cases. Use ``ReadOnlyMany`` or
-``ReadWriteMany`` storage, or separate per-site claims, when multiple job pods
-on different nodes need concurrent access to the same dataset.
+お使いのストレージバックエンドがサポートするアクセスモードを使用してください。多くの
+シングルノードまたは単一ジョブのケースでは ``ReadWriteOnce`` で十分です。異なるノード上の
+複数のジョブ Pod が同じデータセットへ同時にアクセスする必要がある場合は、``ReadOnlyMany``
+または ``ReadWriteMany`` のストレージ、あるいはサイトごとに分離したクレームを使用して
+ください。
 
-Apply the study-data PVC in the same namespace where the participant's job pods
-will run:
+参加者のジョブ Pod が実行されるのと同じネームスペースにスタディデータ PVC を適用します。
 
 .. code-block:: bash
 
    kubectl -n "$NAMESPACE" apply -f nvfldata-pvc.yaml
    kubectl -n "$NAMESPACE" get pvc nvfldata
 
-Install the Charts
-==================
+チャートのインストール
+=======================
 
-Prepare, stage, and install each server or client kit in the Kubernetes cluster
-or namespace where that participant runs. After either staging method described
-above, install the generated Helm chart to start the long-lived parent pod.
+各サーバーまたはクライアントのキットは、その参加者が実行される Kubernetes クラスタまたは
+ネームスペースにおいて、準備、ステージング、インストールを行ってください。上記のいずれかの
+ステージング方法を実施した後、生成された Helm チャートをインストールして、長時間稼働する
+親 Pod を起動します。
 
-Install the server chart:
+サーバーのチャートをインストールします。
 
 .. code-block:: bash
 
@@ -643,18 +643,19 @@ Install the server chart:
    helm upgrade --install server server-k8s/helm_chart \
        --namespace "$NAMESPACE"
 
-Install a client chart with the same pattern:
+同じパターンでクライアントのチャートをインストールします。
 
 .. code-block:: bash
 
    helm upgrade --install site-1 site-1-k8s/helm_chart \
        --namespace "$NAMESPACE"
 
-``nvflare deploy prepare`` writes ``image.repository`` and ``image.tag`` into
-``helm_chart/values.yaml`` from ``parent.docker_image`` in ``k8s.yaml``. For a
-different parent image, rerun ``nvflare deploy prepare`` with the updated
-``k8s.yaml``. If you must override the image at Helm install or upgrade time,
-prefer a values file and pass it to every related ``helm upgrade`` command:
+``nvflare deploy prepare`` は、``k8s.yaml`` の ``parent.docker_image`` を基に
+``image.repository`` と ``image.tag`` を ``helm_chart/values.yaml`` へ書き込みます。
+別の親イメージを使用する場合は、更新した ``k8s.yaml`` で ``nvflare deploy prepare`` を
+再実行してください。Helm のインストール時またはアップグレード時にイメージを上書きする必要が
+ある場合は、values ファイルを使用し、関連するすべての ``helm upgrade`` コマンドにそれを
+渡すことを推奨します。
 
 .. code-block:: bash
 
@@ -668,13 +669,13 @@ prefer a values file and pass it to every related ``helm upgrade`` command:
        --namespace "$NAMESPACE" \
        -f server-values.yaml
 
-Avoid using one-off ``--set image.repository=...`` and ``--set image.tag=...``
-flags as the source of truth for image changes. Later upgrade commands that do
-not include the same overrides can render the release with the generated chart
-defaults instead.
+イメージ変更の正となる情報源として、その場限りの ``--set image.repository=...`` や
+``--set image.tag=...`` フラグを使用することは避けてください。同じ上書き設定を含まない
+後続のアップグレードコマンドを実行すると、生成されたチャートのデフォルト値でリリースが
+レンダリングされてしまう可能性があります。
 
-If the server and client run in the same namespace, use different workspace PVCs
-or override ``persistence.workspace.claimName`` for one of the releases:
+サーバーとクライアントが同じネームスペースで実行される場合は、異なるワークスペース PVC を
+使用するか、いずれかのリリースで ``persistence.workspace.claimName`` を上書きしてください。
 
 .. code-block:: bash
 
@@ -682,26 +683,26 @@ or override ``persistence.workspace.claimName`` for one of the releases:
        --namespace "$NAMESPACE" \
        --set persistence.workspace.claimName=nvflws-site-1
 
-The namespace must already exist before you run namespaced ``kubectl`` commands
-or install the charts. The storage step above creates it explicitly. If you skip
-that flow, create the namespace first:
+ネームスペース付きの ``kubectl`` コマンドを実行したり、チャートをインストールしたりする
+前に、ネームスペースが既に存在している必要があります。上記のストレージ準備のステップで
+明示的に作成しています。その手順を省略する場合は、先にネームスペースを作成してください。
 
 .. code-block:: bash
 
    kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-Expose FL Traffic
-=================
+FL トラフィックの公開
+======================
 
-The generated server chart creates a Kubernetes Service for the FL server. The
-service defaults to ``ClusterIP``, which is reachable only inside the cluster.
-If clients or admin consoles connect from outside the cluster, expose the FL
-server ports with the mechanism that matches your Kubernetes environment:
+生成されるサーバーチャートは、FL サーバー用の Kubernetes Service を作成します。この
+Service のデフォルトは ``ClusterIP`` であり、クラスタ内からのみ到達できます。クライアント
+や管理コンソールがクラスタ外部から接続する場合は、お使いの Kubernetes 環境に合った仕組みで
+FL サーバーのポートを公開してください。
 
-If you use an override values file for the server release, include the same
-``-f`` file in these ``helm upgrade`` commands too.
+サーバーリリースに上書き用の values ファイルを使用している場合は、以下の ``helm upgrade``
+コマンドにも同じ ``-f`` ファイルを含めてください。
 
-* Use a cloud load balancer when available:
+* 利用できる場合はクラウドのロードバランサーを使用します。
 
   .. code-block:: bash
 
@@ -710,26 +711,25 @@ If you use an override values file for the server release, include the same
          --set service.type=LoadBalancer
      kubectl -n "$NAMESPACE" get svc nvflare-server
 
-* For local testing from the same machine, use port forwarding:
+* 同一マシン上でのローカルテストには、ポートフォワーディングを使用します。
 
   .. code-block:: bash
 
      kubectl -n "$NAMESPACE" port-forward svc/nvflare-server 8002:8002 8003:8003
 
-* For single-node or ingress-based clusters, configure your cluster's TCP
-  routing, firewall rules, or host ports so the FL and admin ports from
-  ``project.yml`` reach the ``nvflare-server`` Service. Some single-node
-  deployments use ``--set hostPortEnabled=true`` for the server chart.
+* シングルノードクラスタや Ingress ベースのクラスタでは、``project.yml`` の FL ポートと
+  管理ポートが ``nvflare-server`` Service に到達するように、クラスタの TCP ルーティング、
+  ファイアウォールルール、ホストポートを設定してください。シングルノードのデプロイでは、
+  サーバーチャートに対して ``--set hostPortEnabled=true`` を使用する場合もあります。
 
-Make sure the server host name used during provisioning resolves to the exposed
-address. For example, update DNS or ``/etc/hosts`` for the admin console and for
-any remote client sites.
+プロビジョニング時に使用したサーバーのホスト名が、公開されたアドレスに解決されることを
+確認してください。たとえば、管理コンソールおよびすべてのリモートクライアントサイトで DNS
+や ``/etc/hosts`` を更新します。
 
-Verify The Deployment
+デプロイメントの検証
 =====================
 
-After installing a chart, verify that the deployment, pods, services, and PVCs
-are healthy:
+チャートをインストールした後、Deployment、Pod、Service、PVC が正常であることを確認します。
 
 .. code-block:: bash
 
@@ -739,43 +739,42 @@ are healthy:
    kubectl -n "$NAMESPACE" logs deploy/server --tail=200
    kubectl -n "$NAMESPACE" logs deploy/site-1 --tail=200
 
-If a pod is not ready, inspect the pod and recent events:
+Pod が Ready にならない場合は、その Pod と最近のイベントを確認します。
 
 .. code-block:: bash
 
    kubectl -n "$NAMESPACE" describe pod -l app.kubernetes.io/instance=server
    kubectl -n "$NAMESPACE" get events --sort-by=.lastTimestamp
 
-Pod logs persist only while the pod exists. When a parent pod restarts or is
-recreated by a Helm upgrade, prior logs are lost. Use cluster log aggregation
-or capture logs externally if you need to retain them.
+Pod のログは、その Pod が存在する間しか保持されません。親 Pod が再起動したり、Helm の
+アップグレードによって再作成されたりすると、それ以前のログは失われます。ログを保持する
+必要がある場合は、クラスタのログ集約機能を使用するか、外部でログを取得してください。
 
-Login With The Admin Console
-============================
+管理コンソールでのログイン
+===========================
 
-Use the admin startup kit produced by ``nvflare provision``. The admin console
-connects to the server host and ports written into the provisioned project, so
-confirm that those names resolve to the exposed Kubernetes endpoint before
-logging in.
+``nvflare provision`` が生成した管理者スタートアップキットを使用します。管理コンソールは、
+プロビジョニングされたプロジェクトに書き込まれたサーバーのホストとポートに接続するため、
+ログインする前に、それらの名前が公開された Kubernetes エンドポイントに解決されることを
+確認してください。
 
 .. code-block:: bash
 
    cd workspace/<project>/prod_00/admin@nvidia.com/startup
    bash fl_admin.sh
 
-When prompted for ``User Name``, enter the admin identity from ``project.yml``,
-such as ``admin@nvidia.com``.
+``User Name`` の入力を求められたら、``admin@nvidia.com`` のような ``project.yml`` の
+管理者アイデンティティを入力してください。
 
-Private Registry and Image Pull Secrets
-=======================================
+プライベートレジストリとイメージ pull Secret
+=============================================
 
-The generated chart supports parent-pod image pull Secrets through
-``imagePullSecrets`` in ``helm_chart/values.yaml``. ``nvflare deploy prepare``
-fills this value from ``parent.image_pull_secrets`` in ``k8s.yaml``. The
-Kubernetes Secrets must already exist in the participant namespace; NVFLARE does
-not create registry credentials.
+生成されるチャートは、``helm_chart/values.yaml`` の ``imagePullSecrets`` を通じて親 Pod
+のイメージ pull Secret をサポートします。``nvflare deploy prepare`` は、``k8s.yaml`` の
+``parent.image_pull_secrets`` からこの値を設定します。対象の Kubernetes Secret は参加者の
+ネームスペースに既に存在している必要があります。NVFLARE はレジストリ認証情報を作成しません。
 
-For example:
+例を示します。
 
 .. code-block:: bash
 
@@ -791,209 +790,206 @@ For example:
      image_pull_secrets:
        - registry-credentials
 
-This renders the parent chart value as:
+これにより、親チャートの値は次のようにレンダリングされます。
 
 .. code-block:: yaml
 
    imagePullSecrets:
      - name: registry-credentials
 
-Dynamically launched job pods are not controlled by the Helm chart after
-installation. For private job images, set ``job_launcher.image_pull_secrets`` in
-``k8s.yaml`` before running ``nvflare deploy prepare``. The K8s launcher writes
-those Secret references into each created job pod's ``spec.imagePullSecrets``.
+動的に起動されるジョブ Pod は、インストール後は Helm チャートの制御下にありません。
+プライベートなジョブイメージを使用する場合は、``nvflare deploy prepare`` を実行する前に
+``k8s.yaml`` で ``job_launcher.image_pull_secrets`` を設定してください。K8s ランチャーは、
+作成する各ジョブ Pod の ``spec.imagePullSecrets`` にこれらの Secret 参照を書き込みます。
 
-If your cluster supports node-level registry credentials or the namespace
-default ServiceAccount already has suitable image pull Secrets, you can use that
-instead of explicit ``image_pull_secrets`` settings.
+クラスタがノードレベルのレジストリ認証情報をサポートしている場合、またはネームスペースの
+デフォルト ServiceAccount が既に適切なイメージ pull Secret を持っている場合は、明示的な
+``image_pull_secrets`` 設定の代わりにそれを利用できます。
 
-If a parent pod or job pod enters ``ImagePullBackOff``, inspect the pod events
-with ``kubectl describe pod`` and confirm that the image name, tag, registry
-credentials, and image pull policy are correct.
+親 Pod またはジョブ Pod が ``ImagePullBackOff`` になった場合は、``kubectl describe pod``
+で Pod のイベントを確認し、イメージ名、タグ、レジストリ認証情報、イメージ pull ポリシーが
+正しいことを確かめてください。
 
-Helm Values Reference
-=====================
+Helm values リファレンス
+=========================
 
-``nvflare deploy prepare`` writes each participant's generated defaults to
-``helm_chart/values.yaml``. The most commonly overridden values are image,
-service exposure, resources, and persistence.
+``nvflare deploy prepare`` は、各参加者について生成したデフォルト値を
+``helm_chart/values.yaml`` に書き込みます。最も頻繁に上書きされる値は、イメージ、
+Service の公開設定、リソース、永続化に関するものです。
 
 .. list-table::
    :header-rows: 1
 
-   * - Value
-     - Scope
-     - Default source
-     - Purpose
+   * - 値
+     - スコープ
+     - デフォルト値の由来
+     - 用途
    * - ``name``
-     - Server and client
-     - Participant name
-     - Deployment name and chart labels unless chart helpers derive another
-       name.
+     - サーバーおよびクライアント
+     - 参加者名
+     - Deployment 名およびチャートのラベル。ただしチャートのヘルパーが別の名前を
+       導出する場合を除きます。
    * - ``siteName``
-     - Client
-     - Participant name
-     - Client UID passed to ``client_train``.
+     - クライアント
+     - 参加者名
+     - ``client_train`` に渡されるクライアント UID。
    * - ``serviceName``
-     - Server and client
-     - ``server_service_name`` for server; stable site name for client
-     - Kubernetes Service name used by job pods to reach the parent pod.
+     - サーバーおよびクライアント
+     - サーバーの場合は ``server_service_name``、クライアントの場合は安定したサイト名
+     - ジョブ Pod が親 Pod へ到達するために使用する Kubernetes Service 名。
    * - ``image.repository``
-     - Server and client
-     - Repository part of ``parent.docker_image``
-     - Parent pod image repository.
+     - サーバーおよびクライアント
+     - ``parent.docker_image`` のリポジトリ部分
+     - 親 Pod のイメージリポジトリ。
    * - ``image.tag``
-     - Server and client
-     - Tag part of ``parent.docker_image``
-     - Parent pod image tag. If empty, the repository value is used as-is.
+     - サーバーおよびクライアント
+     - ``parent.docker_image`` のタグ部分
+     - 親 Pod のイメージタグ。空の場合、リポジトリの値がそのまま使用されます。
    * - ``image.pullPolicy``
-     - Server and client
-     - ``IfNotPresent`` for server, ``Always`` for client
-     - Parent pod image pull policy.
+     - サーバーおよびクライアント
+     - サーバーは ``IfNotPresent``、クライアントは ``Always``
+     - 親 Pod のイメージ pull ポリシー。
    * - ``imagePullSecrets``
-     - Server and client
-     - ``parent.image_pull_secrets`` rendered as ``[{name: ...}]``
-     - Parent pod image pull Secret references. The Secrets must already exist
-       in the release namespace.
+     - サーバーおよびクライアント
+     - ``parent.image_pull_secrets`` を ``[{name: ...}]`` としてレンダリングしたもの
+     - 親 Pod のイメージ pull Secret 参照。対象の Secret はリリースのネームスペースに
+       既に存在している必要があります。
    * - ``serviceAccount.create``
-     - Server and client
+     - サーバーおよびクライアント
      - ``true``
-     - Creates a ServiceAccount for the parent pod.
+     - 親 Pod 用の ServiceAccount を作成します。
    * - ``serviceAccount.annotations``
-     - Server and client
+     - サーバーおよびクライアント
      - ``{}``
-     - Adds annotations to the generated ServiceAccount.
+     - 生成される ServiceAccount にアノテーションを追加します。
    * - ``serviceAccount.automountServiceAccountToken``
-     - Server and client
+     - サーバーおよびクライアント
      - ``true``
-     - Must remain enabled when the parent launcher uses in-cluster
-       Kubernetes API access.
+     - 親ランチャーがクラスタ内の Kubernetes API アクセスを使用する場合は、有効の
+       ままにしておく必要があります。
    * - ``rbac.create``
-     - Server and client
+     - サーバーおよびクライアント
      - ``true``
-     - Creates the Role and RoleBinding needed to create job pods and startup
-       Secrets.
+     - ジョブ Pod とスタートアップ Secret の作成に必要な Role と RoleBinding を
+       作成します。
    * - ``podAnnotations``
-     - Server and client
+     - サーバーおよびクライアント
      - ``{}``
-     - Adds annotations to the parent pod template.
+     - 親 Pod テンプレートにアノテーションを追加します。
    * - ``securityContext``
-     - Server and client
-     - ``parent.pod_security_context`` or ``{}``
-     - Parent pod security context.
+     - サーバーおよびクライアント
+     - ``parent.pod_security_context`` または ``{}``
+     - 親 Pod のセキュリティコンテキスト。
    * - ``resources``
-     - Server and client
-     - ``parent.resources`` or CPU ``2`` and memory ``8Gi`` requests
-     - Parent pod resource requests and limits.
+     - サーバーおよびクライアント
+     - ``parent.resources``、または CPU ``2`` とメモリ ``8Gi`` のリクエスト
+     - 親 Pod のリソースリクエストおよびリミット。
    * - ``persistence.workspace.claimName``
-     - Server and client
-     - ``parent.workspace_pvc`` or ``nvflws``
-     - Workspace PVC mounted by the parent pod.
+     - サーバーおよびクライアント
+     - ``parent.workspace_pvc`` または ``nvflws``
+     - 親 Pod がマウントするワークスペース PVC。
    * - ``persistence.workspace.volumeName``
-     - Server and client
+     - サーバーおよびクライアント
      - ``workspace``
-     - Internal volume name in the parent pod manifest.
+     - 親 Pod マニフェスト内の内部ボリューム名。
    * - ``persistence.workspace.mountPath``
-     - Server and client
+     - サーバーおよびクライアント
      - ``parent.workspace_mount_path``
-     - In-container workspace mount path.
+     - コンテナ内のワークスペースマウントパス。
    * - ``fedLearnPort``
-     - Server
-     - Server ``fed_learn_port`` from provisioning, or ``8002``
-     - FL server port exposed by the server Service and parent container.
+     - サーバー
+     - プロビジョニングで設定されたサーバーの ``fed_learn_port``、または ``8002``
+     - サーバー Service と親コンテナが公開する FL サーバーのポート。
    * - ``adminPort``
-     - Server
-     - Server ``admin_port`` when distinct from ``fedLearnPort``; otherwise
+     - サーバー
+     - ``fedLearnPort`` と異なる場合はサーバーの ``admin_port``、それ以外は
        ``null``
-     - Admin port exposed by the server Service and parent container.
+     - サーバー Service と親コンテナが公開する管理ポート。
    * - ``parentPort``
-     - Server
-     - ``parent.parent_port`` or ``8102``
-     - Internal parent Service port for server job pods.
+     - サーバー
+     - ``parent.parent_port`` または ``8102``
+     - サーバーのジョブ Pod 向けの内部親 Service ポート。
    * - ``port``
-     - Client
-     - ``parent.parent_port`` or ``8102``
-     - Internal parent Service port for client job pods.
+     - クライアント
+     - ``parent.parent_port`` または ``8102``
+     - クライアントのジョブ Pod 向けの内部親 Service ポート。
    * - ``hostPortEnabled``
-     - Server
+     - サーバー
      - ``false``
-     - Adds ``hostPort`` for ``fedLearnPort`` and ``adminPort`` on the server
-       parent pod. Useful for some single-node clusters.
+     - サーバーの親 Pod に ``fedLearnPort`` と ``adminPort`` の ``hostPort`` を
+       追加します。一部のシングルノードクラスタで有用です。
    * - ``tcpConfigMapEnabled``
-     - Server
+     - サーバー
      - ``false``
-     - Emits a MicroK8s nginx ingress TCP-services ConfigMap mapping the FL
-       ports to the server Service. Useful only on MicroK8s clusters that use
-       the nginx ingress addon.
+     - FL ポートをサーバー Service にマッピングする MicroK8s nginx ingress の
+       TCP-services ConfigMap を出力します。nginx ingress アドオンを使用する
+       MicroK8s クラスタでのみ有用です。
    * - ``service.type``
-     - Server
+     - サーバー
      - ``ClusterIP``
-     - Server Service type, for example ``LoadBalancer``.
+     - サーバー Service のタイプ (例: ``LoadBalancer``)。
    * - ``service.loadBalancerIP``
-     - Server
+     - サーバー
      - ``null``
-     - Optional static load-balancer IP when supported by the cluster.
+     - クラスタがサポートしている場合の、任意指定の静的ロードバランサー IP。
    * - ``service.annotations``
-     - Server and client
+     - サーバーおよびクライアント
      - ``{}``
-     - Adds annotations to the generated Service.
+     - 生成される Service にアノテーションを追加します。
    * - ``command``
-     - Server and client
+     - サーバーおよびクライアント
      - ``parent.python_path``
-     - Parent container command.
+     - 親コンテナのコマンド。
    * - ``args``
-     - Server and client
-     - Generated by ``nvflare deploy prepare``
-     - Parent process module and runtime arguments. Override only when you know
-       how the FLARE parent process is launched.
+     - サーバーおよびクライアント
+     - ``nvflare deploy prepare`` によって生成されます
+     - 親プロセスのモジュールおよびランタイム引数。FLARE の親プロセスがどのように
+       起動されるかを理解している場合にのみ上書きしてください。
 
-Launcher RBAC
-=============
+ランチャーの RBAC
+==================
 
-The generated chart creates a ServiceAccount and namespace-scoped
-Role/RoleBinding by default. The launcher needs permission to:
+生成されるチャートは、デフォルトで ServiceAccount とネームスペーススコープの
+Role/RoleBinding を作成します。ランチャーには次の権限が必要です。
 
-* create, delete, get, list, and watch pods;
-* create, get, update, patch, and delete Secrets.
+* Pod の create、delete、get、list、watch。
+* Secret の create、get、update、patch、delete。
 
-The Secret permission is required because the launcher creates or updates a
-per-site startup-kit Secret for dynamically launched job pods, and a per-job
-credential Secret (``nvflare-cred-<pod-name>``) delivering the job bootstrap
-credentials as env vars via ``secretKeyRef``. The credential Secret is patched
-with an ownerReference to its pod and deleted when the job ends. Job pods mount
-the startup-kit Secret read-only at ``<workspace_mount_path>/startup``. The
-startup-kit Secret name uses this pattern:
+Secret に関する権限が必要なのは、ランチャーが動的に起動されるジョブ Pod 用にサイトごとの
+スタートアップキット Secret を作成または更新し、さらに ``secretKeyRef`` 経由でジョブの
+ブートストラップ認証情報を環境変数として提供するジョブごとの認証情報 Secret
+(``nvflare-cred-<pod-name>``) を作成するためです。認証情報 Secret には、その Pod への
+ownerReference がパッチとして付与され、ジョブ終了時に削除されます。ジョブ Pod は
+スタートアップキット Secret を ``<workspace_mount_path>/startup`` に読み取り専用で
+マウントします。スタートアップキット Secret の名前は、次のパターンに従います。
 
 .. code-block:: text
 
    nvflare-startup-<rfc1123-site-name>-<8-char-sha256-prefix>
 
-``<rfc1123-site-name>`` is the site name with non-RFC1123 characters replaced.
-The 8-char SHA256 suffix is always appended, even for site names that are
-already RFC1123-compliant, so look up the Secret name with the ``grep`` example
-below rather than constructing it. Service and Deployment names, in contrast,
-track the site name directly when it is already DNS-label compliant (lowercase
-alphanumeric and hyphens, starting and ending with alphanumeric, up to 63
-characters).
+``<rfc1123-site-name>`` は、RFC1123 に準拠しない文字を置き換えたサイト名です。8 文字の
+SHA256 サフィックスは、既に RFC1123 に準拠しているサイト名の場合でも常に付加されるため、
+Secret 名は自分で組み立てるのではなく、以下の ``grep`` の例で検索してください。一方、
+Service 名と Deployment 名は、サイト名が既に DNS ラベルに準拠している場合 (英小文字、
+数字、ハイフンからなり、先頭と末尾が英数字で、最大 63 文字) はサイト名をそのまま反映します。
 
-For example, inspect startup-kit Secrets with:
+たとえば、次のコマンドでスタートアップキットの Secret を確認できます。
 
 .. code-block:: bash
 
    kubectl -n "$NAMESPACE" get secret | grep nvflare-startup
 
-If your cluster operator disables ``serviceAccount.create`` or ``rbac.create``
-in chart values, provide equivalent API access in the same namespace before job
-submission. The parent pod must run with a ServiceAccount that can create job
-pods and create, update, patch, and delete the startup-kit and per-job
-credential Secrets.
+クラスタの運用者がチャートの値で ``serviceAccount.create`` または ``rbac.create`` を
+無効にしている場合は、ジョブを送信する前に同じネームスペース内で同等の API アクセス権を
+用意してください。親 Pod は、ジョブ Pod を作成でき、かつスタートアップキット Secret と
+ジョブごとの認証情報 Secret を create、update、patch、delete できる ServiceAccount で
+実行される必要があります。
 
-Configure Kubernetes Job Pods
+Kubernetes ジョブ Pod の設定
 =============================
 
-Job pod settings live in the submitted job's ``meta.json`` under
-``launcher_spec``. The ``default`` block applies to all sites and a site-specific
-block overrides it:
+ジョブ Pod の設定は、送信されるジョブの ``meta.json`` の ``launcher_spec`` 配下にあります。
+``default`` ブロックはすべてのサイトに適用され、サイト固有のブロックがそれを上書きします。
 
 .. code-block:: json
 
@@ -1023,86 +1019,85 @@ block overrides it:
      }
    }
 
-Supported ``launcher_spec[site][k8s]`` keys include:
+サポートされている ``launcher_spec[site][k8s]`` のキーには、次のものがあります。
 
-* ``image``: container image for the job pod. This is required, either in
-  ``launcher_spec.default.k8s`` or in the site-specific ``k8s`` block.
-* ``python_path``: Python executable inside the job image. If omitted, the
-  launcher uses ``job_launcher.default_python_path`` from the prepared site
-  runtime config.
-* ``cpu`` and ``memory``: container limits. When ``cpu_request`` or
-  ``memory_request`` is omitted, the request matches the corresponding limit.
-* ``cpu_request`` and ``memory_request``: optional requests when the request
-  should be lower than the limit.
-* ``ephemeral_storage``: Kubernetes quantity string for the job workspace
-  ``emptyDir.sizeLimit`` and the container ``ephemeral-storage`` request and
-  limit. Set this in ``launcher_spec.default.k8s`` or in a site-specific
-  ``launcher_spec[site].k8s`` block. If omitted, the built-in launcher default
-  is used. The current ``deploy prepare`` runtime config does not expose
-  ``job_launcher.ephemeral_storage`` as a ``k8s.yaml`` setting.
+* ``image``: ジョブ Pod のコンテナイメージ。``launcher_spec.default.k8s`` または
+  サイト固有の ``k8s`` ブロックのいずれかで必ず指定する必要があります。
+* ``python_path``: ジョブイメージ内の Python 実行ファイル。省略した場合、ランチャーは
+  準備済みサイトのランタイム設定から ``job_launcher.default_python_path`` を使用します。
+* ``cpu`` と ``memory``: コンテナのリミット。``cpu_request`` または ``memory_request``
+  が省略された場合、リクエストは対応するリミットと同じ値になります。
+* ``cpu_request`` と ``memory_request``: リクエストをリミットより小さくしたい場合に
+  指定する任意の値です。
+* ``ephemeral_storage``: ジョブワークスペースの ``emptyDir.sizeLimit`` と、コンテナの
+  ``ephemeral-storage`` のリクエストおよびリミットに使用される Kubernetes の数量文字列
+  です。``launcher_spec.default.k8s`` またはサイト固有の ``launcher_spec[site].k8s``
+  ブロックで設定してください。省略した場合は、組み込みのランチャーのデフォルト値が使用
+  されます。現在の ``deploy prepare`` のランタイム設定では、
+  ``job_launcher.ephemeral_storage`` は ``k8s.yaml`` の設定項目として公開されていません。
 
-Job pods are created with ``imagePullPolicy: Always``. Tag changes take effect
-immediately, but every submitted job pulls the image once per site. For private
-registries, factor this into rate limits and registry-credential plumbing. Use
-``job_launcher.image_pull_secrets`` when dynamically launched job pods need
-explicit image pull Secrets.
+ジョブ Pod は ``imagePullPolicy: Always`` で作成されます。タグの変更は即座に反映されますが、
+送信されるジョブごとに、サイト単位で 1 回イメージが pull されます。プライベートレジストリを
+使用する場合は、レート制限とレジストリ認証情報の受け渡しにこの点を織り込んでください。
+動的に起動されるジョブ Pod に明示的なイメージ pull Secret が必要な場合は、
+``job_launcher.image_pull_secrets`` を使用してください。
 
-``resource_spec`` remains scheduler-facing. New jobs should place K8s launcher
-settings in ``launcher_spec`` and resource requests such as ``num_of_gpus`` in
-``resource_spec``. The launcher writes ``resource_spec[site].num_of_gpus`` as
-both the ``nvidia.com/gpu`` request and limit.
+``resource_spec`` は引き続きスケジューラ向けの設定です。新しいジョブでは、K8s ランチャーの
+設定は ``launcher_spec`` に、``num_of_gpus`` などのリソースリクエストは ``resource_spec``
+に配置してください。ランチャーは、``resource_spec[site].num_of_gpus`` を
+``nvidia.com/gpu`` のリクエストとリミットの両方として書き込みます。
 
-GPU requests require the NVIDIA GPU Operator or NVIDIA device plugin on the
-target cluster. For MIG, make sure the device plugin exposes a resource that the
-launcher requests. The built-in launcher writes ``nvidia.com/gpu`` for
-``num_of_gpus``; clusters that expose only profile-specific resources such as
-``nvidia.com/mig-1g.5gb`` require cluster configuration or launcher
-customization to request those resource names.
+GPU のリクエストには、対象クラスタ上に NVIDIA GPU Operator または NVIDIA デバイス
+プラグインが必要です。MIG を使用する場合は、デバイスプラグインがランチャーの要求する
+リソースを公開していることを確認してください。組み込みのランチャーは ``num_of_gpus`` に
+対して ``nvidia.com/gpu`` を書き込みます。``nvidia.com/mig-1g.5gb`` のようなプロファイル
+固有のリソースのみを公開するクラスタでは、それらのリソース名を要求するために、クラスタ側の
+設定またはランチャーのカスタマイズが必要です。
 
-Reprovisioning and Upgrades
-===========================
+再プロビジョニングとアップグレード
+===================================
 
-Provisioned certificates, local config, server communication settings, and
-prepared Kubernetes parent-Service settings are tied to the provisioned project
-state. If you change ``project.yml``, server host names, ports, participants,
-or ``k8s.yaml`` settings, first clean up ConfigMap/Secret staging when that
-method is in use:
+プロビジョニングされた証明書、ローカル設定、サーバーの通信設定、および準備済みの
+Kubernetes 親 Service の設定は、プロビジョニングされたプロジェクトの状態と結び付いて
+います。``project.yml``、サーバーのホスト名、ポート、参加者、または ``k8s.yaml`` の設定を
+変更する場合は、ConfigMap/Secret 方式を使用しているときはまずそのステージングを
+クリーンアップしてください。
 
 .. code-block:: bash
 
    helm uninstall "$RELEASE_NAME" --namespace "$NAMESPACE"
    nvflare deploy k8s unstage "$PREPARED_KIT"
 
-Unstage before replacing the prepared output so its recorded namespace and
-exact cleanup names remain available. ``deploy prepare`` refuses to overwrite
-a chart that still references staged resources.
+記録されたネームスペースと正確なクリーンアップ用の名前を利用できる状態に保つため、準備済み
+の出力を置き換える前に unstage を実行してください。``deploy prepare`` は、ステージング
+されたリソースをまだ参照しているチャートの上書きを拒否します。
 
-Then:
+その後、次の手順を実行します。
 
-#. Run ``nvflare provision`` again.
-#. Run ``nvflare deploy prepare`` again for every affected participant.
-#. Back up any PVC content you need to keep before restaging. On the server
-   workspace PVC, that usually includes ``transfer/`` (admin uploads), the
-   site directory holding job history and snapshots, and any log files at the
-   workspace root. Client workspace PVCs typically have little to preserve
-   beyond optional logs.
-#. Restage ``startup/`` and ``local/`` using the selected method. For the PVC
-   method, replace those folders on the participant's workspace PVC and remove
-   stale copies first. For the ConfigMap/Secret method, run
-   ``nvflare deploy k8s stage`` on the new prepared kit.
-#. Run ``helm upgrade --install`` for the affected release.
+#. ``nvflare provision`` を再実行します。
+#. 影響を受けるすべての参加者について ``nvflare deploy prepare`` を再実行します。
+#. 再ステージングの前に、保持したい PVC の内容をバックアップします。サーバーのワークスペース
+   PVC では、通常 ``transfer/`` (管理者のアップロード)、ジョブ履歴とスナップショットを
+   保持するサイトディレクトリ、およびワークスペースのルートにあるログファイルが対象と
+   なります。クライアントのワークスペース PVC では、通常は任意のログ以外に保持すべきものは
+   ほとんどありません。
+#. 選択した方法で ``startup/`` と ``local/`` を再ステージングします。PVC 方式の場合は、
+   参加者のワークスペース PVC 上でこれらのフォルダを置き換え、先に古いコピーを削除して
+   ください。ConfigMap/Secret 方式の場合は、新しい準備済みキットに対して
+   ``nvflare deploy k8s stage`` を実行します。
+#. 影響を受けるリリースに対して ``helm upgrade --install`` を実行します。
 
-Do not reuse an old staged ``startup/`` or ``local/`` folder after
-reprovisioning.
+再プロビジョニング後に、古いステージング済みの ``startup/`` または ``local/`` フォルダを
+再利用しないでください。
 
-Troubleshooting
-===============
+トラブルシューティング
+=======================
 
-PVC stays ``Pending``
----------------------
+PVC が ``Pending`` のままになる
+--------------------------------
 
-Check that the cluster has a default storage class, or add an explicit
-``storageClassName`` under each PVC ``spec``:
+クラスタにデフォルトのストレージクラスが存在することを確認するか、各 PVC の ``spec``
+配下に明示的な ``storageClassName`` を追加してください。
 
 .. code-block:: bash
 
@@ -1110,41 +1105,41 @@ Check that the cluster has a default storage class, or add an explicit
    kubectl -n "$NAMESPACE" describe pvc nvflws
    kubectl -n "$NAMESPACE" describe pvc nvfldata
 
-Use ``storageClassName: ""`` only when binding to a pre-created PersistentVolume
-without a dynamic storage class.
+``storageClassName: ""`` は、動的なストレージクラスを使わずに事前作成された
+PersistentVolume にバインドする場合にのみ使用してください。
 
-Parent pod has ``ImagePullBackOff``
------------------------------------
+親 Pod が ``ImagePullBackOff`` になる
+--------------------------------------
 
-Confirm that the parent image exists and that the cluster can pull it:
+親イメージが存在し、クラスタがそれを pull できることを確認します。
 
 .. code-block:: bash
 
    kubectl -n "$NAMESPACE" describe pod -l app.kubernetes.io/instance=server
    kubectl -n "$NAMESPACE" describe pod -l app.kubernetes.io/instance=site-1
 
-Check the rendered image:
+レンダリングされたイメージを確認します。
 
 .. code-block:: bash
 
    helm -n "$NAMESPACE" get values server --all
    helm -n "$NAMESPACE" get values site-1 --all
 
-For private registries, configure node credentials or add image pull secrets as
-described in `Private Registry and Image Pull Secrets`_.
+プライベートレジストリを使用する場合は、`プライベートレジストリとイメージ pull Secret`_
+で説明しているとおり、ノードの認証情報を設定するか、イメージ pull Secret を追加してください。
 
-Parent pod cannot find ``startup`` or ``local``
------------------------------------------------
+親 Pod が ``startup`` または ``local`` を見つけられない
+--------------------------------------------------------
 
-The prepared kit was copied to the wrong level in the PVC, or the wrong PVC is
-mounted. The configured workspace mount path must contain:
+準備済みキットが PVC 内の誤った階層にコピーされたか、誤った PVC がマウントされています。
+設定されたワークスペースのマウントパスには、次のディレクトリが含まれている必要があります。
 
 .. code-block:: text
 
    <workspace_mount_path>/startup
    <workspace_mount_path>/local
 
-With the example default ``workspace_mount_path``, those paths are:
+例のデフォルトの ``workspace_mount_path`` を使用した場合、それらのパスは次のようになります。
 
 .. code-block:: text
 

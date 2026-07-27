@@ -1,85 +1,85 @@
 .. _base_image_build:
 
-##################################
-CVM Base Image and Binary Building
-##################################
+#############################################
+CVM ベースイメージとバイナリのビルド
+#############################################
 
-This document explains how to build the prerequisite base images and binaries required by the CVM builder before running ``nvflare provision``.
+このドキュメントでは、 ``nvflare provision`` を実行する前に CVM ビルダーが必要とする、前提となるベースイメージとバイナリのビルド方法を説明します。
 
-The image builder is shipped as part of the NVFlare source tree under ``nvflare/lighter/cc/image_builder/``
-and contains the ``cvm_build.sh`` script along with Ansible playbooks and helper scripts. It is typically
-installed at ``~/cc/image_builder``, which is the path referenced by ``build_image_cmd`` in ``project.yml``.
+イメージビルダーは NVFlare のソースツリーの ``nvflare/lighter/cc/image_builder/`` 配下に含まれており、
+``cvm_build.sh`` スクリプトのほか、Ansible のプレイブックとヘルパースクリプトが含まれています。通常は
+``~/cc/image_builder`` にインストールされ、これは ``project.yml`` の ``build_image_cmd`` で参照されるパスです。
 
-The following artifacts must be built and placed in the image builder directory:
+以下の成果物をビルドし、イメージビルダーのディレクトリに配置する必要があります。
 
-- ``base_images/ubuntu_base.qcow2`` — Ubuntu base disk image
-- ``base_images/OVMF.amdsev.fd`` — Firmware with ``kernel-hashes=on`` support
-- ``binaries/snpguest`` — Tool for interacting with the TEE
-- ``binaries/kbs-client`` — Tool for communicating with Trustee KBS
-
-.. note::
-
-   In examples below, ``<builder_root>`` refers to the directory containing the ``cvm_build.sh`` script.
-
-Build Ubuntu Base Image
-=======================
-
-The Ubuntu base image must be built on a **Ubuntu 25.04 host** with an **Ubuntu 24.04 guest**.
+- ``base_images/ubuntu_base.qcow2`` — Ubuntu のベースディスクイメージ
+- ``base_images/OVMF.amdsev.fd`` — ``kernel-hashes=on`` をサポートするファームウェア
+- ``binaries/snpguest`` — TEE とやり取りするためのツール
+- ``binaries/kbs-client`` — Trustee KBS と通信するためのツール
 
 .. note::
 
-   The OS versions differ between host and guest. This is the only tested combination.
+   以下の例において、 ``<builder_root>`` は ``cvm_build.sh`` スクリプトを含むディレクトリを指します。
 
-The following instructions are adapted from NVIDIA's **Deployment Guide for SecureAI**:
+Ubuntu ベースイメージのビルド
+========================================
+
+Ubuntu のベースイメージは、 **Ubuntu 25.04 のホスト** 上で **Ubuntu 24.04 のゲスト** を用いてビルドする必要があります。
+
+.. note::
+
+   ホストとゲストで OS のバージョンが異なります。これがテスト済みの唯一の組み合わせです。
+
+以下の手順は、NVIDIA の **Deployment Guide for SecureAI** をもとにしています:
 https://docs.nvidia.com/cc-deployment-guide-snp.pdf
 
-Download GPU Admin Tools
-------------------------
+GPU Admin Tools のダウンロード
+----------------------------------------
 
 .. code-block:: bash
 
    cd /shared/
    git clone https://github.com/NVIDIA/gpu-admin-tools
 
-Autoload VFIO
--------------
+VFIO の自動ロード
+-------------------------
 
-Create ``/etc/modules-load.d/vfio.conf`` with the following content:
+``/etc/modules-load.d/vfio.conf`` を以下の内容で作成します。
 
 .. code-block:: text
 
    vfio
    vfio_pci
 
-Restart the host to load the VFIO modules:
+VFIO モジュールをロードするためにホストを再起動します。
 
 .. code-block:: bash
 
    sudo reboot
 
-Download Ubuntu Installation Image
------------------------------------
+Ubuntu インストールイメージのダウンロード
+--------------------------------------------------
 
-Download the ISO file for Ubuntu 24.04.2:
+Ubuntu 24.04.2 の ISO ファイルをダウンロードします。
 
 .. code-block:: bash
 
    cd /shared
    wget https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-live-server-amd64.iso
 
-Create a Drive Image
---------------------
+ドライブイメージの作成
+--------------------------------
 
-Create a drive image large enough to hold the OS. A minimum of 30GB is required to install Ubuntu and the GPU drivers. The builder will extend it as needed.
+OS を格納できる十分な大きさのドライブイメージを作成します。Ubuntu と GPU ドライバーをインストールするには最低 30GB が必要です。ビルダーが必要に応じて拡張します。
 
 .. code-block:: bash
 
    qemu-img create -f qcow2 /shared/ubuntu_base.qcow2 30G
 
-Install Ubuntu Guest
---------------------
+Ubuntu ゲストのインストール
+------------------------------------
 
-Create the file ``/shared/launch_vm.sh`` with the following content:
+``/shared/launch_vm.sh`` というファイルを以下の内容で作成します。
 
 .. code-block:: bash
 
@@ -160,28 +160,28 @@ Create the file ``/shared/launch_vm.sh`` with the following content:
      -device pcie-root-port,id=pci.1,bus=pcie.0 \
      -device vfio-pci,host=${NVIDIA_GPU},bus=pci.1,iommufd=iommufd0,romfile=
 
-Launch the VM to start the Ubuntu installation:
+VM を起動して Ubuntu のインストールを開始します。
 
 .. code-block:: bash
 
    chmod +x /shared/launch_vm.sh
    sudo /shared/launch_vm.sh -ex
 
-Install a minimal Ubuntu 24.04. All required software will be installed by the builder later. After the guest OS is installed, Ubuntu will prompt you to reboot — the VM will terminate and return you to the host.
+最小構成の Ubuntu 24.04 をインストールしてください。必要なソフトウェアはすべて後でビルダーがインストールします。ゲスト OS のインストールが完了すると、Ubuntu が再起動を求めてきます。その際 VM は終了し、ホストに戻ります。
 
-Save Base Image
----------------
+ベースイメージの保存
+------------------------------
 
-Copy the VM image to the ``base_images`` folder:
+VM のイメージを ``base_images`` フォルダーにコピーします。
 
 .. code-block:: bash
 
    cp /shared/ubuntu_base.qcow2 <builder_root>/base_images
 
-Fetch Firmware
-==============
+ファームウェアの取得
+==============================
 
-Check if ``OVMF.amdsev.fd`` is already available in ``/usr/share/ovmf``. If not, install it from the Ubuntu proposed repository:
+``OVMF.amdsev.fd`` が既に ``/usr/share/ovmf`` にあるかどうかを確認します。ない場合は、Ubuntu の proposed リポジトリからインストールします。
 
 .. code-block:: bash
 
@@ -197,16 +197,16 @@ Check if ``OVMF.amdsev.fd`` is already available in ``/usr/share/ovmf``. If not,
    sudo apt update
    sudo apt install -t plucky-proposed ovmf
 
-Copy the firmware to the ``base_images`` folder:
+ファームウェアを ``base_images`` フォルダーにコピーします。
 
 .. code-block:: bash
 
    cp /usr/share/ovmf/OVMF.amdsev.fd <builder_root>/base_images
 
-Build snpguest
-==============
+snpguest のビルド
+=========================
 
-The ``snpguest`` tool is needed to interact with the TEE (Trusted Execution Environment).
+``snpguest`` ツールは、TEE (Trusted Execution Environment) とやり取りするために必要です。
 
 .. code-block:: bash
 
@@ -224,10 +224,10 @@ The ``snpguest`` tool is needed to interact with the TEE (Trusted Execution Envi
 
    cp target/release/snpguest <builder_root>/binaries
 
-Build kbs-client
-================
+kbs-client のビルド
+===========================
 
-The ``kbs-client`` tool is used to interact with Trustee. Its version must match the Trustee server version. The tested commit is ``a2570329cc33daf9ca16370a1948b5379bb17fbe``.
+``kbs-client`` ツールは Trustee とやり取りするために使用します。そのバージョンは Trustee サーバーのバージョンと一致していなければなりません。テスト済みのコミットは ``a2570329cc33daf9ca16370a1948b5379bb17fbe`` です。
 
 .. code-block:: bash
 

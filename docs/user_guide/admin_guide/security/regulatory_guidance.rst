@@ -3,75 +3,75 @@
 .. _regulatory_guidance:
 
 ###################################
-Regulatory & Compliance Guidance
+規制・コンプライアンスガイダンス
 ###################################
 
 .. note::
-   This guide is coming soon. It will cover how NVIDIA FLARE helps organizations
-   meet regulatory requirements across industries.
+   このガイドは近日公開予定です。NVIDIA FLARE が各業界の規制要件を満たすうえで組織をどのように
+   支援するかを扱います。
 
-Overview
+概要
 ========
 
-Federated learning is often adopted specifically to address regulatory constraints
-on data sharing. This guide explains how NVIDIA FLARE's security and privacy features
-map to common regulatory frameworks.
+連合学習は、データ共有に対する規制上の制約に対処するために採用されることがよくあります。
+このガイドでは、NVIDIA FLARE のセキュリティ機能とプライバシー機能が、一般的な規制フレームワークに
+どのように対応するかを説明します。
 
-HIPAA (Healthcare)
+HIPAA (ヘルスケア)
 ===================
 
-*Coming soon.* Will cover:
+*近日公開。* 以下の内容を扱う予定です。
 
-- How FL addresses the HIPAA Privacy Rule (data stays local)
-- Technical safeguards provided by FLARE (encryption, access control, audit)
-- Business Associate Agreement (BAA) considerations
-- De-identification and minimum necessary standards
-- Relevant FLARE features: Differential Privacy, Homomorphic Encryption, Audit Logging
+- FL が HIPAA プライバシールールにどのように対応するか (データはローカルに留まる)
+- FLARE が提供する技術的セーフガード (暗号化、アクセス制御、監査)
+- Business Associate Agreement (BAA) に関する考慮事項
+- 非識別化と必要最小限の基準
+- 関連する FLARE の機能: 差分プライバシー、準同型暗号、監査ログ
 
-GDPR (European Union)
+GDPR (欧州連合)
 ======================
 
-*Coming soon.* Will cover:
+*近日公開。* 以下の内容を扱う予定です。
 
-- Data minimization through federated training (no raw data transfer)
-- Right to erasure considerations in federated models
-- Data Processing Agreements between participating organizations
-- Cross-border data transfer implications
-- Relevant FLARE features: Site Policies, Data Privacy Filters
+- 連合トレーニングによるデータ最小化 (生データの転送なし)
+- 連合モデルにおける消去権に関する考慮事項
+- 参加組織間のデータ処理契約
+- 国境を越えたデータ移転に関する影響
+- 関連する FLARE の機能: サイトポリシー、データプライバシーフィルター
 
-Financial Regulations (SOX, FINRA, PCI-DSS)
+金融規制 (SOX、FINRA、PCI-DSS)
 =============================================
 
-*Coming soon.* Will cover:
+*近日公開。* 以下の内容を扱う予定です。
 
-- Data segregation requirements and how FL addresses them
-- Audit trail requirements and FLARE's audit logging
-- Model risk management (SR 11-7) for federated models
-- Relevant FLARE features: Authorization Policies, Audit Logging, Secure Aggregation
+- データ分離の要件と FL がそれにどう対応するか
+- 監査証跡の要件と FLARE の監査ログ
+- 連合モデルに対するモデルリスク管理 (SR 11-7)
+- 関連する FLARE の機能: 認可ポリシー、監査ログ、セキュアアグリゲーション
 
-FDA (Pharmaceutical & Medical Devices)
+FDA (医薬品・医療機器)
 =======================================
 
-*Coming soon.* Will cover:
+*近日公開。* 以下の内容を扱う予定です。
 
-- Good Machine Learning Practice (GMLP) in federated settings
-- Model validation across distributed data
-- Traceability and reproducibility requirements
+- 連合環境における Good Machine Learning Practice (GMLP)
+- 分散データにまたがるモデル検証
+- トレーサビリティと再現性の要件
 
-General Compliance Best Practices
-==================================
+一般的なコンプライアンスのベストプラクティス
+==============================================
 
-*Coming soon.* Will cover:
+*近日公開。* 以下の内容を扱う予定です。
 
-- Documentation requirements for federated learning deployments
-- Data governance frameworks for multi-party collaboration
-- Model governance and version control
-- Audit and reporting capabilities in FLARE
+- 連合学習のデプロイメントに関するドキュメント要件
+- 多者間コラボレーションのためのデータガバナンスフレームワーク
+- モデルガバナンスとバージョン管理
+- FLARE における監査およびレポート機能
 
-See Also
-========
+関連項目
+============
 
-- :ref:`Security Overview <security>` -- FLARE security architecture
-- :doc:`auditing` -- Audit logging capabilities
-- :doc:`data_privacy_protection` -- Privacy-preserving techniques
-- :doc:`site_policy_management` -- Per-site policy configuration
+- :ref:`セキュリティ概要 <security>` -- FLARE のセキュリティアーキテクチャ
+- :doc:`auditing` -- 監査ログ機能
+- :doc:`data_privacy_protection` -- プライバシー保護技術
+- :doc:`site_policy_management` -- サイトごとのポリシー設定

@@ -1,46 +1,46 @@
 .. _diagnostic_commands:
 
-#####################
-Diagnostic Commands
-#####################
+################
+診断コマンド
+################
 
-NVIDIA FLARE provides diagnostic commands for monitoring and debugging communication statistics in the CellNet layer. These commands are particularly useful for troubleshooting network issues, analyzing message patterns, and understanding system performance characteristics.
+NVIDIA FLARE は、CellNet レイヤーにおける通信統計の監視とデバッグのための診断コマンドを提供しています。これらのコマンドは、ネットワークの問題のトラブルシューティング、メッセージパターンの分析、システムの性能特性の理解に特に役立ちます。
 
 .. note::
-   These diagnostic commands are only available when the system is configured with diagnose mode enabled in the NetManager component.
+   これらの診断コマンドは、NetManager コンポーネントで diagnose モードが有効になるようにシステムが設定されている場合にのみ利用できます。
 
-Overview
-========
+概要
+====
 
-The diagnostic commands allow administrators to:
+診断コマンドを使用すると、管理者は次のことが行えます。
 
-* Discover active cells in the CellNet system
-* View statistics about message sizes and timing
-* Monitor communication patterns between cells
-* Inspect available statistics pools
-* Analyze histogram data with different statistical modes
+* CellNet システム内のアクティブなセルを検出する
+* メッセージサイズとタイミングに関する統計を表示する
+* セル間の通信パターンを監視する
+* 利用可能な統計プールを調査する
+* さまざまな統計モードでヒストグラムデータを分析する
 
-These commands query the CellNet layer's statistics tracking system, which maintains various statistics pools for monitoring different aspects of system communication.
+これらのコマンドは、CellNet レイヤーの統計トラッキングシステムに問い合わせます。このシステムは、システム通信のさまざまな側面を監視するための多様な統計プールを保持しています。
 
-Statistics Pools
-================
+統計プール
+==========
 
-NVIDIA FLARE's statistics system uses "pools" to organize different types of metrics:
+NVIDIA FLARE の統計システムは、さまざまな種類のメトリクスを整理するために「プール」を使用します。
 
-* **Histogram Pools**: Track distributions of values (e.g., message sizes, timing) with configurable bins
-* **Counter Pools**: Track simple counters for specific events
+* **ヒストグラムプール** : 設定可能なビンを用いて値の分布 (メッセージサイズやタイミングなど) を追跡します
+* **カウンタープール** : 特定のイベントに対する単純なカウンターを追跡します
 
-Each pool has a name, type, and description. The system automatically creates pools for tracking message statistics, and applications can create custom pools for tracking domain-specific metrics.
+各プールには名前、種類、説明があります。システムはメッセージ統計を追跡するためのプールを自動的に作成し、アプリケーションはドメイン固有のメトリクスを追跡するためのカスタムプールを作成できます。
 
-Configuring Statistics Pool Saving
-===================================
+統計プールの保存設定
+=====================
 
-By default, statistics pools are maintained in memory during job execution. However, you can configure NVFLARE to save pool statistics to disk for later analysis and record-keeping.
+デフォルトでは、統計プールはジョブの実行中にメモリ上に保持されます。ただし、後からの分析や記録保持のために、プールの統計をディスクへ保存するよう NVFLARE を設定することもできます。
 
-Configuration in meta.json
----------------------------
+meta.json での設定
+-------------------
 
-To enable statistics pool saving for a job, add the following configuration to your job's ``meta.json`` file:
+ジョブで統計プールの保存を有効にするには、ジョブの ``meta.json`` ファイルに次の設定を追加します。
 
 .. code-block:: json
 
@@ -54,17 +54,17 @@ To enable statistics pool saving for a job, add the following configuration to y
      }
    }
 
-**Configuration Options:**
+**設定オプション:**
 
-* ``save_pools``: A list of pool names to save. Supports:
-  
-  * **Specific pool names**: e.g., ``"request_processing"``, ``"msg_sizes"``
-  * **Wildcard**: Use ``"*"`` to save all pools
-  * **Mixed**: Combine specific names and wildcards
+* ``save_pools``: 保存するプール名のリストです。次の指定をサポートします。
 
-**Examples:**
+  * **特定のプール名** : 例 ``"request_processing"``、``"msg_sizes"``
+  * **ワイルドカード** : ``"*"`` を使用してすべてのプールを保存します
+  * **混在** : 特定の名前とワイルドカードを組み合わせます
 
-1. Save only specific pools:
+**例:**
+
+1. 特定のプールのみを保存する場合:
 
 .. code-block:: json
 
@@ -74,7 +74,7 @@ To enable statistics pool saving for a job, add the following configuration to y
      }
    }
 
-2. Save all pools:
+2. すべてのプールを保存する場合:
 
 .. code-block:: json
 
@@ -84,19 +84,19 @@ To enable statistics pool saving for a job, add the following configuration to y
      }
    }
 
-Output Files
-------------
+出力ファイル
+-------------
 
-When statistics pool saving is enabled, NVFLARE generates two files for each job at the end of job execution:
+統計プールの保存を有効にすると、NVFLARE はジョブの実行終了時にジョブごとに 2 つのファイルを生成します。
 
 stats_pool_summary.json
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Location:** Job workspace directory
+**場所:** ジョブのワークスペースディレクトリ
 
-**Content:** Contains histogram summaries and aggregated statistics for each saved pool.
+**内容:** 保存された各プールについて、ヒストグラムのサマリと集計統計が含まれます。
 
-**Format:** JSON file with the following structure:
+**形式:** 次の構造を持つ JSON ファイルです。
 
 .. code-block:: json
 
@@ -117,23 +117,23 @@ stats_pool_summary.json
      }
    }
 
-**Use Cases:**
+**ユースケース:**
 
-* Post-job analysis of communication patterns
-* Historical comparison across multiple job runs
-* Generating reports for system performance
-* Identifying trends over time
+* ジョブ完了後の通信パターンの分析
+* 複数のジョブ実行にまたがる履歴比較
+* システム性能に関するレポートの生成
+* 時系列でのトレンドの特定
 
 stats_pool_records.csv
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-**Location:** Job workspace directory
+**場所:** ジョブのワークスペースディレクトリ
 
-**Content:** Contains raw, timestamped recordings for each data point collected in the saved pools.
+**内容:** 保存されたプールで収集された各データポイントについて、タイムスタンプ付きの生の記録が含まれます。
 
-**Format:** CSV file with columns that vary by pool type:
+**形式:** プールの種類によって列が異なる CSV ファイルです。
 
-For histogram pools:
+ヒストグラムプールの場合:
 
 .. code-block:: text
 
@@ -142,7 +142,7 @@ For histogram pools:
    2024-01-15T10:30:45.456Z,request_processing,0.031,
    2024-01-15T10:30:46.789Z,request_response,0.120,
 
-For counter pools:
+カウンタープールの場合:
 
 .. code-block:: text
 
@@ -150,20 +150,20 @@ For counter pools:
    2024-01-15T10:30:45.123Z,event_counts,task_received,1
    2024-01-15T10:30:46.456Z,event_counts,task_completed,1
 
-**Use Cases:**
+**ユースケース:**
 
-* Detailed timeline analysis
-* Custom data processing and visualization
-* Integration with external analytics tools
-* Machine learning on system behavior patterns
-* Debugging specific events or anomalies
+* 詳細なタイムライン分析
+* 独自のデータ処理と可視化
+* 外部の分析ツールとの連携
+* システムの挙動パターンに対する機械学習
+* 特定のイベントや異常のデバッグ
 
-Workflow Example
-----------------
+ワークフローの例
+-----------------
 
-**Step 1: Configure Your Job**
+**ステップ 1: ジョブの設定**
 
-Create or edit your job's ``meta.json``:
+ジョブの ``meta.json`` を作成または編集します。
 
 .. code-block:: json
 
@@ -176,192 +176,192 @@ Create or edit your job's ``meta.json``:
      }
    }
 
-**Step 2: Submit the Job**
+**ステップ 2: ジョブの投入**
 
 .. code-block:: shell
 
    > submit_job my_job_folder
 
-**Step 3: Run the Job**
+**ステップ 3: ジョブの実行**
 
-The job executes normally, with statistics being collected in the background.
+ジョブは通常どおり実行され、その裏で統計が収集されます。
 
-**Step 4: Retrieve Statistics After Job Completion**
+**ステップ 4: ジョブ完了後の統計の取得**
 
 .. code-block:: shell
 
    > download_job job_abc-123-def
 
-**Step 5: Analyze the Output**
+**ステップ 5: 出力の分析**
 
-Navigate to the downloaded job workspace and examine:
+ダウンロードしたジョブのワークスペースに移動して、次を確認します。
 
 .. code-block:: shell
 
    cd downloaded_job/workspace/
-   
+
    # View summary statistics
    cat stats_pool_summary.json
-   
+
    # Analyze raw records
    cat stats_pool_records.csv
 
-**Step 6: Use Statistics for Analysis**
+**ステップ 6: 統計を用いた分析**
 
 .. code-block:: python
 
    import json
    import pandas as pd
-   
+
    # Load summary data
    with open('stats_pool_summary.json', 'r') as f:
        summary = json.load(f)
-   
+
    # Load raw records
    records = pd.read_csv('stats_pool_records.csv')
-   
+
    # Analyze timing patterns
    timing_data = records[records['pool_name'] == 'request_processing']
    print(f"Average: {timing_data['value'].mean()}")
    print(f"95th percentile: {timing_data['value'].quantile(0.95)}")
 
-Using the Stats Viewer Tool
-----------------------------
+Stats Viewer ツールの使用
+--------------------------
 
-NVFLARE provides a convenient command-line tool called ``stats_viewer`` for interactively exploring statistics files. This tool allows you to view and analyze the ``stats_pool_summary.json`` files without writing custom scripts.
+NVFLARE は、統計ファイルを対話的に調べるための ``stats_viewer`` という便利なコマンドラインツールを提供しています。このツールを使うと、独自のスクリプトを書かずに ``stats_pool_summary.json`` ファイルを表示・分析できます。
 
-**Starting the Stats Viewer:**
+**Stats Viewer の起動:**
 
 .. code-block:: shell
 
    python -m nvflare.fuel.f3.qat.stats_viewer -f stats_pool_summary.json
 
-This launches an interactive shell where you can explore the statistics data.
+これにより、統計データを調べられる対話型シェルが起動します。
 
-**Available Commands:**
+**利用可能なコマンド:**
 
-The stats viewer provides the following commands:
+stats viewer では次のコマンドが利用できます。
 
-* ``list_pools``: Display all available statistics pools with their types and descriptions
-* ``show_pool <pool_name> [mode]``: Display detailed statistics for a specific pool
-  
-  * ``pool_name``: Name of the pool to display
-  * ``mode`` (optional): Histogram display mode - one of: ``count``, ``total``, ``min``, ``max``, ``avg``
+* ``list_pools``: 利用可能なすべての統計プールを、その種類と説明とともに表示します
+* ``show_pool <pool_name> [mode]``: 特定のプールの詳細な統計を表示します
 
-* ``help`` or ``?``: List available commands
-* ``bye``: Exit the stats viewer
+  * ``pool_name``: 表示するプールの名前
+  * ``mode`` (省略可): ヒストグラムの表示モード。``count``、``total``、``min``、``max``、``avg`` のいずれか
 
-**Example Session:**
+* ``help`` または ``?``: 利用可能なコマンドを一覧表示します
+* ``bye``: stats viewer を終了します
+
+**セッションの例:**
 
 .. code-block:: shell
 
    $ python -m nvflare.fuel.f3.qat.stats_viewer -f stats_pool_summary.json
    Type help or ? to list commands.
-   
+
    > list_pools
    Name                  Type    Description
    -------------------- ------- ------------------------------
    request_processing   hist    Request processing time
    request_response     hist    Request-response round trip
    msg_sizes            hist    Message size distribution
-   
+
    > show_pool request_processing avg
    Range         Count    Average
    ------------ ------- -----------
    0-10ms           150     5.2ms
    10-100ms          80    45.3ms
    100-1000ms        20   425.8ms
-   
+
    > show_pool msg_sizes count
    Range         Count
    ------------ -------
    0-1KB           200
    1KB-10KB        150
    10KB-100KB       50
-   
+
    > bye
 
-**Server-Side vs Client-Side Statistics:**
+**サーバ側統計とクライアント側統計:**
 
-The ``stats_viewer`` tool can analyze statistics from both server and client sides:
+``stats_viewer`` ツールは、サーバ側とクライアント側の両方の統計を分析できます。
 
-* **Server-side statistics**: Available in the server's job workspace after job completion. Can be retrieved using ``download_job`` command.
-* **Client-side statistics**: Currently stored locally on each client site in their respective job workspaces.
+* **サーバ側統計** : ジョブ完了後、サーバのジョブワークスペースで利用できます。``download_job`` コマンドで取得できます。
+* **クライアント側統計** : 現在は、各クライアントサイトのそれぞれのジョブワークスペースにローカルで保存されます。
 
 .. note::
-   Currently, client-side statistics files are not automatically sent to the server after job completion. To analyze client statistics, you need to access the ``stats_pool_summary.json`` file directly on each client site's job workspace.
+   現時点では、クライアント側の統計ファイルはジョブ完了後に自動的にサーバへ送信されません。クライアントの統計を分析するには、各クライアントサイトのジョブワークスペースにある ``stats_pool_summary.json`` ファイルに直接アクセスする必要があります。
 
-Common Pool Names
+一般的なプール名
 -----------------
 
-The following pools are commonly available in NVFLARE jobs:
+NVFLARE のジョブでは、次のプールが一般的に利用できます。
 
-Communication Pools
+通信関連のプール
+^^^^^^^^^^^^^^^^^
+
+* ``request_processing``: リクエストの処理に要した時間
+* ``request_response``: エンドツーエンドのリクエスト・レスポンス時間
+* ``msg_sizes``: メッセージサイズの分布
+* ``msg_travel_time``: メッセージの伝送時間
+
+ジョブ固有のプール
 ^^^^^^^^^^^^^^^^^^^
 
-* ``request_processing``: Time spent processing requests
-* ``request_response``: End-to-end request-response times
-* ``msg_sizes``: Distribution of message sizes
-* ``msg_travel_time``: Message transmission times
-
-Job-Specific Pools
-^^^^^^^^^^^^^^^^^^
-
-Different jobs may create custom pools based on their workflows. Use the ``list_pools`` command during job execution to discover available pools:
+ジョブによっては、そのワークフローに基づいてカスタムプールが作成されることがあります。ジョブの実行中に ``list_pools`` コマンドを使用して、利用可能なプールを確認してください。
 
 .. code-block:: shell
 
    > cells
    server.job_abc-123
    site1.job_abc-123
-   
+
    > list_pools server.job_abc-123
 
 
-Integration with Monitoring
-----------------------------
+モニタリングとの連携
+----------------------
 
-Statistics pool data complements external monitoring systems:
+統計プールのデータは、外部のモニタリングシステムを補完します。
 
-* **Statistics Pools**: Detailed, job-specific metrics saved with job artifacts
-* **External Monitoring** (Prometheus/Grafana): Real-time system-wide monitoring
+* **統計プール** : ジョブのアーティファクトとともに保存される、詳細でジョブ固有のメトリクス
+* **外部モニタリング** (Prometheus/Grafana): リアルタイムでのシステム全体の監視
 
-Use both approaches together:
+両方のアプローチを組み合わせて使用してください。
 
-1. External monitoring for real-time alerting and dashboards
-2. Statistics pool saving for detailed post-job analysis and historical records
+1. リアルタイムのアラートとダッシュボードには外部モニタリングを使用します
+2. 詳細なジョブ完了後の分析と履歴の記録には統計プールの保存を使用します
 
-See :ref:`monitoring` for information on setting up external monitoring.
+外部モニタリングのセットアップについては :ref:`monitoring` を参照してください。
 
-Available Commands
-==================
+利用可能なコマンド
+===================
 
 cells
 -----
 
-**Description:** Lists all active cells in the CellNet system with their FQCNs (Fully Qualified Cell Names). This command is essential for discovering available targets to use with other diagnostic commands.
+**説明:** CellNet システム内のアクティブなすべてのセルを FQCN (Fully Qualified Cell Name) とともに一覧表示します。このコマンドは、他の診断コマンドで使用できるターゲットを見つけるために不可欠です。
 
-**Usage:**
+**使い方:**
 
 .. code-block:: shell
 
    cells
 
-**Parameters:**
+**パラメータ:**
 
-None. This command takes no parameters.
+なし。このコマンドはパラメータを取りません。
 
-**Output:**
+**出力:**
 
-Displays a list of all active cells in the system, showing each cell's FQCN on a separate line, followed by a summary line showing the total number of valid cells.
+システム内のアクティブなすべてのセルの一覧を表示します。各セルの FQCN が 1 行ずつ表示され、最後に有効なセルの総数を示すサマリ行が続きます。
 
-**Example:**
+**例:**
 
 .. code-block:: shell
 
    > cells
 
-**Example Output:**
+**出力例:**
 
 .. code-block:: text
 
@@ -374,37 +374,37 @@ Displays a list of all active cells in the system, showing each cell's FQCN on a
    site2.abc-123-def
    Total Cells: 7
 
-**Understanding the Output:**
+**出力の理解:**
 
-The cells listed include:
+一覧表示されるセルには次のものが含まれます。
 
-* **Parent Cells**: Base cells for each site (e.g., ``server``, ``site1``, ``site2``)
-  
-  * The server's parent cell is always named ``server``
-  * Client parent cells use their site names
+* **親セル** : 各サイトのベースとなるセル (例: ``server``、``site1``、``site2``)
 
-* **Job Cells**: Cells created for active jobs (e.g., ``server.abc-123-def``, ``site1.abc-123-def``)
-  
-  * Format: ``<site_name>.<job_id>``
-  * Created when a job is deployed
-  * Removed when the job completes
+  * サーバの親セルの名前は常に ``server`` です
+  * クライアントの親セルはそのサイト名を使用します
 
-* **Relay Cells**: In hierarchical deployments, relay nodes (e.g., ``relay1``, ``relay1.site1``)
-  
-  * Intermediate nodes in the communication hierarchy
-  * Can have their own job cells when jobs are running
+* **ジョブセル** : アクティブなジョブのために作成されたセル (例: ``server.abc-123-def``、``site1.abc-123-def``)
 
-**Use Cases:**
+  * 形式: ``<site_name>.<job_id>``
+  * ジョブがデプロイされたときに作成されます
+  * ジョブが完了すると削除されます
 
-* **Discover Available Targets**: Find valid FQCNs to use with ``list_pools``, ``show_pool``, ``msg_stats``, and other diagnostic commands
-* **Verify System Topology**: Confirm all expected sites are connected and active
-* **Monitor Job Cells**: See which jobs are currently running by identifying job cell FQCNs
-* **Troubleshoot Connectivity**: Identify missing or disconnected cells
-* **Understand Hierarchy**: In hierarchical deployments, visualize the cell structure
+* **リレーセル** : 階層型のデプロイにおけるリレーノード (例: ``relay1``、``relay1.site1``)
 
-**Examples with Follow-up Commands:**
+  * 通信階層における中間ノードです
+  * ジョブの実行中は、独自のジョブセルを持つことがあります
 
-After running ``cells`` to discover targets, you can use the FQCNs with other commands:
+**ユースケース:**
+
+* **利用可能なターゲットの検出** : ``list_pools``、``show_pool``、``msg_stats`` などの診断コマンドで使用できる有効な FQCN を見つけます
+* **システムトポロジの確認** : 想定されるすべてのサイトが接続され、アクティブであることを確認します
+* **ジョブセルの監視** : ジョブセルの FQCN を特定して、現在実行中のジョブを把握します
+* **接続性のトラブルシューティング** : 欠落しているセルや切断されたセルを特定します
+* **階層構造の理解** : 階層型のデプロイにおけるセル構造を可視化します
+
+**後続コマンドとの組み合わせ例:**
+
+``cells`` を実行してターゲットを検出した後、その FQCN を他のコマンドで使用できます。
 
 .. code-block:: shell
 
@@ -423,75 +423,75 @@ After running ``cells`` to discover targets, you can use the FQCNs with other co
    > msg_stats server.job123
    > list_pools site1.job123
 
-**Interpreting Different Cell Types:**
+**さまざまなセルタイプの解釈:**
 
-1. **Server Parent Cell** (``server``):
-   
-   * Always present when the FL system is running
-   * Handles administrative operations
-   * Parent for all job cells on the server
+1. **サーバ親セル** (``server``):
 
-2. **Client Parent Cells** (``site1``, ``site2``, etc.):
-   
-   * One per connected FL client site
-   * Active as long as the client is connected
-   * Persist across multiple jobs
+   * FL システムが稼働している間は常に存在します
+   * 管理操作を処理します
+   * サーバ上のすべてのジョブセルの親となります
 
-3. **Job Server Cell** (``server.<job_id>``):
-   
-   * Created when a job is deployed on the server
-   * Contains job-specific server workflows
-   * Removed when job completes
+2. **クライアント親セル** (``site1``、``site2`` など):
 
-4. **Job Client Cells** (``<site_name>.<job_id>``):
-   
-   * One per client participating in a job
-   * Execute the client-side job logic
-   * Communication with corresponding server job cell
+   * 接続された FL クライアントサイトごとに 1 つ存在します
+   * クライアントが接続されている間はアクティブです
+   * 複数のジョブをまたいで存続します
 
-5. **Hierarchical Cells** (``relay1``, ``relay1.site1``):
-   
-   * Relay nodes in hierarchical deployments
-   * Can be nested (e.g., ``relay1.relay2.site1``)
-   * Help manage large-scale deployments
+3. **ジョブサーバセル** (``server.<job_id>``):
 
-**Tips:**
+   * サーバ上でジョブがデプロイされたときに作成されます
+   * ジョブ固有のサーバ側ワークフローを含みます
+   * ジョブが完了すると削除されます
 
-* Run ``cells`` before other diagnostic commands to identify valid targets
-* Compare cell lists over time to track system changes
-* If expected cells are missing, check connectivity and site status
-* Job cells appear when jobs start and disappear when they complete
+4. **ジョブクライアントセル** (``<site_name>.<job_id>``):
+
+   * ジョブに参加するクライアントごとに 1 つ存在します
+   * クライアント側のジョブロジックを実行します
+   * 対応するサーバのジョブセルと通信します
+
+5. **階層型セル** (``relay1``、``relay1.site1``):
+
+   * 階層型デプロイにおけるリレーノードです
+   * 入れ子にできます (例: ``relay1.relay2.site1``)
+   * 大規模なデプロイの管理に役立ちます
+
+**ヒント:**
+
+* 他の診断コマンドを実行する前に ``cells`` を実行して、有効なターゲットを特定してください
+* セルの一覧を時系列で比較して、システムの変化を追跡してください
+* 想定されるセルが見つからない場合は、接続性とサイトのステータスを確認してください
+* ジョブセルはジョブの開始時に現れ、完了時に消えます
 
 list_pools
 ----------
 
-**Description:** Lists all statistics pools available on a target cell.
+**説明:** ターゲットセルで利用可能なすべての統計プールを一覧表示します。
 
-**Usage:**
+**使い方:**
 
 .. code-block:: shell
 
    list_pools target
 
-**Parameters:**
+**パラメータ:**
 
-* ``target`` - The FQCN (Fully Qualified Cell Name) of the target cell to query (e.g., "server", "client1", "server.job_id")
+* ``target`` - 問い合わせ先となるターゲットセルの FQCN (Fully Qualified Cell Name) (例: "server"、"client1"、"server.job_id")
 
-**Output:**
+**出力:**
 
-Displays a table with three columns:
+3 つの列を持つテーブルを表示します。
 
-* **pool** - The name of the statistics pool
-* **type** - The type of pool ("hist" for histogram, "counter" for counter)
-* **description** - A description of what the pool tracks
+* **pool** - 統計プールの名前
+* **type** - プールの種類 (ヒストグラムの場合は "hist"、カウンターの場合は "counter")
+* **description** - そのプールが何を追跡しているかの説明
 
-**Example:**
+**例:**
 
 .. code-block:: shell
 
    > list_pools server
 
-**Example Output:**
+**出力例:**
 
 .. code-block:: text
 
@@ -503,42 +503,42 @@ Displays a table with three columns:
    | request_counts   | counter  | Request counts by channel      |
    +------------------+----------+--------------------------------+
 
-**Use Cases:**
+**ユースケース:**
 
-* Discover available statistics pools on a cell
-* Verify that expected statistics tracking is configured
-* Identify pools for detailed inspection with ``show_pool``
+* セル上で利用可能な統計プールを検出する
+* 想定される統計トラッキングが設定されていることを確認する
+* ``show_pool`` で詳細に調査するプールを特定する
 
 show_pool
 ---------
 
-**Description:** Shows detailed statistics for a specific pool on a target cell.
+**説明:** ターゲットセル上の特定のプールについて詳細な統計を表示します。
 
-**Usage:**
+**使い方:**
 
 .. code-block:: shell
 
    show_pool target pool_name [mode]
 
-**Parameters:**
+**パラメータ:**
 
-* ``target`` - The FQCN of the target cell to query
-* ``pool_name`` - The name of the statistics pool to display
-* ``mode`` - (Optional) The display mode for histogram pools. Valid values:
+* ``target`` - 問い合わせ先となるターゲットセルの FQCN
+* ``pool_name`` - 表示する統計プールの名前
+* ``mode`` - (省略可) ヒストグラムプールの表示モード。有効な値は次のとおりです。
 
-  * ``count`` - Show the count of values in each bin (default)
-  * ``percent`` - Show the percentage of values in each bin
-  * ``avg`` - Show the average value in each bin
-  * ``min`` - Show the minimum value in each bin
-  * ``max`` - Show the maximum value in each bin
+  * ``count`` - 各ビンに含まれる値の個数を表示します (デフォルト)
+  * ``percent`` - 各ビンに含まれる値の割合を表示します
+  * ``avg`` - 各ビンの平均値を表示します
+  * ``min`` - 各ビンの最小値を表示します
+  * ``max`` - 各ビンの最大値を表示します
 
-**Output:**
+**出力:**
 
-For histogram pools, displays a table showing the distribution of values across bins. The exact columns depend on the pool type and configuration.
+ヒストグラムプールの場合は、ビンごとの値の分布を示すテーブルを表示します。正確な列はプールの種類と設定によって異なります。
 
-For counter pools, displays a table with counter names and their current values.
+カウンタープールの場合は、カウンター名と現在の値を含むテーブルを表示します。
 
-**Examples:**
+**例:**
 
 .. code-block:: shell
 
@@ -551,7 +551,7 @@ For counter pools, displays a table with counter names and their current values.
    # Show message size percentages
    > show_pool site1 msg_sizes percent
 
-**Example Output (Count Mode):**
+**出力例 (count モード):**
 
 .. code-block:: text
 
@@ -565,7 +565,7 @@ For counter pools, displays a table with counter names and their current values.
    | >1MB          | 5     |
    +---------------+-------+
 
-**Example Output (Average Mode):**
+**出力例 (avg モード):**
 
 .. code-block:: text
 
@@ -578,40 +578,40 @@ For counter pools, displays a table with counter names and their current values.
    | >1s           | 2.1e+00   |
    +---------------+-----------+
 
-**Use Cases:**
+**ユースケース:**
 
-* Analyze message size distributions to identify outliers
-* Monitor timing characteristics of requests
-* Compare statistics across different cells
-* Identify performance bottlenecks or unusual patterns
+* メッセージサイズの分布を分析して外れ値を特定する
+* リクエストのタイミング特性を監視する
+* 異なるセル間で統計を比較する
+* 性能のボトルネックや異常なパターンを特定する
 
 msg_stats
 ---------
 
-**Description:** Shows message request statistics for a target cell. This is a convenience command that displays the pre-configured message statistics pool.
+**説明:** ターゲットセルのメッセージリクエスト統計を表示します。これは、あらかじめ設定されたメッセージ統計プールを表示する便利コマンドです。
 
-**Usage:**
+**使い方:**
 
 .. code-block:: shell
 
    msg_stats target [mode]
 
-**Parameters:**
+**パラメータ:**
 
-* ``target`` - The FQCN of the target cell to query
-* ``mode`` - (Optional) The display mode. Valid values:
+* ``target`` - 問い合わせ先となるターゲットセルの FQCN
+* ``mode`` - (省略可) 表示モード。有効な値は次のとおりです。
 
-  * ``count`` - Show the count of messages (default)
-  * ``percent`` - Show the percentage of messages
-  * ``avg`` - Show the average message size or timing
-  * ``min`` - Show the minimum values
-  * ``max`` - Show the maximum values
+  * ``count`` - メッセージの件数を表示します (デフォルト)
+  * ``percent`` - メッセージの割合を表示します
+  * ``avg`` - メッセージサイズまたはタイミングの平均を表示します
+  * ``min`` - 最小値を表示します
+  * ``max`` - 最大値を表示します
 
-**Output:**
+**出力:**
 
-Displays statistics about request messages, typically showing distributions of message sizes and/or timing information. The exact format depends on how the message statistics pool is configured in the system.
+リクエストメッセージに関する統計を表示します。通常は、メッセージサイズの分布やタイミング情報、あるいはその両方が示されます。正確な形式は、システムでメッセージ統計プールがどのように設定されているかによって異なります。
 
-**Examples:**
+**例:**
 
 .. code-block:: shell
 
@@ -624,7 +624,7 @@ Displays statistics about request messages, typically showing distributions of m
    # Show maximum values
    > msg_stats client1 max
 
-**Example Output:**
+**出力例:**
 
 .. code-block:: text
 
@@ -638,89 +638,89 @@ Displays statistics about request messages, typically showing distributions of m
    | >100KB        | 10    | 500ms    |
    +---------------+-------+----------+
 
-**Use Cases:**
+**ユースケース:**
 
-* Quick overview of message traffic patterns
-* Monitor communication health
-* Identify unusual message patterns
-* Baseline system performance characteristics
+* メッセージトラフィックのパターンをすばやく概観する
+* 通信の健全性を監視する
+* 異常なメッセージパターンを特定する
+* システムの性能特性のベースラインを取得する
 
-Common Workflows
-================
+一般的なワークフロー
+=====================
 
-Discovering Available Targets
-------------------------------
+利用可能なターゲットの検出
+---------------------------
 
-Before using diagnostic commands, discover available cells:
+診断コマンドを使用する前に、利用可能なセルを検出します。
 
-1. **List all active cells:**
-
-   .. code-block:: shell
-
-      > cells
-
-2. **Identify target cells of interest:**
-
-   * Parent cells for overall system monitoring (``server``, ``site1``, etc.)
-   * Job cells for job-specific monitoring (``server.job_id``, ``site1.job_id``)
-   * Relay cells in hierarchical deployments
-
-3. **Verify cell connectivity:**
-
-   Check that expected cells appear in the list. Missing cells may indicate connectivity issues.
-
-Investigating Communication Issues
-----------------------------------
-
-When investigating communication problems between cells:
-
-1. **Discover active cells:**
+1. **アクティブなセルをすべて一覧表示する:**
 
    .. code-block:: shell
 
       > cells
 
-2. **List available pools:**
+2. **対象となるターゲットセルを特定する:**
+
+   * システム全体の監視には親セル (``server``、``site1`` など)
+   * ジョブ固有の監視にはジョブセル (``server.job_id``、``site1.job_id``)
+   * 階層型デプロイにおけるリレーセル
+
+3. **セルの接続性を確認する:**
+
+   想定されるセルが一覧に現れていることを確認します。セルが見つからない場合、接続の問題を示している可能性があります。
+
+通信の問題の調査
+-----------------
+
+セル間の通信の問題を調査する場合:
+
+1. **アクティブなセルを検出する:**
+
+   .. code-block:: shell
+
+      > cells
+
+2. **利用可能なプールを一覧表示する:**
 
    .. code-block:: shell
 
       > list_pools server
       > list_pools client1
 
-3. **Check message statistics:**
+3. **メッセージ統計を確認する:**
 
    .. code-block:: shell
 
       > msg_stats server count
       > msg_stats client1 count
 
-4. **Examine specific pools:**
+4. **特定のプールを詳しく調べる:**
 
    .. code-block:: shell
 
       > show_pool server msg_travel_time avg
       > show_pool client1 msg_sizes percent
 
-Performance Analysis
---------------------
+性能分析
+---------
 
-To analyze system performance characteristics:
+システムの性能特性を分析するには:
 
-1. **Check message timing distribution:**
+1. **メッセージのタイミング分布を確認する:**
 
    .. code-block:: shell
 
       > show_pool server msg_travel_time count
       > show_pool server msg_travel_time avg
 
-2. **Analyze message size patterns:**
+2. **メッセージサイズのパターンを分析する:**
 
    .. code-block:: shell
 
       > show_pool server msg_sizes count
       > show_pool server msg_sizes max
 
-3. **Compare across cells:**
+3. **セル間で比較する:**
 
    .. code-block:: shell
 
@@ -728,188 +728,188 @@ To analyze system performance characteristics:
       > msg_stats client1 avg
       > msg_stats client2 avg
 
-Monitoring Job Execution
--------------------------
+ジョブ実行の監視
+-----------------
 
-During job execution, monitor communication patterns:
+ジョブの実行中に通信パターンを監視します。
 
-1. **Identify job cells:**
+1. **ジョブセルを特定する:**
 
    .. code-block:: shell
 
       > cells
       # Look for cells with format: <site_name>.<job_id>
 
-2. **Check job cell statistics:**
+2. **ジョブセルの統計を確認する:**
 
    .. code-block:: shell
 
       > list_pools server.job_abc123
       > msg_stats server.job_abc123 count
 
-3. **Compare parent and job cells:**
+3. **親セルとジョブセルを比較する:**
 
    .. code-block:: shell
 
       > msg_stats server avg
       > msg_stats server.job_abc123 avg
 
-Statistical Modes Explained
-============================
+統計モードの解説
+=================
 
-The different statistical modes provide different views of the data:
+統計モードが異なると、データに対する異なる視点が得られます。
 
 count
 -----
-Shows the number of data points in each bin. This is useful for understanding the distribution and identifying where most values fall.
+各ビンに含まれるデータポイントの数を表示します。分布を把握し、ほとんどの値がどこに位置するかを特定するのに役立ちます。
 
-**Use case:** "How many messages are in the 1KB-10KB range?"
+**ユースケース:** 「1KB〜10KB の範囲にはいくつのメッセージがあるか?」
 
 percent
 -------
-Shows what percentage of all data points fall in each bin. This normalizes the distribution and makes it easier to compare across different time periods or cells.
+すべてのデータポイントのうち、各ビンに含まれる割合を表示します。これにより分布が正規化され、異なる期間やセル間での比較が容易になります。
 
-**Use case:** "What percentage of messages are larger than 100KB?"
+**ユースケース:** 「100KB を超えるメッセージの割合はどれくらいか?」
 
 avg
 ---
-Shows the average value of data points within each bin. This helps understand the typical characteristics within each range.
+各ビン内のデータポイントの平均値を表示します。各範囲における典型的な特性を把握するのに役立ちます。
 
-**Use case:** "For messages in the 10ms-100ms latency range, what's the typical latency?"
+**ユースケース:** 「10ms〜100ms のレイテンシ範囲にあるメッセージの典型的なレイテンシはどれくらいか?」
 
 min
 ---
-Shows the minimum value encountered in each bin. Useful for understanding best-case scenarios.
+各ビンで観測された最小値を表示します。ベストケースのシナリオを把握するのに役立ちます。
 
-**Use case:** "What's the fastest response time we've seen in the 1KB-10KB message range?"
+**ユースケース:** 「1KB〜10KB のメッセージ範囲で観測された最速のレスポンス時間はどれくらいか?」
 
 max
 ---
-Shows the maximum value encountered in each bin. Useful for identifying worst-case scenarios or outliers.
+各ビンで観測された最大値を表示します。ワーストケースのシナリオや外れ値を特定するのに役立ちます。
 
-**Use case:** "What's the longest latency we've seen for small messages?"
+**ユースケース:** 「小さなメッセージで観測された最長のレイテンシはどれくらいか?」
 
-Target Cell Addressing
-======================
+ターゲットセルのアドレッシング
+===============================
 
-The ``target`` parameter in these commands uses FQCN (Fully Qualified Cell Name) addressing:
+これらのコマンドの ``target`` パラメータは、FQCN (Fully Qualified Cell Name) によるアドレッシングを使用します。
 
-Server Cell
+サーバセル
 -----------
 
 .. code-block:: shell
 
    > msg_stats server
 
-Client Cell
------------
+クライアントセル
+-----------------
 
 .. code-block:: shell
 
    > msg_stats site1
    > msg_stats client_alpha
 
-Job Cells
----------
+ジョブセル
+-----------
 
-When a job is running, each site has a dedicated job cell with FQCN in the format ``<site_name>.<job_id>``:
+ジョブの実行中は、各サイトが ``<site_name>.<job_id>`` という形式の FQCN を持つ専用のジョブセルを持ちます。
 
 .. code-block:: shell
 
    > msg_stats server.abc-123-def
    > msg_stats site1.abc-123-def
 
-Hierarchical Cells
-------------------
+階層型セル
+-----------
 
-In hierarchical deployments with relays:
+リレーを使用する階層型デプロイでは:
 
 .. code-block:: shell
 
    > msg_stats relay1
    > msg_stats relay1.site1
 
-See :ref:`hierarchical_communication` for more information on communication hierarchies.
+通信階層の詳細については :ref:`hierarchical_communication` を参照してください。
 
-Tips and Best Practices
-========================
+ヒントとベストプラクティス
+===========================
 
-1. **Regular Monitoring:** Establish baseline statistics during normal operation to help identify anomalies.
+1. **定期的な監視:** 通常運用時のベースライン統計を確立しておくと、異常の特定に役立ちます。
 
-2. **Compare Cells:** Compare statistics across different cells to identify inconsistencies or issues specific to certain sites.
+2. **セルの比較:** 異なるセル間で統計を比較して、不整合や特定のサイトに固有の問題を特定します。
 
-3. **Use Different Modes:** Switch between statistical modes to get different insights into the same data.
+3. **異なるモードの活用:** 統計モードを切り替えることで、同じデータから異なる洞察が得られます。
 
-4. **Track Over Time:** Run commands periodically and save output to track trends over time.
+4. **時系列での追跡:** コマンドを定期的に実行して出力を保存し、時系列のトレンドを追跡します。
 
-5. **Job-Specific Analysis:** Monitor job cells separately from parent cells to understand job-specific communication patterns.
+5. **ジョブ単位の分析:** ジョブセルを親セルとは別に監視して、ジョブ固有の通信パターンを把握します。
 
-6. **Correlate with Logs:** Use diagnostic commands in conjunction with log analysis for comprehensive troubleshooting.
+6. **ログとの相関:** 包括的なトラブルシューティングのために、診断コマンドとログ分析を組み合わせて使用します。
 
-Troubleshooting
-===============
+トラブルシューティング
+=======================
 
-Command Not Found
------------------
+コマンドが見つからない
+-----------------------
 
-If diagnostic commands are not available:
+診断コマンドが利用できない場合:
 
-* Verify that the NetManager component is configured with ``diagnose=True``
-* Check that you have appropriate permissions to run these commands
-* Ensure you're using a version of NVIDIA FLARE that includes these commands
+* NetManager コンポーネントが ``diagnose=True`` で設定されていることを確認してください
+* これらのコマンドを実行する適切な権限があるか確認してください
+* これらのコマンドを含むバージョンの NVIDIA FLARE を使用していることを確認してください
 
-Cells Command Shows Fewer Cells Than Expected
-----------------------------------------------
+cells コマンドで表示されるセルが想定より少ない
+-----------------------------------------------
 
-If the ``cells`` command doesn't show all expected cells:
+``cells`` コマンドで想定されるすべてのセルが表示されない場合:
 
-* **Check connectivity**: Verify that all sites are connected to the server
-* **Check site status**: Use ``check_status`` to see if clients are properly connected
-* **Wait for initialization**: Sites may take a few moments to appear after starting
-* **Check logs**: Review server and client logs for connection errors
-* **Verify network**: Ensure there are no network issues or firewall blocks
+* **接続性の確認** : すべてのサイトがサーバに接続されていることを確認してください
+* **サイトのステータス確認** : ``check_status`` を使用して、クライアントが正しく接続されているか確認してください
+* **初期化の待機** : サイトは起動後、表示されるまで少し時間がかかる場合があります
+* **ログの確認** : サーバとクライアントのログで接続エラーを確認してください
+* **ネットワークの確認** : ネットワークの問題やファイアウォールによるブロックがないことを確認してください
 
-Cells Command Shows Old Job Cells
-----------------------------------
+cells コマンドに古いジョブセルが表示される
+-------------------------------------------
 
-If job cells remain listed after a job completes:
+ジョブ完了後もジョブセルが一覧に残っている場合:
 
-* There may be a delay in cleanup - wait a few moments and run ``cells`` again
-* Check if the job is actually still running with ``list_jobs``
-* Review logs for any errors during job shutdown
+* クリーンアップに遅延がある可能性があります。少し待ってから再度 ``cells`` を実行してください
+* ``list_jobs`` を使用して、そのジョブが実際にまだ実行中かどうか確認してください
+* ジョブのシャットダウン中にエラーが発生していないか、ログを確認してください
 
-Invalid Mode Error
-------------------
+無効なモードのエラー
+---------------------
 
-If you receive an "invalid mode" error:
+"invalid mode" というエラーが表示される場合:
 
-* Ensure you're using one of the valid modes: ``count``, ``percent``, ``avg``, ``min``, ``max``
-* Check for typos in the mode parameter
-* Note that mode is case-sensitive (use lowercase)
+* 有効なモードである ``count``、``percent``、``avg``、``min``、``max`` のいずれかを使用しているか確認してください
+* mode パラメータにタイプミスがないか確認してください
+* モードは大文字小文字を区別します (小文字を使用してください)
 
-Target Not Found
-----------------
+ターゲットが見つからない
+-------------------------
 
-If the target cell cannot be reached:
+ターゲットセルに到達できない場合:
 
-* Verify the FQCN is correct
-* Check that the target cell is running and connected
-* Use the ``cells`` command to list available cells
+* FQCN が正しいか確認してください
+* ターゲットセルが稼働し、接続されていることを確認してください
+* ``cells`` コマンドを使用して、利用可能なセルを一覧表示してください
 
-Pool Does Not Exist
+プールが存在しない
 -------------------
 
-If you receive a "pool does not exist" error:
+"pool does not exist" というエラーが表示される場合:
 
-* Use ``list_pools`` to see available pools on that cell
-* Verify the pool name is spelled correctly
-* Note that pool names are case-sensitive
+* ``list_pools`` を使用して、そのセルで利用可能なプールを確認してください
+* プール名のつづりが正しいか確認してください
+* プール名は大文字小文字を区別します
 
-See Also
+関連項目
 ========
 
-* :ref:`cellnet_architecture` - Learn about FLARE's communication layer
-* :ref:`communication_configuration` - Configure communication settings
-* :ref:`monitoring` - Set up external monitoring with Prometheus and Grafana
-* :ref:`hierarchical_communication` - Understand hierarchical cell topologies
+* :ref:`cellnet_architecture` - FLARE の通信レイヤーについて学ぶ
+* :ref:`communication_configuration` - 通信設定を構成する
+* :ref:`monitoring` - Prometheus と Grafana による外部モニタリングをセットアップする
+* :ref:`hierarchical_communication` - 階層型のセルトポロジを理解する
 

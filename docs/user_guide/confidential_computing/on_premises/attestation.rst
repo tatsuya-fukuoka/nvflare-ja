@@ -1,136 +1,135 @@
 .. _confidential_computing_attestation:
 
-#######################################################
-Confidential Computing: Attestation Service Integration
-#######################################################
+##############################################################
+機密コンピューティング: アテステーションサービスの統合
+##############################################################
 
-Overview
-========
+概要
+====
 
-This document introduces the Confidential Computing (CC) attestation integration in NVFlare.
+このドキュメントでは、NVFlare における機密コンピューティング (CC) のアテステーション統合について紹介します。
 
-Please refer to the :ref:`NVFlare CC <confidential_computing>` for the introduction and detailed architecture of Confidential Computing.
+機密コンピューティングの概要と詳細なアーキテクチャについては、 :ref:`NVFlare CC <confidential_computing>` を参照してください。
 
-Attestation enables participants to prove the integrity and trustworthiness of their computing environment. This mechanism ensures that only mutually trusted participants take part in a federated learning job, reinforcing both security and integrity across the NVFlare system.
+アテステーションにより、参加者は自身のコンピューティング環境の完全性と信頼性を証明できます。この仕組みによって、相互に信頼された参加者のみがフェデレーテッドラーニングのジョブに参加するようになり、NVFlare システム全体のセキュリティと完全性が強化されます。
 
-How It Works
-============
+動作の仕組み
+=============
 
-CC Token Generation
--------------------
+CC トークンの生成
+------------------
 
-Each participant uses a ``CCAuthorizer`` to generate a CC token that attests to its environment's security posture.
+各参加者は ``CCAuthorizer`` を使用して、自身の環境のセキュリティ状態を証明する CC トークンを生成します。
 
-For example, the ``SNPAuthorizer`` utilizes AMD's ``snpguest`` utility to generate an attestation report and package it into a CC token.
+たとえば ``SNPAuthorizer`` は、AMD の ``snpguest`` ユーティリティを利用してアテステーションレポートを生成し、それを CC トークンにパッケージ化します。
 
-CC Token Verification
-----------------------
+CC トークンの検証
+------------------
 
-When a participant receives a CC token from another participant, it verifies the token's claims against its own security policy. This check ensures that the token owner is using the required hardware, software, and configurations to meet the security standards.
+参加者が他の参加者から CC トークンを受け取ると、そのトークンのクレームを自身のセキュリティポリシーに照らして検証します。このチェックにより、トークンの所有者がセキュリティ基準を満たすために必要なハードウェア、ソフトウェア、構成を使用していることが確認されます。
 
-If verification fails—i.e., the CC token does not meet the policy—the site may choose not to participate in the job. It will not exchange models or collaborate further.
+検証に失敗した場合、つまり CC トークンがポリシーを満たさない場合、そのサイトはジョブに参加しないことを選択できます。その場合、モデルの交換やそれ以上の協業は行われません。
 
-Components
-==========
+コンポーネント
+==============
 
 CCManager
 ---------
 
-The ``CCManager`` component orchestrates the attestation process across the NVFlare system. It is responsible for:
+``CCManager`` コンポーネントは、NVFlare システム全体のアテステーションプロセスを統括します。その責務は以下のとおりです。
 
-- Generating CC tokens for the local participant
-- Collecting and storing CC tokens from other participants
-- Verifying tokens against security policies
-- Coordinating peer verification among participants
+- ローカル参加者のための CC トークンの生成
+- 他の参加者からの CC トークンの収集と保存
+- セキュリティポリシーに対するトークンの検証
+- 参加者間のピア検証の調整
 
 CCAuthorizer
 ------------
 
-Each ``CCAuthorizer`` is responsible for generating attestation reports for a specific hardware platform. NVFlare provides multiple authorizers to support different confidential computing technologies.
+各 ``CCAuthorizer`` は、特定のハードウェアプラットフォーム向けのアテステーションレポートを生成する責務を持ちます。NVFlare は、さまざまな機密コンピューティング技術をサポートするために複数のオーソライザーを提供しています。
 
-Supported Platforms
-===================
+サポートされるプラットフォーム
+==============================
 
-NVFlare currently supports the following ``CCAuthorizer`` components:
+NVFlare は現在、以下の ``CCAuthorizer`` コンポーネントをサポートしています。
 
 .. list-table::
    :header-rows: 1
    :widths: 30 70
 
-   * - Authorizer
-     - Platform
+   * - オーソライザー
+     - プラットフォーム
    * - ``SNPAuthorizer``
      - AMD SEV-SNP (Secure Encrypted Virtualization - Secure Nested Paging)
    * - ``GPUAuthorizer``
-     - NVIDIA GPU Confidential Computing (H100, Blackwell)
+     - NVIDIA GPU 機密コンピューティング (H100、Blackwell)
    * - ``TDXAuthorizer``
      - Intel TDX (Trust Domain Extensions)
    * - ``ACIAuthorizer``
      - Azure Confidential Containers Instance
 
-Configuration
--------------
+設定
+----
 
-You can configure the CC attestation components during the provision step. See the :ref:`NVFlare CC Deployment Guide <cc_deployment_guide>` for detailed instructions.
+CC アテステーションのコンポーネントは、プロビジョニングの手順で構成できます。詳細な手順については :ref:`NVFlare CC デプロイガイド <cc_deployment_guide>` を参照してください。
 
-Runtime Behavior
+ランタイムの動作
 ================
 
 
-The Confidential Computing (CC) attestation workflow establishes continuous, system-wide trust between all federated learning participants.
+機密コンピューティング (CC) のアテステーションワークフローは、すべてのフェデレーテッドラーニング参加者の間で、継続的かつシステム全体にわたる信頼を確立します。
 
-1. System Bootstrap
--------------------
+1. システムのブートストラップ
+------------------------------
 
-When the system starts, each CC-enabled site (server or client) initializes its confidential computing components and generates a CC token that identifies its trusted environment.
-
-
-2. Client Registration
-----------------------
-
-During client registration:
-
-    - The client sends its token to the server.
-
-    - The server verifies the client’s token and responds with its own.
-
-    - The client then validates the server’s token.
-
-This mutual verification ensures both sides trust each other before participating in any job.
+システムの起動時に、CC が有効な各サイト (サーバーまたはクライアント) は機密コンピューティングのコンポーネントを初期化し、自身の信頼された環境を示す CC トークンを生成します。
 
 
-3. Continuous Cross-Site Validation
------------------------------------
+2. クライアント登録
+--------------------
 
-After startup, all sites periodically perform cross-site token validation:
+クライアント登録の際には、次の処理が行われます。
 
-Each site generates new CC tokens at regular intervals.
+    - クライアントが自身のトークンをサーバーに送信します。
 
-Sites exchange tokens through a secure communication channel.
+    - サーバーはクライアントのトークンを検証し、自身のトークンを返します。
 
-Every participant validates the tokens of all others.
+    - 続いてクライアントがサーバーのトークンを検証します。
 
-If any CC-enabled site fails token validation, the system will shut down to maintain a trusted environment.
-Sites that are not CC-enabled are skipped during attestation checks.
+この相互検証により、いずれかのジョブに参加する前に双方が互いを信頼していることが保証されます。
 
 
-4. Job Scheduling
------------------
+3. 継続的なクロスサイト検証
+----------------------------
 
-Before jobs run, the server confirms that all CC-enabled participants have valid, verified tokens.
-If validation fails, the system shuts down to prevent untrusted operation.
-Jobs involving untrusted code (for example, BYOC) are blocked in CC mode.
+起動後、すべてのサイトは定期的にクロスサイトのトークン検証を実行します。
 
-5. Summary
+各サイトは一定の間隔で新しい CC トークンを生成します。
+
+サイト間はセキュアな通信チャネルを通じてトークンを交換します。
+
+すべての参加者が、他のすべての参加者のトークンを検証します。
+
+CC が有効ないずれかのサイトがトークン検証に失敗した場合、信頼された環境を維持するためにシステムはシャットダウンします。
+CC が有効でないサイトは、アテステーションチェックの対象から除外されます。
+
+
+4. ジョブスケジューリング
+--------------------------
+
+ジョブの実行前に、サーバーは CC が有効なすべての参加者が有効かつ検証済みのトークンを持っていることを確認します。
+検証に失敗した場合、信頼されない状態での動作を防ぐためにシステムはシャットダウンします。
+信頼されないコードを含むジョブ (たとえば BYOC) は、CC モードではブロックされます。
+
+5. まとめ
 ----------
 
-The attestation workflow provides:
+アテステーションのワークフローは、以下を提供します。
 
-    - Continuous, system-wide token verification
+    - 継続的かつシステム全体にわたるトークン検証
 
-    - Mutual trust between server and clients
+    - サーバーとクライアント間の相互信頼
 
-    - Automatic shutdown on attestation failure
+    - アテステーション失敗時の自動シャットダウン
 
-This ensures that all confidential computing participants operate only within secure and attested environments.
-
+これにより、すべての機密コンピューティング参加者が、セキュアかつアテステーション済みの環境内でのみ動作することが保証されます。

@@ -1,25 +1,27 @@
 .. _multi_study_guide:
 
-Multi-Study Support
-*******************
+マルチスタディのサポート
+**************************
 
-Overview
-========
+概要
+====
 
-Studies provide multi-tenant isolation within a single NVFlare deployment. Each study defines which
-sites participate and what role each admin user has. Study-aware job and client-targeted operations
-are scoped to the active study. The default study (``"default"``) is the fallback session context:
-it uses the certificate-based role and scopes visibility to jobs in the default study.
+スタディ (study) は、単一の NVFlare デプロイ内でマルチテナントの分離を提供します。各スタディは、
+どのサイトが参加するか、および各管理ユーザがどのロールを持つかを定義します。スタディを意識した
+ジョブ操作やクライアントを対象とする操作は、アクティブなスタディにスコープが限定されます。
+デフォルトスタディ (``"default"``) はフォールバックのセッションコンテキストです。これは証明書に
+基づくロールを使用し、可視性をデフォルトスタディのジョブに限定します。
 
-If ``studies:`` is absent from ``project.yml``, the deployment starts single-tenant: only the
-``default`` study can be used at login until studies are registered at runtime (see
-:ref:`updating_studies`).
+``project.yml`` に ``studies:`` が存在しない場合、デプロイはシングルテナントとして起動します。
+ランタイムでスタディが登録されるまで、ログイン時には ``default`` スタディのみが使用できます
+(:ref:`updating_studies` を参照)。
 
-Configuring Studies in project.yml
-==================================
+project.yml でのスタディの設定
+================================
 
-Multi-study requires ``api_version: 4`` in your ``project.yml``. Studies are defined in a top-level
-``studies`` section that maps study names to their site and admin configurations:
+マルチスタディを使用するには、``project.yml`` で ``api_version: 4`` が必要です。スタディは、
+スタディ名をそのサイト構成および管理者構成に対応付けるトップレベルの ``studies`` セクションで
+定義します。
 
 .. code-block:: yaml
 
@@ -61,120 +63,122 @@ Multi-study requires ``api_version: 4`` in your ``project.yml``. Studies are def
         admins:
           admin@nvidia.com: project_admin
 
-Validation rules:
+検証ルール:
 
-- Sites listed in a study must reference existing client participants.
-- Admins listed in a study must reference existing admin participants.
-- Study names use lowercase alphanumeric characters plus hyphens or underscores, 1-63 characters, and must start and end with an alphanumeric character.
-- ``"default"`` is reserved and cannot be used as a study name.
-- Provisioning generates ``study_registry.json`` in the server's ``local/`` folder, which seeds the
-  runtime registry on first server start (see :ref:`updating_studies`).
+- スタディに列挙されたサイトは、既存のクライアント参加者を参照している必要があります。
+- スタディに列挙された管理者は、既存の admin 参加者を参照している必要があります。
+- スタディ名には英小文字と数字に加えてハイフンまたはアンダースコアを使用し、長さは 1〜63 文字で、先頭と末尾は英数字である必要があります。
+- ``"default"`` は予約されており、スタディ名として使用できません。
+- プロビジョニングにより、サーバの ``local/`` フォルダに ``study_registry.json`` が生成されます。
+  これは初回のサーバ起動時にランタイムレジストリの初期値となります (:ref:`updating_studies` を参照)。
 
-Per-Study Role Resolution
+スタディごとのロール解決
 =========================
 
-When a user logs in to a named study, their role is looked up from that study's ``admins`` mapping
-instead of using the certificate-based role. This resolved role is used for study-scoped
-authorization decisions during that session. If the user is not listed in the study's ``admins``
-mapping, login is rejected.
+ユーザが名前付きのスタディにログインすると、そのロールは証明書に基づくロールではなく、当該スタディの
+``admins`` マッピングから参照されます。こうして解決されたロールが、そのセッション中のスタディスコープの
+認可判断に使用されます。ユーザがそのスタディの ``admins`` マッピングに列挙されていない場合、ログインは
+拒否されます。
 
 .. note::
 
-   If a study maps a user to ``project_admin``, that means the user has full authority for
-   study-scoped operations in that study. It does **not** make the user a deployment-wide project
-   admin for server-only or other global operations. Those continue to use the certificate-based
-   role from the admin participant definition in ``project.yml``.
+   スタディがユーザを ``project_admin`` に対応付けている場合、それはそのスタディにおけるスタディスコープの
+   操作に対して完全な権限を持つことを意味します。それによって、サーバ専用の操作やその他のグローバルな操作に
+   関して、デプロイ全体のプロジェクト管理者になるわけでは **ありません** 。それらの操作では、引き続き
+   ``project.yml`` の admin 参加者定義に基づく証明書ベースのロールが使用されます。
 
-The ``default`` study always uses the certificate-based role. In a multi-study deployment, default
-sessions still only see default-study jobs.
+``default`` スタディは常に証明書ベースのロールを使用します。マルチスタディのデプロイにおいても、
+default のセッションからはデフォルトスタディのジョブのみが見えます。
 
-Using Studies
-=============
+スタディの使用
+===============
 
-FLARE Console
--------------
+FLARE コンソール
+-----------------
 
-Pass the ``--study`` flag when launching the admin console:
+管理コンソールを起動する際に ``--study`` フラグを渡します。
 
 .. code-block:: bash
 
     fl_admin.sh --study cancer-research
 
-If ``--study`` is omitted, the session uses the ``default`` study.
+``--study`` を省略した場合、セッションは ``default`` スタディを使用します。
 
 FLARE API
 ---------
 
-Specify the ``study`` parameter when creating a secure session:
+セキュアセッションを作成する際に ``study`` パラメータを指定します。
 
 .. code-block:: python
 
     new_secure_session("admin@nvidia.com", "/path/to/admin", study="cancer-research")
 
-ProdEnv (Recipes)
+ProdEnv (レシピ)
 -----------------
 
-Pass the ``study`` parameter to :class:`ProdEnv`:
+:class:`ProdEnv` に ``study`` パラメータを渡します。
 
 .. code-block:: python
 
     ProdEnv(startup_kit_location="/path/to/admin", study="cancer-research")
 
-PocEnv (Recipes)
+PocEnv (レシピ)
 ----------------
 
-Pass the ``study`` parameter to :class:`PocEnv` when your POC deployment is provisioned from a custom
-``project.yml`` that defines ``studies:``:
+POC デプロイが ``studies:`` を定義するカスタムの ``project.yml`` からプロビジョニングされている場合は、
+:class:`PocEnv` に ``study`` パラメータを渡します。
 
 .. code-block:: python
 
     PocEnv(num_clients=2, project_conf_path="/path/to/project.yml", study="cancer-research")
 
-If the POC deployment uses the default generated project with no ``studies:``, only the ``default`` study is valid.
+POC デプロイが ``studies:`` を持たないデフォルト生成のプロジェクトを使用している場合、有効なスタディは ``default`` のみです。
 
-Study-Scoped Behavior
-=====================
+スタディスコープの挙動
+=======================
 
-When a session is bound to a study, the following scoping rules apply to study-aware operations:
+セッションがスタディにバインドされている場合、スタディを意識した操作には次のスコープ規則が適用されます。
 
-- ``list_jobs`` shows only jobs belonging to the active study.
-- ``get_job_meta`` and ``clone_job`` return "not found" for jobs in other studies.
-- ``check_status client`` shows only sites enrolled in the active study.
-- ``submit_job`` tags the job with the active study; ``@ALL`` is narrowed to study-enrolled sites.
-- ``deploy_map`` validation rejects sites not enrolled in the study.
-- Jobs without a ``study`` field (legacy) are normalized to ``"default"``.
+- ``list_jobs`` は、アクティブなスタディに属するジョブのみを表示します。
+- ``get_job_meta`` と ``clone_job`` は、他のスタディのジョブに対して "not found" を返します。
+- ``check_status client`` は、アクティブなスタディに登録されているサイトのみを表示します。
+- ``submit_job`` は、アクティブなスタディをジョブにタグ付けします。``@ALL`` はスタディに登録された
+  サイトに絞り込まれます。
+- ``deploy_map`` の検証は、スタディに登録されていないサイトを拒否します。
+- ``study`` フィールドを持たないジョブ (レガシー) は ``"default"`` に正規化されます。
 
-Server-only/global operations continue to use the certificate-based role.
+サーバ専用/グローバルな操作では、引き続き証明書ベースのロールが使用されます。
 
-When to Use Multi-Study vs. Separate Deployments
-=================================================
+マルチスタディと個別デプロイの使い分け
+=========================================
 
-Multi-study is suited for scenarios where organizations share trust (same PKI, same server) but
-want logical isolation of experiments. For stronger isolation — separate PKI, separate blast
-radius — use separate NVFlare deployments.
+マルチスタディは、組織どうしが信頼を共有している (同じ PKI、同じサーバ) 一方で、実験の論理的な分離を
+求めるシナリオに適しています。より強い分離 (PKI の分離、影響範囲の分離) が必要な場合は、NVFlare の
+デプロイ自体を分けてください。
 
 .. _updating_studies:
 
-Updating Studies
-================
+スタディの更新
+===============
 
-The ``nvflare study`` command family manages the server-side study registry at runtime, without
-reprovisioning or restarting the server: ``register`` creates or merges a study, ``add-site`` /
-``remove-site`` change site enrollment, ``add-user`` / ``remove-user`` manage study-user
-membership, and ``remove`` deletes a study. See :ref:`study_command` for the full command
-reference.
+``nvflare study`` コマンド群は、再プロビジョニングやサーバの再起動を行うことなく、ランタイムで
+サーバ側のスタディレジストリを管理します。``register`` はスタディを作成またはマージし、
+``add-site`` / ``remove-site`` はサイトの登録を変更し、``add-user`` / ``remove-user`` は
+スタディとユーザのメンバーシップを管理し、``remove`` はスタディを削除します。コマンドの完全な
+リファレンスについては :ref:`study_command` を参照してください。
 
-These commands change only the server's view of a study — enrollment, login membership, and job
-scoping. They do not configure the participating sites: sites must already be provisioned and
-connected to be enrolled (adding a new site or admin identity to the deployment still requires
-provisioning, since certificates must be issued), and per-site runtime resources for a study —
-data mounts, job images, and related settings in each site's ``local/study_runtime.yaml`` — are
-managed by each site's operator, not by these commands. Until a site defines runtime resources for
-a study, jobs for that study run at that site without any study-specific data mounts or settings.
+これらのコマンドが変更するのは、スタディに関するサーバ側の見え方 (登録状況、ログインのメンバーシップ、
+ジョブのスコープ) のみです。参加サイトの構成は行いません。サイトは登録されるためにあらかじめ
+プロビジョニングされ、接続されている必要があります (新しいサイトや管理者 ID をデプロイに追加するには、
+証明書を発行する必要があるため、依然としてプロビジョニングが必要です)。また、スタディに対するサイトごとの
+ランタイムリソース (データマウント、ジョブイメージ、および各サイトの ``local/study_runtime.yaml`` にある
+関連設定) は、これらのコマンドではなく各サイトの運用担当者が管理します。サイトがあるスタディ向けの
+ランタイムリソースを定義するまで、そのスタディのジョブはそのサイトにおいてスタディ固有のデータマウントや
+設定なしで実行されます。
 
-Runtime study mutations are persisted to ``study_registry.json`` in the server workspace root, not
-in the ``local/`` folder. The provisioned copy under ``local/`` is only a first-start seed: once a
-runtime mutation has been persisted, the workspace-root copy is authoritative, shadows the seed,
-and survives server restarts. Because writes never target ``local/``, runtime study management also
-works in deployments where ``local/`` is mounted read-only, such as Kubernetes deployments that
-stage ``local/`` as a ConfigMap.
+ランタイムでのスタディの変更は、``local/`` フォルダではなく、サーバワークスペースのルートにある
+``study_registry.json`` に永続化されます。``local/`` 配下のプロビジョニングされたコピーは初回起動時の
+初期値にすぎません。いったんランタイムの変更が永続化されると、ワークスペースルートのコピーが正となり、
+初期値を覆い隠し、サーバの再起動をまたいで保持されます。書き込みが ``local/`` を対象とすることは
+決してないため、ランタイムでのスタディ管理は、``local/`` を ConfigMap として配置する Kubernetes
+デプロイのように ``local/`` が読み取り専用でマウントされているデプロイでも機能します。
