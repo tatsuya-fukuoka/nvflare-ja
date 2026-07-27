@@ -2,15 +2,16 @@
 .. _researcher_guide:
 
 ################
-Research Papers
+研究論文
 ################
 
-NVIDIA FLARE has been used in peer-reviewed research across medical imaging, federated optimization,
-privacy analysis, and large language models. Reference implementations are available in the
-`research directory on GitHub <https://github.com/NVIDIA/NVFlare/tree/main/research>`_.
+NVIDIA FLARE は、医用画像、連合最適化、プライバシー分析、大規模言語モデルといった分野の
+査読付き研究で利用されてきました。リファレンス実装は
+`GitHub の research ディレクトリ <https://github.com/NVIDIA/NVFlare/tree/main/research>`_
+で公開されています。
 
-Published Research
-==================
+発表済みの研究
+==============
 
 - `FedNCA -- Equitable Federated Learning with NCA <https://github.com/NVIDIA/NVFlare/tree/main/research/FedNCA>`_ (MICCAI 2025)
 - `FedBPT -- Efficient Federated Black-box Prompt Tuning for LLMs <https://github.com/NVIDIA/NVFlare/tree/main/research/fed-bpt>`_ (ICML 2024)
@@ -24,8 +25,9 @@ Published Research
 - `FedBN -- Federated Learning on Non-IID Features <https://github.com/NVIDIA/NVFlare/tree/main/research/fed-bn>`_ (ICLR 2021)
 - `Privacy-preserving Federated Brain Tumour Segmentation <https://github.com/NVIDIA/NVFlare/tree/main/research/brats18>`_ (MLMI 2019)
 
-Contributing
-============
+コントリビューション
+====================
 
-Interested in contributing your own federated learning research? See the
-`research contribution guide <https://github.com/NVIDIA/NVFlare/tree/main/research/CONTRIBUTING.md>`_.
+ご自身の連合学習の研究をコントリビュートすることに興味がありますか。詳しくは
+`research コントリビューションガイド <https://github.com/NVIDIA/NVFlare/tree/main/research/CONTRIBUTING.md>`_
+を参照してください。
