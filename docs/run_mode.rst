@@ -2,25 +2,25 @@
 
 .. _run_mode:
 
-Modes to Run NVFLARE
+NVFLARE の実行モード
 ====================
 
-NVFLARE supports several modes for different use cases:
+NVFLARE は、さまざまなユースケースに向けて次の実行モードをサポートしています。
 
-+-------------+--------------------------------------------------------------+
-| Mode        | Description                                                  |
-+=============+==============================================================+
-| Simulator   | :ref:`fl_simulator`                                          |
-|             | Lightweight, runs jobs on a single system for fast testing   |
-|             | and FL algorithm experiments.                                |
-+-------------+--------------------------------------------------------------+
-| POC         | :ref:`poc_command`                                           |
-|             | Simulates deployment on one host with separate processes     |
-|             | for Clients/Server. Enables local "provision" testing and    |
-|             | FLARE system interaction.                                    |
-+-------------+--------------------------------------------------------------+
-| Production  | :ref:`provisioned_setup`                                     |
-|             | Distributed deployment using startup kits from provisioning. |
-|             | Includes provisioning tools, dashboard, and deployment       |
-|             | options.                                                     |
-+-------------+--------------------------------------------------------------+
++------------+------------------------------------------------------------------+
+| モード     | 説明                                                             |
++============+==================================================================+
+| Simulator  | :ref:`fl_simulator`                                              |
+|            | 軽量なモードで、1 つのシステム上でジョブを実行し、高速なテストと |
+|            | FL アルゴリズムの実験を行えます。                                |
++------------+------------------------------------------------------------------+
+| POC        | :ref:`poc_command`                                               |
+|            | 1 台のホスト上で、クライアント/サーバーを別々のプロセスとして    |
+|            | デプロイをシミュレートします。ローカルでの「プロビジョニング」   |
+|            | テストと FLARE システムとの対話が可能になります。                |
++------------+------------------------------------------------------------------+
+| Production | :ref:`provisioned_setup`                                         |
+|            | プロビジョニングで生成したスタートアップキットを使った分散       |
+|            | デプロイです。プロビジョニングツール、ダッシュボード、           |
+|            | デプロイのオプションが含まれます。                               |
++------------+------------------------------------------------------------------+

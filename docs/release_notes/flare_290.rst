@@ -1,64 +1,62 @@
 :orphan:
 
-**************************
-What's New in FLARE v2.9.0
-**************************
+**********************************
+FLARE v2.9.0 の新機能
+**********************************
 
-Compatibility and Migration Notes
-=================================
+互換性と移行に関する注意
+========================
 
-- Job-process bootstrap credentials (auth token, token signature, session ID)
-  are no longer passed as command-line arguments. Launchers deliver them
-  through the job process environment; on Kubernetes they ride a per-job
-  Secret referenced via ``env[].valueFrom.secretKeyRef``. There is no fallback
-  machinery, so Docker and Kubernetes job images must run NVFlare 2.9 or
-  newer: a job image pinned to 2.8 or earlier fails immediately at argument
-  parsing when launched by a 2.9 CP/SP. The CLI path is retained, so an older
-  parent launching a newer job image is unaffected. Custom launchers that
-  render worker commands from ``generate_client_command`` /
-  ``generate_server_command`` and implement ``launch_job`` directly must also
-  export ``get_credential_env(job_args)`` into the child environment. Launcher
-  Kubernetes RBAC now needs the ``patch`` and ``delete`` verbs on Secrets
-  (included in the generated Helm role templates).
-- Patched PyTorch Lightning clients now report ``NUM_STEPS_CURRENT_ROUND`` as
-  the actual per-round change in ``trainer.global_step`` instead of
-  ``trainer.estimated_stepping_batches``. This corrects cumulative aggregation
-  over-weighting in later rounds when ``update_fit_loop=True``. Because
-  ``global_step`` counts completed optimizer steps across optimizers, a
-  multi-optimizer FedAvg client reports their combined step count unless it
-  supplies ``NUM_STEPS_CURRENT_ROUND`` explicitly; explicit client metadata is
-  still preserved.
-- CellPipe cell names now keep the runtime token and pipe mode in one
-  explicitly marked, ``~``-delimited FQCN leaf segment
-  (``site-1.cellpipe~plain~<job-id>~active``, or
-  ``<relay>.cellpipe~alias~<site>~<job-id>~active`` behind a relay) so a
-  pipe cell's FQCN parent matches the cell it actually connects to and pipe
-  names can never be confused with other cell names. As part of this change,
-  CellPipe validates tokens at construction: tokens must be non-empty, may
-  not contain the reserved ``~`` separator, and may not contain ``.`` when
-  the pipe connects to the site's own CP or a relay. Custom
-  ``FlareAgentWithCellPipe`` agent ids that violate these rules now fail fast
-  with a ``ValueError`` instead of producing unroutable cell names.
-- Both ends of a CellPipe pair derive each other's cell names independently,
-  so a Client Job process and an external training process must run the same
-  NVFlare naming scheme. A training environment pinned to an older NVFlare
-  fails with "peer FQCN mismatch" when paired with a 2.9 CJ; align the
-  training environment's NVFlare version with the site's. Only the flat
-  whole-FQCN alias used by NVFlare 2.8 and earlier (a root-connected pipe
-  named ``<site>_<token>_<mode>``) is still recognized for backward
-  compatibility. The forms used through 2.8 when nested under a CP or relay
-  (``<parent>.<site>_<token>_<mode>``) are not, because an unmarked leaf
-  inside a longer FQCN is indistinguishable from a real cell of that name.
-  When upgrading to 2.9, upgrade a site and its relay together, including
-  sites currently running NVFlare 2.8.
-- ``ScriptRunner`` now exports ``ClientAPIExecutor`` for both in-process and
-  external-process execution. Jobs generated with FLARE 2.9 therefore require
-  a client runtime that provides this executor and are not runnable on older
-  client runtimes. ``ScriptRunner`` no longer performs a build-time PyTorch or
-  TensorFlow import check; ensure the required framework dependencies are
-  available in the execution environment. Code that explicitly passes
-  ``pipe_connect_type`` (including its former default value) or supplies a
-  custom ``task_pipe`` must use ``BaseScriptRunner``. A client app may contain
-  only one ``ClientAPIExecutor``; configurations that previously added multiple
-  script runners to one site must combine the scripts behind one entry point
-  and dispatch on the Client API task name.
+- ジョブプロセスのブートストラップ資格情報(認証トークン、トークン署名、セッション ID)は、
+  コマンドライン引数として渡されなくなりました。ランチャーはこれらをジョブプロセスの環境変数
+  経由で引き渡します。Kubernetes では、``env[].valueFrom.secretKeyRef`` によって
+  参照されるジョブごとの Secret に載せられます。フォールバックの仕組みは存在しないため、
+  Docker および Kubernetes のジョブイメージは NVFlare 2.9 以降を実行している必要が
+  あります。2.8 以前に固定されたジョブイメージは、2.9 の CP/SP から起動されると引数の
+  パース時点で即座に失敗します。CLI 経路は維持されているため、古い親が新しいジョブイメージを
+  起動する場合には影響はありません。``generate_client_command`` /
+  ``generate_server_command`` からワーカーコマンドを生成し、``launch_job`` を直接
+  実装しているカスタムランチャーは、``get_credential_env(job_args)`` を子プロセスの
+  環境にエクスポートする必要もあります。ランチャーの Kubernetes RBAC には、Secret に
+  対する ``patch`` および ``delete`` の verb が必要になりました(生成される Helm の
+  role テンプレートには含まれています)。
+- パッチ適用済みの PyTorch Lightning クライアントは、``NUM_STEPS_CURRENT_ROUND``
+  として ``trainer.estimated_stepping_batches`` ではなく、``trainer.global_step``
+  のラウンドごとの実際の変化量を報告するようになりました。これにより、
+  ``update_fit_loop=True`` の場合に後半のラウンドで累積集約が過大に重み付けされる問題が
+  修正されます。``global_step`` は複数のオプティマイザにまたがって完了したオプティマイザ
+  ステップを数えるため、複数オプティマイザを使う FedAvg クライアントは、
+  ``NUM_STEPS_CURRENT_ROUND`` を明示的に指定しない限りそれらの合計ステップ数を報告
+  します。クライアントが明示的に指定したメタデータは引き続き保持されます。
+- CellPipe のセル名は、ランタイムトークンとパイプモードを 1 つの明示的にマークされた
+  ``~`` 区切りの FQCN リーフセグメントにまとめて保持するようになりました
+  (``site-1.cellpipe~plain~<job-id>~active``、リレー経由の場合は
+  ``<relay>.cellpipe~alias~<site>~<job-id>~active``)。これにより、パイプセルの
+  FQCN の親が実際に接続するセルと一致し、パイプ名が他のセル名と混同されることが決して
+  ないようになります。この変更の一環として、CellPipe は構築時にトークンを検証します。
+  トークンは空であってはならず、予約された区切り文字 ``~`` を含んではならず、パイプが
+  サイト自身の CP またはリレーに接続する場合は ``.`` を含んではなりません。これらの
+  ルールに違反するカスタムの ``FlareAgentWithCellPipe`` のエージェント ID は、
+  ルーティング不能なセル名を生成する代わりに ``ValueError`` で即座に失敗するように
+  なりました。
+- CellPipe のペアの両端は互いのセル名を独立に導出するため、Client Job プロセスと外部の
+  学習プロセスは同じ NVFlare の命名スキームを実行している必要があります。古い NVFlare に
+  固定された学習環境は、2.9 の CJ とペアになると "peer FQCN mismatch" で失敗します。
+  学習環境の NVFlare のバージョンをサイトのものと揃えてください。後方互換性のために
+  引き続き認識されるのは、NVFlare 2.8 以前で使われていたフラットな FQCN 全体のエイリアス
+  (``<site>_<token>_<mode>`` という名前のルート接続パイプ)のみです。2.8 までに CP や
+  リレーの下にネストされた場合に使われていた形式(``<parent>.<site>_<token>_<mode>``)は
+  認識されません。長い FQCN の内部にあるマークのないリーフは、その名前を持つ実際のセルと
+  区別できないためです。2.9 にアップグレードする際は、現在 NVFlare 2.8 を実行している
+  サイトも含め、サイトとそのリレーを一緒にアップグレードしてください。
+- ``ScriptRunner`` は、インプロセス実行と外部プロセス実行の両方で
+  ``ClientAPIExecutor`` をエクスポートするようになりました。そのため、FLARE 2.9 で
+  生成されたジョブは、この executor を提供するクライアントランタイムを必要とし、古い
+  クライアントランタイムでは実行できません。``ScriptRunner`` はビルド時の PyTorch
+  または TensorFlow のインポートチェックを行わなくなりました。必要なフレームワークの
+  依存関係が実行環境で利用できることを確認してください。``pipe_connect_type`` を明示的に
+  渡すコード(以前のデフォルト値を渡す場合も含む)や、カスタムの ``task_pipe`` を指定する
+  コードは、``BaseScriptRunner`` を使用する必要があります。クライアントアプリには
+  ``ClientAPIExecutor`` を 1 つだけ含めることができます。以前に 1 つのサイトへ複数の
+  script runner を追加していた構成は、スクリプトを 1 つのエントリポイントの背後にまとめ、
+  Client API のタスク名でディスパッチする必要があります。

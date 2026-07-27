@@ -1,116 +1,116 @@
 .. _timeouts_programming_guide:
 
-####################################
-Timeouts in NVIDIA FLARE (Reference)
-####################################
+##################################################
+NVIDIA FLARE におけるタイムアウト(リファレンス)
+##################################################
 
-This document provides a comprehensive overview of all timeout configurations in NVIDIA FLARE,
-organized by functional categories with relationships, impacts, and usage examples.
+本ドキュメントは、NVIDIA FLARE におけるすべてのタイムアウト設定について、機能カテゴリごとに
+整理し、相互の関係、影響、および使用例とあわせて包括的に解説します。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Network Communication Timeouts
-==============================
+ネットワーク通信のタイムアウト
+==================================
 
-This section covers all network-related timeouts including the F3/CellNet communication layer,
-server configuration, and client communication settings.
+このセクションでは、F3/CellNet 通信レイヤー、サーバー設定、クライアント通信設定を含む、
+ネットワーク関連のすべてのタイムアウトを扱います。
 
-F3/CellNet Layer
-----------------
+F3/CellNet レイヤー
+------------------------
 
-The F3 (Flare-Friendly Framework) and CellNet provide the core communication infrastructure.
-These timeouts are configured in ``comm_config.json``.
+F3 (Flare-Friendly Framework) と CellNet は、中核となる通信インフラストラクチャを提供します。
+これらのタイムアウトは ``comm_config.json`` で設定します。
 
-CommConfigurator Settings
-^^^^^^^^^^^^^^^^^^^^^^^^^
+CommConfigurator の設定
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Low-level communication configuration (comm_config.py):
+低レベルの通信設定 (comm_config.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 32 10 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heartbeat_interval
-     - varies
-     - Interval for heartbeat messages
+     - 可変
+     - ハートビートメッセージの送信間隔
    * - subnet_heartbeat_interval
      - 5.0
-     - Interval for subnet heartbeat checks
+     - サブネットのハートビートチェックの間隔
    * - streaming_read_timeout
      - 300
-     - Timeout for reading streamed data
+     - ストリーミングデータの読み取りタイムアウト
    * - streaming_ack_interval
      - 4MB
-     - Bytes between ACK messages during streaming
+     - ストリーミング中の ACK メッセージ間のバイト数
    * - streaming_ack_wait
-     - varies
-     - Time to wait for streaming ACK
+     - 可変
+     - ストリーミングの ACK を待機する時間
    * - streaming_reliable
      - false
-     - Whether streamed chunks are retried until acknowledged
+     - ストリーミングされたチャンクを、確認応答が返るまで再試行するかどうか
    * - streaming_retry_wait
      - 5.0
-     - Time to wait before retrying an unacknowledged reliable streaming chunk
+     - 確認応答のない reliable ストリーミングチャンクを再試行するまでの待機時間
    * - streaming_retry_timeout
      - 60.0
-     - Maximum time to retry an unacknowledged reliable streaming chunk
+     - 確認応答のない reliable ストリーミングチャンクを再試行する最大時間
    * - streaming_retry_max_pending_bytes
      - 2 * streaming_window_size
-     - Maximum payload bytes held in memory for reliable streaming retry
+     - reliable ストリーミングの再試行のためにメモリ上に保持するペイロードの最大バイト数
 
 
-CoreCell Settings
-^^^^^^^^^^^^^^^^^
+CoreCell の設定
+^^^^^^^^^^^^^^^^^^^^
 
-Core cell communication parameters (core_cell.py):
+コアセルの通信パラメータ (core_cell.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - max_timeout
      - 3600
-     - Default timeout for send_and_receive (1 hour)
+     - send_and_receive のデフォルトタイムアウト(1 時間)
    * - bulk_check_interval
      - 0.5
-     - Interval for bulk message checking
+     - 一括メッセージのチェック間隔
    * - bulk_process_interval
      - 0.5
-     - Interval for bulk message processing
+     - 一括メッセージの処理間隔
 
 
-Cell Request Timeouts
-^^^^^^^^^^^^^^^^^^^^^
+Cell リクエストのタイムアウト
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Cell-level request timeouts (cell.py):
+セルレベルのリクエストタイムアウト (cell.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
      - 10.0
-     - Default timeout for send_request/broadcast_request
+     - send_request/broadcast_request のデフォルトタイムアウト
 
-**Timeout Phases**: Requests go through three timeout phases:
+**タイムアウトのフェーズ**: リクエストは 3 つのタイムアウトフェーズを経ます。
 
-1. **Sending timeout**: Time to complete message sending
-2. **Remote processing timeout**: Time for remote to process request
-3. **Receiving timeout**: Time to receive response
+1. **送信タイムアウト**: メッセージ送信を完了するまでの時間
+2. **リモート処理タイムアウト**: リモート側がリクエストを処理する時間
+3. **受信タイムアウト**: レスポンスを受信するまでの時間
 
 
-Example ``comm_config.json``:
+``comm_config.json`` の例:
 
 .. code-block:: json
 
@@ -123,74 +123,74 @@ Example ``comm_config.json``:
    }
 
 
-Server Configuration
+サーバー設定
 --------------------
 
-These timeouts are configured in ``fed_server.json`` or server configuration.
+これらのタイムアウトは ``fed_server.json`` またはサーバー設定で構成します。
 
-FedServer Timeouts
-^^^^^^^^^^^^^^^^^^
+FedServer のタイムアウト
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Server heartbeat and connection management (fed_server.py):
+サーバーのハートビートと接続管理 (fed_server.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heart_beat_timeout
      - 600
-     - Time without heartbeat before client considered dead
+     - クライアントが停止しているとみなされるまでの、ハートビートがない時間
    * - remove_interval
      - 5.0
-     - Interval for checking/removing dead clients
+     - 停止したクライアントのチェック/削除を行う間隔
    * - check_interval
      - 0.2
-     - Interval for connection checking loop
+     - 接続チェックループの間隔
 
 
-ServerRunner Timeouts
-^^^^^^^^^^^^^^^^^^^^^
+ServerRunner のタイムアウト
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Server runner configuration (server_runner.py, server_json_config.py):
+サーバーランナーの設定 (server_runner.py, server_json_config.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heartbeat_timeout
      - 60
-     - Client heartbeat timeout in seconds
+     - クライアントのハートビートタイムアウト(秒)
    * - task_request_interval
      - 2
-     - Task request interval in seconds
+     - タスクリクエストの間隔(秒)
 
 
-Admin Server Timeouts
-^^^^^^^^^^^^^^^^^^^^^
+管理サーバーのタイムアウト
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Admin server command timeouts (admin.py):
+管理サーバーのコマンドタイムアウト (admin.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
      - 10.0
-     - Admin command timeout
+     - 管理コマンドのタイムアウト
    * - timeout_secs
      - 2.0
-     - Timeout for send_requests to clients
+     - クライアントへの send_requests のタイムアウト
 
-**Example** (fed_server.json):
+**例** (fed_server.json):
 
 .. code-block:: json
 
@@ -200,158 +200,156 @@ Admin server command timeouts (admin.py):
    }
 
 
-Client Configuration
---------------------
+クライアント設定
+----------------------
 
-Client heartbeat and retry configuration (client_train.py, base_client_deployer.py):
+クライアントのハートビートおよびリトライ設定 (client_train.py, base_client_deployer.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heart_beat_interval
      - 10.0
-     - Interval for sending heartbeats to server
+     - サーバーへハートビートを送信する間隔
    * - retry_timeout
      - 30
-     - Timeout for retry operations
+     - リトライ操作のタイムアウト
 
-**Note**: ``heart_beat_interval`` must be less than the server's ``heart_beat_timeout`` for
-proper client status tracking.
+**注意**: クライアントのステータスを正しく追跡するためには、``heart_beat_interval`` は
+サーバーの ``heart_beat_timeout`` より小さくする必要があります。
 
-Client-to-Server Communication
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+クライアントからサーバーへの通信
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Low-level client communication timeouts (communicator.py, fed_client_base.py):
+低レベルのクライアント通信タイムアウト (communicator.py, fed_client_base.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - communication_timeout
      - 300.0
-     - General communication timeout
+     - 一般的な通信タイムアウト
    * - maint_msg_timeout
      - 30.0
-     - Maintenance message timeout
+     - メンテナンスメッセージのタイムアウト
    * - engine_create_timeout
      - 30.0
-     - Timeout for engine creation
+     - エンジン生成のタイムアウト
    * - retry_timeout
      - 30.0
-     - Retry timeout for operations
+     - 操作のリトライタイムアウト
 
 Flare Agent
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
-FlareAgent for external process integration (flare_agent.py):
+外部プロセス連携のための FlareAgent (flare_agent.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heartbeat_timeout
      - 60.0
-     - Time without heartbeat before peer is dead
+     - ピアが停止しているとみなされるまでの、ハートビートがない時間
    * - submit_result_timeout
      - 60.0
-     - Timeout for submitting task result to the client training process. 60 s is too short
-       for large models; configure via ``add_client_config({"submit_result_timeout": 1800})``.
+     - クライアントの学習プロセスへタスク結果を送信する際のタイムアウト。大規模モデルには
+       60 秒では短すぎます。``add_client_config({"submit_result_timeout": 1800})`` で設定してください。
    * - max_resends
-     - None in raw ``FlareAgent``; 3 through Client API job config
-     - Maximum send retries on failure. For ``ClientAPILauncherExecutor`` jobs,
-       the default is the finite value ``3``; ``None`` is rejected at job
-       initialization. Override via ``add_client_config({"max_resends": N})``.
+     - 生の ``FlareAgent`` では None、Client API のジョブ設定経由では 3
+     - 失敗時の最大送信リトライ回数。``ClientAPILauncherExecutor`` のジョブでは、
+       デフォルトは有限値の ``3`` であり、``None`` はジョブの初期化時に拒否されます。
+       ``add_client_config({"max_resends": N})`` で上書きできます。
    * - download_complete_timeout
      - 1800.0
-     - Time the subprocess waits after result ACK while the server finishes
-       downloading tensors from the subprocess ``DownloadService``. Must not be
-       ``None`` for ``ClientAPILauncherExecutor`` jobs.
+     - 結果の ACK 後、サーバーがサブプロセスの ``DownloadService`` からテンソルの
+       ダウンロードを完了するまでサブプロセスが待機する時間。
+       ``ClientAPILauncherExecutor`` のジョブでは ``None`` にしてはいけません。
 
-**Note**: Raw ``FlareAgentWithCellPipe`` defaults to 60.0 s for
-``submit_result_timeout`` and unlimited ``max_resends``. When launched through
-``ClientAPILauncherExecutor``, the generated Client API config supplies the
-safer job defaults described above. Recipe-based external-process jobs also
-serialize ``max_resends=3`` in the executor args, so reloaded jobs do not fall
-back to the raw unlimited retry default. Use
-``recipe.add_client_config({"max_resends": N})`` only when a job needs a
-different finite retry budget.
+**注意**: 生の ``FlareAgentWithCellPipe`` は ``submit_result_timeout`` のデフォルトが 60.0 秒で、
+``max_resends`` は無制限です。``ClientAPILauncherExecutor`` 経由で起動した場合、生成される
+Client API の設定が上記のより安全なジョブデフォルトを提供します。レシピベースの外部プロセス
+ジョブも Executor の引数に ``max_resends=3`` をシリアライズするため、再読み込みされたジョブが
+生の無制限リトライのデフォルトに戻ることはありません。異なる有限のリトライ回数が必要な
+ジョブの場合にのみ ``recipe.add_client_config({"max_resends": N})`` を使用してください。
 
 IPC Agent
-^^^^^^^^^
+^^^^^^^^^^^^^^
 
-IPC Agent for inter-process communication (ipc_agent.py):
+プロセス間通信のための IPC Agent (ipc_agent.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 32 10 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - submit_result_timeout
      - 30.0
-     - Timeout for submitting results
+     - 結果送信のタイムアウト
    * - flare_site_connection_timeout
      - 60.0
-     - Timeout for CJ disconnection
+     - CJ の切断に関するタイムアウト
    * - flare_site_heartbeat_timeout
      - None
-     - Timeout for missing CJ heartbeats
+     - CJ のハートビート欠落に関するタイムアウト
 
 
-gRPC Utility Timeouts
----------------------
+gRPC ユーティリティのタイムアウト
+--------------------------------------
 
-gRPC connection establishment (grpc_utils.py):
+gRPC 接続の確立 (grpc_utils.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - ready_timeout
-     - varies
-     - Time to wait for gRPC server to be ready
+     - 可変
+     - gRPC サーバーが準備完了になるまで待機する時間
 
 
 Reliable Message
-----------------
+----------------------
 
-Reliable Messages provide guaranteed delivery with retry logic (reliable_message.py):
+Reliable Message は、リトライロジックによって配信を保証します (reliable_message.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - per_msg_timeout
-     - varies
-     - Timeout for each individual message attempt
+     - 可変
+     - 個々のメッセージ試行ごとのタイムアウト
    * - tx_timeout
-     - varies
-     - Timeout for entire transaction including all retries
+     - 可変
+     - すべてのリトライを含むトランザクション全体のタイムアウト
 
-**Behavior**:
+**動作**:
 
-- If ``tx_timeout <= per_msg_timeout``, request is sent only once without retrying
-- Messages are retried until ``tx_timeout`` is reached
-- Completed requests are tracked for ``2 × tx_timeout`` to handle late duplicates
+- ``tx_timeout <= per_msg_timeout`` の場合、リクエストはリトライされず 1 回だけ送信されます
+- ``tx_timeout`` に達するまでメッセージはリトライされます
+- 遅延した重複を処理するため、完了したリクエストは ``2 × tx_timeout`` の間追跡されます
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -368,78 +366,78 @@ Reliable Messages provide guaranteed delivery with retry logic (reliable_message
    )
 
 
-Federated Event Timeouts
-========================
+連合イベントのタイムアウト
+================================
 
-Fed event runner intervals (fed_event.py):
+連合イベントランナーの間隔 (fed_event.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - regular_interval
      - 0.01
-     - Regular processing interval
+     - 通常の処理間隔
    * - grace_period
      - 2.0
-     - Grace period before shutdown
+     - シャットダウン前の猶予期間
    * - queue_empty_period
      - 2.0
-     - Period to wait when queue is empty
+     - キューが空のときに待機する期間
 
 
-Simulator Timeouts
-==================
+シミュレーターのタイムアウト
+====================================
 
-Simulator-specific timeouts (simulator_runner.py, simulator_worker.py):
+シミュレーター固有のタイムアウト (simulator_runner.py, simulator_worker.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 10 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - simulator_worker_timeout
      - 60.0
-     - Timeout for simulator worker
+     - シミュレーターワーカーのタイムアウト
    * - app_runner_timeout
      - 60.0
-     - Timeout for app runner
+     - アプリランナーのタイムアウト
    * - CELL_CONNECT_CHECK_TIMEOUT
      - 10.0
-     - Timeout for cell connection check
+     - セル接続チェックのタイムアウト
    * - FETCH_TASK_RUN_RETRY
      - 3
-     - Number of retry attempts for task fetch
+     - タスク取得のリトライ試行回数
 
 
-Flare API Session Timeouts
-==========================
+Flare API セッションのタイムアウト
+========================================
 
-Session management for programmatic API (flare_api.py):
+プログラム的な API のためのセッション管理 (flare_api.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout (new_session)
      - 10.0
-     - Timeout to establish session
+     - セッションを確立するためのタイムアウト
    * - poll_interval
      - 2.0
-     - Interval for polling job status
+     - ジョブステータスをポーリングする間隔
    * - set_timeout()
-     - varies
-     - Session-specific command timeout
+     - 可変
+     - セッション固有のコマンドタイムアウト
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -459,39 +457,39 @@ Session management for programmatic API (flare_api.py):
    rc = sess.monitor_job(job_id, timeout=3600, poll_interval=5.0)
 
 
-Heartbeat Timeouts
-==================
+ハートビートのタイムアウト
+================================
 
-Executor Heartbeat
-------------------
+Executor のハートビート
+----------------------------
 
-Heartbeat mechanisms ensure connectivity between components:
+ハートビートの仕組みは、コンポーネント間の接続性を保証します。
 
 .. list-table::
    :header-rows: 1
    :widths: 25 10 35 30
 
-   * - Timeout
-     - Default
-     - Location
-     - Purpose
+   * - タイムアウト
+     - デフォルト
+     - 場所
+     - 目的
    * - heartbeat_interval
      - 5.0
      - ``LauncherExecutor`` launcher_executor.py:49
-     - Interval for sending heartbeat messages
+     - ハートビートメッセージを送信する間隔
    * - heartbeat_timeout
      - 60.0
      - ``LauncherExecutor`` launcher_executor.py:50
-     - Timeout for waiting for heartbeat from peer
+     - ピアからのハートビートを待機するタイムアウト
    * - peer_read_timeout
      - 60.0
      - ``LauncherExecutor`` launcher_executor.py:46
-     - Time to wait for peer to accept sent message
+     - 送信したメッセージをピアが受け取るまで待機する時間
 
-Client API Heartbeat
-^^^^^^^^^^^^^^^^^^^^
+Client API のハートビート
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Client API inherits heartbeat configuration from the task exchange settings (config.py:154-159):
+Client API は、タスク交換の設定からハートビート設定を継承します (config.py:154-159):
 
 .. code-block:: python
 
@@ -501,87 +499,86 @@ The Client API inherits heartbeat configuration from the task exchange settings 
            self.config.get(ConfigKey.METRICS_EXCHANGE, {}).get(ConfigKey.HEARTBEAT_TIMEOUT, 60),
        )
 
-Executor and Launcher Timeouts
-==============================
+Executor と Launcher のタイムアウト
+==========================================
 
-LauncherExecutor Base Class
----------------------------
+LauncherExecutor 基底クラス
+--------------------------------
 
-The ``LauncherExecutor`` class defines core timeout parameters for external process management
-(launcher_executor.py:38-58):
+``LauncherExecutor`` クラスは、外部プロセス管理のための中核となるタイムアウトパラメータを
+定義します (launcher_executor.py:38-58):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - launch_timeout
      - None
-     - Timeout for launcher's "launch_task" method completion
+     - ランチャーの "launch_task" メソッド完了のタイムアウト
    * - task_wait_timeout
      - None
-     - Timeout for retrieving task results
+     - タスク結果を取得するためのタイムアウト
    * - last_result_transfer_timeout
      - 300.0
-     - Timeout for transmitting final result from external process
+     - 外部プロセスから最終結果を転送するためのタイムアウト
    * - external_pre_init_timeout
      - 60.0
-     - Time to wait for external process before ``flare.init()`` call
+     - ``flare.init()`` の呼び出し前に外部プロセスを待機する時間
 
 ClientAPILauncherExecutor
--------------------------
+------------------------------
 
-The Client API executor extends base timeouts with more conservative defaults
+Client API の Executor は、基底クラスのタイムアウトをより保守的なデフォルト値で拡張します
 (client_api_launcher_executor.py:29-53):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - external_pre_init_timeout
      - 300.0
-     - Extended timeout for heavy library imports
+     - 重いライブラリのインポートに対応するために延長されたタイムアウト
    * - peer_read_timeout
      - 300.0
-     - Timeout for peer message acceptance
+     - ピアがメッセージを受け取るまでのタイムアウト
    * - heartbeat_timeout
      - 300.0
-     - Extended heartbeat timeout for Client API
+     - Client API 向けに延長されたハートビートタイムアウト
    * - submit_result_timeout
      - 300.0
-     - Subprocess-side wait for CJ to acknowledge each result message
+     - 各結果メッセージを CJ が確認応答するまでのサブプロセス側の待機時間
    * - max_resends
      - 3
-     - Maximum retries after the initial result send; ``None`` is rejected
+     - 最初の結果送信後の最大リトライ回数。``None`` は拒否されます
    * - download_complete_timeout
      - 1800.0
-     - Time the subprocess remains alive for server-side tensor download completion
+     - サーバー側のテンソルダウンロードが完了するまでサブプロセスが生存し続ける時間
 
-For subprocess-mode Client API jobs with large payloads, FLARE validates the
-following at job start:
+大きなペイロードを扱うサブプロセスモードの Client API ジョブでは、FLARE はジョブ開始時に
+以下を検証します。
 
-- ``download_complete_timeout`` must not be ``None``.
-- ``max_resends`` must be a finite non-negative integer. Recipe-based jobs
-  serialize the default value ``3`` in executor args. Use ``0`` to disable
-  retries; do not use ``None`` for unlimited retries.
+- ``download_complete_timeout`` は ``None`` であってはなりません。
+- ``max_resends`` は有限の非負整数でなければなりません。レシピベースのジョブは、
+  Executor の引数にデフォルト値 ``3`` をシリアライズします。リトライを無効化するには ``0``
+  を使用してください。無制限のリトライのために ``None`` を使用してはいけません。
 
-Values supplied through ``recipe.add_client_config()`` are top-level entries in
-``config_fed_client.json``. For subprocess-mode Client API jobs,
-``ClientAPILauncherExecutor`` applies these overrides before writing the
-subprocess ``client_api_config.json``, so ``submit_result_timeout``,
-``download_complete_timeout``, and ``max_resends`` are seen by both the parent
-client job process and the external training process.
+``recipe.add_client_config()`` を通じて渡された値は、``config_fed_client.json`` の
+トップレベルのエントリになります。サブプロセスモードの Client API ジョブでは、
+``ClientAPILauncherExecutor`` がサブプロセス用の ``client_api_config.json`` を書き出す前に
+これらの上書きを適用するため、``submit_result_timeout``、``download_complete_timeout``、
+``max_resends`` は親のクライアントジョブプロセスと外部の学習プロセスの両方から参照されます。
 
-When ``tensor_streaming_per_request_timeout`` or
-``np_streaming_per_request_timeout`` is explicitly configured, FLARE also warns
-if ``PEER_READ_TIMEOUT`` or ``download_complete_timeout`` is shorter than that
-streaming timeout. Set ``PEER_READ_TIMEOUT`` through ``add_client_config`` when
-the parent client job needs a larger pipe-read budget:
+``tensor_streaming_per_request_timeout`` または ``np_streaming_per_request_timeout`` が
+明示的に設定されている場合、FLARE は ``PEER_READ_TIMEOUT`` または
+``download_complete_timeout`` がそのストリーミングタイムアウトより短いときにも警告します。
+親のクライアントジョブにより大きなパイプ読み取りの猶予が必要な場合は、
+``add_client_config`` を通じて ``PEER_READ_TIMEOUT`` を設定してください。
 
 .. code-block:: python
 
@@ -593,10 +590,11 @@ the parent client job needs a larger pipe-read budget:
        "max_resends": 3,
    })
 
-External Pre-Init Override
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+外部プロセスの事前初期化タイムアウトの上書き
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Jobs can override the external pre-init timeout via client configuration (constants.py:20-22):
+ジョブは、クライアント設定を通じて外部プロセスの事前初期化タイムアウトを上書きできます
+(constants.py:20-22):
 
 .. code-block:: python
 
@@ -605,170 +603,169 @@ Jobs can override the external pre-init timeout via client configuration (consta
 
 
 TaskExchanger
--------------
+------------------
 
-The ``TaskExchanger`` base class manages pipe-based task exchange with external processes
+``TaskExchanger`` 基底クラスは、外部プロセスとのパイプベースのタスク交換を管理します
 (task_exchanger.py:38-68):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - read_interval
      - 0.5
-     - How often to read from pipe
+     - パイプから読み取る頻度
    * - heartbeat_interval
      - 5.0
-     - How often to send heartbeat to peer
+     - ピアへハートビートを送信する頻度
    * - heartbeat_timeout
      - 60.0
-     - Time to wait for heartbeat from peer (None = disable)
+     - ピアからのハートビートを待機する時間(None = 無効化)
    * - resend_interval
      - 2.0
-     - How often to resend a message if failing to send
+     - 送信に失敗した場合にメッセージを再送する頻度
    * - peer_read_timeout
      - 60.0
-     - Time to wait for peer to accept sent message
+     - 送信したメッセージをピアが受け取るまで待機する時間
    * - result_poll_interval
      - 0.5
-     - How often to poll for task result
+     - タスク結果をポーリングする頻度
 
 
 IPCExchanger
-------------
+-----------------
 
-The ``IPCExchanger`` manages IPC-based communication with Flare Agents
+``IPCExchanger`` は、Flare Agent との IPC ベースの通信を管理します
 (ipc_exchanger.py:50-82):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - send_task_timeout
      - 5.0
-     - How long to wait for response when sending task to Agent
+     - Agent へタスクを送信した際にレスポンスを待つ時間
    * - resend_task_interval
      - 2.0
-     - How often to resend task if failed
+     - 失敗した場合にタスクを再送する頻度
    * - agent_connection_timeout
      - 60.0
-     - Time allowed to miss heartbeat before considering agent disconnected
+     - Agent が切断されたとみなすまでにハートビートの欠落を許容する時間
    * - agent_heartbeat_timeout
      - None
-     - Time allowed to miss heartbeat before stopping (None = disabled)
+     - 停止するまでにハートビートの欠落を許容する時間(None = 無効)
    * - agent_heartbeat_interval
      - 5.0
-     - How often to send heartbeats to the agent
+     - Agent へハートビートを送信する頻度
    * - agent_ack_timeout
      - 5.0
-     - How long to wait for agent ack (heartbeat and bye messages)
+     - Agent の ACK(ハートビートおよび bye メッセージ)を待つ時間
 
 
 InProcessClientAPIExecutor
---------------------------
+-------------------------------
 
-The in-process executor for Client API (in_process_client_api_executor.py:50-70):
+Client API のためのインプロセス Executor (in_process_client_api_executor.py:50-70):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - result_pull_interval
      - 0.5
-     - How often to poll for task result
+     - タスク結果をポーリングする頻度
    * - log_pull_interval
      - None
-     - How often to pull logs (None = same as result_pull_interval)
-
+     - ログを取得する頻度(None = result_pull_interval と同じ)
 
 Pipe Handler
-------------
+-----------------
 
-Inter-process communication pipe timeouts for Client API (pipe_handler.py):
+Client API のためのプロセス間通信パイプのタイムアウト (pipe_handler.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heartbeat_interval
      - 5.0
-     - Interval for sending heartbeats
+     - ハートビートを送信する間隔
    * - heartbeat_timeout
      - 30.0
-     - Max time without heartbeat before peer is dead
+     - ピアが停止しているとみなすまでの、ハートビートがない最大時間
    * - default_request_timeout
      - 5.0
-     - Default timeout for requests
+     - リクエストのデフォルトタイムアウト
    * - resend_interval
      - 2.0
-     - Interval between message resends
+     - メッセージ再送の間隔
 
-**Important**: ``heartbeat_interval`` must be less than ``heartbeat_timeout``.
+**重要**: ``heartbeat_interval`` は ``heartbeat_timeout`` より小さくする必要があります。
 
 
 P2P Executor
-------------
+-----------------
 
-Peer-to-peer sync executor (sync_executor.py):
+ピアツーピアの同期 Executor (sync_executor.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - sync_timeout
      - 10
-     - Timeout waiting for values from neighbors
+     - 隣接ノードからの値を待機するタイムアウト
 
 
-Admin Client Timeouts
-=====================
+管理クライアントのタイムアウト
+====================================
 
-Admin client timeouts control session management and command execution:
+管理クライアントのタイムアウトは、セッション管理とコマンド実行を制御します。
 
 .. list-table::
    :header-rows: 1
    :widths: 28 10 32 30
 
-   * - Timeout
-     - Default
-     - Location
-     - Purpose
+   * - タイムアウト
+     - デフォルト
+     - 場所
+     - 目的
    * - idle_timeout
      - 900.0
-     - Admin config
-     - Automatic shutdown after idle period
+     - 管理設定
+     - アイドル期間後の自動シャットダウン
    * - login_timeout
      - 10.0
-     - Admin config
-     - Max time to attempt login
+     - 管理設定
+     - ログインを試行する最大時間
    * - authenticate_msg_timeout
      - 2.0
-     - Admin config
-     - Timeout for authentication messages
+     - 管理設定
+     - 認証メッセージのタイムアウト
    * - Command timeout
      - 5.0
-     - FLARE API session
-     - Default timeout for admin commands
+     - FLARE API セッション
+     - 管理コマンドのデフォルトタイムアウト
 
-Session-Specific Timeouts
--------------------------
+セッション固有のタイムアウト
+--------------------------------
 
-Admin API supports session-specific command timeouts (api_spec.py:305-318):
+管理 API は、セッション固有のコマンドタイムアウトをサポートします (api_spec.py:305-318):
 
 .. code-block:: python
 
@@ -778,84 +775,84 @@ Admin API supports session-specific command timeouts (api_spec.py:305-318):
        Note that this value is only effective for the current API session."""
 
 
-Task Communication and Messaging
+タスク通信とメッセージング
 ================================
 
-These timeouts control task assignment and result collection between server and clients.
+これらのタイムアウトは、サーバーとクライアント間のタスク割り当てと結果収集を制御します。
 
-WfCommServer (Workflow Communication Server)
+WfCommServer (ワークフロー通信サーバー)
 --------------------------------------------
 
-Server-side workflow communication (wf_comm_server.py):
+サーバー側のワークフロー通信 (wf_comm_server.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - task.timeout
-     - varies
-     - Overall task timeout
+     - 可変
+     - タスク全体のタイムアウト
    * - task_assignment_timeout
      - 0
-     - Time to wait for client to pick task
+     - クライアントがタスクを取得するまで待機する時間
    * - task_result_timeout
      - 0
-     - Time to wait for client to return result
+     - クライアントが結果を返すまで待機する時間
    * - task_check_period
      - 0.2
-     - Interval for checking task status
+     - タスクステータスをチェックする間隔
 
-**Validation Rules**:
+**検証ルール**:
 
-- ``task_assignment_timeout`` must be <= ``task.timeout``
-- ``task_result_timeout`` must be <= ``task.timeout``
+- ``task_assignment_timeout`` は ``task.timeout`` 以下でなければなりません
+- ``task_result_timeout`` は ``task.timeout`` 以下でなければなりません
 
 
-WfCommClient (Workflow Communication Client)
+WfCommClient (ワークフロー通信クライアント)
 --------------------------------------------
 
-Client-side workflow communication (wf_comm_client.py):
+クライアント側のワークフロー通信 (wf_comm_client.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - max_task_timeout
      - 3600
-     - Maximum single task execution time; used as the effective timeout when the controller sets task.timeout = 0 (i.e., "no timeout")
+     - 単一タスクの最大実行時間。Controller が task.timeout = 0(つまり「タイムアウトなし」)を設定した場合に、実効的なタイムアウトとして使用されます
 
 
-Task Pull/Fetch Timeouts
-------------------------
+タスクの取得(Pull/Fetch)のタイムアウト
+------------------------------------------
 
-Client-side task fetching from server (client_runner.py, communicator.py, fed_client_base.py):
+サーバーからのクライアント側タスク取得 (client_runner.py, communicator.py, fed_client_base.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - get_task_timeout
      - None
-     - Timeout for client to fetch task from server
+     - クライアントがサーバーからタスクを取得する際のタイムアウト
    * - submit_task_result_timeout
      - None
-     - Timeout for client to submit result to server
+     - クライアントがサーバーへ結果を送信する際のタイムアウト
    * - timeout (pull_task)
      - None
-     - Timeout for pull_task communication
+     - pull_task 通信のタイムアウト
 
-**Configuration**: Set via ``ConfigVarName.GET_TASK_TIMEOUT`` and ``ConfigVarName.SUBMIT_TASK_RESULT_TIMEOUT`` in client config.
+**設定方法**: クライアント設定の ``ConfigVarName.GET_TASK_TIMEOUT`` および ``ConfigVarName.SUBMIT_TASK_RESULT_TIMEOUT`` で設定します。
 
-**Example** (client params in job):
+**例** (ジョブ内のクライアントパラメータ):
 
 .. code-block:: python
 
@@ -864,187 +861,187 @@ Client-side task fetching from server (client_runner.py, communicator.py, fed_cl
    })
 
 
-Task Manager Timeouts
----------------------
+タスクマネージャーのタイムアウト
+------------------------------------
 
-Task managers control sequential and relay task distribution (send_manager.py, seq_relay_manager.py, any_relay_manager.py):
+タスクマネージャーは、逐次およびリレー方式のタスク配布を制御します (send_manager.py, seq_relay_manager.py, any_relay_manager.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - task_assignment_timeout
      - 0
-     - Time window for client to request task
+     - クライアントがタスクを要求できる時間枠
    * - task_result_timeout
      - 0
-     - Time to wait for client result before moving to next
+     - 次へ進む前にクライアントの結果を待機する時間
 
-**Behavior**:
+**動作**:
 
-- For SendOrder.SEQUENTIAL: Clients are assigned in order with sliding time window
-- For SendOrder.ANY: First available client gets the task
-- Timeout of 0 means no timeout (wait indefinitely)
+- SendOrder.SEQUENTIAL の場合: クライアントはスライディングタイムウィンドウを用いて順番に割り当てられます
+- SendOrder.ANY の場合: 最初に利用可能になったクライアントがタスクを取得します
+- タイムアウトが 0 の場合はタイムアウトなし(無期限に待機)を意味します
 
 
-Workflow and Controller Timeouts
-================================
+ワークフローと Controller のタイムアウト
+================================================
 
-Client-Controlled Workflows (Server-Side)
------------------------------------------
+クライアント制御ワークフロー(サーバー側)
+--------------------------------------------
 
-Server-side controller timeouts for workflow management (common.py:79-92):
+ワークフロー管理のためのサーバー側 Controller のタイムアウト (common.py:79-92):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Timeout
-     - Default
-     - Purpose
+   * - タイムアウト
+     - デフォルト
+     - 目的
    * - configure_task_timeout
      - 300
-     - Time for clients to respond to config task
+     - クライアントが config タスクに応答するまでの時間
    * - start_task_timeout
      - 10
-     - Time for starting client to begin workflow
+     - 開始側クライアントがワークフローを開始するまでの時間
    * - end_workflow_timeout
      - 2.0
-     - Timeout for ending workflow message
+     - ワークフロー終了メッセージのタイムアウト
    * - progress_timeout
      - 3600.0
-     - Max time without workflow progress
+     - ワークフローの進捗がない状態を許容する最大時間
    * - max_status_report_interval
      - 90.0
-     - Max time for client to miss status report
+     - クライアントがステータス報告を欠落できる最大時間
 
-Client-Controlled Workflows (Client-Side)
------------------------------------------
+クライアント制御ワークフロー(クライアント側)
+------------------------------------------------
 
-Client-side timeouts for task coordination (common.py:87-92):
+タスク調整のためのクライアント側タイムアウト (common.py:87-92):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Timeout
-     - Default
-     - Purpose
+   * - タイムアウト
+     - デフォルト
+     - 目的
    * - learn_task_check_interval
      - 1.0
-     - Interval for checking new learning tasks
+     - 新しい学習タスクをチェックする間隔
    * - learn_task_ack_timeout
      - 10
-     - P2P model-transfer ACK budget (seconds). 10 s is too short for models >2 GB.
-       Set via ``SwarmLearningRecipe(round_timeout=3600)`` which wires both
-       ``learn_task_ack_timeout`` and ``final_result_ack_timeout``.
+     - P2P モデル転送の ACK 猶予時間(秒)。2 GB を超えるモデルには 10 秒では短すぎます。
+       ``learn_task_ack_timeout`` と ``final_result_ack_timeout`` の両方を設定する
+       ``SwarmLearningRecipe(round_timeout=3600)`` で指定してください。
    * - learn_task_abort_timeout
      - 5.0
-     - Timeout for task abortion
+     - タスク中断のタイムアウト
    * - final_result_ack_timeout
      - 10
-     - Timeout for final result acknowledgment. See ``learn_task_ack_timeout`` note above.
+     - 最終結果の確認応答のタイムアウト。上記の ``learn_task_ack_timeout`` の注記を参照してください。
    * - get_model_timeout
      - 10
-     - Timeout for getting model from peers
+     - ピアからモデルを取得する際のタイムアウト
    * - max_task_timeout
      - 3600
-     - Maximum single task execution time
+     - 単一タスクの最大実行時間
 
 ScatterAndGather Controller
----------------------------
+--------------------------------
 
-The SAG controller manages aggregation timing (scatter_and_gather.py:37-67):
+SAG Controller は集約のタイミングを管理します (scatter_and_gather.py:37-67):
 
 .. list-table::
    :header-rows: 1
    :widths: 35 12 53
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - train_timeout
      - 0
-     - Time to wait for clients to do local training (0 = no timeout)
+     - クライアントがローカル学習を行うのを待機する時間(0 = タイムアウトなし)
    * - wait_time_after_min_received
      - 10
-     - Time to wait for additional responses after min_clients
+     - min_clients に達した後、追加の応答を待機する時間
    * - task_check_interval
      - 0.5
-     - Interval for checking task completion
+     - タスク完了をチェックする間隔
 
 
-ModelController-Based Workflows
--------------------------------
+ModelController ベースのワークフロー
+----------------------------------------
 
-FedAvg, Cyclic, Scaffold, and other ModelController-based workflows (model_controller.py, base_model_controller.py):
+FedAvg、Cyclic、Scaffold、およびその他の ModelController ベースのワークフロー (model_controller.py, base_model_controller.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
      - 0
-     - Time to wait for clients to perform task (0 = no timeout)
+     - クライアントがタスクを実行するのを待機する時間(0 = タイムアウトなし)
 
-**Note**: FedAvg, Scaffold, Cyclic all inherit from ModelController and use the same ``timeout`` parameter.
+**注意**: FedAvg、Scaffold、Cyclic はすべて ModelController を継承しており、同じ ``timeout`` パラメータを使用します。
 
 
 CyclicController
-----------------
+---------------------
 
-Cyclic workflow controller (cyclic_ctl.py):
+Cyclic ワークフローの Controller (cyclic_ctl.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - task_assignment_timeout
      - 10
-     - Timeout for client to request its assigned task
+     - クライアントが割り当てられたタスクを要求するまでのタイムアウト
 
 
 CrossSiteModelEval / CrossSiteEval
-----------------------------------
+--------------------------------------
 
-Cross-site model evaluation workflows (cross_site_model_eval.py, cross_site_eval.py):
+サイト横断のモデル評価ワークフロー (cross_site_model_eval.py, cross_site_eval.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - submit_model_timeout
      - 600
-     - Timeout for submit_model_task (10 min)
+     - submit_model_task のタイムアウト(10 分)
    * - validation_timeout
      - 6000
-     - Timeout for validate_model task (100 min)
+     - validate_model タスクのタイムアウト(100 分)
    * - wait_for_clients_timeout
      - 300
-     - Timeout for clients to appear (5 min)
+     - クライアントが現れるまでのタイムアウト(5 分)
    * - eval_task_timeout (CCWF)
      - 1200+
-     - Time for model evaluation by clients
+     - クライアントによるモデル評価の時間
    * - configure_task_timeout (CCWF)
      - 300
-     - Timeout for configuration task
+     - 構成タスクのタイムアウト
    * - progress_timeout (CCWF)
      - 7200+
-     - Overall workflow progress timeout
+     - ワークフロー全体の進捗タイムアウト
 
-Example configuration:
+設定例:
 
 .. code-block:: python
 
@@ -1057,280 +1054,279 @@ Example configuration:
 
 
 GlobalModelEval
----------------
+--------------------
 
-Global model evaluation controller (global_model_eval.py):
+グローバルモデル評価の Controller (global_model_eval.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - validation_timeout
      - 6000
-     - Timeout for validate_model task
+     - validate_model タスクのタイムアウト
    * - wait_for_clients_timeout
      - 300
-     - Timeout for clients to appear
+     - クライアントが現れるまでのタイムアウト
 
 
 BroadcastAndProcess / InitializeGlobalWeights
----------------------------------------------
+------------------------------------------------
 
-Broadcast workflows (broadcast_and_process.py, initialize_global_weights.py):
+ブロードキャスト系ワークフロー (broadcast_and_process.py, initialize_global_weights.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 10 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout / task_timeout
      - 0
-     - Task timeout (0 = no timeout)
+     - タスクのタイムアウト(0 = タイムアウトなし)
    * - wait_time_after_min_received
      - 0-10
-     - Wait time after min responses received
+     - 最小数の応答を受信した後の待機時間
 
 
 StatisticsController / HierarchicalStatisticsController
---------------------------------------------------------
+----------------------------------------------------------
 
-Statistics workflow controllers (statistics_controller.py, hierarchical_statistics_controller.py):
+統計ワークフローの Controller (statistics_controller.py, hierarchical_statistics_controller.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - result_wait_timeout
      - 10
-     - Seconds to wait for results per statistic
+     - 統計量ごとに結果を待機する秒数
    * - wait_time_after_min_received
      - 1
-     - Seconds to wait after min clients received
+     - 最小数のクライアントから受信した後に待機する秒数
 
-**Note**: ``result_wait_timeout`` is reset for each statistic, not an overall timeout.
+**注意**: ``result_wait_timeout`` は統計量ごとにリセットされるものであり、全体のタイムアウトではありません。
 
 
 SplitNNController
------------------
+----------------------
 
-Split learning controller (splitnn_workflow.py:47-79):
+Split Learning の Controller (splitnn_workflow.py:47-79):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - task_timeout
      - 10
-     - Timeout for client to request its assigned task
-   * - TIMEOUT (class constant)
+     - クライアントが割り当てられたタスクを要求するまでのタイムアウト
+   * - TIMEOUT (クラス定数)
      - 60.0
-     - Timeout for auxiliary message requests
+     - 補助メッセージリクエストのタイムアウト
 
 
-TIE Controller (Third-party Integration)
+TIE Controller (サードパーティ統合)
 ----------------------------------------
 
-Base controller for third-party integration (tie/controller.py, tie/defs.py):
+サードパーティ統合のための基底 Controller (tie/controller.py, tie/defs.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - configure_task_timeout
      - 10
-     - Time to wait for clients to complete config task
+     - クライアントが config タスクを完了するまで待機する時間
    * - start_task_timeout
      - 10
-     - Time to wait for clients to complete start task
+     - クライアントが start タスクを完了するまで待機する時間
    * - job_status_check_interval
      - 2.0
-     - How often to check client job statuses
+     - クライアントのジョブステータスをチェックする頻度
    * - max_client_op_interval
      - 90.0
-     - Max time allowed between app ops from a client
+     - クライアントからのアプリ操作の間隔として許容される最大時間
    * - progress_timeout
      - 3600.0
-     - Max time allowed with no workflow progress
+     - ワークフローの進捗がない状態を許容する最大時間
 
-**Note**: TIE is used by XGBoost, Flower, and other third-party framework integrations.
+**注意**: TIE は XGBoost、Flower、およびその他のサードパーティフレームワーク統合で使用されます。
 
 
-Flower Integration Timeouts
----------------------------
+Flower 統合のタイムアウト
+------------------------------
 
-Flower-specific controller and executor timeouts (flower/controller.py, flower/executor.py):
+Flower 固有の Controller および Executor のタイムアウト (flower/controller.py, flower/executor.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - superlink_ready_timeout
      - 10.0
-     - Time to wait for Flower superlink to become ready
+     - Flower の superlink が準備完了になるまで待機する時間
    * - superlink_min_query_interval
      - 10.0
-     - Minimal interval for querying superlink status
+     - superlink のステータスを問い合わせる最小間隔
    * - monitor_interval
      - 0.5
-     - How often to check Flower run status
+     - Flower の実行ステータスをチェックする頻度
    * - per_msg_timeout
      - 10.0
-     - Per-message timeout for ReliableMessage
+     - ReliableMessage のメッセージ単位のタイムアウト
    * - tx_timeout
      - 100.0
-     - Transaction timeout for ReliableMessage
+     - ReliableMessage のトランザクションタイムアウト
    * - client_shutdown_timeout
      - 5.0
-     - Max time for graceful client shutdown
+     - クライアントのグレースフルシャットダウンの最大時間
 
 
 Private Set Intersection (PSI)
+----------------------------------
+
+PSI ワークフローには、PSI Controller レベルでの明示的なタイムアウトパラメータはありません。
+PSI は、基盤となるタスクシステムから一般的なワークフローのタイムアウトを継承します。
+
+PSI の処理では、タイムアウトはより低いレベルで制御されます。
+
+- **タスクレベルのタイムアウト**: Controller の一般的な ``timeout`` パラメータを使用します
+- **通信のタイムアウト**: システムの ``heartbeat_timeout`` と ``peer_read_timeout`` を継承します
+
+**注意**: 大規模な PSI 処理では、反復的な Diffie-Hellman プロトコルのやり取りに対応できるよう、
+``application.conf`` でシステムレベルのタイムアウトを十分に確保してください。
+
+
+Aggregator のタイムアウト
 ------------------------------
 
-PSI workflows do not have explicit timeout parameters at the PSI controller level. 
-PSI inherits general workflow timeouts from the underlying task system.
-
-For PSI operations, timeouts are controlled at lower levels:
-
-- **Task-level timeouts**: Use controller's general ``timeout`` parameter
-- **Communication timeouts**: Inherited from system ``heartbeat_timeout`` and ``peer_read_timeout``
-
-**Note**: For large-scale PSI operations, ensure adequate system-level timeouts in 
-``application.conf`` to handle the iterative Diffie-Hellman protocol exchanges.
-
-
-Aggregator Timeouts
--------------------
-
 LazyAggregator
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
-Lazy aggregator for async aggregation (lazy.py):
+非同期集約のための Lazy Aggregator (lazy.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - accept_timeout
      - 600.0
-     - Max time to wait for accept to finish
+     - accept の完了を待機する最大時間
 
+ジョブスケジューラーのタイムアウト
+--------------------------------------
 
-Job Scheduler Timeouts
-----------------------
-
-The ``DefaultJobScheduler`` controls job scheduling frequency (job.rst:255-270):
+``DefaultJobScheduler`` はジョブのスケジューリング頻度を制御します (job.rst:255-270):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - min_schedule_interval
      - 10.0
-     - Minimum interval between schedule attempts
+     - スケジューリング試行間の最小間隔
    * - max_schedule_interval
      - 600.0
-     - Maximum interval between schedule attempts
+     - スケジューリング試行間の最大間隔
    * - max_schedule_count
      - 10
-     - Maximum times to try scheduling a job
+     - ジョブのスケジューリングを試行する最大回数
 
-**Scheduling Strategy**: The scheduler uses adaptive frequency - doubling interval after each
-failure up to the maximum.
+**スケジューリング戦略**: スケジューラーは適応的な頻度を使用し、失敗するたびに間隔を
+最大値まで倍増させます。
 
-Recipe Timeouts
-===============
+Recipe のタイムアウト
+==========================
 
-Standard Recipe Timeouts
-------------------------
+標準 Recipe のタイムアウト
+------------------------------
 
-All standard recipes support these timeout parameters (fedavg.py, cyclic.py):
+すべての標準 Recipe は、これらのタイムアウトパラメータをサポートします (fedavg.py, cyclic.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - shutdown_timeout
      - 0.0
-     - Wait time before shutdown for cleanup
+     - クリーンアップのためにシャットダウン前に待機する時間
    * - task_assignment_timeout
      - 10
-     - Timeout for cyclic task assignment (CyclicRecipe only)
+     - Cyclic のタスク割り当てのタイムアウト(CyclicRecipe のみ)
 
-``CyclicRecipe`` exposes both parameters directly. Its advanced
-``server_config_overrides`` and ``client_config_overrides`` dictionaries target
-``CyclicController`` and ``ScriptRunner``, respectively. They use a shallow merge
-and take precedence over overlapping named parameters.
+``CyclicRecipe`` は両方のパラメータを直接公開しています。その高度な設定である
+``server_config_overrides`` および ``client_config_overrides`` の辞書は、それぞれ
+``CyclicController`` と ``ScriptRunner`` を対象とします。これらは浅いマージ(shallow merge)を
+使用し、重複する名前付きパラメータより優先されます。
 
-Evaluation Recipe Timeouts
---------------------------
+評価 Recipe のタイムアウト
+------------------------------
 
-Evaluation recipes have specific timeout requirements (fedeval.py, cross_site_eval.py):
+評価用の Recipe には固有のタイムアウト要件があります (fedeval.py, cross_site_eval.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - validation_timeout
      - 6000
-     - Time allowed for model validation
+     - モデル検証に許容される時間
    * - submit_model_timeout
      - 600
-     - Time for clients to submit models for evaluation
+     - クライアントが評価用のモデルを提出するための時間
 
 
-Large Model and Streaming Timeouts
-==================================
+大規模モデルとストリーミングのタイムアウト
+==============================================
 
-File Streaming Timeouts
------------------------
+ファイルストリーミングのタイムアウト
+----------------------------------------
 
-File streaming for large files (file_streamer.py):
+大きなファイルのファイルストリーミング (file_streamer.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - chunk_timeout
      - 5.0
-     - Timeout for each chunk sent to targets
+     - ターゲットへ送信される各チャンクのタイムアウト
    * - chunk_size
      - 1M bytes
-     - Size of each chunk streamed
+     - ストリーミングされる各チャンクのサイズ
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -1345,23 +1341,23 @@ File streaming for large files (file_streamer.py):
    )
 
 
-Container Streaming Timeouts
-----------------------------
+コンテナストリーミングのタイムアウト
+----------------------------------------
 
-Container/object streaming (container_streamer.py):
+コンテナ/オブジェクトのストリーミング (container_streamer.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - entry_timeout
      - 60.0
-     - Timeout for each entry sent to targets
+     - ターゲットへ送信される各エントリのタイムアウト
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -1375,100 +1371,101 @@ Container/object streaming (container_streamer.py):
    )
 
 
-Object Retrieval Timeouts
--------------------------
+オブジェクト取得のタイムアウト
+------------------------------------
 
-Retrieving files/containers from remote sites (file_retriever.py, container_retriever.py):
+リモートサイトからのファイル/コンテナの取得 (file_retriever.py, container_retriever.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
-     - varies
-     - Max seconds to wait for data retrieval
+     - 可変
+     - データ取得を待機する最大秒数
    * - chunk_timeout
-     - varies
-     - Timeout per chunk during file retrieval
+     - 可変
+     - ファイル取得中のチャンクごとのタイムアウト
 
 
-Byte Streaming Timeouts
------------------------
+バイトストリーミングのタイムアウト
+--------------------------------------
 
-Byte streaming timeouts and intervals (byte_receiver.py, byte_streamer.py):
+バイトストリーミングのタイムアウトと間隔 (byte_receiver.py, byte_streamer.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - streaming_read_timeout
      - 300
-     - Timeout for reading streamed data
+     - ストリーミングされたデータの読み取りタイムアウト
    * - ack_interval
      - 4MB
-     - Bytes between acknowledgment messages
+     - 確認応答メッセージ間のバイト数
    * - ack_wait
-     - varies
-     - Time to wait for ACK before timing out
+     - 可変
+     - タイムアウトするまで ACK を待機する時間
 
-**Note**: ACK timeout triggers ``StreamError`` and stops the stream.
+**注意**: ACK のタイムアウトは ``StreamError`` を発生させ、ストリームを停止します。
 
 
-Download Transaction Timeouts
------------------------------
+ダウンロードトランザクションのタイムアウト
+----------------------------------------------
 
-Object download transaction timeouts (download_service.py, obj_downloader.py):
+オブジェクトのダウンロードトランザクションのタイムアウト (download_service.py, obj_downloader.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
-     - varies
-     - Transaction timeout (time since last activity)
+     - 可変
+     - トランザクションのタイムアウト(最後のアクティビティからの時間)
    * - per_request_timeout
-     - varies
-     - Timeout for each request to object owner
+     - 可変
+     - オブジェクト所有者への各リクエストのタイムアウト
 
-**Note**: Transaction times out if no activity from any receiver for the specified duration.
-Normally finished download refs are tombstoned temporarily so a late retry from
-the same receiver can receive the original EOF or error status instead of a
-fatal missing-ref response. Timeout and deleted transactions are not tombstoned.
+**注意**: 指定された期間、いずれの受信側からもアクティビティがない場合、トランザクションは
+タイムアウトします。正常に完了したダウンロードの参照は一時的に tombstone 化されるため、
+同じ受信側からの遅延したリトライは、致命的な「参照が存在しない」レスポンスではなく、
+元の EOF またはエラーステータスを受け取ることができます。タイムアウトしたトランザクションと
+削除されたトランザクションは tombstone 化されません。
 
 
-Tensor Streaming Timeouts
--------------------------
+テンソルストリーミングのタイムアウト
+----------------------------------------
 
-Tensor streaming provides efficient transfer of large model weights. These timeouts control
-the streaming behavior (tensor_stream/server.py, client.py):
+テンソルストリーミングは、大きなモデル重みの効率的な転送を提供します。これらのタイムアウトは
+ストリーミングの動作を制御します (tensor_stream/server.py, client.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 38 12 50
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - tensor_send_timeout
      - 30.0
-     - Timeout for each tensor entry transfer operation
+     - 各テンソルエントリの転送操作のタイムアウト
    * - wait_send_task_data_all_clients_timeout
      - 300.0
-     - Timeout for sending tensors to all clients
+     - すべてのクライアントへテンソルを送信する際のタイムアウト
    * - wait_for_tensors timeout
      - 5.0
-     - Time to wait for tensors to be received
+     - テンソルが受信されるまで待機する時間
 
-**Server-side configuration** (TensorServerStreamer):
+**サーバー側の設定** (TensorServerStreamer):
 
 .. code-block:: python
 
@@ -1480,7 +1477,7 @@ the streaming behavior (tensor_stream/server.py, client.py):
        wait_send_task_data_all_clients_timeout=600.0,  # All clients timeout
    )
 
-**Client-side configuration** (TensorClientStreamer):
+**クライアント側の設定** (TensorClientStreamer):
 
 .. code-block:: python
 
@@ -1493,85 +1490,86 @@ the streaming behavior (tensor_stream/server.py, client.py):
 
 .. warning::
 
-   **Critical Timeout Relationship for Tensor Streaming**
-   
-   When using tensor streaming, you **must** ensure that ``get_task_timeout`` is set and is 
-   greater than or equal to ``wait_send_task_data_all_clients_timeout``. If ``get_task_timeout`` 
-   is not set, it defaults to the communicator's timeout, which may be shorter than the tensor 
-   streaming timeout.
-   
-   **Problem**: If streaming timeout > communicator timeout and no ``get_task_timeout`` is set, 
-   some clients may receive weights while others are still waiting. The server may not send the 
-   task in time, causing a timeout that restarts the tensor streaming process. This can result 
-   in clients receiving empty tensors and job failure.
-   
-   **Solution**: Always set ``get_task_timeout`` when using tensor streaming:
-   
+   **テンソルストリーミングにおける重要なタイムアウトの関係**
+
+   テンソルストリーミングを使用する場合、``get_task_timeout`` を設定し、その値が
+   ``wait_send_task_data_all_clients_timeout`` 以上であることを **必ず** 確認してください。
+   ``get_task_timeout`` が設定されていない場合、communicator のタイムアウトがデフォルトとして
+   使用されますが、これはテンソルストリーミングのタイムアウトより短い可能性があります。
+
+   **問題**: ストリーミングのタイムアウトが communicator のタイムアウトより長く、かつ
+   ``get_task_timeout`` が設定されていない場合、一部のクライアントは重みを受信する一方で、
+   他のクライアントは待機し続ける可能性があります。サーバーがタスクを時間内に送信できず、
+   タイムアウトが発生してテンソルストリーミングの処理が最初からやり直される場合があります。
+   これにより、クライアントが空のテンソルを受け取り、ジョブが失敗する可能性があります。
+
+   **解決策**: テンソルストリーミングを使用する場合は、常に ``get_task_timeout`` を
+   設定してください。
+
    .. code-block:: python
-   
+
       # Ensure get_task_timeout >= wait_send_task_data_all_clients_timeout
       recipe.add_client_config({
           "get_task_timeout": 600,  # Must be >= streaming timeout
       })
 
+ストリーミングダウンロードのタイムアウト
+--------------------------------------------
 
-Streaming Download Timeouts
----------------------------
-
-Framework-level settings for large payload transfers (fl_constant.py:553, comm_config.py:41):
+大きなペイロード転送のためのフレームワークレベルの設定 (fl_constant.py:553, comm_config.py:41):
 
 .. list-table::
    :header-rows: 1
    :widths: 35 15 50
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - streaming_per_request_timeout
      - 600
-     - Per-request timeout for streaming chunks
+     - ストリーミングチャンクのリクエスト単位のタイムアウト
    * - streaming_read_timeout
      - 300
-     - Timeout for reading streaming data
+     - ストリーミングデータの読み取りタイムアウト
    * - np_min_download_timeout
      - 300
-     - Minimum idle time (seconds) before an inactive NumPy array download transaction
-       is declared dead. Applies to NumPy/sklearn-based models.
-       Increase to 600 s for 70B+ models on congested networks.
-       Configure via ``add_client_config({"np_min_download_timeout": 600})``.
+     - 非アクティブな NumPy 配列のダウンロードトランザクションが停止していると
+       判定されるまでの最小アイドル時間(秒)。NumPy/scikit-learn ベースのモデルに適用されます。
+       混雑したネットワーク上で 70B 以上のモデルを扱う場合は 600 秒に増やしてください。
+       ``add_client_config({"np_min_download_timeout": 600})`` で設定します。
    * - tensor_min_download_timeout
      - 300
-     - Minimum idle time (seconds) before an inactive PyTorch tensor download transaction
-       is declared dead. Applies to PyTorch-based models.
-       Increase to 600 s for 70B+ models on congested networks.
-       Configure via ``add_client_config({"tensor_min_download_timeout": 600})``.
+     - 非アクティブな PyTorch テンソルのダウンロードトランザクションが停止していると
+       判定されるまでの最小アイドル時間(秒)。PyTorch ベースのモデルに適用されます。
+       混雑したネットワーク上で 70B 以上のモデルを扱う場合は 600 秒に増やしてください。
+       ``add_client_config({"tensor_min_download_timeout": 600})`` で設定します。
    * - np_download_chunk_size
      - 2097152
-     - Chunk size for NumPy array downloads (bytes)
+     - NumPy 配列ダウンロードのチャンクサイズ(バイト)
    * - tensor_download_chunk_size
      - 2097152
-     - Chunk size for PyTorch tensor downloads (bytes)
+     - PyTorch テンソルダウンロードのチャンクサイズ(バイト)
 
-For Client API subprocess jobs, keep these download settings aligned with the
-subprocess pipe settings:
+Client API のサブプロセスジョブでは、これらのダウンロード設定をサブプロセスのパイプ設定と
+整合させてください。
 
-- ``tensor_min_download_timeout`` / ``np_min_download_timeout`` should be at
-  least ``tensor_streaming_per_request_timeout`` /
-  ``np_streaming_per_request_timeout``.
-- ``PEER_READ_TIMEOUT`` should be at least the configured streaming per-request
-  timeout so the parent client job does not resend the task while the subprocess
-  is still downloading a large payload.
-- ``download_complete_timeout`` should be at least the configured streaming
-  per-request timeout and long enough for the server to pull large tensor
-  results from the subprocess after result ACK.
-- ``max_resends`` should stay finite. The recipe default is ``3``; raise it
-  only when the network is expected to recover after a small number of delayed
-  result acknowledgments.
+- ``tensor_min_download_timeout`` / ``np_min_download_timeout`` は、少なくとも
+  ``tensor_streaming_per_request_timeout`` /
+  ``np_streaming_per_request_timeout`` 以上にしてください。
+- ``PEER_READ_TIMEOUT`` は、少なくとも設定されたストリーミングのリクエスト単位の
+  タイムアウト以上にし、サブプロセスが大きなペイロードをダウンロードしている最中に
+  親のクライアントジョブがタスクを再送しないようにしてください。
+- ``download_complete_timeout`` は、少なくとも設定されたストリーミングのリクエスト単位の
+  タイムアウト以上で、かつ結果の ACK 後にサーバーがサブプロセスから大きなテンソルの結果を
+  取得するのに十分な長さにしてください。
+- ``max_resends`` は有限のままにしてください。レシピのデフォルトは ``3`` です。
+  結果の確認応答が数回遅延した後にネットワークが回復すると見込まれる場合にのみ
+  値を増やしてください。
 
-Swarm Learning Large Model Setup
---------------------------------
+Swarm Learning の大規模モデル設定
+--------------------------------------
 
-Recommended timeouts for large models in Swarm Learning:
+Swarm Learning における大規模モデル向けの推奨タイムアウト:
 
 .. code-block:: python
 
@@ -1602,57 +1600,57 @@ Recommended timeouts for large models in Swarm Learning:
    })
 
 
-XGBoost-Specific Timeouts
-=========================
+XGBoost 固有のタイムアウト
+================================
 
-XGBoost Histogram-Based Controller
-----------------------------------
+XGBoost ヒストグラムベースの Controller
+--------------------------------------------
 
-XGBoost histogram-based controller timeouts (histogram_based_v2/controller.py):
+XGBoost のヒストグラムベース Controller のタイムアウト (histogram_based_v2/controller.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - configure_task_timeout
      - 300
-     - Timeout for configuration task
+     - 構成タスクのタイムアウト
    * - start_task_timeout
      - 10
-     - Timeout for start task
+     - start タスクのタイムアウト
    * - progress_timeout
      - 3600.0
-     - Overall workflow progress timeout
+     - ワークフロー全体の進捗タイムアウト
 
-**Note**: XGBoost uses Reliable Messages for secure training. See the `Reliable Message`_ section
-for ``per_msg_timeout`` and ``tx_timeout`` configuration.
+**注意**: XGBoost はセキュアな学習のために Reliable Message を使用します。``per_msg_timeout``
+および ``tx_timeout`` の設定については `Reliable Message`_ のセクションを参照してください。
 
-XGBoost gRPC Client
--------------------
+XGBoost gRPC クライアント
+------------------------------
 
-gRPC client for XGBoost communication (grpc_client.py, grpc_server_adaptor.py):
+XGBoost 通信のための gRPC クライアント (grpc_client.py, grpc_server_adaptor.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 28 12 60
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - ready_timeout
      - 10
-     - Timeout for gRPC server to be ready
+     - gRPC サーバーが準備完了になるまでのタイムアウト
    * - xgb_server_ready_timeout
-     - varies
-     - Timeout for XGBoost server readiness
+     - 可変
+     - XGBoost サーバーの準備完了に関するタイムアウト
    * - aggr_timeout
      - 10.0
-     - Aggregation timeout for mock servicer
+     - モックサービサーの集約タイムアウト
 
-Example configuration for large datasets:
+大規模データセット向けの設定例:
 
 .. code-block:: python
 
@@ -1660,124 +1658,125 @@ Example configuration for large datasets:
    "tx_timeout": 900.0,
 
 
-Confidential Computing Timeouts
-===============================
+Confidential Computing のタイムアウト
+==========================================
 
-SNP Authorizer Timeouts
------------------------
+SNP Authorizer のタイムアウト
+----------------------------------
 
-AMD SEV-SNP attestation timeouts (snp_authorizer.py):
+AMD SEV-SNP のアテステーションに関するタイムアウト (snp_authorizer.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - cmd_timeout
      - 60
-     - SNPGuest command execution timeout
+     - SNPGuest コマンド実行のタイムアウト
    * - retry_interval
      - 10
-     - Wait time between retry attempts
+     - リトライ試行間の待機時間
    * - max_retries
      - 5
-     - Maximum retry attempts
+     - 最大リトライ試行回数
 
-CC Manager Timeouts
--------------------
+CC Manager のタイムアウト
+------------------------------
 
-Cross-site CC verification timeouts (cc_manager.py):
+サイト横断の CC 検証に関するタイムアウト (cc_manager.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 30 12 58
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - get_site_request_timeout
      - 10.0
-     - Timeout for get site request
+     - サイト取得リクエストのタイムアウト
    * - get_token_request_timeout
      - 10.0
-     - Timeout for get token request
+     - トークン取得リクエストのタイムアウト
    * - verify_frequency
      - 600
-     - CC token verification interval (seconds)
+     - CC トークンの検証間隔(秒)
    * - cross_validation_interval
-     - varies
-     - Interval between cross-site validation cycles
+     - 可変
+     - サイト横断の検証サイクル間の間隔
 
-**Note**: Other CC authorizers (ACI, TDX, GPU, Azure CVM) do not have explicit timeout parameters
-and rely on system defaults.
+**注意**: その他の CC Authorizer (ACI、TDX、GPU、Azure CVM) には明示的なタイムアウト
+パラメータはなく、システムのデフォルト値に依存します。
 
 
-Job Launcher Timeouts
-=====================
+ジョブランチャーのタイムアウト
+====================================
 
-Kubernetes Launcher
--------------------
+Kubernetes ランチャー
+--------------------------
 
-K8s job launcher timeouts (k8s_launcher.py):
-
-.. list-table::
-   :header-rows: 1
-   :widths: 20 12 68
-
-   * - Parameter
-     - Default
-     - Purpose
-   * - timeout
-     - None
-     - Timeout for pod to enter RUNNING/TERMINATED state
-
-Docker Launcher
----------------
-
-Docker container launcher timeouts (docker_launcher.py):
+K8s ジョブランチャーのタイムアウト (k8s_launcher.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 20 12 68
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - timeout
      - None
-     - Timeout for container to enter target state
+     - Pod が RUNNING/TERMINATED 状態になるまでのタイムアウト
+
+Docker ランチャー
+----------------------
+
+Docker コンテナランチャーのタイムアウト (docker_launcher.py):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 12 68
+
+   * - パラメータ
+     - デフォルト
+     - 目的
+   * - timeout
+     - None
+     - コンテナが目標の状態になるまでのタイムアウト
 
 
-Edge Device Timeouts
-====================
+エッジデバイスのタイムアウト
+====================================
 
-This section covers all edge device, mobile client, and hierarchical FL timeouts.
+このセクションでは、エッジデバイス、モバイルクライアント、および階層型 FL の
+すべてのタイムアウトを扱います。
 
-Edge Device General
--------------------
+エッジデバイス全般
+------------------------
 
-Edge devices have specific timeout requirements:
+エッジデバイスには固有のタイムアウト要件があります。
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - update_timeout
      - 5
-     - Timeout for model updates from devices
+     - デバイスからのモデル更新のタイムアウト
    * - device_wait_timeout
      - None
-     - Time to wait for sufficient devices to join
+     - 十分な数のデバイスが参加するのを待機する時間
    * - job_timeout
      - 60.0
-     - Overall timeout for edge job execution
+     - エッジジョブ実行全体のタイムアウト
 
-Example:
+例:
 
 .. code-block:: python
 
@@ -1790,66 +1789,66 @@ Example:
    )
 
 
-Hierarchical FL
----------------
+階層型 FL
+--------------
 
-Hierarchical FL enables multi-tier federation with edge devices organized in a tree structure.
+階層型 FL は、ツリー構造に編成されたエッジデバイスによる多階層のフェデレーションを実現します。
 
 ScatterAndGatherForEdge (SAGE) Controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Server-side controller for hierarchical edge FL (edge/controllers/sage.py):
+階層型エッジ FL のためのサーバー側 Controller (edge/controllers/sage.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - assess_interval
      - 0.5
-     - Interval for invoking the assessor during task execution
+     - タスク実行中に assessor を呼び出す間隔
    * - update_interval
      - 1.0
-     - Interval for children to send updates
+     - 子ノードが更新を送信する間隔
    * - task_check_period
      - 0.5
-     - Interval for checking status of tasks
+     - タスクのステータスをチェックする間隔
 
 HierarchicalUpdateGatherer (HUG) Executor
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Executor for hierarchical update gathering (edge/executors/hug.py):
+階層的な更新収集のための Executor (edge/executors/hug.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - update_timeout
-     - required
-     - Timeout for update messages sent to parent
+     - 必須
+     - 親へ送信する更新メッセージのタイムアウト
 
 EdgeTaskExecutor (ETE)
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edge task executor for leaf nodes (edge/executors/ete.py):
+リーフノード向けのエッジタスク Executor (edge/executors/ete.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - update_timeout
-     - required
-     - Timeout for update messages sent to parent
+     - 必須
+     - 親へ送信する更新メッセージのタイムアウト
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -1872,10 +1871,10 @@ Edge task executor for leaf nodes (edge/executors/ete.py):
    )
 
 
-Mobile Client
--------------
+モバイルクライアント
+------------------------
 
-Android SDK includes job operation timeout (mobile_android.rst:43-58):
+Android SDK にはジョブ操作のタイムアウトが含まれます (mobile_android.rst:43-58):
 
 .. code-block:: kotlin
 
@@ -1885,95 +1884,96 @@ Android SDK includes job operation timeout (mobile_android.rst:43-58):
    )
 
 
-SubprocessLauncher Timeouts
-===========================
+SubprocessLauncher のタイムアウト
+======================================
 
-Subprocess launcher timeout (subprocess_launcher.py):
+サブプロセスランチャーのタイムアウト (subprocess_launcher.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - shutdown_timeout
      - 0.0
-     - Time to wait before forcefully stopping subprocess
+     - サブプロセスを強制停止するまでの待機時間
 
 
-Experiment Tracking Timeouts
-============================
+実験トラッキングのタイムアウト
+====================================
 
 WandB Receiver
---------------
+-------------------
 
-Weights & Biases integration timeouts (wandb_receiver.py):
+Weights & Biases 連携のタイムアウト (wandb_receiver.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - process_timeout
      - 10.0
-     - Timeout for joining WandB processes at shutdown
+     - シャットダウン時に WandB プロセスを join する際のタイムアウト
    * - login timeout
      - 1.0
-     - Internal timeout for WandB login verification
+     - WandB のログイン検証に関する内部タイムアウト
 
 
 MLflow Receiver
----------------
+--------------------
 
-MLflow integration timing (mlflow_receiver.py):
+MLflow 連携のタイミング (mlflow_receiver.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - buffer_flush_time
      - 1
-     - Seconds between deliveries to MLflow tracking server
+     - MLflow トラッキングサーバーへの送信間隔(秒)
 
-**Note**: Reducing ``buffer_flush_time`` increases traffic to MLflow server and may cause latency.
+**注意**: ``buffer_flush_time`` を小さくすると MLflow サーバーへのトラフィックが増加し、
+レイテンシの原因になる可能性があります。
 
 
 TensorBoard Receiver
---------------------
+-------------------------
 
-TensorBoard receiver (tb_receiver.py) does not have explicit timeout parameters.
-Events are written directly to disk without buffering.
+TensorBoard Receiver (tb_receiver.py) には明示的なタイムアウトパラメータはありません。
+イベントはバッファリングされることなく、直接ディスクへ書き込まれます。
 
 
-Metrics Relay and Sender
-------------------------
+Metrics Relay と Sender
+----------------------------
 
-Metrics exchange timeouts for experiment tracking (metric_relay.py, metrics_sender.py):
+実験トラッキングのためのメトリクス交換のタイムアウト (metric_relay.py, metrics_sender.py):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 12 63
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - heartbeat_timeout
      - 30.0-60.0
-     - Timeout for peer heartbeat (MetricRelay: 60s, MetricsSender: 30s)
+     - ピアのハートビートのタイムアウト(MetricRelay: 60 秒、MetricsSender: 30 秒)
    * - heartbeat_interval
      - 5.0
-     - Interval between heartbeats
+     - ハートビートの間隔
    * - read_interval
      - 0.1
-     - Interval for reading from pipe
+     - パイプから読み取る間隔
 
-**Example**:
+**例**:
 
 .. code-block:: python
 
@@ -1986,11 +1986,11 @@ Metrics exchange timeouts for experiment tracking (metric_relay.py, metrics_send
    )
 
 
-Timeout Relationships and Dependencies
-======================================
+タイムアウトの関係と依存関係
+====================================
 
-Hierarchical Relationships
---------------------------
+階層的な関係
+------------------
 
 .. code-block:: text
 
@@ -2136,89 +2136,89 @@ Hierarchical Relationships
    └─────────────────────────────────────────────────────────────────┘
 
 
-Impact Analysis
----------------
+影響の分析
+----------------
 
-**Too Short Timeouts:**
+**タイムアウトが短すぎる場合:**
 
 .. list-table::
    :header-rows: 1
    :widths: 30 70
 
-   * - Timeout Category
-     - Impact of Too Short Value
+   * - タイムアウトのカテゴリ
+     - 値が短すぎる場合の影響
    * - heart_beat_timeout
-     - Clients incorrectly marked dead, frequent reconnections
+     - クライアントが誤って停止扱いされ、再接続が頻発します
    * - task.timeout / train_timeout
-     - Training interrupted before completion, lost work
+     - 学習が完了前に中断され、作業が失われます
    * - external_pre_init_timeout
-     - Large model loading fails, external processes killed
+     - 大規模モデルの読み込みが失敗し、外部プロセスが強制終了されます
    * - streaming_read_timeout
-     - Large file transfers fail mid-stream
+     - 大きなファイルの転送がストリーミング途中で失敗します
    * - per_msg_timeout
-     - Reliable messages fail on slow networks
+     - 低速なネットワークで Reliable Message が失敗します
    * - get_task_timeout
-     - Clients fail to receive tasks, job stalls
+     - クライアントがタスクを受信できず、ジョブが停滞します
    * - admin_timeout
-     - Admin commands fail, poor CLI experience
+     - 管理コマンドが失敗し、CLI の使用感が悪化します
    * - task_assignment_timeout (Cyclic)
-     - Client fails to fetch task in time, job aborts
+     - クライアントが時間内にタスクを取得できず、ジョブが中断されます
    * - submit_model_timeout (CrossSiteEval)
-     - Model submission fails, evaluation incomplete
+     - モデルの提出が失敗し、評価が不完全になります
    * - validation_timeout (CrossSiteEval)
-     - Validation tasks fail prematurely
+     - 検証タスクが早すぎるタイミングで失敗します
    * - result_wait_timeout (Statistics)
-     - Statistics collection aborted before all clients respond
+     - すべてのクライアントが応答する前に統計収集が中断されます
    * - agent_connection_timeout (IPC)
-     - External agent incorrectly marked disconnected
+     - 外部エージェントが誤って切断扱いされます
    * - send_task_timeout (IPC)
-     - Task delivery to agent fails, triggers resends
+     - エージェントへのタスク配信が失敗し、再送が発生します
    * - superlink_ready_timeout (Flower)
-     - Flower integration fails to initialize
+     - Flower 連携の初期化が失敗します
    * - configure_task_timeout (TIE)
-     - Third-party framework configuration fails
+     - サードパーティフレームワークの構成が失敗します
    * - max_client_op_interval (TIE)
-     - Healthy clients marked as stuck
+     - 正常なクライアントがスタックしているとみなされます
 
-**Too Long Timeouts:**
+**タイムアウトが長すぎる場合:**
 
 .. list-table::
    :header-rows: 1
    :widths: 30 70
 
-   * - Timeout Category
-     - Impact of Too Long Value
+   * - タイムアウトのカテゴリ
+     - 値が長すぎる場合の影響
    * - heart_beat_timeout
-     - Dead clients not detected, resources wasted
+     - 停止したクライアントが検出されず、リソースが無駄になります
    * - task_assignment_timeout
-     - Slow failover to backup clients
+     - バックアップのクライアントへのフェイルオーバーが遅くなります
    * - progress_timeout
-     - Hung workflows not detected for hours
+     - ハングしたワークフローが数時間検出されません
    * - retry_timeout
-     - Long delays before retry attempts
+     - リトライ試行までの遅延が長くなります
    * - shutdown_timeout
-     - Slow job termination, resource cleanup delayed
+     - ジョブの終了が遅くなり、リソースのクリーンアップが遅延します
    * - wait_for_clients_timeout (CrossSiteEval)
-     - Long wait for clients that won't join
+     - 参加しないクライアントを長時間待ち続けます
    * - agent_heartbeat_timeout (IPC)
-     - Hung agents not detected, job stalls
+     - ハングしたエージェントが検出されず、ジョブが停滞します
    * - resend_task_interval (IPC/TaskExchanger)
-     - Slow recovery from transient failures
+     - 一時的な障害からの回復が遅くなります
    * - result_poll_interval (Executor)
-     - Delayed result detection, slower job completion
+     - 結果の検出が遅れ、ジョブの完了が遅くなります
    * - job_status_check_interval (TIE)
-     - Delayed detection of job completion or failure
+     - ジョブの完了または失敗の検出が遅れます
    * - tx_timeout (ReliableMessage)
-     - Long waits for failed transactions
+     - 失敗したトランザクションを長時間待つことになります
 
 
-Recommended Settings by Use Case
-================================
+ユースケース別の推奨設定
+============================
 
-Development Environment
------------------------
+開発環境
+--------------
 
-Fast iteration with quick feedback:
+素早いフィードバックによる高速なイテレーション:
 
 .. code-block:: python
 
@@ -2236,10 +2236,10 @@ Fast iteration with quick feedback:
    poll_interval = 1.0
 
 
-Production - Standard Training
-------------------------------
+本番環境 - 標準的な学習
+----------------------------
 
-Balanced settings for typical federated learning:
+一般的な連合学習向けのバランスの取れた設定:
 
 .. code-block:: python
 
@@ -2259,10 +2259,10 @@ Balanced settings for typical federated learning:
    last_result_transfer_timeout = 300.0
 
 
-Production - Large Models (100M+ parameters)
---------------------------------------------
+本番環境 - 大規模モデル(1 億パラメータ以上)
+------------------------------------------------
 
-Extended timeouts for large model training:
+大規模モデルの学習のために延長したタイムアウト:
 
 .. code-block:: python
 
@@ -2282,10 +2282,10 @@ Extended timeouts for large model training:
    learn_task_timeout = 7200      # 2 hours
 
 
-LLM/Foundation Model Training
------------------------------
+LLM/基盤モデルの学習
+--------------------------
 
-For billion-parameter models (examples/advanced/llm_hf):
+数十億パラメータのモデル向け (examples/advanced/llm_hf):
 
 .. code-block:: python
 
@@ -2304,10 +2304,10 @@ For billion-parameter models (examples/advanced/llm_hf):
    })
 
 
-Unreliable/High-Latency Networks
---------------------------------
+不安定/高レイテンシのネットワーク
+--------------------------------------
 
-Conservative settings for challenging network conditions:
+厳しいネットワーク条件向けの保守的な設定:
 
 .. code-block:: python
 
@@ -2329,10 +2329,10 @@ Conservative settings for challenging network conditions:
    ack_wait = 30
 
 
-Edge/Hierarchical FL
---------------------
+エッジ/階層型 FL
+----------------------
 
-Settings for edge device deployments:
+エッジデバイス配備向けの設定:
 
 .. code-block:: python
 
@@ -2346,10 +2346,10 @@ Settings for edge device deployments:
    update_interval = 2.0
 
 
-XGBoost Secure Training
------------------------
+XGBoost のセキュア学習
+----------------------------
 
-Settings for histogram-based XGBoost:
+ヒストグラムベースの XGBoost 向けの設定:
 
 .. code-block:: python
 
@@ -2364,10 +2364,10 @@ Settings for histogram-based XGBoost:
    xgb_server_ready_timeout = 30
 
 
-Cross-Site Model Evaluation
----------------------------
+サイト横断のモデル評価
+--------------------------
 
-Settings for model evaluation across sites:
+サイト間でモデルを評価する際の設定:
 
 .. code-block:: python
 
@@ -2380,10 +2380,10 @@ Settings for model evaluation across sites:
    )
 
 
-Federated Statistics
---------------------
+連合統計
+--------------
 
-Settings for statistics computation:
+統計計算のための設定:
 
 .. code-block:: python
 
@@ -2396,9 +2396,9 @@ Settings for statistics computation:
 
 
 Split Learning
---------------
+-------------------
 
-Settings for split neural network training:
+Split Neural Network の学習向けの設定:
 
 .. code-block:: python
 
@@ -2410,10 +2410,10 @@ Settings for split neural network training:
    )
 
 
-Flower Integration
-------------------
+Flower 統合
+----------------
 
-Settings for Flower framework integration:
+Flower フレームワーク連携のための設定:
 
 .. code-block:: python
 
@@ -2430,20 +2430,20 @@ Settings for Flower framework integration:
    )
 
 
-Configuration File Locations
-============================
+設定ファイルの場所
+========================
 
-This section describes where timeout configuration files are located and which timeouts 
-each file controls. Configuration is divided into **system-level** (startup kit) and 
-**job-level** (application) settings.
+このセクションでは、タイムアウトの設定ファイルがどこに配置されているか、また各ファイルが
+どのタイムアウトを制御するかを説明します。設定は **システムレベル** (スタートアップキット)と
+**ジョブレベル** (アプリケーション)に分かれています。
 
-System-Level Configuration (Startup Kit)
-----------------------------------------
+システムレベルの設定(スタートアップキット)
+------------------------------------------------
 
-System-level timeouts are configured in the startup kit and apply to all jobs.
-These files are located in the ``local/`` directory of each participant.
+システムレベルのタイムアウトはスタートアップキットで設定され、すべてのジョブに適用されます。
+これらのファイルは、各参加者の ``local/`` ディレクトリに配置されています。
 
-**Startup Kit Structure:**
+**スタートアップキットの構成:**
 
 .. code-block:: text
 
@@ -2464,36 +2464,36 @@ These files are located in the ``local/`` directory of each participant.
        └── local/
            └── admin.json               # Admin session timeouts
 
-**Deployed System Paths:**
+**デプロイ後のシステムパス:**
 
-After deployment, these files are located at:
+デプロイ後、これらのファイルは以下の場所に配置されます。
 
 .. list-table::
    :header-rows: 1
    :widths: 20 40 40
 
-   * - Component
-     - Startup Kit Path
-     - Deployed Path
-   * - Server
+   * - コンポーネント
+     - スタートアップキットのパス
+     - デプロイ後のパス
+   * - サーバー
      - ``startup_kit/server/local/``
-     - ``/opt/nvflare/workspace/server/local/`` or ``~/nvflare/workspace/server/local/``
-   * - Client (Site)
+     - ``/opt/nvflare/workspace/server/local/`` または ``~/nvflare/workspace/server/local/``
+   * - クライアント(サイト)
      - ``startup_kit/site-\*/local/``
-     - ``/opt/nvflare/workspace/site-\*/local/`` or ``~/nvflare/workspace/site-\*/local/``
-   * - Admin
+     - ``/opt/nvflare/workspace/site-\*/local/`` または ``~/nvflare/workspace/site-\*/local/``
+   * - 管理(Admin)
      - ``startup_kit/admin/local/``
-     - ``/opt/nvflare/workspace/admin/local/`` or ``~/nvflare/workspace/admin/local/``
+     - ``/opt/nvflare/workspace/admin/local/`` または ``~/nvflare/workspace/admin/local/``
 
-**System-Level Configuration Files:**
+**システムレベルの設定ファイル:**
 
 .. list-table::
    :header-rows: 1
    :widths: 22 22 56
 
-   * - File
-     - Location
-     - Timeouts Controlled
+   * - ファイル
+     - 場所
+     - 制御するタイムアウト
    * - fed_server.json
      - server/local/
      - ``heart_beat_timeout``, ``admin_timeout``, ``task_request_interval``, ``heartbeat_timeout``
@@ -2505,42 +2505,43 @@ After deployment, these files are located at:
      - ``heartbeat_interval``, ``subnet_heartbeat_interval``, ``streaming_read_timeout``, ``streaming_ack_interval``, ``max_message_size``
    * - resources.json
      - server/local/, site-\*/local/
-     - Resource allocation and limits
+     - リソースの割り当てと上限
    * - admin.json
      - admin/local/
      - ``idle_timeout``, ``login_timeout``, ``command_timeout``
 
-**Note**: Changes to system-level files require restarting the affected FLARE components.
+**注意**: システムレベルのファイルを変更した場合、対象となる FLARE のコンポーネントを
+再起動する必要があります。
 
 
-Job-Level Configuration
------------------------
+ジョブレベルの設定
+------------------------
 
-Job-level timeouts are configured per job and override defaults for that specific job.
-These files are located in the job's ``app/config/`` directory.
+ジョブレベルのタイムアウトはジョブごとに設定され、その特定のジョブについてデフォルト値を
+上書きします。これらのファイルはジョブの ``app/config/`` ディレクトリに配置されています。
 
-**Job Configuration Files:**
+**ジョブの設定ファイル:**
 
 .. list-table::
    :header-rows: 1
    :widths: 25 25 50
 
-   * - File
-     - Location
-     - Timeouts Controlled
+   * - ファイル
+     - 場所
+     - 制御するタイムアウト
    * - application.conf
      - app/config/
-     - Task timeouts, streaming timeouts, runner sync timeouts
+     - タスクのタイムアウト、ストリーミングのタイムアウト、ランナー同期のタイムアウト
    * - config_fed_client.json
      - app/config/
-     - Executor timeouts, Client API task exchange, pipe handler settings
+     - Executor のタイムアウト、Client API のタスク交換、Pipe Handler の設定
    * - config_fed_server.json
      - app/config/
-     - Controller timeouts, workflow component configurations
+     - Controller のタイムアウト、ワークフローコンポーネントの構成
 
-**Ways to Configure Job-Level Timeouts:**
+**ジョブレベルのタイムアウトを設定する方法:**
 
-1. **Recipe API** - Using ``recipe.add_client_config()`` to pass client parameters:
+1. **Recipe API** - ``recipe.add_client_config()`` を使用してクライアントパラメータを渡します。
 
    .. code-block:: python
 
@@ -2555,16 +2556,16 @@ These files are located in the job's ``app/config/`` directory.
           "get_task_timeout": 600,
       }, clients=["site-1", "site-2"])
 
-2. **Job config files** - In ``app/config/`` directory:
+2. **ジョブ設定ファイル** - ``app/config/`` ディレクトリ内:
 
-   - ``config_fed_client.json`` - Client-side executor and task exchange settings
-   - ``config_fed_server.json`` - Server-side controller and workflow settings
+   - ``config_fed_client.json`` - クライアント側の Executor およびタスク交換の設定
+   - ``config_fed_server.json`` - サーバー側の Controller およびワークフローの設定
 
-Configuration Examples
-======================
+設定例
+============
 
-fed_server.json (Server Configuration)
---------------------------------------
+fed_server.json (サーバー設定)
+------------------------------------
 
 .. code-block:: json
 
@@ -2579,8 +2580,8 @@ fed_server.json (Server Configuration)
    }
 
 
-comm_config.json (F3/CellNet Layer)
------------------------------------
+comm_config.json (F3/CellNet レイヤー)
+------------------------------------------
 
 .. code-block:: json
 
@@ -2598,8 +2599,8 @@ comm_config.json (F3/CellNet Layer)
    }
 
 
-Client API Configuration (config_fed_client.json)
--------------------------------------------------
+Client API の設定 (config_fed_client.json)
+------------------------------------------------
 
 .. code-block:: json
 
@@ -2617,8 +2618,8 @@ Client API Configuration (config_fed_client.json)
    }
 
 
-application.conf Settings
--------------------------
+application.conf の設定
+----------------------------
 
 .. code-block::
 
@@ -2649,44 +2650,45 @@ application.conf Settings
 
 .. _server_startup_dead_job_safety_flags:
 
-Server Startup and Dead-Job Safety Flags
-----------------------------------------
+サーバー起動とデッドジョブの安全フラグ
+------------------------------------------
 
-These ``application.conf`` flags are server-side safety controls used during job startup
-and client heartbeat synchronization:
+これらの ``application.conf`` のフラグは、ジョブ起動時およびクライアントのハートビート同期の
+際に使用されるサーバー側の安全制御です。
 
 .. list-table::
    :header-rows: 1
    :widths: 36 12 52
 
-   * - Parameter
-     - Default
-     - Purpose
+   * - パラメータ
+     - デフォルト
+     - 目的
    * - strict_start_job_reply_check
      - false
-     - Enables strict START_JOB reply validation (detects missing/timeout replies and non-OK return codes).
+     - 厳密な START_JOB 応答検証を有効にします(応答の欠落/タイムアウトおよび OK 以外のリターンコードを検出します)。
    * - sync_client_jobs_require_previous_report
      - true
-     - Requires a prior positive heartbeat report before treating "missing job on client" as a dead-job signal.
+     - 「クライアント上にジョブが存在しない」ことをデッドジョブのシグナルとして扱う前に、事前に正常なハートビート報告があることを必須とします。
 
-Recommended usage:
+推奨される使い方:
 
-- ``strict_start_job_reply_check`` defaults to ``false`` for backward compatibility.
-  In non-strict mode, timed-out clients are silently excluded from the active set and the
-  job continues — but ``min_sites`` / ``required_sites`` constraints are **not enforced**
-  for those timeouts, so startup problems can go undetected.
-  In strict mode, timeouts are detected and surfaced: ``required_sites`` and ``min_sites``
-  are then checked, and the job only continues (with a warning) if constraints are still
-  satisfied. Enable strict mode when you want timeouts to be visible and constraints to be
-  enforced at startup.
-- Keep ``sync_client_jobs_require_previous_report=true`` (default) to prevent false
-  dead-job reports during startup races and transient heartbeat delays.
-- Set ``sync_client_jobs_require_previous_report=false`` only to restore legacy behavior
-  where the first missing-job heartbeat immediately triggers dead-job detection.
+- ``strict_start_job_reply_check`` は後方互換性のためデフォルトで ``false`` です。
+  非厳密モードでは、タイムアウトしたクライアントはアクティブなセットから黙って除外され、
+  ジョブは継続します。ただし、それらのタイムアウトについては ``min_sites`` /
+  ``required_sites`` の制約が **適用されない** ため、起動時の問題が検出されないまま
+  進行する可能性があります。
+  厳密モードでは、タイムアウトが検出されて表面化します。``required_sites`` と ``min_sites``
+  がチェックされ、制約が依然として満たされている場合にのみ(警告付きで)ジョブが継続します。
+  タイムアウトを可視化し、起動時に制約を強制したい場合は厳密モードを有効にしてください。
+- 起動時の競合状態や一時的なハートビートの遅延によって誤ったデッドジョブ報告が発生するのを
+  防ぐため、``sync_client_jobs_require_previous_report=true`` (デフォルト)のままにして
+  ください。
+- ``sync_client_jobs_require_previous_report=false`` を設定するのは、最初にジョブが欠落した
+  ハートビートで即座にデッドジョブ検出が発動する従来の動作に戻す場合のみにしてください。
 
 
-Admin Client Session (Python API)
----------------------------------
+管理クライアントセッション (Python API)
+--------------------------------------------
 
 .. code-block:: python
 
@@ -2713,8 +2715,8 @@ Admin Client Session (Python API)
    sess.unset_timeout()
 
 
-Recipe with Extended Timeouts
------------------------------
+タイムアウトを延長した Recipe
+----------------------------------
 
 .. code-block:: python
 
@@ -2736,8 +2738,8 @@ Recipe with Extended Timeouts
    })
 
 
-CCWF/Swarm Learning Configuration
----------------------------------
+CCWF/Swarm Learning の設定
+--------------------------------
 
 .. code-block:: python
 
@@ -2753,8 +2755,8 @@ CCWF/Swarm Learning Configuration
    )
 
 
-Flower Integration
-------------------
+Flower 統合
+----------------
 
 .. code-block:: python
 
@@ -2773,8 +2775,8 @@ Flower Integration
    )
 
 
-Edge Device Configuration
--------------------------
+エッジデバイスの設定
+------------------------
 
 .. code-block:: python
 
@@ -2788,8 +2790,8 @@ Edge Device Configuration
    )
 
 
-TaskExchanger Configuration
----------------------------
+TaskExchanger の設定
+--------------------------
 
 .. code-block:: python
 
@@ -2805,7 +2807,7 @@ TaskExchanger Configuration
    )
 
 
-LauncherExecutor Configuration
+LauncherExecutor の設定
 ------------------------------
 
 .. code-block:: python
@@ -2825,8 +2827,8 @@ LauncherExecutor Configuration
    )
 
 
-ModelController-Based Workflow
-------------------------------
+ModelController ベースのワークフロー
+----------------------------------------
 
 .. code-block:: python
 
@@ -2845,7 +2847,7 @@ ModelController-Based Workflow
    )
 
 
-ScatterAndGather Configuration
+ScatterAndGather の設定
 ------------------------------
 
 .. code-block:: python
@@ -2861,7 +2863,7 @@ ScatterAndGather Configuration
    )
 
 
-CyclicController Configuration
+CyclicController の設定
 ------------------------------
 
 .. code-block:: python
@@ -2874,8 +2876,8 @@ CyclicController Configuration
    )
 
 
-TIE Controller Configuration
-----------------------------
+TIE Controller の設定
+--------------------------
 
 .. code-block:: python
 
@@ -2890,96 +2892,97 @@ TIE Controller Configuration
    )
 
 
-Notes and Best Practices
-========================
+注意事項とベストプラクティス
+====================================
 
-**General Rules:**
+**一般的なルール:**
 
-- Timeout values are in **seconds** unless otherwise specified
-- ``None`` or ``0`` often means no timeout limit (wait indefinitely)
-- Chunk size values of ``0`` disable streaming and use native serialization
+- タイムアウトの値は、特に指定がない限り **秒** 単位です
+- ``None`` または ``0`` は、多くの場合タイムアウトの制限がない(無期限に待機する)ことを意味します
+- チャンクサイズの値が ``0`` の場合、ストリーミングは無効化され、ネイティブのシリアライズが使用されます
 
-**Critical Constraints:**
+**重要な制約:**
 
-- ``heartbeat_interval`` must be **less than** ``heartbeat_timeout``
-- ``task_assignment_timeout`` must be **less than or equal to** ``task.timeout``
-- ``task_result_timeout`` must be **less than or equal to** ``task.timeout``
-- ``per_msg_timeout`` should be **less than or equal to** ``tx_timeout`` for retries to work
-- ``agent_heartbeat_interval`` must be **less than** ``agent_connection_timeout``
-- **IMPORTANT**: When using tensor streaming, ``get_task_timeout`` must be **greater than or equal to** 
-  ``wait_send_task_data_all_clients_timeout`` to prevent task fetch timeouts while waiting for all 
-  clients to receive tensors
+- ``heartbeat_interval`` は ``heartbeat_timeout`` より **小さく** する必要があります
+- ``task_assignment_timeout`` は ``task.timeout`` **以下** である必要があります
+- ``task_result_timeout`` は ``task.timeout`` **以下** である必要があります
+- リトライを機能させるため、``per_msg_timeout`` は ``tx_timeout`` **以下** にするべきです
+- ``agent_heartbeat_interval`` は ``agent_connection_timeout`` より **小さく** する必要があります
+- **重要**: テンソルストリーミングを使用する場合、すべてのクライアントがテンソルを受信するのを
+  待っている間にタスク取得のタイムアウトが発生するのを防ぐため、``get_task_timeout`` は
+  ``wait_send_task_data_all_clients_timeout`` **以上** である必要があります
 
-**Tensor Streaming Timeout Warning:**
+**テンソルストリーミングのタイムアウトに関する警告:**
 
-When tensor streaming is enabled, if ``get_task_timeout`` is not explicitly set, it defaults to the 
-communicator's timeout. If the streaming timeout (``wait_send_task_data_all_clients_timeout``) exceeds 
-the communicator timeout, clients may timeout while waiting for other clients to receive weights. This 
-can cause the tensor streaming process to restart and clients may receive empty tensors, causing the 
-job to fail.
+テンソルストリーミングが有効な場合、``get_task_timeout`` が明示的に設定されていないと、
+communicator のタイムアウトがデフォルトとして使用されます。ストリーミングのタイムアウト
+(``wait_send_task_data_all_clients_timeout``)が communicator のタイムアウトを超えると、
+他のクライアントが重みを受信するのを待っている間にクライアントがタイムアウトする可能性が
+あります。これによりテンソルストリーミングの処理が再開され、クライアントが空のテンソルを
+受け取り、ジョブが失敗する可能性があります。
 
-**Recommended relationship for tensor streaming:**
+**テンソルストリーミングにおける推奨される関係:**
 
 .. code-block:: text
 
    get_task_timeout >= wait_send_task_data_all_clients_timeout >= tensor_send_timeout * num_clients
 
-**Hierarchy:**
+**優先順位:**
 
-- Session-specific timeouts override server defaults
-- Client config overrides can be set via ``recipe.add_client_config()``
-- ``comm_config.json`` settings apply to all F3/CellNet communication
+- セッション固有のタイムアウトは、サーバーのデフォルト値を上書きします
+- クライアント設定の上書きは ``recipe.add_client_config()`` を通じて設定できます
+- ``comm_config.json`` の設定は、すべての F3/CellNet 通信に適用されます
 
-**Best Practices by Component:**
+**コンポーネント別のベストプラクティス:**
 
-*Controllers:*
+*Controller:*
 
-- Start with ``timeout=0`` (no timeout) during development
-- Set appropriate ``train_timeout`` based on expected round duration
-- For cross-site eval, ``validation_timeout`` should exceed longest validation time
-- Use ``wait_for_clients_timeout`` to limit waiting for slow clients
+- 開発中は ``timeout=0`` (タイムアウトなし)から始めてください
+- 想定されるラウンド時間に基づいて適切な ``train_timeout`` を設定してください
+- サイト横断の評価では、``validation_timeout`` は最長の検証時間を超えるようにしてください
+- 低速なクライアントを待つ時間を制限するには ``wait_for_clients_timeout`` を使用してください
 
-*Executors:*
+*Executor:*
 
-- ``external_pre_init_timeout`` should cover model loading + library imports
-- ``heartbeat_timeout`` should be 2-3x ``heartbeat_interval``
-- Set ``last_result_transfer_timeout`` based on result size
-- For IPC: ``agent_connection_timeout`` > ``agent_heartbeat_interval`` * 3
+- ``external_pre_init_timeout`` は、モデルの読み込みとライブラリのインポートを賄えるようにしてください
+- ``heartbeat_timeout`` は ``heartbeat_interval`` の 2〜3 倍にするべきです
+- ``last_result_transfer_timeout`` は結果のサイズに基づいて設定してください
+- IPC の場合: ``agent_connection_timeout`` > ``agent_heartbeat_interval`` * 3
 
-*Workflows:*
+*ワークフロー:*
 
-- ``progress_timeout`` catches hung jobs; set to 2-3x expected round time
-- ``job_status_check_interval`` trades responsiveness vs overhead
-- For statistics: ``result_wait_timeout`` per statistic, not total
+- ``progress_timeout`` はハングしたジョブを検出します。想定されるラウンド時間の 2〜3 倍に設定してください
+- ``job_status_check_interval`` は応答性とオーバーヘッドのトレードオフです
+- 統計の場合: ``result_wait_timeout`` は合計ではなく統計量ごとの時間です
 
-*Network/Streaming:*
+*ネットワーク/ストリーミング:*
 
-- Increase ``per_msg_timeout`` and ``tx_timeout`` for high-latency networks
-- ``streaming_read_timeout`` should handle slowest expected transfer
-- Use longer ``ack_wait`` for unreliable connections
+- 高レイテンシのネットワークでは ``per_msg_timeout`` と ``tx_timeout`` を大きくしてください
+- ``streaming_read_timeout`` は想定される最も遅い転送に対応できるようにしてください
+- 信頼性の低い接続では ``ack_wait`` を長めにしてください
 
-**Debugging Tips:**
+**デバッグのヒント:**
 
-- Enable debug logging to see timeout-related messages
-- Check ``num_timeout_reqs`` counter in CoreCell for timeout statistics
-- Monitor heartbeat status to detect connectivity issues early
-- Look for "timeout" in logs to identify which timeouts are triggering
-- For IPC issues, check ``agent_connection_timeout`` and agent logs
-- For third-party integration (TIE), monitor ``max_client_op_interval`` triggers
+- タイムアウト関連のメッセージを確認するには、デバッグログを有効にしてください
+- タイムアウトの統計については、CoreCell の ``num_timeout_reqs`` カウンターを確認してください
+- 接続性の問題を早期に検出するため、ハートビートのステータスを監視してください
+- どのタイムアウトが発動しているかを特定するため、ログ中の "timeout" を確認してください
+- IPC の問題については、``agent_connection_timeout`` とエージェントのログを確認してください
+- サードパーティ統合 (TIE) では、``max_client_op_interval`` の発動を監視してください
 
-**Common Timeout Patterns:**
+**よくあるタイムアウトのパターン:**
 
-1. **Layered Timeouts**: Higher-level timeouts should exceed lower-level ones
-   
+1. **階層化されたタイムアウト**: より上位のタイムアウトは、下位のタイムアウトを上回るべきです
+
    - ``progress_timeout`` > ``train_timeout`` > ``task_wait_timeout``
-   - ``validation_timeout`` > per-batch validation time * num_batches
+   - ``validation_timeout`` > バッチごとの検証時間 * バッチ数
 
-2. **Heartbeat Relationships**: Always maintain proper ratios
-   
-   - ``heartbeat_timeout`` = 3-6x ``heartbeat_interval``
-   - ``agent_heartbeat_timeout`` = 3-6x ``agent_heartbeat_interval``
+2. **ハートビートの関係**: 常に適切な比率を保ってください
 
-3. **Retry Allowance**: Leave room for retries
-   
-   - ``tx_timeout`` > ``per_msg_timeout`` * expected_retries
-   - ``task.timeout`` > ``task_assignment_timeout`` + actual_work_time
+   - ``heartbeat_timeout`` = ``heartbeat_interval`` の 3〜6 倍
+   - ``agent_heartbeat_timeout`` = ``agent_heartbeat_interval`` の 3〜6 倍
+
+3. **リトライの余裕**: リトライのための余裕を残してください
+
+   - ``tx_timeout`` > ``per_msg_timeout`` * 想定リトライ回数
+   - ``task.timeout`` > ``task_assignment_timeout`` + 実際の作業時間

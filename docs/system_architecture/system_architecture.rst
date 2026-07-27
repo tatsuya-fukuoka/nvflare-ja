@@ -1,7 +1,7 @@
 .. _flare_system_architecture:
 
 ####################
-FLARE Architecture
+FLARE アーキテクチャ
 ####################
 
 .. image:: ../resources/flare_overview.png
@@ -10,124 +10,124 @@ FLARE Architecture
 
 
 
-Purpose and Scope
-=================
+目的と適用範囲
+==============
 
-This document describes NVIDIA FLARE's overall system architecture, including its major subsystems, process model,
-and component interactions. It provides a technical overview of how the platform orchestrates federated learning
-workloads across distributed participants.
+本ドキュメントでは、NVIDIA FLARE の全体的なシステムアーキテクチャについて、主要なサブシステム、プロセスモデル、
+コンポーネント間の相互作用を含めて説明します。分散した参加者間でフェデレーテッドラーニングのワークロードを
+このプラットフォームがどのようにオーケストレーションするかを、技術的な観点から概説します。
 
-For detailed information about specific subsystems:
+個別のサブシステムに関する詳細情報は、以下を参照してください。
 
-- Communication infrastructure: see :ref:`cellnet_architecture`
-- Provisioning and deployment: see :ref:`provisioning`
-- Security: see :ref:`flare_security_overview`
-
-
-Architectural Overview
-======================
-
-NVIDIA FLARE is a distributed federated learning platform with a multi-process, component-based architecture.
-The system is organized into distinct layers: user interaction, provisioning, runtime execution, communication,
-and storage.
-
-The FLARE architecture comprises three main layers:
-
-- **Foundation Layer**: Communication infrastructure, messaging protocols, privacy preservation tools, and secure platform management.
-- **Application Layer**: Building blocks for federated learning, including federation workflows and learning algorithms.
-- **Tooling**: FL Simulator and POC CLI for experimentation and simulation, plus deployment and management tools for production workflows.
+- 通信インフラストラクチャ: :ref:`cellnet_architecture` を参照
+- プロビジョニングとデプロイメント: :ref:`provisioning` を参照
+- セキュリティ: :ref:`flare_security_overview` を参照
 
 
-Core Design Principles
-----------------------
+アーキテクチャの概要
+====================
 
-**Component-Based Design**
+NVIDIA FLARE は、マルチプロセスかつコンポーネントベースのアーキテクチャを持つ分散フェデレーテッドラーニング
+プラットフォームです。システムは、ユーザーインタラクション、プロビジョニング、ランタイム実行、通信、
+ストレージという明確なレイヤーに整理されています。
 
-The architecture uses pluggable components (``Controller``, ``Executor``, ``Filter``, ``Aggregator``) defined in
-JSON configuration files to implement federated learning algorithms. This enables flexible composition of
-workflows without code changes.
+FLARE アーキテクチャは、次の 3 つの主要レイヤーで構成されます。
 
-**Multi-Process Isolation**
-
-Parent processes (``ProcessType.SERVER_PARENT``, ``ProcessType.CLIENT_PARENT``) manage system lifecycle and spawn
-isolated job processes (``ProcessType.SERVER_JOB``, ``ProcessType.CLIENT_JOB``) for workload execution. This
-provides fault tolerance and resource isolation.
-
-**Cell-Based Communication**
-
-All inter-process and inter-machine communication uses the ``Cell`` class from the F3 CellNet framework. Addressing
-uses Fully Qualified Cell Names (FQCN), and messages are routed through predefined ``CellChannel`` values.
-
-**Multiple Deployment Modes**
-
-The same core classes support three deployment modes: ``SimulatorRunner`` (single process with threads), POC mode
-(multiple processes on localhost), and production (distributed processes with mTLS).
+- **基盤レイヤー (Foundation Layer)**: 通信インフラストラクチャ、メッセージングプロトコル、プライバシー保護ツール、およびセキュアなプラットフォーム管理。
+- **アプリケーションレイヤー (Application Layer)**: フェデレーションワークフローや学習アルゴリズムを含む、フェデレーテッドラーニングのためのビルディングブロック。
+- **ツール群 (Tooling)**: 実験やシミュレーションのための FL Simulator と POC CLI、加えて本番ワークフローのためのデプロイメントおよび管理ツール。
 
 
-Core Components
-===============
+コア設計原則
+------------
 
-Primary System Modules
+**コンポーネントベースの設計**
+
+このアーキテクチャでは、JSON 設定ファイルで定義されるプラグイン可能なコンポーネント (``Controller``、``Executor``、``Filter``、``Aggregator``) を使用して
+フェデレーテッドラーニングのアルゴリズムを実装します。これにより、コードを変更することなく柔軟に
+ワークフローを構成できます。
+
+**マルチプロセスによる分離**
+
+親プロセス (``ProcessType.SERVER_PARENT``、``ProcessType.CLIENT_PARENT``) がシステムのライフサイクルを管理し、
+ワークロード実行のために分離されたジョブプロセス (``ProcessType.SERVER_JOB``、``ProcessType.CLIENT_JOB``) を起動します。
+これにより、耐障害性とリソースの分離が実現されます。
+
+**セルベースの通信**
+
+プロセス間およびマシン間のすべての通信では、F3 CellNet フレームワークの ``Cell`` クラスを使用します。アドレス指定には
+完全修飾セル名 (FQCN) を用い、メッセージは事前定義された ``CellChannel`` の値を通じてルーティングされます。
+
+**複数のデプロイメントモード**
+
+同一のコアクラス群が 3 つのデプロイメントモードをサポートします。``SimulatorRunner`` (スレッドを用いた単一プロセス)、POC モード
+(localhost 上の複数プロセス)、および本番環境 (mTLS を用いた分散プロセス) です。
+
+
+主要コンポーネント
+==================
+
+主要システムモジュール
 ----------------------
 
 .. list-table::
    :header-rows: 1
    :widths: 20 35 45
 
-   * - Component
-     - Primary Classes/Modules
-     - Purpose
-   * - FL Runtime
+   * - コンポーネント
+     - 主なクラス/モジュール
+     - 目的
+   * - FL ランタイム
      - ServerEngine, ClientEngine, JobRunner
-     - Core federated learning orchestration and execution
-   * - Job Management
-     - Job definition, storage, scheduling
-     - Job lifecycle and state management
-   * - Communication
+     - フェデレーテッドラーニングの中核となるオーケストレーションと実行
+   * - ジョブ管理
+     - ジョブ定義、ストレージ、スケジューリング
+     - ジョブのライフサイクルと状態の管理
+   * - 通信
      - Cell, CoreCell, StreamCell, Pipe
-     - Secure inter-party communication with streaming support
-   * - Client Integration
+     - ストリーミングをサポートする、参加者間のセキュアな通信
+   * - クライアント統合
      - ClientAPI (flare.receive(), flare.send()), LauncherExecutor
-     - ML framework integration and external process management
-   * - Administration
+     - ML フレームワークの統合と外部プロセスの管理
+   * - 管理 (Administration)
      - Dashboard, Admin Console
-     - Programmatic and GUI-based system management
-   * - Deployment
+     - プログラムおよび GUI ベースのシステム管理
+   * - デプロイメント
      - ProvisionerSpec, WorkspaceBuilder
-     - Certificate generation, configuration, and secure deployment
-   * - Workflows
+     - 証明書の生成、設定、およびセキュアなデプロイメント
+   * - ワークフロー
      - ScatterAndGather, FedAvg, ModelController
-     - Built-in federated learning algorithms and patterns
+     - 組み込みのフェデレーテッドラーニングのアルゴリズムとパターン
 
 
-Multi-Process Architecture
-==========================
+マルチプロセスアーキテクチャ
+============================
 
-NVIDIA FLARE uses a multi-process architecture where parent processes manage system lifecycle and spawn isolated
-job processes for workload execution.
+NVIDIA FLARE はマルチプロセスアーキテクチャを採用しており、親プロセスがシステムのライフサイクルを管理し、
+ワークロード実行のために分離されたジョブプロセスを起動します。
 
-Process Types
--------------
+プロセスタイプ
+--------------
 
 .. list-table::
    :header-rows: 1
    :widths: 15 25 60
 
-   * - Process
-     - Code Symbol
-     - Description
+   * - プロセス
+     - コード上のシンボル
+     - 説明
    * - SP
      - ``ProcessType.SERVER_PARENT``
-     - Server parent process running FederatedServer and ServerEngine
+     - FederatedServer と ServerEngine を実行するサーバー親プロセス
    * - SJ
      - ``ProcessType.SERVER_JOB``
-     - Server job process running ServerRunner and workflow Controllers
+     - ServerRunner とワークフロー Controller を実行するサーバージョブプロセス
    * - CP
      - ``ProcessType.CLIENT_PARENT``
-     - Client parent process running FederatedClient and ClientEngine
+     - FederatedClient と ClientEngine を実行するクライアント親プロセス
    * - CJ
      - ``ProcessType.CLIENT_JOB``
-     - Client job process running ClientRunner and Executors
+     - ClientRunner と Executor を実行するクライアントジョブプロセス
 
 
 .. |job_arch1| image:: ../resources/job_architecture.png
@@ -141,71 +141,71 @@ Process Types
 |job_arch1| |job_arch2|
 
 
-Process Responsibilities
-------------------------
+プロセスの責務
+--------------
 
-**Server Parent (SP)**
+**サーバー親プロセス (SP)**
 
-- Runs ``FederatedServer`` for client registration and heartbeat monitoring
-- Houses ``ServerEngine`` which orchestrates job scheduling via ``JobRunner``
-- Spawns Server Job (SJ) processes or containers for each active job
-- Manages authentication and token issuance for clients
+- クライアントの登録とハートビート監視のために ``FederatedServer`` を実行します
+- ``JobRunner`` を介してジョブスケジューリングをオーケストレーションする ``ServerEngine`` を保持します
+- アクティブな各ジョブに対して、サーバージョブ (SJ) プロセスまたはコンテナを起動します
+- クライアントの認証とトークン発行を管理します
 
-**Server Job (SJ)**
+**サーバージョブ (SJ)**
 
-- Runs ``ServerRunner`` for workflow execution
-- Executes workflow Controllers (e.g., ``ScatterAndGather``, ``FedAvg``)
-- Broadcasts tasks to client jobs and aggregates results
-- Isolated process per job for fault tolerance
+- ワークフロー実行のために ``ServerRunner`` を実行します
+- ワークフロー Controller (例: ``ScatterAndGather``、``FedAvg``) を実行します
+- クライアントジョブへタスクをブロードキャストし、結果を集約します
+- 耐障害性のため、ジョブごとに分離されたプロセスとなります
 
-**Client Parent (CP)**
+**クライアント親プロセス (CP)**
 
-- Runs ``FederatedClient`` for registration with server
-- Houses ``ClientEngine`` which coordinates job execution
-- Spawns Client Job (CJ) processes or containers for assigned jobs
-- Maintains connection heartbeat with server
+- サーバーへの登録のために ``FederatedClient`` を実行します
+- ジョブ実行を調整する ``ClientEngine`` を保持します
+- 割り当てられたジョブに対して、クライアントジョブ (CJ) プロセスまたはコンテナを起動します
+- サーバーとの接続ハートビートを維持します
 
-**Client Job (CJ)**
+**クライアントジョブ (CJ)**
 
-- Runs ``ClientRunner`` for task execution
-- Pulls tasks from server via Cell network
-- Launches training processes using ``LauncherExecutor``
-- Routes task data to/from training process via Pipe
+- タスク実行のために ``ClientRunner`` を実行します
+- Cell ネットワークを介してサーバーからタスクをプルします
+- ``LauncherExecutor`` を使用してトレーニングプロセスを起動します
+- Pipe を介してトレーニングプロセスとの間でタスクデータをルーティングします
 
-**Training Process**
+**トレーニングプロセス**
 
-- User's ML training script
-- Uses Client API: ``flare.init()``, ``flare.receive()``, ``flare.send()``
-- Communicates with CJ via FilePipe (file-based) or CellPipe (network-based)
+- ユーザーの ML トレーニングスクリプトです
+- Client API (``flare.init()``、``flare.receive()``、``flare.send()``) を使用します
+- FilePipe (ファイルベース) または CellPipe (ネットワークベース) を介して CJ と通信します
 
 
-Process Lifecycle and Spawning
+プロセスのライフサイクルと起動
 ------------------------------
 
-Job processes are spawned dynamically when jobs are scheduled:
+ジョブプロセスは、ジョブがスケジューリングされた時点で動的に起動されます。
 
-1. **Job Submission**: Admin submits job via ``nvflare job submit``
-2. **Scheduling**: ``JobRunner`` selects job based on policy and resource availability
-3. **Server Job Spawn**: SP spawns SJ process with job configuration
-4. **Client Notification**: SP notifies registered clients to start job
-5. **Client Job Spawn**: Each CP spawns CJ process for the job
-6. **Execution**: SJ and CJ processes execute workflow
-7. **Completion**: Processes terminate and report status to parents
+1. **ジョブ投入**: 管理者が ``nvflare job submit`` でジョブを投入します
+2. **スケジューリング**: ``JobRunner`` がポリシーとリソースの空き状況に基づいてジョブを選択します
+3. **サーバージョブの起動**: SP がジョブ設定とともに SJ プロセスを起動します
+4. **クライアントへの通知**: SP が登録済みクライアントにジョブ開始を通知します
+5. **クライアントジョブの起動**: 各 CP がそのジョブのために CJ プロセスを起動します
+6. **実行**: SJ プロセスと CJ プロセスがワークフローを実行します
+7. **完了**: プロセスが終了し、ステータスを親プロセスに報告します
 
 
-K8s-native Architecture: Control and Execution Planes Separation
------------------------------------------------------------------
+K8s ネイティブアーキテクチャ: コントロールプレーンと実行プレーンの分離
+----------------------------------------------------------------------
 
 .. note::
 
-   K8s-native deployment support was introduced in FLARE 2.8.0. For deployment
-   steps, Helm chart generation, parent pods, and dynamically launched job
-   pods, see :ref:`helm_chart`.
+   K8s ネイティブデプロイメントのサポートは FLARE 2.8.0 で導入されました。デプロイメント手順、
+   Helm チャートの生成、親 Pod、および動的に起動されるジョブ
+   Pod については、:ref:`helm_chart` を参照してください。
 
-Parent pods manage the system lifecycle and spawn job pods (server job pod, client job pod) for workload execution.
-The server hosts the central coordination logic and is designed to be resilient, scalable, and capable of handling
-high-throughput metadata traffic separately from high-volume data traffic.
-The following diagram illustrates the Server Parent (SP), Server Job (SJ), and related pods within the Kubernetes environment.
+親 Pod はシステムのライフサイクルを管理し、ワークロード実行のためにジョブ Pod (サーバージョブ Pod、クライアントジョブ Pod) を起動します。
+サーバーは中央の調整ロジックをホストしており、耐障害性とスケーラビリティを備え、
+大容量のデータトラフィックとは分離して高スループットのメタデータトラフィックを処理できるよう設計されています。
+次の図は、Kubernetes 環境におけるサーバー親プロセス (SP)、サーバージョブ (SJ)、および関連する Pod を示しています。
 
 
 .. image:: ../resources/k8s_control_execution_planes.png
@@ -214,162 +214,162 @@ The following diagram illustrates the Server Parent (SP), Server Job (SJ), and r
 
 
 
-Communication Framework
-=======================
+通信フレームワーク
+==================
 
-The Communication Framework, also known as F3 (FLARE Foundation Framework) and CellNet, provides the foundational
-messaging infrastructure for all communication in NVIDIA FLARE.
+通信フレームワークは F3 (FLARE Foundation Framework) および CellNet としても知られており、NVIDIA FLARE における
+すべての通信の基盤となるメッセージングインフラストラクチャを提供します。
 
-Key capabilities include:
+主な機能は次のとおりです。
 
-- **FQCN Addressing**: Hierarchical cell names (e.g., ``server.job_123``, ``client.site-1.job_123``)
-- **Channel-Based Routing**: Predefined channels for task distribution, commands, and auxiliary messages
-- **Secure Messaging**: End-to-end encryption with certificate-based authentication
-- **Large Data Streaming**: Automatic chunking with flow control for model weights and datasets
+- **FQCN アドレス指定**: 階層的なセル名 (例: ``server.job_123``、``client.site-1.job_123``)
+- **チャネルベースのルーティング**: タスク配布、コマンド、および補助メッセージ用の事前定義されたチャネル
+- **セキュアなメッセージング**: 証明書ベースの認証によるエンドツーエンド暗号化
+- **大容量データのストリーミング**: モデルの重みやデータセットに対する、フロー制御を伴う自動チャンク分割
 
-CellNet uses a three-layer architecture (CoreCell → StreamCell → Cell) that abstracts transport details
-and supports multiple protocols (gRPC, TCP, HTTP).
+CellNet は 3 層構造のアーキテクチャ (CoreCell → StreamCell → Cell) を採用しており、トランスポートの詳細を抽象化し、
+複数のプロトコル (gRPC、TCP、HTTP) をサポートします。
 
-For detailed information on CellNet internals, channels, streaming components, and communication patterns,
-see :ref:`cellnet_architecture`.
-
-
-Message Flow: Task Pull Pattern
--------------------------------
-
-FLARE uses a pull-based task distribution pattern:
-
-1. **Task Creation**: Controller creates task with payload
-2. **Task Broadcast**: ServerRunner broadcasts task availability
-3. **Task Pull**: ClientRunner pulls task via ``CellChannel.SERVER_MAIN``
-4. **Task Execution**: Executor processes task, produces result
-5. **Result Push**: ClientRunner sends result via ``CellChannel.SERVER_MAIN``
-6. **Result Processing**: Controller aggregates results
+CellNet の内部構造、チャネル、ストリーミングコンポーネント、および通信パターンの詳細については、
+:ref:`cellnet_architecture` を参照してください。
 
 
+メッセージフロー: タスクプルパターン
+------------------------------------
 
-Client API Job Process
-======================
+FLARE では、プルベースのタスク配布パターンを使用します。
 
-The Client API provides a simplified interface for integrating user training scripts with the FLARE job process.
-With just a few lines of code changes, data scientists can convert centralized training code to federated learning.
+1. **タスク生成**: Controller がペイロードを伴うタスクを生成します
+2. **タスクのブロードキャスト**: ServerRunner がタスクの利用可能性をブロードキャストします
+3. **タスクのプル**: ClientRunner が ``CellChannel.SERVER_MAIN`` を介してタスクをプルします
+4. **タスクの実行**: Executor がタスクを処理し、結果を生成します
+5. **結果のプッシュ**: ClientRunner が ``CellChannel.SERVER_MAIN`` を介して結果を送信します
+6. **結果の処理**: Controller が結果を集約します
+
+
+
+Client API ジョブプロセス
+=========================
+
+Client API は、ユーザーのトレーニングスクリプトを FLARE のジョブプロセスに統合するための簡潔なインターフェイスを提供します。
+わずか数行のコード変更で、データサイエンティストは中央集権的なトレーニングコードをフェデレーテッドラーニングに変換できます。
 
 .. image:: ../resources/client_api.png
    :alt: Client API Architecture
    :height: 300px
 
-Key characteristics:
+主な特徴:
 
-- **Minimal Code Changes**: Three core methods (``init()``, ``receive()``, ``send()``) handle all FL communication
-- **Two Execution Modes**: In-process (single GPU, maximum performance) or sub-process (multi-GPU, process isolation)
-- **Framework Support**: Works with PyTorch, PyTorch Lightning, HuggingFace, and other frameworks
+- **最小限のコード変更**: 3 つの中核メソッド (``init()``、``receive()``、``send()``) がすべての FL 通信を処理します
+- **2 つの実行モード**: インプロセス (シングル GPU、最大性能) またはサブプロセス (マルチ GPU、プロセス分離)
+- **フレームワークのサポート**: PyTorch、PyTorch Lightning、HuggingFace、およびその他のフレームワークで動作します
 
-For detailed Client API documentation, communication patterns, configuration options, and examples,
-see :ref:`client_api`
+Client API の詳細なドキュメント、通信パターン、設定オプション、および例については、
+:ref:`client_api` を参照してください
 
 
-Job Management
-==============
+ジョブ管理
+==========
 
-Job Structure
--------------
+ジョブの構造
+------------
 
-A FLARE job consists of:
+FLARE のジョブは、次の要素で構成されます。
 
-- **meta.json**: Job metadata (name, deploy map, resource requirements)
-- **config_fed_server.json**: Server-side component configuration
-- **config_fed_client.json**: Client-side component configuration
-- **Custom code**: Application-specific components and scripts
+- **meta.json**: ジョブのメタデータ (名前、デプロイマップ、リソース要件)
+- **config_fed_server.json**: サーバー側のコンポーネント設定
+- **config_fed_client.json**: クライアント側のコンポーネント設定
+- **カスタムコード**: アプリケーション固有のコンポーネントとスクリプト
 
-Job Lifecycle States
---------------------
+ジョブのライフサイクル状態
+--------------------------
 
 .. list-table::
    :header-rows: 1
    :widths: 25 75
 
-   * - State
-     - Description
+   * - 状態
+     - 説明
    * - ``SUBMITTED``
-     - Job submitted, awaiting scheduling
+     - ジョブが投入され、スケジューリング待ちの状態です
    * - ``DISPATCHED``
-     - Job assigned to clients, processes starting
+     - ジョブがクライアントに割り当てられ、プロセスが開始中の状態です
    * - ``RUNNING``
-     - Job actively executing
+     - ジョブが実行中の状態です
    * - ``FINISHED_COMPLETED``
-     - Job completed successfully
+     - ジョブが正常に完了した状態です
    * - ``FINISHED_ABORTED``
-     - Job aborted by admin request or by a failure classified as an abort
+     - 管理者の要求、または中断として分類される障害によってジョブが中断された状態です
    * - ``FINISHED_EXECUTION_EXCEPTION``
-     - Job failed due to an execution exception, such as a launcher startup
-       failure or a Kubernetes job pod stuck in ``Pending``/``Unknown`` beyond
-       ``pending_timeout``
+     - 実行時の例外によってジョブが失敗した状態です。たとえば、ランチャーの起動
+       失敗や、Kubernetes のジョブ Pod が ``pending_timeout`` を超えて
+       ``Pending``/``Unknown`` のまま停滞した場合などです
 
 
-JobRunner Architecture
-----------------------
+JobRunner アーキテクチャ
+------------------------
 
 .. image:: ../resources/job_runner_architecture.png
    :alt: FLARE Job Runner Architecture
    :align: center
    :height: 300px
 
-The ``JobRunner`` is responsible for:
+``JobRunner`` は次の役割を担います。
 
-- Monitoring submitted jobs in the job store
-- Scheduling jobs based on policy and resource availability
-- Deploying jobs to server and client processes
-- Tracking job status and handling completion/failure
+- ジョブストア内の投入済みジョブを監視する
+- ポリシーとリソースの空き状況に基づいてジョブをスケジューリングする
+- サーバープロセスおよびクライアントプロセスへジョブをデプロイする
+- ジョブのステータスを追跡し、完了/失敗を処理する
 
 
-Deployment Modes
-================
+デプロイメントモード
+====================
 
-NVIDIA FLARE provides three deployment modes that share the same core runtime but differ in packaging, security,
-and deployment complexity.
+NVIDIA FLARE は 3 つのデプロイメントモードを提供します。これらは同一のコアランタイムを共有しますが、パッケージング、セキュリティ、
+およびデプロイメントの複雑さが異なります。
 
-Deployment Modes Comparison
----------------------------
+デプロイメントモードの比較
+--------------------------
 
 .. list-table::
    :header-rows: 1
    :widths: 15 25 15 25 20
 
-   * - Mode
-     - Use Case
-     - Security
-     - Processes
-     - Setup Time
+   * - モード
+     - ユースケース
+     - セキュリティ
+     - プロセス
+     - セットアップ時間
    * - Simulator
-     - Rapid prototyping, algorithm testing
-     - None
-     - Single process with threads (may spawn multiple processes in some cases)
-     - Seconds
+     - 高速なプロトタイピング、アルゴリズムのテスト
+     - なし
+     - スレッドを用いた単一プロセス (場合によっては複数プロセスを起動することがあります)
+     - 数秒
    * - POC
-     - Local multi-client testing, workflow validation
-     - Optional
-     - Multiple processes on localhost
-     - Minutes
-   * - Production
-     - Real-world distributed deployment
-     - Full PKI/mTLS
-     - Distributed across machines
-     - < 1 hr (with provisioning)
+     - ローカルでのマルチクライアントテスト、ワークフローの検証
+     - 任意
+     - localhost 上の複数プロセス
+     - 数分
+   * - 本番 (Production)
+     - 実世界における分散デプロイメント
+     - 完全な PKI/mTLS
+     - 複数マシンに分散
+     - 1 時間未満 (プロビジョニングを含む)
 
 
-Simulator Mode
---------------
+Simulator モード
+----------------
 
-Simulator mode runs the entire FL system in a localhost using threads and processes
+Simulator モードは、スレッドとプロセスを使用して FL システム全体を localhost 上で実行します。
 
-**Characteristics**:
+**特徴**:
 
-- Single process with ``SimulatorRunner``
-- Clients simulated as threads sharing memory
-- Uses network communication (in-memory message passing coming soon)
-- Fastest iteration for algorithm development
+- ``SimulatorRunner`` による単一プロセス
+- クライアントはメモリを共有するスレッドとしてシミュレートされます
+- ネットワーク通信を使用します (インメモリのメッセージパッシングは近日提供予定)
+- アルゴリズム開発において最も高速なイテレーションが可能です
 
-**Usage with Job Recipe**:
+**Job Recipe での使用方法**:
 
 .. code-block:: python
 
@@ -377,26 +377,26 @@ Simulator mode runs the entire FL system in a localhost using threads and proces
    env = SimEnv(num_clients=n_clients, num_threads=n_clients)
    recipe.execute(env=env)
 
-**Usage with CLI**:
+**CLI での使用方法**:
 
 .. code-block:: bash
 
    nvflare simulator -w workspace -n 2 -t 2 <job_dir>
 
 
-POC Mode
---------
+POC モード
+----------
 
-POC mode launches separate processes for server and clients on localhost.
+POC モードは、localhost 上でサーバーとクライアントのために個別のプロセスを起動します。
 
-**Characteristics**:
+**特徴**:
 
-- Server parent process with separate client parent processes
-- Uses actual network communication (gRPC on localhost)
-- Job processes spawn using same mechanism as production
-- TLS optional (for testing purposes)
+- サーバー親プロセスと、それとは別のクライアント親プロセス
+- 実際のネットワーク通信 (localhost 上の gRPC) を使用します
+- ジョブプロセスは本番環境と同じ仕組みで起動されます
+- TLS は任意です (テスト目的)
 
-**Usage with Job Recipe**:
+**Job Recipe での使用方法**:
 
 .. code-block:: python
 
@@ -405,7 +405,7 @@ POC mode launches separate processes for server and clients on localhost.
    recipe.execute(env=env)
 
 
-**Usage with CLI**:
+**CLI での使用方法**:
 
 .. code-block:: bash
 
@@ -414,78 +414,78 @@ POC mode launches separate processes for server and clients on localhost.
    nvflare job submit -j <job_dir>
 
 
-Production Mode
----------------
+本番モード
+----------
 
-Production mode deploys across multiple machines with full security enforcement.
+本番モードは、完全なセキュリティ適用のもとで複数のマシンにまたがってデプロイします。
 
-**Requirements**:
+**要件**:
 
-- Separate machines for server and clients
-- PKI certificates generated by Provisioner
-- All certificates signed by root CA
-- Optional: Relay nodes for hierarchical connectivity
+- サーバーとクライアントのための別々のマシン
+- Provisioner によって生成された PKI 証明書
+- ルート CA によって署名されたすべての証明書
+- 任意: 階層的な接続性のためのリレーノード
 
-**Characteristics**:
+**特徴**:
 
-- Server runs via ``nvflare.private.fed.app.server.server_train``
-- Clients run via ``nvflare.private.fed.app.client.client_train``
-- All Cell instances use mTLS (mutual TLS)
-- Full authentication and authorization enforcement
-
-
-Security Architecture
-=====================
-
-PKI and Certificate Management
-------------------------------
-
-NVIDIA FLARE uses PKI for mutual authentication in secure mode:
-
-**Certificate Hierarchy**:
-
-- **Root CA**: Self-signed certificate authority generated during provisioning
-- **Server Certificate**: Signed by Root CA, identifies server
-- **Client Certificates**: Signed by Root CA, unique per client
-- **Admin Certificates**: Signed by Root CA, include role attributes for RBAC
-
-**Authentication Protocol**:
-
-1. Client sends challenge (random nonce) to server
-2. Server proves identity by signing nonce with its private key
-3. Client validates server, sends registration with signed response
-4. Server issues authentication token for subsequent requests
-
-**Token-Based Authentication**:
-
-After registration, all messages include authentication headers:
-
-- ``TOKEN``: Client authentication token
-- ``TOKEN_SIGNATURE``: Server signature for verification
-- ``SSID``: Service session ID
+- サーバーは ``nvflare.private.fed.app.server.server_train`` 経由で実行されます
+- クライアントは ``nvflare.private.fed.app.client.client_train`` 経由で実行されます
+- すべての Cell インスタンスが mTLS (相互 TLS) を使用します
+- 完全な認証と認可が適用されます
 
 
-Authorization Service
----------------------
+セキュリティアーキテクチャ
+==========================
 
-The ``AuthorizationService`` enforces role-based access control:
+PKI と証明書の管理
+------------------
 
-- Policy defined in ``authorization.json``
-- Admin commands checked against user role from certificate
-- Rights enforced before command execution
+NVIDIA FLARE は、セキュアモードにおける相互認証のために PKI を使用します。
 
-For more details, see :ref:`flare_security_overview`.
+**証明書の階層**:
+
+- **ルート CA**: プロビジョニング時に生成される自己署名の認証局
+- **サーバー証明書**: ルート CA によって署名され、サーバーを識別します
+- **クライアント証明書**: ルート CA によって署名され、クライアントごとに固有です
+- **管理者証明書**: ルート CA によって署名され、RBAC のためのロール属性を含みます
+
+**認証プロトコル**:
+
+1. クライアントがサーバーにチャレンジ (ランダムな nonce) を送信します
+2. サーバーが自身の秘密鍵で nonce に署名し、身元を証明します
+3. クライアントがサーバーを検証し、署名済みのレスポンスとともに登録要求を送信します
+4. サーバーが以降のリクエストのための認証トークンを発行します
+
+**トークンベースの認証**:
+
+登録後、すべてのメッセージには次の認証ヘッダーが含まれます。
+
+- ``TOKEN``: クライアントの認証トークン
+- ``TOKEN_SIGNATURE``: 検証のためのサーバー署名
+- ``SSID``: サービスセッション ID
 
 
-Configuration and Customization
-===============================
+認可サービス
+------------
 
-Component Configuration
------------------------
+``AuthorizationService`` は、ロールベースのアクセス制御を適用します。
 
-FLARE uses JSON configuration files to assemble components:
+- ポリシーは ``authorization.json`` で定義されます
+- 管理者コマンドは、証明書から取得されるユーザーロールに照らしてチェックされます
+- コマンド実行前に権限が適用されます
 
-**Server Configuration** (``config_fed_server.json``):
+詳細については、:ref:`flare_security_overview` を参照してください。
+
+
+構成とカスタマイズ
+==================
+
+コンポーネント構成
+------------------
+
+FLARE では、コンポーネントを組み立てるために JSON 設定ファイルを使用します。
+
+**サーバー設定** (``config_fed_server.json``):
 
 .. code-block:: json
 
@@ -504,7 +504,7 @@ FLARE uses JSON configuration files to assemble components:
      ]
    }
 
-**Client Configuration** (``config_fed_client.json``):
+**クライアント設定** (``config_fed_client.json``):
 
 .. code-block:: json
 
@@ -519,27 +519,27 @@ FLARE uses JSON configuration files to assemble components:
    }
 
 
-Filter Pipeline
----------------
+フィルタパイプライン
+--------------------
 
-Filters implement privacy preservation and data transformation:
+Filter は、プライバシー保護とデータ変換を実装します。
 
-- **Task Data Filters**: Applied before executor receives task
-- **Task Result Filters**: Applied after executor produces result
-- **Direction**: ``IN`` (server→client) or ``OUT`` (client→server)
+- **タスクデータフィルタ**: Executor がタスクを受け取る前に適用されます
+- **タスク結果フィルタ**: Executor が結果を生成した後に適用されます
+- **方向**: ``IN`` (サーバー→クライアント) または ``OUT`` (クライアント→サーバー)
 
-**Common Filters**:
+**代表的なフィルタ**:
 
-- ``PercentilePrivacy``: Clip values to percentiles
-- ``DifferentialPrivacyFilter``: Add noise for differential privacy
-- ``ExcludeVars``: Exclude specific variables from sharing
+- ``PercentilePrivacy``: 値をパーセンタイルでクリップします
+- ``DifferentialPrivacyFilter``: 差分プライバシーのためにノイズを付加します
+- ``ExcludeVars``: 特定の変数を共有対象から除外します
 
 
-Additional Resources
-====================
+その他のリソース
+================
 
-- CellNet Architecture: :ref:`cellnet_architecture`
-- Security Overview: :ref:`flare_security_overview`
-- Provisioning: :ref:`provisioning`
+- CellNet アーキテクチャ: :ref:`cellnet_architecture`
+- セキュリティ概要: :ref:`flare_security_overview`
+- プロビジョニング: :ref:`provisioning`
 - Job Recipe API: :ref:`job_recipe`
 - FLARE CLI: :ref:`nvflare_cli`

@@ -1,166 +1,166 @@
 **************************
-What's New in FLARE v2.5.0
+FLARE v2.5.0 の新機能
 **************************
 
-User Experience Improvements
-============================
-NVFlare 2.5.0 offers several new sets of APIs that allows for end-to-end ease of use that can greatly improve researcher and data
-scientists' experience working with FLARE. The new API covers client, server and job construction with end-to-end pythonic user experience.
+ユーザーエクスペリエンスの改善
+==============================
+NVFlare 2.5.0 では、エンドツーエンドでの使いやすさを実現するいくつかの新しい API セットを提供しており、研究者やデータ
+サイエンティストが FLARE を扱う体験を大きく向上させます。この新しい API は、クライアント、サーバー、およびジョブの構築を、エンドツーエンドで Python らしいユーザー体験とともにカバーします。
 
 Model Controller API
 ~~~~~~~~~~~~~~~~~~~~
-The new :ref:`model_controller` greatly simplifies the experience of developing new federated learning workflows. Users can simply subclass
-the ModelController to develop new workflows. The new API doesn't require users to know the details of NVFlare constructs except for FLModel
-class, where it is simply a data structure that contains model weights, optimization parameters and metadata. 
+新しい :ref:`model_controller` は、新たなフェデレーテッドラーニングワークフローを開発する体験を大幅に簡素化します。ユーザーは
+ModelController をサブクラス化するだけで新しいワークフローを開発できます。この新しい API では、FLModel クラスを除き、
+NVFlare の構成要素の詳細を知る必要はありません。FLModel はモデルの重み、最適化パラメータ、メタデータを含む単なるデータ構造です。
 
-You can easily construct a new workflow with basic python code, and when ready, the send_and_wait() communication function is all you need for
-communication between clients and server. 
+基本的な Python コードで新しいワークフローを簡単に構築でき、準備ができたら、クライアントとサーバー間の通信には
+send_and_wait() という通信関数だけがあれば十分です。
 
 Client API
 ~~~~~~~~~~
-We introduced another :ref:`client_api` implementation,
-:class:`InProcessClientAPIExecutor<nvflare.app_common.executors.in_process_client_api_executor.InProcessClientAPIExecutor>`.
-This has the same interface and syntax of the previous Client API using
-:class:`SubprocessLauncher<nvflare.app_common.launchers.subprocess_launcher.SubprocessLauncher>`, except all communication is in memory. 
+もう 1 つの :ref:`client_api` の実装として、
+:class:`InProcessClientAPIExecutor<nvflare.app_common.executors.in_process_client_api_executor.InProcessClientAPIExecutor>` を導入しました。
+これは :class:`SubprocessLauncher<nvflare.app_common.launchers.subprocess_launcher.SubprocessLauncher>` を使用する従来の Client API と
+同じインターフェースおよび構文を持ちますが、すべての通信がメモリ内で行われる点が異なります。
 
-Using this in-process client API, we build a :class:`ScriptExecutor<nvflare.app_common.executors.script_executor.ScriptExecutor>`,
-which is directly used in the new Job API.
+このインプロセスの Client API を使用して :class:`ScriptExecutor<nvflare.app_common.executors.script_executor.ScriptExecutor>` を構築しており、
+これは新しい Job API で直接使用されます。
 
-Compared with SubProcessLauncherClientAPI, the in-process client API offers better efficiency and is easier to configure. All
-the operations will be carried out within the memory space of the executor.  
+SubProcessLauncherClientAPI と比較して、インプロセスの Client API はより高い効率性を提供し、構成も容易です。
+すべての操作は Executor のメモリ空間内で実行されます。
 
-SubProcessLauncherClientAPI can be used for cases where a separate training process is required.
+SubProcessLauncherClientAPI は、別個の学習プロセスが必要となるケースで使用できます。
 
 Job API
 ~~~~~~~
-The new Job API, or :ref:`fed_job_api`, combined with Client API and Model Controller API, will give users an end-to-end pythonic
-user experience. The Job configuration, required prior to the current release, can now be directly generated automatically, so the
-user doesn't need to edit the configuration files manually. 
+新しい Job API、すなわち :ref:`fed_job_api` は、Client API および Model Controller API と組み合わせることで、エンドツーエンドで Python らしい
+ユーザー体験をもたらします。現行リリース以前は必要だったジョブ構成が、直接自動生成できるようになったため、
+ユーザーは構成ファイルを手作業で編集する必要がなくなりました。
 
-We provide many examples to demonstrate the power of the new Job APIs making it very easy to experiment with new federated
-learning algorithms or create new applications. 
+新しい Job API の威力を示す多数のサンプルを提供しており、新しいフェデレーテッドラーニングアルゴリズムを試したり、
+新しいアプリケーションを作成したりすることが非常に容易になります。
 
-Flower Integration
+Flower との統合
 ------------------
-Integration between NVFlare and the `Flower <https://flower.ai/>`_ framework aims to provide researchers the ability to leverage
-the strengths of both frameworks by enabling Flower projects to seamlessly run on top of NVFlare. Through the seamless
-integration of Flower and FLARE, applications crafted within the Flower framework can effortlessly operate within the FLARE runtime
-environment without necessitating any modifications. This initial integration streamlines the process, eliminating complexities and
-ensuring smooth interoperability between the two platforms, thus enhancing the overall efficiency and accessibility of FL applications.
-Please find details `here <https://arxiv.org/abs/2407.00031>`__. A hello-world example is available
-:github_nvflare_link:`here <examples/hello-world/hello-flower>`.
+NVFlare と `Flower <https://flower.ai/>`_ フレームワークの統合は、Flower のプロジェクトを NVFlare 上でシームレスに実行できるようにすることで、
+研究者が両フレームワークの強みを活用できるようにすることを目指しています。Flower と FLARE のシームレスな
+統合により、Flower フレームワーク内で作成されたアプリケーションは、いかなる変更も必要とせずに FLARE のランタイム
+環境内で難なく動作します。この初期統合はプロセスを効率化し、複雑さを取り除き、
+2 つのプラットフォーム間の円滑な相互運用性を確保することで、FL アプリケーション全体の効率性とアクセシビリティを高めます。
+詳細は `こちら <https://arxiv.org/abs/2407.00031>`__ を参照してください。hello-world のサンプルは
+:github_nvflare_link:`こちら <examples/hello-world/hello-flower>` にあります。
 
-Secure XGBoost
---------------
-The latest features from XGBoost introduced the support for secure federated learning via homomorphic encryption. For vertical federated
-XGBoost learning, the gradients of each sample are protected by encryption such that the label information
-will not be leaked to unintended parties; while for horizontal federated XGBoost learning, the local gradient histograms will not be
-learnt by the central aggregation server. 
+セキュア XGBoost
+----------------
+XGBoost の最新機能により、準同型暗号を用いたセキュアなフェデレーテッドラーニングのサポートが導入されました。垂直フェデレーテッド
+XGBoost 学習では、各サンプルの勾配が暗号化によって保護されるため、ラベル情報が
+意図しない当事者に漏洩することはありません。一方、水平フェデレーテッド XGBoost 学習では、ローカルの勾配ヒストグラムが
+中央の集約サーバーに知られることはありません。
 
-With our encryption plugins working with XGBoost, NVFlare now supports all secure federated schemes for XGBoost model training, with
-both CPU and GPU.
+XGBoost と連携する当社の暗号化プラグインにより、NVFlare は CPU と GPU の両方で、XGBoost モデル学習のためのすべての
+セキュアなフェデレーテッド方式をサポートするようになりました。
 
-Please check `federated xgboost with nvflare user guide <https://nvflare.readthedocs.io/en/2.5/user_guide/federated_xgboost.html>`
-and the :github_nvflare_link:`example <examples/advanced/xgboost_secure>`
+`nvflare によるフェデレーテッド xgboost のユーザーガイド <https://nvflare.readthedocs.io/en/2.5/user_guide/federated_xgboost.html>`
+および :github_nvflare_link:`サンプル <examples/advanced/xgboost_secure>` を参照してください。
 
-Tensorflow support
-------------------
-With community contributions, we add FedOpt, FedProx and Scaffold algorithms using Tensorflow.
-You can check the code :github_nvflare_link:`here <nvflare/app_opt/tf>` and the :github_nvflare_link:`example <examples/getting_started/tf>`
+Tensorflow のサポート
+---------------------
+コミュニティからの貢献により、Tensorflow を用いた FedOpt、FedProx、Scaffold のアルゴリズムを追加しました。
+コードは :github_nvflare_link:`こちら <nvflare/app_opt/tf>`、サンプルは :github_nvflare_link:`こちら <examples/getting_started/tf>` で確認できます。
 
-FOBS Auto Registration
+FOBS の自動登録
 ----------------------
-FOBS, the secure mechanism NVFlare uses for message serialization and deserialization, is enhanced with new auto registration features.
-These changes will reduce the number of decomposers that users have to register. The changes are:
+NVFlare がメッセージのシリアライズおよびデシリアライズに使用するセキュアな仕組みである FOBS が、新しい自動登録機能によって強化されました。
+これらの変更により、ユーザーが登録しなければならないデコンポーザの数が削減されます。変更点は以下のとおりです。
 
-  - Auto registering of decomposers on deserialization. The decomposer class is stored in the serialized data and the decomposers are
-    registered automatically when deserializing. If a component only receives serialized data but it doesn't perform serialization,
-    decomposer registering is not needed anymore.
+  - デシリアライズ時のデコンポーザの自動登録。デコンポーザのクラスはシリアライズされたデータ内に保存され、デシリアライズ時に
+    デコンポーザが自動的に登録されます。コンポーネントがシリアライズされたデータを受け取るだけでシリアライズを行わない場合、
+    デコンポーザの登録はもはや不要です。
 
-  - Data Class decomposer auto registering on serialization. If a decomposer is not found for a class, FOBS will try to treat the class
-    as a Data Class and register DataClassDecomposer for it. This works in most cases but not all.
+  - シリアライズ時のデータクラスデコンポーザの自動登録。あるクラスに対するデコンポーザが見つからない場合、FOBS はそのクラスを
+    データクラスとして扱い、DataClassDecomposer を登録しようとします。これはほとんどのケースで機能しますが、すべてではありません。
 
 
-New Examples
-------------
-Secure Federated Kaplan-Meier Analysis
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :github_nvflare_link:`Secure Federated Kaplan-Meier Analysis via Time-Binning and Homomorphic Encryption example <examples/advanced/kaplan-meier-he>`
-illustrates two features:
+新しいサンプル
+--------------
+セキュアなフェデレーテッド Kaplan-Meier 解析
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:github_nvflare_link:`時間ビニングと準同型暗号によるセキュアなフェデレーテッド Kaplan-Meier 解析のサンプル <examples/advanced/kaplan-meier-he>`
+は、2 つの機能を示しています。
 
-  - How to perform Kaplan-Meier survival analysis in a federated setting without and with secure features via time-binning and Homomorphic Encryption (HE).
-  - How to use the Flare ModelController API to contract a workflow to facilitate HE under simulator mode.
+  - 時間ビニングと準同型暗号 (HE) によるセキュアな機能を用いる場合と用いない場合の、フェデレーテッドな設定での Kaplan-Meier 生存解析の実施方法。
+  - シミュレータモードで HE を実現するためのワークフローを構成するために、Flare の ModelController API を使用する方法。
 
-BioNemo example for Drug Discovery
+創薬向けの BioNemo サンプル
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-`BioNeMo <https://www.nvidia.com/en-us/clara/bionemo/>`_ is NVIDIA's generative AI platform for drug discovery.
-We included several examples of running BioNeMo in a federated learning environment using NVFlare:
+`BioNeMo <https://www.nvidia.com/en-us/clara/bionemo/>`_ は、創薬のための NVIDIA の生成 AI プラットフォームです。
+NVFlare を使用してフェデレーテッドラーニング環境で BioNeMo を実行するサンプルをいくつか含めています。
 
-  - The :github_nvflare_link:`task fitting example <examples/advanced/bionemo/task_fitting/README.md>` includes a notebook that shows how to obtain protein-learned representations in the form of embeddings using the ESM-1nv pre-trained model.
-  - The :github_nvflare_link:`downstream example <examples/advanced/bionemo/downstream/README.md>` shows three different downstream tasks for fine-tuning a BioNeMo ESM-style model.
+  - :github_nvflare_link:`タスクフィッティングのサンプル <examples/advanced/bionemo/task_fitting/README.md>` には、ESM-1nv の事前学習済みモデルを使用して、埋め込みの形でタンパク質の学習済み表現を取得する方法を示すノートブックが含まれています。
+  - :github_nvflare_link:`下流タスクのサンプル <examples/advanced/bionemo/downstream/README.md>` では、BioNeMo の ESM スタイルのモデルをファインチューニングするための 3 つの異なる下流タスクを示しています。
 
-Federated Logistic Regression with NR optimization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :github_nvflare_link:`Federated Logistic Regression with Second-Order Newton-Raphson optimization example <examples/advanced/lr-newton-raphson>`
-shows how to implement a federated binary classification via logistic regression with second-order Newton-Raphson optimization.
+NR 最適化によるフェデレーテッドロジスティック回帰
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:github_nvflare_link:`2 次のニュートン・ラフソン最適化によるフェデレーテッドロジスティック回帰のサンプル <examples/advanced/lr-newton-raphson>`
+では、2 次のニュートン・ラフソン最適化を用いたロジスティック回帰による、フェデレーテッドな二値分類の実装方法を示します。
 
-Hierarchical Federated Statistics
+階層的フェデレーテッド統計
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-:github_nvflare_link:`Hierarchical Federated Statistics <examples/advanced/federated-statistics/hierarchical_stats>` is helpful when there
-are multiple organizations involved.  For example, in the medical device applications, the medical devices usage statistics can be
-viewed from both device, device-hosting site, and hospital or manufacturers' point of views.
-Manufacturers would like to see the usage stats of their product (device) in different sites and hospitals. Hospitals
-may like to see overall stats of devices including different products from different manufacturers. In such a case, the hierarchical
-federated stats will be very helpful.
+:github_nvflare_link:`階層的フェデレーテッド統計 <examples/advanced/federated-statistics/hierarchical_stats>` は、複数の組織が
+関与する場合に役立ちます。例えば医療機器のアプリケーションでは、医療機器の使用統計をデバイス、
+デバイスをホストするサイト、そして病院やメーカーのそれぞれの観点から見ることができます。
+メーカーは、異なるサイトや病院における自社製品 (デバイス) の使用統計を見たいと考えるでしょう。病院は、
+異なるメーカーの異なる製品を含む、デバイス全体の統計を見たいと考えるかもしれません。このような場合に、階層的な
+フェデレーテッド統計は非常に役立ちます。
 
-FedAvg Early Stopping Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :github_nvflare_link:`FedAvg Early Stopping example <examples/hello-world/hello-fedavg>` tries to demonstrate that with the new server-side model
-controller API, it is very easy to change the control conditions and adjust workflows with a few lines of python code.
+FedAvg 早期停止のサンプル
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+:github_nvflare_link:`FedAvg 早期停止のサンプル <examples/hello-world/hello-fedavg>` は、新しいサーバー側の Model
+Controller API を使えば、数行の Python コードで制御条件を変更したりワークフローを調整したりすることが非常に容易であることを示そうとしています。
 
-Tensorflow Algorithms & Examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-FedOpt, FedProx, Scaffold implementation for Tensorflow.
+Tensorflow のアルゴリズムとサンプル
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tensorflow 向けの FedOpt、FedProx、Scaffold の実装です。
 
-FedBN: Federated Learning on Non-IID Features via Local Batch Normalization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :github_nvflare_link:`FedBN example <research/fed-bn>` showcases a federated learning algorithm designed
-to address the feature shift problem when aggregating models across different data distributions.
+FedBN: ローカルバッチ正規化による非 IID 特徴量上でのフェデレーテッドラーニング
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:github_nvflare_link:`FedBN のサンプル <research/fed-bn>` は、異なるデータ分布をまたいでモデルを集約する際の
+特徴シフト問題に対処するために設計されたフェデレーテッドラーニングアルゴリズムを紹介しています。
 
-In this work, we propose an effective method that uses local batch normalization to alleviate the feature shift before averaging models.
-The resulting scheme, called FedBN, outperforms both classical FedAvg and FedProx in our extensive experiments. These empirical results
-are supported by a convergence analysis that shows in a simplified setting that FedBN has a faster convergence rate than FedAvg.
+この研究では、モデルを平均化する前に特徴シフトを緩和するために、ローカルバッチ正規化を使用する効果的な手法を提案します。
+FedBN と呼ばれるこの結果として得られる方式は、私たちの広範な実験において、古典的な FedAvg と FedProx の両方を上回りました。これらの実験的結果は、
+簡略化された設定において FedBN が FedAvg よりも速い収束率を持つことを示す収束解析によって裏付けられています。
 
 
-End-to-end Federated XGBoost examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In :github_nvflare_link:`this example <examples/advanced/finance-end-to-end/xgboost.ipynb>`,
-we try to show that end-to-end process of feature engineering, pre-processing and training in federated settings. You
-can use FLARE to perform federated ETL and then training. 
+エンドツーエンドのフェデレーテッド XGBoost サンプル
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:github_nvflare_link:`このサンプル <examples/advanced/finance-end-to-end/xgboost.ipynb>` では、
+フェデレーテッドな設定における特徴量エンジニアリング、前処理、学習のエンドツーエンドのプロセスを示そうとしています。
+FLARE を使用してフェデレーテッド ETL を実行し、その後に学習を行うことができます。
 
-Developer Tutorial Page
------------------------
-To let users quickly learn Federated Learning with FLARE, we developed a `tutorial web page <https://nvidia.github.io/NVFlare>`_ with
-both code and video to interactively learn how to convert and run FL in a few minutes. We also
-created a tutorial catalog to help you easily search and find the examples you are interested in.
+開発者向けチュートリアルページ
+------------------------------
+ユーザーが FLARE によるフェデレーテッドラーニングをすばやく学べるように、コードと動画の両方を備えた `チュートリアル Web ページ <https://nvidia.github.io/NVFlare>`_ を作成し、
+数分で FL への変換と実行の方法を対話的に学べるようにしました。また、
+興味のあるサンプルを簡単に検索して見つけられるように、チュートリアルカタログも作成しました。
 
 **********************************
-Migration to 2.5.0: Notes and Tips
+2.5.0 への移行: 注意点とヒント
 **********************************
 
-FLARE 2.5.0 introduces some API and behavior changes. This migration guide will help you to migrate from the previous NVFlare version
-to the current version.
+FLARE 2.5.0 では、いくつかの API と挙動の変更が導入されています。この移行ガイドは、以前の NVFlare バージョンから
+現在のバージョンへ移行するのに役立ちます。
 
-Deprecate "name" to only use "path"
------------------------------------
-In 2.5.0, the "name" field in configurations is deprecated. You need to change the "name" field to "path" and use the full path. For
-example,
+"name" を非推奨とし "path" のみを使用
+-------------------------------------
+2.5.0 では、構成内の "name" フィールドは非推奨となりました。"name" フィールドを "path" に変更し、フルパスを使用する必要があります。
+例えば、
 
 .. code-block:: json
 
   "name": "TBAnalyticsReceiver"
 
-needs to be updated to:
+は次のように更新する必要があります。
 
 .. code-block:: json
 
@@ -169,16 +169,16 @@ needs to be updated to:
 XGBoost v1 - v2
 ---------------
 
-XGBoost support is enhanced in 2.5.0 to support secure training using Homomorphic Encryption (HE). The user interface is also simplified by
-setting the XGBoost parameters in the controller so all clients get the same parameters. 
+2.5.0 では XGBoost のサポートが強化され、準同型暗号 (HE) を用いたセキュアな学習をサポートするようになりました。また、Controller 側で
+XGBoost のパラメータを設定することで、すべてのクライアントが同じパラメータを取得できるようになり、ユーザーインターフェースも簡素化されました。
 
-The main changes are:
+主な変更点は以下のとおりです。
 
-  - The xgboost params have been moved from the client configuration to server.
-  - New split_mode and secure_training parameters
-  - New :class:`CSVDataLoader<nvflare.app_opt.xgboost.histogram_based_v2.csv_data_loader.CSVDataLoader>`
+  - xgboost のパラメータがクライアントの構成からサーバーへ移動しました。
+  - 新しい split_mode および secure_training パラメータ
+  - 新しい :class:`CSVDataLoader<nvflare.app_opt.xgboost.histogram_based_v2.csv_data_loader.CSVDataLoader>`
 
-Sample configuration files for 2.5.0
+2.5.0 向けのサンプル構成ファイル
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 config_fed_server.json
@@ -212,7 +212,7 @@ config_fed_server.json
                       "site-1": 0,
                       "site-2": 1
                   },
-                  "in_process": true 
+                  "in_process": true
               }
           }
       ]
@@ -253,16 +253,16 @@ config_fed_client.json
       ]
   }
 
-Simulator workspace structure
------------------------------
+シミュレータのワークスペース構造
+--------------------------------
 
-In 2.4.0, the server and all the clients shared the same simulator workspace root of ``simulate_job``. The server and each client had
-their own app_XXXX job definition, but the same root folder for the workspace may result in conflicting model file locations.
+2.4.0 では、サーバーとすべてのクライアントが ``simulate_job`` という同じシミュレータワークスペースのルートを共有していました。サーバーと各クライアントは
+それぞれ独自の app_XXXX ジョブ定義を持っていましたが、ワークスペースのルートフォルダが同じであるため、モデルファイルの場所が競合する可能性がありました。
 
 .. raw:: html
 
    <details>
-   <summary><a>Example folder structure for 2.4.0</a></summary>
+   <summary><a>2.4.0 のフォルダ構造の例</a></summary>
 
 .. code-block:: none
 
@@ -364,14 +364,14 @@ their own app_XXXX job definition, but the same root folder for the workspace ma
    </details>
    <br />
 
-In 2.5.0, the server and all the clients will have their own workspace subfolder under the simulator workspace. The ``simulator_job``
-is within the workspace of each site. This results in the total isolation of each site, with no model files conflicting. This workspace
-structure is consistent with the format of the POC real world application.
+2.5.0 では、サーバーとすべてのクライアントが、シミュレータワークスペースの下にそれぞれ独自のワークスペースのサブフォルダを持つようになります。``simulator_job``
+は各サイトのワークスペース内にあります。これにより各サイトが完全に分離され、モデルファイルが競合することはありません。このワークスペース
+構造は、POC の実世界アプリケーションのフォーマットと一貫しています。
 
 .. raw:: html
 
    <details>
-   <summary><a>Example folder structure for 2.5.0</a></summary>
+   <summary><a>2.5.0 のフォルダ構造の例</a></summary>
 
 .. code-block:: none
 
@@ -497,10 +497,10 @@ structure is consistent with the format of the POC real world application.
    </details>
    <br />
 
-Allow Simulator local resources configuration
+シミュレータのローカルリソース構成を許可
 ----------------------------------------------
-In 2.4.0, we only support the ``log.config`` setting file within the simulator workspace ``startup`` folder to be used to change the log format.
+2.4.0 では、ログのフォーマットを変更するために使用できるのは、シミュレータワークスペースの ``startup`` フォルダ内にある ``log.config`` 設定ファイルのみをサポートしていました。
 
-In 2.5.0, we enable the full ``local`` and ``startup`` contents to be configured under the simulator workspace. All the POC real world application
-local settings can be placed within the ``workspace/local`` folder and be deployed to each site. The ``log.config`` file is also moved to
-this ``workspace/local`` folder.
+2.5.0 では、シミュレータワークスペースの下で ``local`` および ``startup`` の全内容を構成できるようにしました。POC の実世界アプリケーションにおける
+すべてのローカル設定を ``workspace/local`` フォルダ内に配置し、各サイトへデプロイできます。``log.config`` ファイルも
+この ``workspace/local`` フォルダへ移動されました。
