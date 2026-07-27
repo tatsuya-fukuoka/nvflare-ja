@@ -1,29 +1,29 @@
 .. deprecated:: 2.8
-   Use ``nvflare.recipe.SimEnv`` from Python instead. See :ref:`recipe_command`
-   and the SimEnv examples under ``examples/advanced``.
+   代わりに Python から ``nvflare.recipe.SimEnv`` を使用してください。 :ref:`recipe_command`
+   および ``examples/advanced`` 配下の SimEnv のサンプルを参照してください。
 
 .. _fl_simulator:
 
-#########################
-NVIDIA FLARE FL Simulator
-#########################
+############################
+NVIDIA FLARE FL シミュレータ
+############################
 
-The NVIDIA FLARE FL Simulator can help researchers
-accelerate the development of federated learning workflows.
+NVIDIA FLARE FL シミュレータは、研究者が連合学習ワークフローの開発を
+加速するのに役立ちます。
 
-The FL Simulator is a lightweight simulator of a running NVFLARE FL deployment,
-and it can allow researchers to test and debug their application without
-provisioning a real project.
+FL シミュレータは、実際に稼働している NVFLARE FL デプロイメントの軽量なシミュレータであり、
+実際のプロジェクトをプロビジョニングすることなく、研究者が
+アプリケーションをテストおよびデバッグできるようにします。
 
-The FL jobs run on a local simulator-managed server and simulated clients,
-without provisioning a real project or starting long-running server/client
-daemons. Use the simulator for single-machine development, tests, and
-batch-scheduled experiments where one Python command should start, run, and
-exit. Use POC or production modes for the provisioned deployment model.
+FL ジョブは、実際のプロジェクトをプロビジョニングしたり、長時間稼働するサーバー/クライアントの
+デーモンを起動したりすることなく、ローカルのシミュレータ管理サーバーとシミュレートされた
+クライアント上で実行されます。1 つの Python コマンドで起動・実行・終了までを完結させたい
+単一マシンでの開発、テスト、バッチスケジュールされた実験には、シミュレータを使用してください。
+プロビジョニングされたデプロイメントモデルには、POC モードまたは本番モードを使用してください。
 
-***********************
-Command Usage
-***********************
+****************
+コマンドの使い方
+****************
 
 .. code-block:: shell
 
@@ -51,21 +51,21 @@ Command Usage
         --end_run_for_all     flag to indicate if running END_RUN event for all clients
 
 
-*****************
-Command examples
-*****************
+************
+コマンドの例
+************
 
-Run a single NVFlare app
-========================
+単一の NVFlare アプリを実行する
+===============================
 
-The ``hello-numpy`` example uses Recipe API. For Recipe API examples, run the job.py script directly:
+``hello-numpy`` のサンプルは Recipe API を使用しています。Recipe API のサンプルでは、job.py スクリプトを直接実行してください。
 
 .. code-block:: bash
 
     cd NVFlare/examples/hello-world/hello-numpy
     python job.py --n_clients 8
 
-For traditional job structures (with meta.json and app/config directories), use the nvflare simulator command:
+従来のジョブ構造（meta.json と app/config ディレクトリを持つもの）の場合は、nvflare simulator コマンドを使用してください。
 
 .. code-block:: bash
 
@@ -74,7 +74,7 @@ For traditional job structures (with meta.json and app/config directories), use 
 .. raw:: html
 
    <details>
-   <summary><a>Example Output</a></summary>
+   <summary><a>出力例</a></summary>
 
 .. code-block:: none
 
@@ -757,26 +757,26 @@ For traditional job structures (with meta.json and app/config directories), use 
    </details>
    <br />
 
-Run an NVFlare job
-===================
+NVFlare ジョブを実行する
+========================
 
-This command will run the job following the meta.json in the job. The executing client list can be provided in the command line with the ``-c`` option
-("client0,client1,client2,client3"). If there is any client not defined in the deploy_map of the meta.json, the simulator will report an error and not run.
+このコマンドは、ジョブ内の meta.json に従ってジョブを実行します。実行するクライアントのリストは、コマンドラインで ``-c`` オプション
+（"client0,client1,client2,client3"）を使って指定できます。meta.json の deploy_map に定義されていないクライアントが 1 つでもある場合、シミュレータはエラーを報告し、実行しません。
 
 .. code-block:: shell
 
     nvflare simulator NVFlare/examples/hello-world/hello-numpy -w /tmp/nvflare/workspace_folder/ -c client0,client1,client2,client3 -t 1
 
-Note that the ``-n`` option is used to specify the number of clients like in the previous section above, but it is checked only if the ``-c`` option is not used.
-The with the ``-n`` option, clients are automatically created up to the number provided after ``-n``, and they are named site-1, site-2, site-3, etc.
+なお、 ``-n`` オプションは前の節と同様にクライアント数を指定するために使用しますが、これが参照されるのは ``-c`` オプションが使用されていない場合だけです。
+``-n`` オプションを使用すると、 ``-n`` の後に指定した数までクライアントが自動的に作成され、site-1、site-2、site-3 のように名前が付けられます。
 
-The output should be similar to above but with only four clients.
+出力は上記と同様になりますが、クライアントは 4 つだけになります。
 
-Run a job with no client name list
-===================================
+クライアント名リストを指定せずにジョブを実行する
+================================================
 
-If there is no client name list provided and no number of clients (-n) option provided, the simulator extracts the list of client names from the deployment_map
-in meta.json to run.
+クライアント名のリストもクライアント数（-n）オプションも指定されていない場合、シミュレータは実行するために meta.json の deployment_map から
+クライアント名のリストを抽出します。
 
 .. code-block:: shell
 
@@ -785,16 +785,16 @@ in meta.json to run.
 
 .. note::
 
-    The client name list option is used in priority over the number of clients option. When it's provided, it will be used as the simulated client name list.
+    クライアント名リストのオプションは、クライアント数のオプションよりも優先して使用されます。指定された場合、それがシミュレートされるクライアント名のリストとして使用されます。
 
-**************************
-Debug NVFlare Application
-**************************
+**********************************
+NVFlare アプリケーションのデバッグ
+**********************************
 
-One of the goals for the Simulator is to enable researchers easily debug the NVFlare application. The FL simulator is implemented in a way of API design.
-Actually, the Simulator application is also implemented using the Simulator API. The researchers can simply write a "main" python script like the Simulator
-App, then place the script into their familiar Python IDE, add the NVFlare app into the python source codes path, then add the breakpoints to debug the
-application run.
+シミュレータの目標の 1 つは、研究者が NVFlare アプリケーションを簡単にデバッグできるようにすることです。FL シミュレータは API 設計の形で実装されています。
+実際、シミュレータアプリケーション自体もシミュレータ API を使用して実装されています。研究者はシミュレータアプリと同じような "main" の Python
+スクリプトを書き、そのスクリプトを使い慣れた Python IDE に配置し、NVFlare アプリを Python のソースコードパスに追加し、ブレークポイントを設定して
+アプリケーションの実行をデバッグするだけで済みます。
 
 .. code-block:: python
 
@@ -847,77 +847,76 @@ application run.
         status = run_simulator(args)
         sys.exit(status)
 
-******************************
-Processes, Clients, and Events
-******************************
+********************************
+プロセス、クライアント、イベント
+********************************
 
-Specifying Client Worker Processes
+クライアントワーカープロセスの指定
 ==================================
-The simulator ``-t`` option provides the ability to specify how many simulated
-client worker processes can run concurrently.
+シミュレータの ``-t`` オプションでは、シミュレートされたクライアントワーカープロセスを
+何個まで同時に実行できるかを指定できます。
 
 .. note::
 
-    The ``-t`` and ``--threads`` option name is historical. Simulated client
-    execution now uses separate worker processes, and the option controls worker
-    process concurrency.
+    ``-t`` および ``--threads`` というオプション名は歴史的な経緯によるものです。現在、
+    シミュレートされたクライアントの実行には独立したワーカープロセスが使用されており、
+    このオプションはワーカープロセスの同時実行数を制御します。
 
-- N = number of clients (``-n``)
-- T = number of concurrent client worker processes (``-t``)
+- N = クライアント数（ ``-n`` ）
+- T = 同時実行されるクライアントワーカープロセス数（ ``-t`` ）
 
-When running the simulator with fewer worker processes than clients (T < N),
-the simulator swaps clients in and out as worker processes become available.
-This also causes the ClientRunner/learner objects to go through setup and
-teardown in every round. Using T < N is only needed when simulating many clients
-on a single machine with limited resources.
+クライアント数よりも少ないワーカープロセス数（T < N）でシミュレータを実行すると、
+ワーカープロセスが空くたびに、シミュレータはクライアントをスワップイン・スワップアウトします。
+これにより、ClientRunner や learner のオブジェクトは毎ラウンドでセットアップと
+ティアダウンを経ることにもなります。T < N が必要になるのは、リソースが限られた単一のマシンで
+多数のクライアントをシミュレートする場合だけです。
 
-In most cases, run the simulator with the same number of worker processes as
-clients (T = N). Each client stays in memory with no swap-in/out, but this
-requires more available resources.
+ほとんどの場合、シミュレータはクライアント数と同じワーカープロセス数（T = N）で実行してください。
+各クライアントはスワップイン・スワップアウトされることなくメモリ上に留まりますが、
+その分より多くの利用可能なリソースが必要になります。
 
-For the dataset / tensorboard initialization, you could make use of EventType.SWAP_IN and EventType.SWAP_OUT
-in the application.
+データセットや TensorBoard の初期化については、アプリケーション内で EventType.SWAP_IN および
+EventType.SWAP_OUT を利用できます。
 
-SWAP_IN and SWAP_OUT events
-===========================
-During FLARE simulator execution, simulated client Apps fetch tasks from the
-controller, execute the tasks, and submit results back to the controller. When
-T < N, multiple simulated clients share a smaller pool of worker processes and
-may be swapped in and out as worker processes become available.
+SWAP_IN イベントと SWAP_OUT イベント
+====================================
+FLARE シミュレータの実行中、シミュレートされたクライアントアプリはコントローラからタスクを
+取得し、タスクを実行し、結果をコントローラに送り返します。T < N の場合、複数のシミュレート
+されたクライアントがより少ないワーカープロセスのプールを共有し、ワーカープロセスが空くたびに
+スワップイン・スワップアウトされることがあります。
 
-If the client App needs to preserve state for the next execution turn, the
-client executor can use the ``SWAP_OUT`` event fired by the simulator engine to
-save the current state. When the client App gets another turn to execute, use
-the ``SWAP_IN`` event to recover the previous saved state.
+クライアントアプリが次の実行ターンのために状態を保持する必要がある場合、クライアントの
+executor は、シミュレータエンジンが発行する ``SWAP_OUT`` イベントを使用して現在の状態を
+保存できます。クライアントアプリが次に実行のターンを得たときには、 ``SWAP_IN`` イベントを
+使用して以前に保存した状態を復元します。
 
-Multi-GPU and Separate Client Process with Simulator
-====================================================
-The simulator uses separate client worker processes and assigns GPUs to those
-workers. If there are multiple GPUs available and you want to make use of them
-all for the simulator run, you can use the ``-gpu`` option for this. The
-``-gpu`` option provides the list of GPUs for the simulator to run on. The
-clients list will be distributed among the GPU groups.
+シミュレータでのマルチ GPU と独立したクライアントプロセス
+=========================================================
+シミュレータは独立したクライアントワーカープロセスを使用し、それらのワーカーに GPU を
+割り当てます。複数の GPU が利用可能で、シミュレータの実行にそれらをすべて活用したい場合は、
+``-gpu`` オプションを使用できます。 ``-gpu`` オプションでは、シミュレータが実行対象とする
+GPU のリストを指定します。クライアントのリストは GPU グループ間に分配されます。
 
-For example:
+例:
 
 .. code-block:: shell
 
     -c  c1,c2,c3,c4,c5 -gpu 0,1
 
-The clients c1, c3, and c5 will be assigned to GPU 0, and clients c2 and c4
-will be assigned to GPU 1.
+クライアント c1、c3、c5 は GPU 0 に割り当てられ、クライアント c2 と c4 は
+GPU 1 に割り当てられます。
 
-The GPU numbers do not have to be unique. If you use ``-gpu 0,0``, this will
-create two client worker slots assigned to GPU 0, assuming this GPU has enough
-memory to support the applications.
+GPU 番号は一意である必要はありません。 ``-gpu 0,0`` を指定した場合、この GPU が
+アプリケーションを実行するのに十分なメモリを持っていることを前提として、GPU 0 に
+割り当てられたクライアントワーカーのスロットが 2 つ作成されます。
 
 .. note::
 
-    If you have invalid GPU IDs assigned and ``nvidia-smi`` is available, the simulation will be aborted. Otherwise if ``nvidia-smi`` is not available,
-    the simulation will run on CPU.
+    無効な GPU ID が割り当てられており、かつ ``nvidia-smi`` が利用可能な場合、シミュレーションは中止されます。一方、 ``nvidia-smi`` が利用できない場合は、
+    シミュレーションは CPU 上で実行されます。
 
-To change the MAX_CLIENTS
-=========================
-By default, the simulator runs with a maximum number of 100 clients. If you need to simulate a larger number of clients, use the "-m MAX_CLIENTS" option
-to set the number of clients to run. The simulator can support more than 1000 clients with one run. You just need to make sure that the machine that the
-simulator is running on has enough resources to support the parallel execution of the number of clients set.
+MAX_CLIENTS を変更するには
+==========================
+デフォルトでは、シミュレータはクライアントの最大数 100 で実行されます。より多くのクライアントをシミュレートする必要がある場合は、"-m MAX_CLIENTS" オプションを使用して
+実行するクライアント数を設定してください。シミュレータは 1 回の実行で 1000 を超えるクライアントをサポートできます。設定したクライアント数の並列実行を
+サポートできるだけの十分なリソースを、シミュレータを実行するマシンが備えていることを確認してください。

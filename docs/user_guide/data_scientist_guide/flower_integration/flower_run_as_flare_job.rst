@@ -1,39 +1,38 @@
-***********************************
-Run Flower Application as FLARE Job
-***********************************
+********************************************************
+Flower アプリケーションを FLARE ジョブとして実行する
+********************************************************
 
-Before running Flower applications with FLARE, you must have both FLARE and Flower frameworks
-installed in your Python environment. Current NVFlare ``main`` and the NVFlare 2.8 release
-candidate line use Flower's SuperLink configuration flow and require ``flwr>=1.26``.
+FLARE で Flower アプリケーションを実行する前に、FLARE と Flower の両フレームワークが Python 環境に
+インストールされている必要があります。現在の NVFlare ``main`` および NVFlare 2.8 のリリース候補系列は、
+Flower の SuperLink 設定フローを使用しており、 ``flwr>=1.26`` を必要とします。
 
 .. code-block:: shell
 
     pip install 'flwr>=1.26'
 
-If you are using released NVFlare 2.7.x, use ``flwr>=1.16,<1.26`` and the 2.7 branch or tag of
-the Flower examples. NVFlare 2.7.x still uses Flower's legacy ``--federation-config`` CLI
-option, which Flower 1.26+ ignores.
+リリース済みの NVFlare 2.7.x を使用している場合は、 ``flwr>=1.16,<1.26`` と Flower サンプルの 2.7 ブランチ
+またはタグを使用してください。NVFlare 2.7.x は依然として Flower のレガシーな ``--federation-config`` CLI
+オプションを使用しますが、Flower 1.26 以降ではこのオプションは無視されます。
 
-With Flower 1.26 and newer, SuperLink connections are no longer configured in
-``pyproject.toml`` for NVFlare jobs. Instead, NVFlare writes a job-scoped Flower
-configuration file at ``$FLWR_HOME/config.toml`` and uses it to connect
-``flwr run``, ``flwr list``, and ``flwr stop`` to the job's dynamically assigned
-SuperLink control API address. Do not create a global ``~/.flwr/config.toml`` as a workaround
-for NVFlare 2.7.x compatibility; the dynamic port must be configured by an NVFlare version that
-supports Flower 1.26+.
+Flower 1.26 以降では、NVFlare ジョブの SuperLink 接続は ``pyproject.toml`` では設定しません。代わりに、
+NVFlare がジョブスコープの Flower 設定ファイルを ``$FLWR_HOME/config.toml`` に書き出し、それを使って
+``flwr run`` 、 ``flwr list`` 、 ``flwr stop`` をジョブに動的に割り当てられた SuperLink コントロール API の
+アドレスに接続します。NVFlare 2.7.x との互換性のための回避策としてグローバルな ``~/.flwr/config.toml`` を
+作成しないでください。動的なポートは、Flower 1.26 以降をサポートする NVFlare のバージョンによって設定される
+必要があります。
 
-To run a Flower application as a job in FLARE, follow these steps:
+Flower アプリケーションを FLARE のジョブとして実行するには、次の手順に従います。
 
-    - Copy all Flower application code (python code) into the job's "custom" folder. Note that all training functions are implemented in Flower, not in FLARE!
-    - Create the ``config_fed_server.json`` and ``config_fed_client.json``
-    - Submit the created job to FLARE system for execution
+    - Flower アプリケーションのコード (Python コード) をすべてジョブの "custom" フォルダにコピーします。学習関数はすべて FLARE ではなく Flower 側で実装される点に注意してください。
+    - ``config_fed_server.json`` と ``config_fed_client.json`` を作成します
+    - 作成したジョブを FLARE システムに送信して実行します
 
-For a full example, see:
+完全な例については、次を参照してください:
 :github_nvflare_link:`Hello Flower <examples/hello-world/hello-flower>`
 
-Server Config: config_fed_server.json
-=====================================
-A typical server configuration looks like this:
+サーバー設定: config_fed_server.json
+========================================
+一般的なサーバー設定は次のようになります。
 
 .. code-block:: json
 
@@ -52,8 +51,8 @@ A typical server configuration looks like this:
         ]
     }
 
-The :class:`FlowerController<nvflare.app_opt.flower.controller.FlowerController>` has additional args that can be
-set to finetune its behavior, as shown below:
+:class:`FlowerController<nvflare.app_opt.flower.controller.FlowerController>` には、以下に示すように、
+その挙動を細かく調整するために設定できる追加の引数があります。
 
 .. code-block:: python
 
@@ -96,22 +95,23 @@ set to finetune its behavior, as shown below:
                 run_config: optional dict for flwr run --run-config arguments
             """
 
-The args ``num_rounds`` and ``database`` are not currently used. 
+``num_rounds`` と ``database`` の引数は現在使用されていません。
 
-Default values for most args should be good enough. You may need to adjust the following args in some special cases.
+ほとんどの引数は既定値のままで十分です。特殊なケースでは、以下の引数の調整が必要になる場合があります。
 
-``Superlink_ready_timeout`` - superlink process is started first and must become ready before starting the server-app process.
-It may take some time for the superlink to become ready (port is open and ready for the server-app). The default value is
-10 seconds, which should be enough for most cases. If not, you may need to increase it.
-
-
-Rest of the args are for job lifecycle management. Their meanings are the same as those used for
-:ref:`XGBoost controller<secure_xgboost_controller>`.
+``Superlink_ready_timeout`` - superlink プロセスが最初に起動され、server-app プロセスを起動する前に
+準備完了状態になっている必要があります。superlink が準備完了になる (ポートが開かれ、server-app を受け入れられる状態になる)
+までには時間がかかる場合があります。既定値は 10 秒であり、ほとんどのケースではこれで十分です。
+不足する場合は、値を増やす必要があるかもしれません。
 
 
-Client Config: config_fed_client.json
--------------------------------------
-A typical client configuration looks like this:
+残りの引数はジョブのライフサイクル管理のためのものです。その意味は
+:ref:`XGBoost コントローラ <secure_xgboost_controller>` で使用されているものと同じです。
+
+
+クライアント設定: config_fed_client.json
+--------------------------------------------
+一般的なクライアント設定は次のようになります。
 
 .. code-block:: json
 
@@ -131,7 +131,7 @@ A typical client configuration looks like this:
         "components": []
     }
 
-The FlowerExecutor has additional args that can be set to finetune its behavior, as shown below:
+FlowerExecutor には、以下に示すように、その挙動を細かく調整するために設定できる追加の引数があります。
 
 .. code-block:: python
 
@@ -145,8 +145,9 @@ The FlowerExecutor has additional args that can be set to finetune its behavior,
             client_shutdown_timeout=5.0,
         ):
 
-The ``per_msg_timeout`` and ``tx_timeout`` configure :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`,
-which is used to send requests to the server.
+``per_msg_timeout`` と ``tx_timeout`` は、サーバーへのリクエスト送信に使用される
+:class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>` を設定します。
 
-The ``client_shutdown_timeout`` specifies how long to wait in seconds for graceful shutdown of the Flower's client-app process when
-stopping the FL client. If the client-app process does not shut down within this time, it will be killed by Flare.
+``client_shutdown_timeout`` は、FL クライアントを停止する際に Flower の client-app プロセスが
+グレースフルにシャットダウンするのを何秒間待つかを指定します。client-app プロセスがこの時間内に
+シャットダウンしない場合、Flare によって強制終了されます。

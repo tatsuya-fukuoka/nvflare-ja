@@ -1,15 +1,15 @@
 .. _config_command:
 
 #########################
-Config Command
+Config コマンド
 #########################
 
-Use ``nvflare config`` to manage local CLI settings, including startup kit
-registration and activation. Normal users should not need to edit or reason
-about the underlying ``~/.nvflare/config.conf`` storage layout.
+``nvflare config`` を使用すると、スタートアップキットの登録や有効化を含む、ローカルの CLI 設定を
+管理できます。通常のユーザーは、内部的な ``~/.nvflare/config.conf`` のストレージレイアウトを
+編集したり、その内容を意識したりする必要はありません。
 
 ***********************
-Command Usage
+コマンドの使い方
 ***********************
 
 .. code-block:: none
@@ -19,35 +19,35 @@ Command Usage
                          {add,use,inspect,list,remove} ...
 
 *****************
-Common Examples
+よく使う例
 *****************
 
-Register and activate a startup kit:
+スタートアップキットを登録して有効化します。
 
 .. code-block:: shell
 
    nvflare config add project_admin /tmp/nvflare/poc/example_project/prod_00/admin@nvidia.com
    nvflare config use project_admin
 
-Configuration notes:
+設定に関する注意事項:
 
-- The saved config format is normalized to v2 with ``version = 2`` as the first line.
-- ``startup_kits.active`` and ``startup_kits.entries`` are managed by ``nvflare config``.
-- ``nvflare config inspect --format json`` and ``nvflare config list --format json``
-  include best-effort startup-kit identity, certificate expiration, and local
-  stale-path findings for automation.
-- ``nvflare config use`` changes global CLI state. Automation should prefer
-  optional per-command ``--kit-id`` or ``--startup-kit`` selectors when running
-  server-connected commands. These selectors override the active startup kit for
-  one command only and do not mutate ``startup_kits.active``.
-- ``nvflare config -d/--startup_kit_dir`` remains accepted for compatibility
-  with 2.7.x scripts, but is deprecated. Use ``nvflare config add`` and
-  ``nvflare config use`` for new workflows.
-- ``nvflare config -pw/--poc_workspace_dir`` remains accepted for compatibility,
-  but is deprecated. Use ``nvflare poc config --pw <poc-workspace-dir>`` for new
-  workflows.
-- ``nvflare config -jt/--job_templates_dir`` remains accepted for compatibility,
-  but job template config is deprecated. Prefer passing custom template
-  locations to job commands that need them.
-- Development-only spellings such as ``--poc.workspace``, ``--poc.startup_kit``,
-  and ``--prod.startup_kit`` are not supported compatibility flags.
+- 保存される設定フォーマットは v2 に正規化され、先頭行が ``version = 2`` になります。
+- ``startup_kits.active`` と ``startup_kits.entries`` は ``nvflare config`` によって管理されます。
+- ``nvflare config inspect --format json`` と ``nvflare config list --format json`` は、
+  自動化のために、ベストエフォートでスタートアップキットの識別情報、証明書の有効期限、および
+  ローカルの古いパスの検出結果を出力に含めます。
+- ``nvflare config use`` はグローバルな CLI の状態を変更します。サーバーに接続するコマンドを
+  実行する自動化処理では、コマンドごとに指定できるオプションのセレクター ``--kit-id`` または
+  ``--startup-kit`` を使用することが推奨されます。これらのセレクターは、そのコマンド 1 回に
+  限りアクティブなスタートアップキットを上書きし、``startup_kits.active`` を変更しません。
+- ``nvflare config -d/--startup_kit_dir`` は 2.7.x のスクリプトとの互換性のために引き続き
+  受け付けられますが、非推奨です。新しいワークフローでは ``nvflare config add`` および
+  ``nvflare config use`` を使用してください。
+- ``nvflare config -pw/--poc_workspace_dir`` は互換性のために引き続き受け付けられますが、
+  非推奨です。新しいワークフローでは ``nvflare poc config --pw <poc-workspace-dir>`` を
+  使用してください。
+- ``nvflare config -jt/--job_templates_dir`` は互換性のために引き続き受け付けられますが、
+  ジョブテンプレートの設定は非推奨です。カスタムテンプレートの場所は、それを必要とする
+  ジョブコマンドに直接渡すようにしてください。
+- ``--poc.workspace`` 、 ``--poc.startup_kit`` 、 ``--prod.startup_kit`` といった開発専用の
+  表記は、互換性フラグとしてはサポートされません。

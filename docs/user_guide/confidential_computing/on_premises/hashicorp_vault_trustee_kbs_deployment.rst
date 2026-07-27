@@ -1,39 +1,39 @@
 .. _hashicorp_vault_trustee_deployment:
 
 #############################################################
-HashiCorp Vault and Trustee KBS Joint Deployment Guide
+HashiCorp Vault と Trustee KBS の統合デプロイガイド
 #############################################################
 
-Overview
+概要
 ========
 
-This guide provides complete instructions for deploying HashiCorp Vault and Trustee KBS (Key Broker Service) as an integrated secret management system for Confidential Computing environments.
+本ガイドでは、Confidential Computing環境向けの統合されたシークレット管理システムとして、HashiCorp Vault と Trustee KBS (Key Broker Service) をデプロイするための完全な手順を説明します。
 
-**Architecture:**
+**アーキテクチャ:**
 
-- **HashiCorp Vault**: Secure backend for storing secrets
-- **Trustee KBS**: Frontend proxy for verifying client identities and brokering keys
-- **Deployment Order**: Vault must be deployed first, then KBS
+- **HashiCorp Vault** : シークレットを保存するための安全なバックエンド
+- **Trustee KBS** : クライアントの身元を検証し、キーを仲介するフロントエンドプロキシ
+- **デプロイ順序** : 先にVaultをデプロイし、その後にKBSをデプロイする必要があります
 
-**What You'll Learn:**
+**本ガイドで学べること:**
 
-- Understanding the deployment architecture and requirements
-- Setting up HashiCorp Vault with proper TLS configuration
-- Compiling and configuring Trustee KBS
-- Testing the complete system with client operations
-- Troubleshooting common issues
+- デプロイのアーキテクチャと要件の理解
+- 適切なTLS設定を伴うHashiCorp Vaultのセットアップ
+- Trustee KBSのコンパイルと設定
+- クライアント操作によるシステム全体のテスト
+- よくある問題のトラブルシューティング
 
 .. note::
 
-   **TEE Environment Deployment Requirements**
+   **TEE環境のデプロイ要件**
 
-   Before starting deployment, please understand the hardware environment requirements for each component to properly plan your deployment architecture.
+   デプロイを開始する前に、デプロイアーキテクチャを適切に計画できるよう、各コンポーネントのハードウェア環境要件を理解してください。
 
-Understanding the Architecture
-===============================
+アーキテクチャの理解
+=========================================
 
-Deployment Architecture
------------------------
+デプロイアーキテクチャ
+------------------------------------
 
 ::
 
@@ -52,85 +52,85 @@ Deployment Architecture
    │                 │    │                  │    │   Transport      │
    └─────────────────┘    └──────────────────┘    └──────────────────┘
 
-Environment Types
------------------
+環境の種類
+--------------------
 
-**Test Environment** (covered in this guide):
+**テスト環境** (本ガイドで扱う対象):
 
-- Vault and KBS deployed on regular servers
-- Client uses "sample attester" to simulate TEE evidence
-- Suitable for: functionality verification, development debugging, system integration testing
+- VaultとKBSは通常のサーバー上にデプロイされます
+- クライアントは "sample attester" を使用してTEEのエビデンスをシミュレートします
+- 適した用途: 機能検証、開発時のデバッグ、システム結合テスト
 
-**Production Environment**:
+**本番環境** :
 
-- Vault and KBS still deployed on secure environment (data center)
-- Clients **must** run on real TEE hardware
-- Clients generate real hardware-based attestation evidence
+- VaultとKBSは引き続き安全な環境(データセンター)にデプロイされます
+- クライアントは **必ず** 実際のTEEハードウェア上で動作させる必要があります
+- クライアントは実際のハードウェアに基づくアテステーションエビデンスを生成します
 
-Deployment Phases
-=================
+デプロイのフェーズ
+=========================
 
-This deployment consists of four phases:
+このデプロイは4つのフェーズで構成されます。
 
-1. **Environment Preparation** - Install required tools and dependencies
-2. **Deploy HashiCorp Vault** - Set up the secure backend storage
-3. **Deploy Trustee KBS** - Set up the attestation and key broker service
-4. **Client Operations** - Test and verify the complete system
+1. **環境の準備** - 必要なツールと依存関係のインストール
+2. **HashiCorp Vaultのデプロイ** - 安全なバックエンドストレージのセットアップ
+3. **Trustee KBSのデプロイ** - アテステーションとキーブローカーのサービスのセットアップ
+4. **クライアント操作** - システム全体のテストと検証
 
-Phase 1: Environment Preparation
+フェーズ1: 環境の準備
 =================================
 
-System Requirements
--------------------
+システム要件
+--------------------
 
-**Operating System:**
+**オペレーティングシステム:**
 
-- Ubuntu 22.04 or 24.04 (recommended)
-- Debian-based distributions
+- Ubuntu 22.04 または 24.04 (推奨)
+- Debian系のディストリビューション
 
-**Required Tools:**
+**必要なツール:**
 
 - Git
 - Curl
 - OpenSSL
-- Build tools (gcc, clang)
-- Protobuf compiler
-- Rust (for KBS compilation)
+- ビルドツール (gcc、clang)
+- Protobufコンパイラ
+- Rust (KBSのコンパイル用)
 
-Installation Steps
-------------------
+インストール手順
+------------------------
 
-**1.1 Update System**
+**1.1 システムの更新**
 
 .. code-block:: bash
 
    sudo apt-get update
    sudo apt-get upgrade -y
 
-**1.2 Install Basic Tools**
+**1.2 基本ツールのインストール**
 
 .. code-block:: bash
 
    sudo apt-get install -y git curl build-essential clang libtss2-dev openssl pkg-config protobuf-compiler
 
-**1.3 Install Rust**
+**1.3 Rustのインストール**
 
-Rust is required for compiling Trustee KBS:
+Trustee KBSのコンパイルにはRustが必要です。
 
 .. code-block:: bash
 
    curl https://sh.rustup.rs -sSf | sh
    source "$HOME/.cargo/env"
 
-During installation, choose the default option (1).
+インストール中は、デフォルトのオプション (1) を選択してください。
 
-Phase 2: Deploy HashiCorp Vault
-================================
+フェーズ2: HashiCorp Vaultのデプロイ
+====================================================
 
-Vault serves as the secure backend for storing secrets. We'll configure it with TLS encryption and proper access controls.
+Vaultはシークレットを保存するための安全なバックエンドとして機能します。ここではTLS暗号化と適切なアクセス制御を設定します。
 
-Install Vault
--------------
+Vaultのインストール
+--------------------------
 
 .. code-block:: bash
 
@@ -138,30 +138,30 @@ Install Vault
    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
    sudo apt update && sudo apt install vault
 
-Create Vault certificate and data directories
----------------------------------------------
+Vaultの証明書ディレクトリとデータディレクトリの作成
+------------------------------------------------------------------
 
 .. code-block:: bash
 
    sudo mkdir -p /opt/vault/tls
    sudo mkdir -p /opt/vault/data
 
-Generate self-signed TLS certificates (for testing)
----------------------------------------------------
+自己署名TLS証明書の生成 (テスト用)
+------------------------------------------------
 
-Execute the following commands to generate the vaultlocal.key and vaultlocal.crt files required by Vault:
+以下のコマンドを実行して、Vaultが必要とする vaultlocal.key ファイルと vaultlocal.crt ファイルを生成します。
 
 .. code-block:: bash
 
    sudo openssl req -x509 -newkey rsa:4096 -keyout /opt/vault/tls/vaultlocal.key -out /opt/vault/tls/vaultlocal.crt -sha256 -days 365 -nodes -subj "/CN=localhost"
 
 .. note::
-   Production environments should use certificates issued by a trusted CA. Self-signed certificates generated by this command are for testing purposes only.
+   本番環境では、信頼されたCAによって発行された証明書を使用してください。このコマンドで生成される自己署名証明書はテスト目的専用です。
 
-Configure Vault (/etc/vault.d/vault.hcl)
-----------------------------------------
+Vaultの設定 (/etc/vault.d/vault.hcl)
+------------------------------------------------
 
-Use `sudo nano /etc/vault.d/vault.hcl` to edit the configuration file and replace with the following content:
+`sudo nano /etc/vault.d/vault.hcl` で設定ファイルを編集し、以下の内容に置き換えてください。
 
 .. code-block::
 
@@ -182,13 +182,13 @@ Use `sudo nano /etc/vault.d/vault.hcl` to edit the configuration file and replac
       }
     }
 
-Use CA-signed server certificates (for strict validation, recommended)
-----------------------------------------------------------------------
+CA署名済みサーバー証明書の使用 (厳格な検証を行う場合。推奨)
+------------------------------------------------------------------------------
 
-If you need to enable strict TLS validation on the client side (such as KBS), do not directly use CA certificates as server certificates. Follow these steps to generate a "server certificate" signed by a local CA (must include SAN, CA:FALSE, and EKU includes serverAuth), then use this server certificate in Vault:
+クライアント側 (KBSなど) で厳格なTLS検証を有効にする必要がある場合、CA証明書をそのままサーバー証明書として使用してはいけません。以下の手順に従って、ローカルCAによって署名された「サーバー証明書」(SANを含み、CA:FALSEであり、EKUに serverAuth を含む必要があります) を生成し、そのサーバー証明書をVaultで使用してください。
 
-Generate local CA (only needed once)
-------------------------------------
+ローカルCAの生成 (最初の一度だけ必要)
+--------------------------------------------------
 
 .. code-block:: bash
 
@@ -199,8 +199,8 @@ Generate local CA (only needed once)
      -addext "keyUsage=critical,keyCertSign,cRLSign" \
      -out /opt/vault/tls/ca.crt
 
-Generate server certificate (with SAN, CA:FALSE + serverAuth)
--------------------------------------------------------------
+サーバー証明書の生成 (SAN付き、CA:FALSE + serverAuth)
+------------------------------------------------------------------
 
 .. code-block:: bash
 
@@ -219,8 +219,8 @@ Generate server certificate (with SAN, CA:FALSE + serverAuth)
    subjectAltName=DNS:localhost,IP:127.0.0.1,IP:10.176.193.230
    EOF
 
-Sign server certificate with CA (note: use ca.crt/ca.key generated in previous step)
-------------------------------------------------------------------------------------
+CAによるサーバー証明書への署名 (注意: 前の手順で生成した ca.crt / ca.key を使用します)
+--------------------------------------------------------------------------------------------------------
 
 .. code-block:: bash
 
@@ -228,16 +228,16 @@ Sign server certificate with CA (note: use ca.crt/ca.key generated in previous s
    -CA /opt/vault/tls/ca.crt -CAkey /opt/vault/tls/ca.key -CAcreateserial \
    -out /opt/vault/tls/vault.crt -days 825 -sha256 -extfile /opt/vault/tls/san.cnf
 
-Quick verification of certificate key extensions (should see CA:FALSE, serverAuth, and SAN list)
-------------------------------------------------------------------------------------------------
+証明書の主要な拡張の簡易検証 (CA:FALSE、serverAuth、SANの一覧が表示されるはずです)
+------------------------------------------------------------------------------------------------------
 
 .. code-block:: bash
 
    sudo openssl x509 -in /opt/vault/tls/vault.crt -noout -text \
    | sed -n '/Subject:/p;/Subject Alternative Name/,+1p;/Extended Key Usage/,+1p;/Basic Constraints/,+1p'
 
-Fix Vault certificate file permissions and ownership (Vault runs as vault user)
--------------------------------------------------------------------------------
+Vaultの証明書ファイルのパーミッションと所有者の修正 (Vaultは vault ユーザーとして動作します)
+------------------------------------------------------------------------------------------------------------------
 
 .. code-block:: bash
 
@@ -250,17 +250,17 @@ Fix Vault certificate file permissions and ownership (Vault runs as vault user)
    # If needed, ensure parent directories are traversable
    sudo chmod 755 /opt /opt/vault
 
-Update Vault configuration and restart
---------------------------------------
+Vault設定の更新と再起動
+------------------------------------
 
-Point the certificate paths in /etc/vault.d/vault.hcl to the new server certificate:
+/etc/vault.d/vault.hcl 内の証明書のパスを、新しいサーバー証明書に向けます。
 
 .. code-block::
 
    tls_cert_file=/opt/vault/tls/vault.crt
    tls_key_file=/opt/vault/tls/vault.key
 
-Then restart and check status:
+その後、再起動して状態を確認します。
 
 .. code-block:: bash
 
@@ -269,82 +269,84 @@ Then restart and check status:
    # Verify HTTPS:
    curl --cacert /opt/vault/tls/ca.crt https://<your-server-IP-or-hostname>:8200/v1/sys/health | cat
 
-Start Vault service
--------------------
+Vaultサービスの起動
+--------------------------
 
 .. code-block:: bash
 
    sudo systemctl restart vault
    sudo systemctl enable vault # Set to start on boot
 
-Verify Vault deployment success
--------------------------------
+Vaultのデプロイ成功の確認
+----------------------------------------
 
-Before continuing, confirm that Vault service is running properly using the following methods:
+次に進む前に、以下の方法でVaultサービスが正常に動作していることを確認してください。
 
-Method 1: Check service status
+方法1: サービスの状態を確認する
 
 .. code-block:: bash
 
    sudo systemctl status vault
 
-If successful, you'll see green "active (running)" text.
+成功していれば、緑色の "active (running)" という文字が表示されます。
 
-Method 2: Check network port
+方法2: ネットワークポートを確認する
 
 .. code-block:: bash
 
    sudo netstat -tuln | grep 8200
 
-If successful, you'll see the system listening on port 8200.
+成功していれば、システムがポート8200で待ち受けていることが確認できます。
 
-Method 3: Access Web UI (most intuitive)
+方法3: Web UIにアクセスする (最も直感的)
 
-Visit https://:8200 in your browser. If you can see Vault's initialization or login page, the deployment is completely successful.
+ブラウザで https://:8200 にアクセスします。Vaultの初期化画面またはログイン画面が表示されれば、デプロイは完全に成功しています。
 
-Initialize and configure in Vault UI
-------------------------------------
+Vault UIでの初期化と設定
+----------------------------------------
 
-a. Initialize: When accessing the UI for the first time, you'll see the initialization interface. This is the core of Vault's security mechanism, used to generate the master key.
+a. 初期化: 初めてUIにアクセスすると、初期化画面が表示されます。これはVaultのセキュリティ機構の中核であり、マスターキーを生成するために使用されます。
 
-- **Key shares**: The total number of parts the master key is split into.
-- **Key threshold**: The minimum number of key parts required to "unseal" Vault each time.
+- **Key shares** : マスターキーが分割される断片の総数です。
+- **Key threshold** : Vaultを毎回 "unseal" するために必要なキー断片の最小数です。
 
-For the test environment in this guide, use the following simplest configuration:
+本ガイドのテスト環境では、以下の最も単純な設定を使用します。
 
-- **Key shares**: 1
-- **Key threshold**: 1
-- **Store PGP keys**: Keep unchecked.
+- **Key shares** : 1
+- **Key threshold** : 1
+- **Store PGP keys** : チェックを入れないままにします。
 
-After clicking the "Initialize" button, the system will generate a Root Token and a Recovery Key. Please be sure to safely copy and save both values!
+"Initialize" ボタンをクリックすると、システムはRoot TokenとRecovery Keyを生成します。これら2つの値は必ず安全にコピーして保存してください。
 
-b. Login: On the page after initialization is complete, use the Root Token you just saved to log in.
+b. ログイン: 初期化完了後のページで、先ほど保存したRoot Tokenを使用してログインします。
 
-c. Enable KV engine:
+c. KVエンジンの有効化:
 
-- Select "Secrets Engines" from the left menu.
-- Click "Enable new engine +".
-- Select "KV".
-- On the configuration page:
-  - **Path**: Enter kv (this must match the mount_path in subsequent KBS configuration).
-  - **Version**: Select 1 (KBS currently only supports V1 version).
-- Click "Enable Engine".
+- 左側のメニューから "Secrets Engines" を選択します。
+- "Enable new engine +" をクリックします。
+- "KV" を選択します。
+- 設定ページで以下を指定します。
+
+  - **Path** : kv と入力します (これは後続のKBS設定における mount_path と一致している必要があります)。
+  - **Version** : 1 を選択します (KBSは現在V1バージョンのみをサポートしています)。
+
+- "Enable Engine" をクリックします。
 
 .. important::
-   If you have previously enabled KV v2 in the UI, follow these steps to change to v1 (web operation):
+   以前にUIでKV v2を有効化している場合は、以下の手順に従ってv1に変更してください (Web上での操作)。
 
-   - Open the "Secrets Engines" list on the left, find the entry with mount path kv, click the "⋯" menu on the right and select "Disable" and confirm.
-   - Click "Enable new engine +", select "KV", in the configuration page set: Path fill in kv, Version select 1, then click "Enable".
-   - Enter the engine page, the upper right corner should show "Version: 1"; if it's still v2, repeat the above steps.
+   - 左側の "Secrets Engines" の一覧を開き、マウントパスが kv のエントリを見つけ、右側の "⋯" メニューをクリックして "Disable" を選択し、確定します。
+   - "Enable new engine +" をクリックし、 "KV" を選択します。設定ページでPathには kv を入力し、Versionには1を選択して、 "Enable" をクリックします。
+   - エンジンのページに入ると、右上に "Version: 1" と表示されているはずです。まだv2のままであれば、上記の手順を繰り返してください。
 
-Phase 3: Deploy Trustee KBS (Key Broker Service)
-================================================
+フェーズ3: Trustee KBS (Key Broker Service) のデプロイ
+================================================================
 
-After Vault is ready, we deploy KBS as the core proxy connecting clients and Vault.  Optionally, you can
-build a docker image and run it directly.  To build docker images, please follow the Appendix.
+Vaultの準備が整ったら、クライアントとVaultをつなぐ中核のプロキシとしてKBSをデプロイします。必要に応じて、
+Dockerイメージをビルドして直接実行することもできます。Dockerイメージをビルドする場合は、付録に従ってください。
 
-Clone and checkout specific version of code
--------------------------------------------
+コードのクローンと特定バージョンのチェックアウト
+------------------------------------------------------------------
 
 .. code-block:: bash
 
@@ -352,100 +354,100 @@ Clone and checkout specific version of code
    cd trustee/kbs
    git checkout a2570329cc33daf9ca16370a1948b5379bb17fbe
 
-Compile KBS (Important!)
-------------------------
+KBSのコンパイル (重要!)
+--------------------------------
 
-To ensure KBS can communicate with Vault, the vault feature must be enabled during compilation.
+KBSがVaultと通信できるようにするには、コンパイル時に vault フィーチャーを有効にする必要があります。
 
-Compile and install KBS service
+KBSサービスのコンパイルとインストール
 
 .. code-block:: bash
 
    sudo cargo install --path . --features="vault"
 
-Compile KBS client tool (supports non-TEE environment testing)
+KBSクライアントツールのコンパイル (非TEE環境でのテストに対応)
 
 .. note::
-   In non-TEE environments, sample_only feature needs to be enabled to support sample attester
+   非TEE環境では、sample attesterをサポートするために sample_only フィーチャーを有効にする必要があります
 
 .. code-block:: bash
 
    make cli CLI_FEATURES=sample_only
    sudo make install-cli
 
-Troubleshooting: Fix compilation and runtime errors
----------------------------------------------------
+トラブルシューティング: コンパイルエラーと実行時エラーの修正
+------------------------------------------------------------------------------
 
-Issue 1: Compilation error "error[E0277]: can't compare"
+問題1: コンパイルエラー "error[E0277]: can't compare"
 
-This is caused by type mismatch in the internal code of kbs dependency library verifier. We need to manually modify this dependency library's source file to solve it.
+これは、kbsの依存ライブラリである verifier の内部コードにおける型の不一致が原因です。この依存ライブラリのソースファイルを手動で修正することで解決する必要があります。
 
-a. Locate file: In the trustee directory, find and open this file: deps/verifier/src/az_snp_vtpm/mod.rs.
+a. ファイルの特定: trustee ディレクトリ内で、deps/verifier/src/az_snp_vtpm/mod.rs というファイルを見つけて開きます。
 
-b. Modify code: Find the code around line 225, which looks like this:
+b. コードの修正: 225行目付近の、次のようなコードを見つけます。
 
 .. code-block:: rust
 
    // Original code
    && get_oid_octets::<64>(&parsed_endorsement_key, HW_ID_OID)? != report.chip_id
 
-According to the compiler's hint, add an asterisk * before report.chip_id for dereferencing, modified as follows:
+コンパイラのヒントに従い、report.chip_id の前にデリファレンス用のアスタリスク * を追加し、以下のように修正します。
 
 .. code-block:: rust
 
    // Modified code
    && get_oid_octets::<64>(&parsed_endorsement_key, HW_ID_OID)? != *report.chip_id
 
-c. Save file and recompile: After saving the file modification, return to trustee/kbs directory, re-execute the compilation command
+c. ファイルの保存と再コンパイル: ファイルの修正を保存したら、trustee/kbs ディレクトリに戻り、コンパイルコマンドを再実行します。
 
 .. code-block:: bash
 
    sudo cargo install --path . --features="vault"
 
-Issue 2: After recompiling, starting KBS still reports error "unknown variant 'Vault'"
+問題2: 再コンパイル後もKBSの起動時に "unknown variant 'Vault'" というエラーが出る
 
-Cause: This usually means your system is running an old version of the kbs program, not the new version you just installed with cargo.
+原因: これは通常、cargoでインストールした新しいバージョンではなく、システム上の古いバージョンのkbsプログラムが実行されていることを意味します。
 
-Diagnosis and solution:
+診断と解決策:
 
-a. Confirm the correct path of kbs under your current user:
+a. 現在のユーザーにおけるkbsの正しいパスを確認します。
 
 .. code-block:: bash
 
    which kbs
 
-This command will show the absolute path of the newly compiled kbs (e.g., /home/user/.cargo/bin/kbs).
+このコマンドは、新しくコンパイルされたkbsの絶対パス (例: /home/user/.cargo/bin/kbs) を表示します。
 
-b. Start using absolute path (recommended): Don't run sudo kbs ... directly, but use the absolute path obtained in the previous step to start the new program:
+b. 絶対パスで起動する (推奨): sudo kbs ... を直接実行するのではなく、前の手順で得た絶対パスを使って新しいプログラムを起動します。
 
-Replace the path below with the real path you got in the previous step
+以下のパスは、前の手順で得た実際のパスに置き換えてください。
 
 .. code-block:: bash
 
    sudo /home/user/.cargo/bin/kbs --config-file ./kbs-config.toml
 
-c. Permanent fix (optional): If you want to be able to use sudo kbs ... directly in the future, you can create a soft link.
+c. 恒久的な修正 (任意): 今後 sudo kbs ... を直接使えるようにしたい場合は、シンボリックリンクを作成できます。
 
-Replace the source path below with the real path you found in step a
+以下のリンク元パスは、手順aで見つけた実際のパスに置き換えてください。
 
 .. code-block:: bash
 
    sudo ln -sf /home/user/.cargo/bin/kbs /usr/local/bin/kbs
 
-Generate various key files required by KBS (New)
-------------------------------------------------
+KBSが必要とする各種キーファイルの生成 (新規)
+----------------------------------------------------------
 
-Before starting KBS, we need to generate HTTPS certificates and administrator authentication keys for it. Please execute in the trustee/kbs directory:
+KBSを起動する前に、KBS用のHTTPS証明書と管理者認証キーを生成する必要があります。trustee/kbs ディレクトリ内で実行してください。
 
-Create directories for storing keys
+キーを格納するディレクトリを作成します。
 
 .. code-block:: bash
 
    mkdir -p keys wkdir admin
 
-1. Generate KBS HTTPS certificate architecture (recommended CA-signed mode)
+1. KBSのHTTPS証明書構成の生成 (CA署名モードを推奨)
 
-1.1) Generate KBS local CA (for signing server certificates)
+1.1) KBSローカルCAの生成 (サーバー証明書への署名用)
 
 .. code-block:: bash
 
@@ -456,14 +458,14 @@ Create directories for storing keys
    -addext "keyUsage=critical,keyCertSign,cRLSign" \
    -out keys/kbs-ca.crt
 
-1.2) Generate KBS server certificate request
+1.2) KBSサーバー証明書要求の生成
 
 .. code-block:: bash
 
    openssl genrsa -out keys/key.pem 2048
    openssl req -new -key keys/key.pem -subj "/CN=localhost" -out keys/kbs.csr
 
-1.3) Create server certificate extension configuration
+1.3) サーバー証明書の拡張設定の作成
 
 .. code-block:: bash
 
@@ -474,7 +476,7 @@ Create directories for storing keys
    subjectAltName=DNS:localhost,IP:127.0.0.1
    EOF
 
-1.4) Sign server certificate with KBS CA
+1.4) KBSのCAによるサーバー証明書への署名
 
 .. code-block:: bash
 
@@ -482,37 +484,37 @@ Create directories for storing keys
    -CA keys/kbs-ca.crt -CAkey keys/kbs-ca.key -CAcreateserial \
    -out keys/cert.pem -days 825 -sha256 -extfile keys/kbs-san.cnf
 
-1.5) Verify generated certificate
+1.5) 生成された証明書の検証
 
 .. code-block:: bash
 
    openssl x509 -in keys/cert.pem -noout -text | \
    sed -n '/Subject:/p;/Subject Alternative Name/,+1p;/Extended Key Usage/,+1p;/Basic Constraints/,+1p'
 
-1.6) Client trust setup (very important)
+1.6) クライアント側の信頼設定 (非常に重要)
 
-kbs-ca.crt (from step 1.1) is the CA root that signs KBS server cert.
-Clients MUST trust this CA to connect to KBS via HTTPS.
+kbs-ca.crt (手順1.1で生成) は、KBSサーバー証明書に署名するCAルートです。
+クライアントがHTTPSでKBSに接続するには、このCAを **必ず** 信頼する必要があります。
 
-Option A: pass explicitly to kbs-client
+オプションA: kbs-client に明示的に渡す
 
 .. code-block:: bash
 
    --cert-file ./keys/kbs-ca.crt
 
-Option B (recommended for services): install into system CA store (Ubuntu/Debian)
+オプションB (サービス向けに推奨): システムのCAストアにインストールする (Ubuntu/Debian)
 
 .. code-block:: bash
 
    sudo cp ./keys/kbs-ca.crt /usr/local/share/ca-certificates/kbs-ca.crt
    sudo update-ca-certificates
 
-Option C (containers): mount file and set env SSL_CERT_FILE=/etc/ssl/certs/kbs-ca.crt
+オプションC (コンテナ): ファイルをマウントし、環境変数 SSL_CERT_FILE=/etc/ssl/certs/kbs-ca.crt を設定する
 
-2. Generate administrator authentication key pair (Ed25519)
+2. 管理者認証用キーペアの生成 (Ed25519)
 
 .. note::
-   KBS admin API only accepts Ed25519 public keys for verifying JWT signatures
+   KBSの管理APIは、JWT署名の検証にEd25519公開鍵のみを受け付けます
 
 .. code-block:: bash
 
@@ -520,12 +522,12 @@ Option C (containers): mount file and set env SSL_CERT_FILE=/etc/ssl/certs/kbs-c
    openssl pkey -in admin/admin.key -pubout -out admin/admin.pub
 
 .. note::
-   Please use the Ed25519 algorithm key pair generated above; RSA public keys will cause KBS to report error "Invalid public key".
+   上記で生成したEd25519アルゴリズムのキーペアを使用してください。RSA公開鍵を使用すると、KBSが "Invalid public key" というエラーを報告します。
 
-Prepare KBS configuration file (kbs-config.toml)
-------------------------------------------------
+KBS設定ファイルの準備 (kbs-config.toml)
+--------------------------------------------------------
 
-Create a file named kbs-config.toml in the kbs directory and fill in the following content.
+kbs ディレクトリ内に kbs-config.toml という名前のファイルを作成し、以下の内容を記述します。
 
 .. code-block::
 
@@ -571,44 +573,46 @@ Create a file named kbs-config.toml in the kbs directory and fill in the followi
    mount_path = "kv"
 
 .. note::
-   This path must be mounted as KV v1 engine; KBS currently uses kv1 API
+   このパスはKV v1エンジンとしてマウントされている必要があります。KBSは現在kv1 APIを使用しています
 
-   If Vault uses self-signed certificates, set this to false
+   Vaultが自己署名証明書を使用している場合は、これを false に設定します
+
    verify_ssl = false
 
-   If verify_ssl is true and using self-signed certificates, uncomment and provide CA certificate path
+   verify_ssl が true で自己署名証明書を使用している場合は、コメントを外してCA証明書のパスを指定します
+
    ca_certs = ["./wkdir/local-ca.pem"]
 
 .. note::
-   Please replace vault_url and token with your actual information.
+   vault_url と token は、実際の情報に置き換えてください。
 
-   If encountering "Permission denied" error, add to [attestation_service.rvps_config.storage] section:
+   "Permission denied" エラーが発生する場合は、 [attestation_service.rvps_config.storage] セクションに以下を追加してください。
 
    file_path = "./wkdir/attestation-service/reference_values.json"
 
-Start KBS service
------------------
+KBSサービスの起動
+--------------------------
 
-Recommend using absolute path to start, ensuring the correct version is running
+正しいバージョンが実行されるようにするため、絶対パスで起動することを推奨します。
 
 .. code-block:: bash
 
    sudo /home/user/.cargo/bin/kbs --config-file ./kbs-config.toml
 
-If the terminal shows no errors and displays that the service is listening on port 8999, then KBS has started successfully.
+ターミナルにエラーが表示されず、サービスがポート8999で待ち受けていることが表示されれば、KBSは正常に起動しています。
 
-Configure attestation policy (required for non-TEE environments)
-----------------------------------------------------------------
+アテステーションポリシーの設定 (非TEE環境では必須)
+------------------------------------------------------------------
 
-When testing in non-TEE environments, you need to configure a permissive attestation policy to allow sample attester to pass verification.
+非TEE環境でテストする場合は、sample attesterが検証を通過できるように、寛容なアテステーションポリシーを設定する必要があります。
 
-Method 1: Directly replace policy file (recommended)
+方法1: ポリシーファイルを直接置き換える (推奨)
 
 .. code-block:: bash
 
    cp ./sample_policies/allow_all.rego ./wkdir/policy.rego
 
-Method 2: Set via admin API (optional)
+方法2: 管理APIを介して設定する (任意)
 
 .. code-block:: bash
 
@@ -618,26 +622,26 @@ Method 2: Set via admin API (optional)
    set-attestation-policy --policy-file ./sample_policies/allow_all.rego
 
 .. note::
-   In production environments, strict attestation policies should be used to verify real TEE evidence. Permissive policies are only suitable for testing and development environments.
+   本番環境では、実際のTEEエビデンスを検証するための厳格なアテステーションポリシーを使用してください。寛容なポリシーはテスト環境や開発環境にのみ適しています。
 
-Phase 4: Client Operations and Verification
-===========================================
+フェーズ4: クライアント操作と検証
+=====================================================
 
-Now the entire system is ready, and you can use kbs-client to test secret storage and retrieval.
+これでシステム全体の準備が整いました。kbs-client を使用して、シークレットの保存と取得をテストできます。
 
 .. note::
-   The compiled kbs-client is located at trustee/target/release/kbs-client. If your project is in /home/user/trustee directory, the full path would be /home/user/trustee/target/release/kbs-client.
+   コンパイル済みの kbs-client は trustee/target/release/kbs-client にあります。プロジェクトが /home/user/trustee ディレクトリにある場合、フルパスは /home/user/trustee/target/release/kbs-client となります。
 
-Store a secret
---------------
+シークレットの保存
+------------------------
 
-First, create a test file, for example test.txt:
+まず、テスト用のファイル (例: test.txt) を作成します。
 
 .. code-block:: bash
 
    echo "this is a test file." > test.txt
 
-Execute the following command to store the file content in Vault (admin operation):
+以下のコマンドを実行して、ファイルの内容をVaultに保存します (管理者操作)。
 
 .. code-block:: bash
 
@@ -647,17 +651,17 @@ Execute the following command to store the file content in Vault (admin operatio
    set-resource --path mysecrets/database/password \
    --resource-file test.txt
 
-Retrieve a secret (remote attestation operation)
-------------------------------------------------
+シークレットの取得 (リモートアテステーション操作)
+------------------------------------------------------------------
 
-First generate TEE private key (for simulating client):
+まず、TEE秘密鍵を生成します (クライアントのシミュレーション用)。
 
 .. code-block:: bash
 
    openssl ecparam -name prime256v1 -genkey -noout | \
    openssl pkcs8 -topk8 -nocrypt -out tee_ec.key
 
-Retrieve secret (client will automatically execute attestation process):
+シークレットを取得します (クライアントが自動的にアテステーション処理を実行します)。
 
 .. code-block:: bash
 
@@ -667,62 +671,62 @@ Retrieve secret (client will automatically execute attestation process):
    --tee-key-file ./tee_ec.key
 
 .. note::
-   Use compiled kbs-client: /path/to/target/release/kbs-client (replace with actual path)
+   コンパイル済みの kbs-client を使用してください: /path/to/target/release/kbs-client (実際のパスに置き換えてください)
 
-   In non-TEE environments, you'll see "Sample Attester will be used" warning, which is normal
+   非TEE環境では "Sample Attester will be used" という警告が表示されますが、これは正常です
 
-   On success, the command will output base64 encoded content, decode with echo "result" | base64 -d
+   成功すると、コマンドはbase64エンコードされた内容を出力します。echo "result" | base64 -d でデコードしてください
 
-Congratulations! You have successfully deployed and tested the secret management system consisting of HashiCorp Vault and Trustee KBS.
+おめでとうございます。HashiCorp Vault と Trustee KBS から成るシークレット管理システムのデプロイとテストに成功しました。
 
-Troubleshooting
-===============
+トラブルシューティング
+=========================
 
-Issue 1: get-resource fails with error "illegal token format"
+問題1: get-resource が "illegal token format" というエラーで失敗する
 
-Symptoms: Client executing get-resource reports error:
+症状: クライアントで get-resource を実行すると、次のエラーが報告されます。
 
 .. code-block::
 
    Error: read token
    Caused by: illegal token format
 
-Root cause: In non-TEE environments, kbs-client doesn't have sample_only feature enabled, cannot generate valid attestation token.
+根本原因: 非TEE環境において、kbs-client で sample_only フィーチャーが有効化されておらず、有効なアテステーショントークンを生成できません。
 
-Solution:
+解決策:
 
-Recompile kbs-client with sample_only feature enabled:
+sample_only フィーチャーを有効にして kbs-client を再コンパイルします。
 
 .. code-block:: bash
 
    make -C trustee/kbs cli CLI_FEATURES=sample_only
 
-Use the newly compiled client:
+新しくコンパイルしたクライアントを使用します。
 
 .. code-block:: bash
 
    /path/to/trustee/target/release/kbs-client [other parameters...]
 
-Issue 2: Attestation fails with error "Access denied by policy"
+問題2: アテステーションが "Access denied by policy" というエラーで失敗する
 
-Symptoms: Client reports error:
+症状: クライアントが次のエラーを報告します。
 
 .. code-block::
 
    Error: request unauthorized
    ...ErrorInformation { error_type: "PolicyDeny", detail: "Access denied by policy" }
 
-Root cause: KBS's default policy rejects sample evidence, only accepts real TEE evidence.
+根本原因: KBSのデフォルトポリシーはsampleのエビデンスを拒否し、実際のTEEエビデンスのみを受け入れます。
 
-Solution:
+解決策:
 
-Update policy file to permissive policy:
+ポリシーファイルを寛容なポリシーに更新します。
 
 .. code-block:: bash
 
    cp ./sample_policies/allow_all.rego ./wkdir/policy.rego
 
-Or set via admin API:
+または、管理APIを介して設定します。
 
 .. code-block:: bash
 
@@ -731,29 +735,29 @@ Or set via admin API:
      config --auth-private-key ./admin/admin.key \
      set-attestation-policy --policy-file ./sample_policies/allow_all.rego
 
-Issue 3: Vault TLS certificate error
+問題3: VaultのTLS証明書エラー
 
-Symptoms: KBS startup reports error "CaUsedAsEndEntity" or Vault connection fails.
+症状: KBSの起動時に "CaUsedAsEndEntity" というエラーが報告される、またはVaultへの接続に失敗します。
 
-Root cause: Vault is using non-compliant certificates (CA certificate used as server certificate).
+根本原因: Vaultが規格に適合しない証明書を使用しています (CA証明書がサーバー証明書として使用されている)。
 
-Solution: Refer to Phase 2 Step 3 in the documentation to generate correct server certificates.
+解決策: 本ドキュメントのフェーズ2の手順3を参照して、正しいサーバー証明書を生成してください。
 
-Issue 4: KV engine version mismatch
+問題4: KVエンジンのバージョンの不一致
 
-Symptoms: set-resource reports error "Invalid path for a versioned K/V secrets engine".
+症状: set-resource が "Invalid path for a versioned K/V secrets engine" というエラーを報告します。
 
-Root cause: Vault has mounted KV v2 engine, but KBS uses kv1 API.
+根本原因: VaultがKV v2エンジンをマウントしているのに対し、KBSはkv1 APIを使用しています。
 
-Solution: In Vault UI, disable existing KV engine and re-enable as v1 version.
+解決策: Vault UIで既存のKVエンジンを無効化し、v1バージョンとして有効化し直してください。
 
-Issue 5: RVPS storage permission error
+問題5: RVPSストレージのパーミッションエラー
 
-Symptoms: KBS startup reports error "Permission denied (os error 13)", usually involving /opt/confidential-containers/attestation-service/ path.
+症状: KBSの起動時に "Permission denied (os error 13)" というエラーが報告され、通常は /opt/confidential-containers/attestation-service/ というパスが関係しています。
 
-Root cause: Built-in RVPS uses LocalJson storage, defaults to writing to system directories where regular users don't have write permissions.
+根本原因: 組み込みのRVPSはLocalJsonストレージを使用しており、デフォルトでは一般ユーザーに書き込み権限のないシステムディレクトリに書き込もうとします。
 
-Solution: Add writable path to [attestation_service.rvps_config.storage] section in kbs-config.toml:
+解決策: kbs-config.toml の [attestation_service.rvps_config.storage] セクションに、書き込み可能なパスを追加します。
 
 .. code-block:: toml
 
@@ -761,46 +765,46 @@ Solution: Add writable path to [attestation_service.rvps_config.storage] section
    type = "LocalJson"
    file_path = "./wkdir/attestation-service/reference_values.json"
 
-Issue 6: Normal Warning Messages in Test Environment
+問題6: テスト環境における正常な警告メッセージ
 
-Symptoms: When testing in non-TEE environments, client outputs the following warning messages:
+症状: 非TEE環境でテストすると、クライアントが以下の警告メッセージを出力します。
 
 .. code-block::
 
    [WARN] No TEE platform detected. Sample Attester will be used.
    [WARN] Authenticating with KBS failed. Perform a new RCAR handshake: TokenNotFound
 
-Explanation: These are normal warning messages, not errors:
+説明: これらはエラーではなく、正常な警告メッセージです。
 
 - "No TEE platform detected":
 
-  - Expected behavior when testing on regular servers
-  - System automatically switches to sample attester to simulate TEE evidence
-  - This is exactly what we expect in test environments
+  - 通常のサーバー上でテストする場合に想定される動作です
+  - システムは自動的にsample attesterに切り替えて、TEEのエビデンスをシミュレートします
+  - これはテスト環境でまさに期待される動作です
 
 - "TokenNotFound" / "Perform a new RCAR handshake":
 
-  - Normal authentication flow on first access
-  - Client doesn't have cached attestation token
-  - System automatically performs new RCAR (Relying Party Attestation Capabilities and Resource) handshake
+  - 初回アクセス時の正常な認証フローです
+  - クライアントにキャッシュされたアテステーショントークンがありません
+  - システムは自動的に新しいRCAR (Relying Party Attestation Capabilities and Resource) ハンドシェイクを実行します
 
-How to confirm successful operation:
+正常に動作したことを確認する方法:
 
-- Check final output: if you see base64 encoded secret content, operation succeeded
-- Use echo "base64content" | base64 -d to decode and verify content correctness
-- In test environments, these warning messages are completely normal and expected
+- 最終出力を確認します。base64エンコードされたシークレットの内容が表示されていれば、操作は成功しています
+- echo "base64content" | base64 -d を使ってデコードし、内容が正しいことを検証します
+- テスト環境では、これらの警告メッセージはまったく正常であり、想定されたものです
 
-Appendix
+付録
 ========
 
-Build KBS docker images
------------------------
+KBSのDockerイメージのビルド
+------------------------------------------
 
 
-You can build docker images for kbs based on the Dockerfile in the kbs/docker folder.
-However, that file in the current trustee repo at commit id a2570329cc33daf9ca16370a1948b5379bb17fbe
-either fails to build or produces docker images with missing dependencies.
-You can patch that file with the following diff.
+kbs/docker フォルダ内のDockerfileを基に、kbs用のDockerイメージをビルドできます。
+ただし、コミットID a2570329cc33daf9ca16370a1948b5379bb17fbe 時点の現在の trustee リポジトリにあるそのファイルは、
+ビルドに失敗するか、依存関係が欠落したDockerイメージを生成します。
+以下のdiffでそのファイルにパッチを当てることができます。
 
 .. code-block:: diff
 
@@ -831,13 +835,13 @@ You can patch that file with the following diff.
       if [ "${ARCH}" = "x86_64" ]; then curl -fsSL https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | \
       gpg --dearmor --output /usr/share/keyrings/intel-sgx.gpg && \
 
-To build the kbs docker image, run the following inside trustee folder
+kbsのDockerイメージをビルドするには、trustee フォルダ内で以下を実行します。
 
 .. code-block:: bash
 
    docker build -f kbs/docker/Dockerfile .
 
-You can run KBS inside a Docker container with ports exposed using the -p option. For example:
+-p オプションでポートを公開して、Dockerコンテナ内でKBSを実行できます。例:
 
 .. code-block:: bash
 

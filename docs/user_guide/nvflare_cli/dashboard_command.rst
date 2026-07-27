@@ -1,17 +1,16 @@
 *****************************************
-Dashboard Command
+ダッシュボードコマンド
 *****************************************
 
-Introduction to the Dashboard Command
+ダッシュボードコマンドの概要
 =====================================
 
-The Dashboard command allows users to start the :ref:`dashboard_api` to provide a simple way to collect information
-of clients and users from different organizations and generate startup kits for users to download.
+ダッシュボードコマンドを使うと、 :ref:`dashboard_api` を起動して、さまざまな組織のクライアントとユーザーの情報を簡単に収集し、ユーザーがダウンロードできるスタートアップキットを生成できます。
 
-Syntax and Usage
+構文と使い方
 =================
 
-Running ``nvflare dashboard -h`` shows all available options.
+``nvflare dashboard -h`` を実行すると、利用可能なすべてのオプションが表示されます。
 
 .. code-block:: shell
 
@@ -49,19 +48,17 @@ Running ``nvflare dashboard -h`` shows all available options.
 
 .. note::
 
-    The ``-i``/``--image`` option is required when starting Dashboard with Docker or launching Dashboard
-    on cloud. It is not required for ``--stop`` or ``--local``.
+    ``-i`` / ``--image`` オプションは、Docker でダッシュボードを起動する場合や、クラウド上でダッシュボードを起動する場合に必須です。 ``--stop`` や ``--local`` では必要ありません。
 
-    For AWS cloud launches, specify ``--vpc-id`` and ``--subnet-id`` together.
-    If only one of these options is provided, Dashboard ignores it.
+    AWS クラウドで起動する場合は、 ``--vpc-id`` と ``--subnet-id`` を必ず一緒に指定してください。どちらか一方のオプションしか指定されていない場合、ダッシュボードはそのオプションを無視します。
 
-To start Dashboard, run ``nvflare dashboard --start -i nvflare/nvflare:2.7.2``.
-The image is a standard container image reference and can come from any registry that the runtime can pull from,
-for example ``nvflare/nvflare:2.7.2``, ``nvcr.io/nvidia/nvflare:2.7.2``, or
-``registry.example.com/nvflare/nvflare:2.7.2``. Different deployments can use image names from different
-registries as long as each Docker host or cloud VM has pull access.
+ダッシュボードを起動するには、 ``nvflare dashboard --start -i nvflare/nvflare:2.7.2`` を実行します。
+このイメージは標準的なコンテナイメージ参照であり、ランタイムがプルできる任意のレジストリのものを使用できます。
+たとえば ``nvflare/nvflare:2.7.2`` 、 ``nvcr.io/nvidia/nvflare:2.7.2`` 、
+``registry.example.com/nvflare/nvflare:2.7.2`` などです。各 Docker ホストまたはクラウド VM がプルアクセスを持っている限り、
+デプロイごとに異なるレジストリのイメージ名を使用できます。
 
-The Dashboard Docker will detect if the database is initialized.  If not, it will ask for the project_admin email address and will generate a random password:
+ダッシュボードの Docker は、データベースが初期化されているかどうかを検出します。初期化されていない場合は、project_admin のメールアドレスの入力を求め、ランダムなパスワードを生成します:
 
 .. code-block::
 
@@ -70,16 +67,16 @@ The Dashboard Docker will detect if the database is initialized.  If not, it wil
     generating random password
     Project admin credential is project_admin@admin_organization.com and the password is EXAMPLE1
 
-Please log in with this credential to finish setting up the project in Dashboard once the system is up and running.
-The project_admin can change his/her password in the Dashboard system after logging in.
+システムが起動したら、この資格情報でログインして、ダッシュボードでのプロジェクト設定を完了してください。
+project_admin はログイン後、ダッシュボードシステム上で自分のパスワードを変更できます。
 
-Note that for the first time, it may take a while to download the nvflare image as you see the prompt:
+初回は、次のプロンプトが表示されるとおり、nvflare イメージのダウンロードに時間がかかる場合があることに注意してください:
 
 .. code-block::
 
     Pulling nvflare/nvflare:2.7.2, may take some time to finish.
 
-After pulling the image, you should see output similar to the following:
+イメージのプルが完了すると、次のような出力が表示されます:
 
 .. code-block::
 
@@ -91,19 +88,17 @@ After pulling the image, you should see output similar to the following:
     Container name nvflare-dashboard
     id is 3108eb7be20b92ab3ec3dd7bfa86c2eb83bd441b4da0865d2ebb10bd60612345
 
-We suggest you to set the passphrase to protect the private key of the root CA by using the ``--passphrase`` option.  Once it's set, you have to provide the same passphrase everytime you
-restart Dashboard for the same project.
+ルート CA の秘密鍵を保護するために、 ``--passphrase`` オプションでパスフレーズを設定することをお勧めします。いったん設定すると、同じプロジェクトでダッシュボードを再起動するたびに、同じパスフレーズを指定する必要があります。
 
-If you would like to start a new project, please remove the db.sqlite file in current working directory (or the directory set with the ``--folder`` option).  Dashboard will start
-from scratch and you can provide a project admin email address and get a new password for the project_admin.
+新しいプロジェクトを開始したい場合は、現在の作業ディレクトリ（または ``--folder`` オプションで設定したディレクトリ）にある db.sqlite ファイルを削除してください。ダッシュボードは最初から開始され、
+プロジェクト管理者のメールアドレスを指定して project_admin の新しいパスワードを取得できます。
 
-The Dashboard will also check the cert folder inside current the working directory (or directory specified by the --folder option) to load web.crt and web.key.
-If those files exist, Dashboard will load them and run as an HTTPS server.  If Dashboard does not find both of them, it runs as HTTP server.  In both cases, the service
-listens to port 443, unless the ``--port`` option is used to specify a different port. Dashboard will run on ``0.0.0.0``, so by default it should be accessible on the same machine from
-``localhost:443``. To make it available to users outside the network, port forwarding and other configurations may be needed to securely direct traffic to the machine running Dashboard.
+ダッシュボードは、現在の作業ディレクトリ（または --folder オプションで指定したディレクトリ）内の cert フォルダも確認し、web.crt と web.key を読み込みます。
+これらのファイルが存在する場合、ダッシュボードはそれらを読み込んで HTTPS サーバーとして動作します。両方が見つからない場合は HTTP サーバーとして動作します。いずれの場合も、 ``--port`` オプションで別のポートを指定しない限り、サービスはポート 443 をリッスンします。ダッシュボードは ``0.0.0.0`` で動作するため、デフォルトでは同じマシンから
+``localhost:443`` でアクセスできます。ネットワーク外のユーザーが利用できるようにするには、ダッシュボードを実行しているマシンへ安全にトラフィックを転送するために、ポートフォワーディングやその他の設定が必要になる場合があります。
 
 .. note::
 
-    Running Dashboard requires Docker. You have to ensure your system can pull and run Docker images. The initial docker pull may take some time depending on your network connection.
+    ダッシュボードの実行には Docker が必要です。システムが Docker イメージをプルして実行できることを確認する必要があります。最初の docker pull は、ネットワーク接続によっては時間がかかる場合があります。
 
-To stop the running Dashboard, run ``nvflare dashboard --stop``.
+実行中のダッシュボードを停止するには、 ``nvflare dashboard --stop`` を実行します。

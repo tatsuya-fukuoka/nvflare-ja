@@ -1,37 +1,37 @@
 .. _mobile_training:
 
 ###############################################
-Mobile Federated Training (iOS / Android)
+モバイル連合トレーニング (iOS / Android)
 ###############################################
 
-FLARE 2.7 introduces federated learning on mobile devices (iOS and Android) using
-`ExecuTorch <https://github.com/pytorch/executorch>`_. The key advantage:
-**no device-side programming is needed** -- you develop your model in standard PyTorch,
-and FLARE handles the export, deployment, and federated training orchestration.
+FLARE 2.7 では、`ExecuTorch <https://github.com/pytorch/executorch>`_ を利用して
+モバイルデバイス (iOS および Android) 上で連合学習を実行できるようになりました。最大の利点は、
+**デバイス側のプログラミングが不要である** ことです -- 標準的な PyTorch でモデルを開発すれば、
+エクスポート、デプロイ、連合トレーニングのオーケストレーションはすべて FLARE が処理します。
 
-How It Works
-============
+動作の仕組み
+==============
 
-1. **Design your model** in standard PyTorch (keep it lightweight for mobile)
-2. **Wrap it** in a ``DeviceModel`` that includes loss and prediction logic for ExecuTorch
-3. **Use the ETFedBuffRecipe** to create a FLARE job [1]_ -- FLARE handles everything else
+1. **モデルを設計する** -- 標準的な PyTorch で設計します (モバイル向けに軽量に保ってください)
+2. **モデルをラップする** -- ExecuTorch 用の損失計算と予測ロジックを含む ``DeviceModel`` でラップします
+3. **ETFedBuffRecipe を使用する** -- FLARE ジョブを作成します [1]_ -- 残りはすべて FLARE が処理します
 
-The mobile SDKs (Android and iOS) communicate with the FLARE server via HTTP,
-following the :ref:`Edge Device Interaction Protocol (EDIP) <flare_edge>`.
+モバイル SDK (Android および iOS) は、:ref:`エッジデバイス連携プロトコル (EDIP) <flare_edge>` に従って
+HTTP 経由で FLARE サーバーと通信します。
 
-Step 1 -- Design Model Architecture
-------------------------------------
+ステップ 1 -- モデルアーキテクチャの設計
+------------------------------------------
 
-Design your model using PyTorch as you would for single-machine training. Keep in mind
-that mobile devices have limited computational resources. Refer to the
-`ExecuTorch documentation <https://github.com/pytorch/executorch>`_ for supported layers,
-as they may differ from standard PyTorch.
+シングルマシンでのトレーニングと同じ要領で、PyTorch を使ってモデルを設計します。ただし、
+モバイルデバイスの計算リソースには限りがあることに留意してください。サポートされるレイヤーは
+標準的な PyTorch とは異なる場合があるため、
+`ExecuTorch のドキュメント <https://github.com/pytorch/executorch>`_ を参照してください。
 
-Step 2 -- Create DeviceModel
------------------------------
+ステップ 2 -- DeviceModel の作成
+----------------------------------
 
-ExecuTorch requires the model to return both the loss and predictions during training.
-Wrap your model into a ``DeviceModel``:
+ExecuTorch では、トレーニング中にモデルが損失と予測の両方を返す必要があります。
+モデルを ``DeviceModel`` でラップしてください。
 
 .. code-block:: python
 
@@ -41,13 +41,13 @@ Wrap your model into a ``DeviceModel``:
        def __init__(self):
            super().__init__(MyCifar10Net())
 
-The ``DeviceModel`` base class includes ``CrossEntropyLoss`` by default. You can override
-the loss function as needed.
+``DeviceModel`` 基底クラスには、デフォルトで ``CrossEntropyLoss`` が含まれています。必要に応じて
+損失関数をオーバーライドできます。
 
-Step 3 -- Create FLARE Job with ETFedBuffRecipe
--------------------------------------------------
+ステップ 3 -- ETFedBuffRecipe による FLARE ジョブの作成
+--------------------------------------------------------
 
-Use the ``ETFedBuffRecipe`` to create a federated training job for mobile devices:
+モバイルデバイス向けの連合トレーニングジョブを作成するには、``ETFedBuffRecipe`` を使用します。
 
 .. code-block:: python
 
@@ -77,28 +77,28 @@ Use the ``ETFedBuffRecipe`` to create a federated training job for mobile device
        device_training_params={"epoch": 3, "lr": 0.0001, "batch_size": batch_size},
    )
 
-Key parameters:
+主なパラメータ:
 
-- **device_model**: The ``DeviceModel`` wrapper from Step 2
-- **input_shape, output_shape**: Tensor shapes for ExecuTorch model export
-- **device_training_params**: Training hyperparameters passed to each device
+- **device_model**: ステップ 2 で作成した ``DeviceModel`` ラッパー
+- **input_shape, output_shape**: ExecuTorch モデルをエクスポートする際のテンソル形状
+- **device_training_params**: 各デバイスに渡されるトレーニングのハイパーパラメータ
 
-Mobile SDK Guides
-=================
+モバイル SDK ガイド
+=====================
 
-For detailed SDK integration and API references:
+SDK の統合方法と API リファレンスの詳細については、以下を参照してください。
 
-- :doc:`FLARE Mobile Development Guide <flare_mobile>` -- SDK architecture, setup, and best practices for both Android and iOS
-- :doc:`Android SDK API Reference <mobile_android>` -- Kotlin/Java API reference for Android
+- :doc:`FLARE モバイル開発ガイド <flare_mobile>` -- Android と iOS の両方に対応した SDK アーキテクチャ、セットアップ、ベストプラクティス
+- :doc:`Android SDK API リファレンス <mobile_android>` -- Android 向けの Kotlin/Java API リファレンス
 
-Examples
-========
+サンプル
+==========
 
-See the `edge examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_
-for complete working examples of mobile federated training.
+モバイル連合トレーニングの完全な動作サンプルについては、
+`エッジのサンプル <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ を参照してください。
 
-Reference
-=========
+参考文献
+==========
 
 .. [1] Nguyen, J., Malik, K., Zhan, H., Yousefpour, A., Rabbat, M., Malek, M., & Huba, D. (2023).
    Asynchronous Federated Learning with Bidirectional Quantized Communications and Buffered Aggregation.
