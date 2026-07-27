@@ -2,80 +2,80 @@
 
 .. _production_readiness:
 
-##############################
-Production Readiness Checklist
-##############################
+##########################################################
+本番環境レディネスチェックリスト
+##########################################################
 
 .. note::
-   This checklist is coming soon. It will provide a comprehensive pre-go-live
-   checklist for production NVIDIA FLARE deployments.
+   注記: このチェックリストは近日公開予定です。本番環境向けNVIDIA FLAREデプロイメントの
+   稼働開始前に確認すべき包括的なチェックリストを提供する予定です。
 
-Use this checklist before deploying NVIDIA FLARE in a production environment.
-Each section covers critical areas that should be reviewed and validated.
+NVIDIA FLAREを本番環境にデプロイする前に、このチェックリストを使用してください。
+各セクションでは、レビューおよび検証すべき重要な領域を扱います。
 
-Infrastructure
-==============
+インフラストラクチャ
+========================================
 
-*Coming soon.* Will cover:
+*近日公開予定。*\ 以下を扱う予定です:
 
-- Hardware requirements validated (CPU, memory, GPU, storage)
-- Network connectivity between server and all client sites confirmed
-- Firewall rules configured for FLARE communication ports
-- DNS resolution working for all participating sites
-- Load balancer configured (if applicable)
+- ハードウェア要件の検証(CPU、メモリ、GPU、ストレージ)
+- サーバーとすべてのクライアントサイト間のネットワーク接続の確認
+- FLARE通信ポート用のファイアウォールルールの設定
+- 参加するすべてのサイトでのDNS名前解決の動作確認
+- ロードバランサーの設定(該当する場合)
 
-Security
-========
+セキュリティ
+========================================
 
-*Coming soon.* Will cover:
+*近日公開予定。*\ 以下を扱う予定です:
 
-- Provisioning completed with proper PKI certificates
-- TLS/mTLS configured and verified
-- Authorization policies reviewed and tested per site
-- Data privacy filters configured (if required)
-- Audit logging enabled
-- Certificate expiration dates documented and rotation plan in place
+- 適切なPKI証明書によるプロビジョニングの完了
+- TLS/mTLSの設定と検証
+- サイトごとの認可ポリシーのレビューとテスト
+- データプライバシーフィルターの設定(必要な場合)
+- 監査ログの有効化
+- 証明書の有効期限の文書化とローテーション計画の策定
 
-For detailed security configuration, see the :ref:`Security Overview <security>`.
+セキュリティ設定の詳細については、:ref:`セキュリティ概要 <security>`\ を参照してください。
 
-Deployment
-==========
+デプロイメント
+========================================
 
-*Coming soon.* Will cover:
+*近日公開予定。*\ 以下を扱う予定です:
 
-- Deployment mode selected (bare metal, Docker, Kubernetes)
-- Server deployed and accessible from all client sites
-- All client sites deployed and connected
-- Preflight check passed on all sites
-- Dashboard UI accessible (if using)
+- デプロイメントモードの選択(ベアメタル、Docker、Kubernetes)
+- サーバーのデプロイと、すべてのクライアントサイトからのアクセス確認
+- すべてのクライアントサイトのデプロイと接続
+- すべてのサイトでのプリフライトチェックの合格
+- ダッシュボードUIへのアクセス確認(使用する場合)
 
-Run the :ref:`Preflight Check <preflight_check>` to validate connectivity:
+接続性を検証するには、:ref:`プリフライトチェック <preflight_check>`\ を実行します:
 
 .. code-block:: bash
 
    nvflare preflight_check -p startup_kit_dir
 
-Monitoring & Operations
-========================
+監視と運用
+========================================
 
-*Coming soon.* Will cover:
+*近日公開予定。*\ 以下を扱う予定です:
 
-- Monitoring stack deployed (StatsD, Prometheus, Grafana)
-- Alerting rules configured for critical events
-- Log rotation configured
-- Backup procedures documented and tested
-- Incident response plan in place
-- Upgrade/rollback procedure documented
+- 監視スタックのデプロイ(StatsD、Prometheus、Grafana)
+- 重大イベントに対するアラートルールの設定
+- ログローテーションの設定
+- バックアップ手順の文書化とテスト
+- インシデント対応計画の策定
+- アップグレード/ロールバック手順の文書化
 
-Job Validation
-==============
+ジョブの検証
+========================================
 
-*Coming soon.* Will cover:
+*近日公開予定。*\ 以下を扱う予定です:
 
-- Job tested in FL Simulator
-- Job tested in POC mode with representative data
-- Expected training time estimated
-- Resource requirements (memory, GPU) validated per site
-- Timeout values configured appropriately
+- FL Simulatorでのジョブのテスト
+- 代表的なデータを用いたPOCモードでのジョブのテスト
+- 想定トレーニング時間の見積もり
+- サイトごとのリソース要件(メモリ、GPU)の検証
+- タイムアウト値の適切な設定
 
-See :doc:`user_guide/timeout_troubleshooting` for timeout configuration guidance.
+タイムアウト設定のガイダンスについては、:doc:`user_guide/timeout_troubleshooting` を参照してください。

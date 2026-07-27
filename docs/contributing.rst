@@ -1,63 +1,62 @@
 .. _contributing:
 
-Contributing
-============
+コントリビューション
+========================
 
-Welcome to NVIDIA FLARE! We're excited you're here and want to
-contribute. This documentation is intended for individuals and
-institutions interested in contributing to NVIDIA FLARE. NVIDIA FLARE is
-an open-source project and, as such, its success relies on its community
-of contributors willing to keep improving it. Your contribution will be
-a valued addition to the code base; we simply ask that you read this
-page and understand our contribution process, whether you are a seasoned
-open-source contributor or whether you are a first-time contributor.
+NVIDIA FLARE へようこそ！皆さんの参加と貢献を心より歓迎します。この
+ドキュメントは、NVIDIA FLARE への貢献に関心のある個人および組織を対象と
+しています。NVIDIA FLARE はオープンソースプロジェクトであり、その成功は
+改善を続けようとするコントリビューターのコミュニティに支えられています。
+皆さんの貢献はコードベースへの貴重な追加となります。経験豊富なオープン
+ソースコントリビューターの方でも、初めて貢献される方でも、このページを
+読んで私たちのコントリビューションプロセスを理解していただくようお願い
+します。
 
-Communicate with us
--------------------
+私たちとのコミュニケーション
+------------------------------------
 
-We are happy to talk with you about your needs for NVIDIA FLARE and your
-ideas for contributing to the project. One way to do this is to create
-an issue discussing your thoughts. It might be that a very similar
-feature is under development or already exists, so an issue is a great
-starting point.
+NVIDIA FLARE に対するニーズやプロジェクトへの貢献のアイデアについて、
+喜んでお話しします。その方法のひとつは、考えを議論する issue を作成する
+ことです。よく似た機能が開発中であったり、すでに存在していたりする可能性
+もあるため、issue は素晴らしい出発点になります。
 
-The contribution process
-------------------------
+コントリビューションプロセス
+------------------------------------
 
-*Pull request early*
+*早めのプルリクエスト*
 
-We encourage you to create pull requests early. It helps us track the
-contributions under development, whether they are ready to be merged or
-not. Change your pull request's title, to begin with ``[WIP]`` and/or
-`create a draft pull
-request <https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests>`__
-until it is ready for formal review.
+プルリクエストは早めに作成することをお勧めします。マージの準備ができて
+いるかどうかにかかわらず、開発中のコントリビューションを追跡するのに
+役立ちます。正式なレビューの準備が整うまでは、プルリクエストのタイトルを
+``[WIP]`` で始めるか、`ドラフトプルリクエストを作成
+<https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests#draft-pull-requests>`__\ してください。
 
-Preparing pull requests
------------------------
+プルリクエストの準備
+----------------------------
 
-To ensure the code quality, NVIDIA FLARE relies on several linting tools
-(`flake8 and its plugins <https://gitlab.com/pycqa/flake8>`__,
-`black <https://github.com/psf/black>`__ and
-`isort <https://github.com/timothycrosley/isort>`__)
+コード品質を確保するため、NVIDIA FLARE はいくつかの lint ツール
+(`flake8 とそのプラグイン <https://gitlab.com/pycqa/flake8>`__、
+`black <https://github.com/psf/black>`__、
+`isort <https://github.com/timothycrosley/isort>`__)を利用しています。
 
-This section highlights all the necessary preparation steps required
-before sending a pull request. To collaborate efficiently, please read
-through this section and follow them.
+このセクションでは、プルリクエストを送る前に必要なすべての準備手順を
+説明します。効率的にコラボレーションするために、このセクションを読んで
+従ってください。
 
--  `Checking the coding style <#checking-the-coding-style>`__
--  `Unit testing <#unit-testing>`__
--  `Building documentation <#building-the-documentation>`__
--  `Signing your work <#signing-your-work>`__
+-  `コーディングスタイルのチェック <#checking-the-coding-style>`__
+-  `ユニットテスト <#unit-testing>`__
+-  `ドキュメントのビルド <#building-the-documentation>`__
+-  `作業への署名 <#signing-your-work>`__
 
-Checking the coding style
-^^^^^^^^^^^^^^^^^^^^^^^^^
+コーディングスタイルのチェック
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We check code style using flake8 and isort. A bash script
-(``runtest.sh``) is provided to run all tests locally.
+コードスタイルは flake8 と isort でチェックします。すべてのテストを
+ローカルで実行するための bash スクリプト(``runtest.sh``)が用意されて
+います。
 
-License information: all source code files should start with this
-paragraph:
+ライセンス情報: すべてのソースコードファイルは、次の段落で始まる必要が
+あります。
 
 ::
 
@@ -75,57 +74,57 @@ paragraph:
    # See the License for the specific language governing permissions and
    # limitations under the License.
 
-Unit testing
-^^^^^^^^^^^^
+ユニットテスト
+^^^^^^^^^^^^^^^^^^^^
 
-NVIDIA FLARE tests are located under test/. The unit test file names
-follow the ``test_[module_name].py`` pattern.
+NVIDIA FLARE のテストは test/ 以下にあります。ユニットテストのファイル名は
+``test_[module_name].py`` のパターンに従います。
 
-The bash script ``runtest.sh`` will run unit tests also.
+bash スクリプト ``runtest.sh`` はユニットテストも実行します。
 
-Building docs
-^^^^^^^^^^^^^
+ドキュメントのビルド
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To build the docs, first make sure you have all requirements
+ドキュメントをビルドするには、まずすべての必要要件が揃っていることを
+確認してください。
 
 .. code:: bash
 
    python -m pip upgrade
    python -m pip install -e .[doc]
 
-To build the docs, please run.
+ドキュメントをビルドするには、次を実行してください。
 
 .. code:: bash
 
    ./build_doc.sh --html
 
-Once built, you can view the docs in ``docs/_build folder``. To clean
-the docs, please run
+ビルドが完了すると、``docs/_build folder`` でドキュメントを閲覧できます。
+ドキュメントをクリーンアップするには、次を実行してください。
 
 .. code:: bash
 
    ./build_doc.sh --clean
 
-Signing your work
-^^^^^^^^^^^^^^^^^
+作業への署名
+^^^^^^^^^^^^^^^^^^
 
-NVIDIA FLARE enforces the `Developer Certificate of
-Origin <https://developercertificate.org/>`__ (DCO) on all pull
-requests.
+NVIDIA FLARE は、すべてのプルリクエストに対して `Developer Certificate of
+Origin <https://developercertificate.org/>`__\ (DCO)を義務付けています。
 
-For a detailed guide on signing commits, please see `Signing
+コミットへの署名の詳細なガイドについては、GitHub の `Signing
 commits <https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits>`__
-from GitHub.
+を参照してください。
 
-Commit signature verification
+コミット署名の検証
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NVIDIA FLARE enforces commit signature verification, a security feature
-provided by GitHub. Developers are required to setup GPG keys as
-described in `Commit Signature
-Verification <https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#gpg-commit-signature-verification>`__.
+NVIDIA FLARE は、GitHub が提供するセキュリティ機能であるコミット署名の
+検証を義務付けています。開発者は `Commit Signature
+Verification <https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#gpg-commit-signature-verification>`__
+に記載されている手順に従って GPG キーをセットアップする必要があります。
 
-Full text of the DCO:
+DCO の全文:
 
 ::
 
@@ -167,46 +166,50 @@ Full text of the DCO:
        maintained indefinitely and may be redistributed consistent with
        this project or the open source license(s) involved.
 
-Submitting pull requests
-------------------------
+プルリクエストの提出
+----------------------------
 
-All code changes to the ``main`` branch must be done via `pull
-requests <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/proposing-changes-to-your-work-with-pull-requests>`__.
-1. Create a new ticket or take a known ticket from `the issue
-list <https://github.com/NVIDIA/NVFlare/issues>`__. 2. Check if there is
-already a branch dedicated to the task. 3. If the task has not been
-taken, `create a new branch in your
-fork <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork>`__
-of the codebase. Ideally, the new branch should be based on the latest
-``main`` branch. 4. Make changes to the branch (`use detailed commit
-messages if possible <https://chris.beams.io/posts/git-commit/>`__). 5.
-Make sure that new tests cover the changes and the changed codebase
-`passes all tests locally <#unit-testing>`__. 6. `Create a new pull
-request <https://help.github.com/en/desktop/contributing-to-projects/creating-a-pull-request>`__
-from the task branch to the ``main`` branch, with detailed descriptions of
-the purpose of this pull request. 7. Check `the CI/CD status of the pull
-request <https://github.com/NVIDIA/NVFlare/actions>`__, make sure all
-CI/CD tests passed. 8. Assign 2 reviewers. One of the reviewers must be
-a code owner for this section of code. 9. Wait for reviews; if there are
-reviews, make point-to-point responses, make further code changes if
-needed. 10. If there are conflicts between the pull request branch and
-the ``main`` branch, pull the changes from ``main`` and resolve the
-conflicts locally. 11. Reviewer and contributor may have discussions
-back and forth until all comments addressed. All conversations must be
-resolved for PR to pass. 12. Wait for the pull request to be merged.
+``main`` ブランチへのすべてのコード変更は、`プルリクエスト
+<https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/proposing-changes-to-your-work-with-pull-requests>`__
+を通して行う必要があります。
+1. 新しいチケットを作成するか、`issue リスト
+<https://github.com/NVIDIA/NVFlare/issues>`__ から既知のチケットを
+引き受けます。 2. そのタスク専用のブランチがすでに存在しないか確認します。
+3. タスクがまだ着手されていなければ、コードベースの\ `フォークに新しい
+ブランチを作成
+<https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork>`__\ します。
+新しいブランチは、最新の ``main`` ブランチをベースにするのが理想的です。
+4. ブランチに変更を加えます(`可能であれば詳細なコミットメッセージを使用
+<https://chris.beams.io/posts/git-commit/>`__)。 5.
+新しいテストが変更をカバーしていること、変更後のコードベースが
+`ローカルですべてのテストにパスすること <#unit-testing>`__ を確認します。
+6. タスクブランチから ``main`` ブランチへ、このプルリクエストの目的の
+詳細な説明を添えて\ `新しいプルリクエストを作成
+<https://help.github.com/en/desktop/contributing-to-projects/creating-a-pull-request>`__\ します。
+7. `プルリクエストの CI/CD ステータス
+<https://github.com/NVIDIA/NVFlare/actions>`__ を確認し、すべての CI/CD
+テストがパスしていることを確認します。 8. レビュアーを2名アサインします。
+レビュアーのうち1名は、該当コード領域のコードオーナーでなければなりません。
+9. レビューを待ちます。レビューがあれば、一つひとつに応答し、必要に応じて
+さらにコードを変更します。 10. プルリクエストのブランチと ``main``
+ブランチの間にコンフリクトがある場合は、``main`` から変更を取り込み、
+ローカルでコンフリクトを解消します。 11. すべてのコメントが解決されるまで、
+レビュアーとコントリビューターの間で議論が往復することがあります。PR が
+パスするには、すべての会話が解決されている必要があります。 12.
+プルリクエストがマージされるのを待ちます。
 
-Reviewing pull requests
------------------------
+プルリクエストのレビュー
+--------------------------------
 
-All code review comments should be specific, constructive, and
-actionable. 1. Check `the CI/CD status of the pull
-request <https://github.com/NVIDIA/NVFlare/actions>`__, make sure all
-CI/CD tests passed before reviewing (contact the branch owner if
-needed). 1. Read carefully the descriptions of the pull request and the
-files changed, write comments if needed. 1. Make in-line comments to
-specific code segments, `request for
-changes <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-request-reviews>`__
-if needed. 1. Review any further code changes until all comments
-addressed by the contributors. 1. Merge the pull request to the main
-branch. 1. Close the corresponding task ticket on `the issue
-list <https://github.com/NVIDIA/NVFlare/issues>`__.
+すべてのコードレビューコメントは、具体的、建設的、かつ実行可能なもので
+なければなりません。 1. `プルリクエストの CI/CD ステータス
+<https://github.com/NVIDIA/NVFlare/actions>`__ を確認し、レビューの前に
+すべての CI/CD テストがパスしていることを確認します(必要に応じてブランチ
+オーナーに連絡します)。 1. プルリクエストの説明と変更されたファイルを
+注意深く読み、必要に応じてコメントを書きます。 1. 特定のコードセグメントに
+インラインコメントを付け、必要に応じて\ `変更をリクエスト
+<https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-request-reviews>`__\ します。
+1. コントリビューターがすべてのコメントに対応するまで、追加のコード変更を
+レビューします。 1. プルリクエストを main ブランチにマージします。 1.
+`issue リスト <https://github.com/NVIDIA/NVFlare/issues>`__ 上の対応する
+タスクチケットをクローズします。

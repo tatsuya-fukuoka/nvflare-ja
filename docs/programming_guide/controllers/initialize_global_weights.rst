@@ -1,44 +1,44 @@
 .. _initialize_global_weights_workflow:
 
-Initialize Global Weights Workflow for Client-Side Global Model Initialization
-------------------------------------------------------------------------------
-The SAG controller requires the global model weights to be initialized before the training is started. Currently it is the job of
-the Persistor component to provide the initial weights, which either loads it from some predefined model file, or dynamically generates
-it by running a piece of custom Python code. The 1st approach requires the hassle of defining a model file; the second approach requires
-custom Python code, which could be a security risk.
+クライアント側でのグローバルモデル初期化のための Initialize Global Weights ワークフロー
+--------------------------------------------------------------------------------------------
+SAG コントローラーは、トレーニング開始前にグローバルモデル重みが初期化されていることを必要とします。現在、初期重みを提供するのは
+Persistor コンポーネントの役割であり、事前に定義されたモデルファイルから読み込むか、カスタム Python コードを実行して動的に生成します。
+1つ目のアプローチにはモデルファイルを定義する手間がかかり、2つ目のアプローチにはカスタム Python コードが必要で、
+これはセキュリティリスクになり得ます。
 
-We introduce the third approach to generate initial model weights based on initial weights from FL clients: creating a controller to
-collect weights from clients, and putting this controller in front of the SAG! This controller is 
-:class:`nvflare.app_common.workflows.initialize_global_weights.InitializeGlobalWeights`.
+そこで、FL クライアントの初期重みに基づいて初期モデル重みを生成する3つ目のアプローチを導入します。すなわち、クライアントから
+重みを収集するコントローラーを作成し、このコントローラーを SAG の前に配置するのです。このコントローラーが
+:class:`nvflare.app_common.workflows.initialize_global_weights.InitializeGlobalWeights` です。
 
-How to Use InitializeGlobalWeights
+InitializeGlobalWeights の使い方
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following steps are based on the ``hello-pt`` example in the NVFLARE repo.
+以下の手順は、NVFLARE リポジトリの ``hello-pt`` サンプルに基づいています。
 
-Step 1: Modify config_fed_server.json
-"""""""""""""""""""""""""""""""""""""
+ステップ 1: config_fed_server.json を修正する
+""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Two changes are needed:
+2つの変更が必要です:
 
-    - Remove the ``model`` arg from the PTFileModelPersistor component configuration.
-    - Add the ``InitializeGlobalWeights`` controller as the first controller in the workflow.
+    - PTFileModelPersistor コンポーネント設定から ``model`` 引数を削除する。
+    - ワークフローの最初のコントローラーとして ``InitializeGlobalWeights`` コントローラーを追加する。
 
-The updated file should look like the following:
+更新後のファイルは次のようになります:
 
 .. literalinclude:: ../../resources/init_weights_1_config_fed_server.json
    :language: json
 
 
-Note that ``PTFileModelPersistor`` no longer requires the custom ``SimpleNetwork`` as the model object.
+``PTFileModelPersistor`` は、モデルオブジェクトとしてカスタムの ``SimpleNetwork`` を必要としなくなった点に注意してください。
 
-Pay attention to the value of the ``task_name``, "get_weights", in the InitializeGlobalWeights configuration.
+InitializeGlobalWeights の設定における ``task_name`` の値 "get_weights" に注意してください。
 
-Step 2: Modify config_fed_client.json
-"""""""""""""""""""""""""""""""""""""
+ステップ 2: config_fed_client.json を修正する
+""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Add the task "get_weights" for the trainer, as highlighted in below. Note that this task name must match the
-task_name of the InitializeGlobalWeights config in config_fed_server.json.
+以下でハイライトされているように、トレーナーにタスク "get_weights" を追加します。このタスク名は、
+config_fed_server.json 内の InitializeGlobalWeights 設定の task_name と一致していなければならない点に注意してください。
 
 .. code-block:: json
     :emphasize-lines: 8
@@ -76,19 +76,19 @@ task_name of the InitializeGlobalWeights config in config_fed_server.json.
     }
 
 
-Step 3: Update the Trainer code
-"""""""""""""""""""""""""""""""
-A new ``pre_train_task_name`` (defaults to "get_weights") is added to Cifar10Trainer, which is an Executor. 
+ステップ 3: Trainer コードを更新する
+""""""""""""""""""""""""""""""""""""""""
+Executor である Cifar10Trainer に、新しい ``pre_train_task_name``\ (デフォルトは "get_weights")が追加されます。
 
-The Trainer is augmented to process this task and return the current model weights (which should be randomly initialized).
+Trainer は、このタスクを処理して現在のモデル重み(ランダムに初期化されているはずのもの)を返すように拡張されます。
 
-The following are the relevant code snippets:
+関連するコードスニペットは以下のとおりです:
 
 
 .. code-block:: python
 
     class Cifar10Trainer(Executor):
-    
+
         def __init__(self, lr=0.01, epochs=5,
                 train_task_name=AppConstants.TASK_TRAIN,
                 submit_model_task_name=AppConstants.TASK_SUBMIT_MODEL,
@@ -118,29 +118,29 @@ The following are the relevant code snippets:
             elif task_name == self._train_task_name:
                 ...
 
-The full implementation is in ``cifar10trainer.py`` of the custom folder of ``hello-pt``.
+完全な実装は、``hello-pt`` の custom フォルダーにある ``cifar10trainer.py`` にあります。
 
-InitializeGlobalWeights Details
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When processing client responses (which are model weights of the clients), ``GlobalWeightsInitializer`` selects one as the global weight.
-It supports two weight selection methods (specified with the "weight_method" argument):
+InitializeGlobalWeights の詳細
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+クライアントの応答(各クライアントのモデル重み)を処理する際、``GlobalWeightsInitializer`` はそのうちの1つをグローバル重みとして選択します。
+2つの重み選択方法をサポートしています("weight_method" 引数で指定します):
 
-  - **first** - use the weight reported by the first client responded. This is the default method.
-  - **client** - use the weight reported by a designated client. This could be useful for deterministic training.
+  - **first**\ : 最初に応答したクライアントが報告した重みを使用します。これがデフォルトの方法です。
+  - **client**\ : 指定したクライアントが報告した重みを使用します。決定論的なトレーニングに役立つ場合があります。
 
-To be complete, weights reported from all clients should be validated and compared to make sure they are valid and compatible. Currently,
-``GlobalWeightsInitializer`` does not do this, since it is not clear how to do this exactly.
+厳密には、すべてのクライアントから報告された重みを検証・比較し、有効かつ互換性があることを確認すべきです。現時点では、
+その正確な方法が明確でないため、``GlobalWeightsInitializer`` はこの処理を行っていません。
 
-InitializeGlobalWeights Implementation Notes
+InitializeGlobalWeights の実装に関する注記
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``InitializeGlobalWeights`` controller is implemented by extending the general-purpose ``BroadcastAndProcess`` controller. 
+``InitializeGlobalWeights`` コントローラーは、汎用の ``BroadcastAndProcess`` コントローラーを拡張して実装されています。
 
-The ``BroadcastAndProcess`` controller requires a ``ResponseProcessor`` component to process client responses. The ``BroadcastAndProcess`` controller works as follows:
+``BroadcastAndProcess`` コントローラーは、クライアントの応答を処理する ``ResponseProcessor`` コンポーネントを必要とします。``BroadcastAndProcess`` コントローラーは次のように動作します:
 
-  - It broadcasts a task of a configured name to all or a configured list of clients to ask for their data.
-  - Each time a response is received from a client, ``BroadcastAndProcess`` invokes the ``ResponseProcessor`` component to process the response.
-  - Once the task is completed (responses received from all clients or timed out), ``BroadcastAndProcess`` invokes the ``ResponseProcessor`` component
-    to do the final check.
+  - 設定された名前のタスクを、すべてのクライアントまたは設定されたクライアントのリストにブロードキャストし、データを要求します。
+  - クライアントから応答を受信するたびに、``BroadcastAndProcess`` は ``ResponseProcessor`` コンポーネントを呼び出して応答を処理します。
+  - タスクが完了する(すべてのクライアントから応答を受信するか、タイムアウトする)と、``BroadcastAndProcess`` は ``ResponseProcessor`` コンポーネントを呼び出して
+    最終チェックを行います。
 
-The ``InitializeGlobalWeights`` controller simply extends the ``BroadcastAndProcess`` with the ``GlobalWeightsInitializer`` as the ``ResponseProcessor``
-component.
+``InitializeGlobalWeights`` コントローラーは、``GlobalWeightsInitializer`` を ``ResponseProcessor`` コンポーネントとして
+``BroadcastAndProcess`` を単純に拡張したものです。

@@ -4,7 +4,7 @@
 
 FLAdminAPI
 ==========
-The legacy ``nvflare.fuel.hci.client.fl_admin_api*`` modules have been removed from NVFlare.
+レガシーの ``nvflare.fuel.hci.client.fl_admin_api*`` モジュールは NVFlare から削除されました。
 
-Use the :ref:`flare_api` for Python-based admin automation, and use
-:doc:`/programming_guide/migrating_to_flare_api` for historical command mapping guidance.
+Python ベースの管理自動化には :ref:`flare_api` を使用してください。過去のコマンド対応表については
+:doc:`/programming_guide/migrating_to_flare_api` を参照してください。
