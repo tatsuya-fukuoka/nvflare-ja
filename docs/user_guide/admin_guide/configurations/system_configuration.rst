@@ -1,11 +1,11 @@
 .. _system_configuration:
 
-######################
-System Configuration
-######################
+####################
+システム設定
+####################
 
-NVIDIA FLARE's behavior is controlled through configuration files. This section covers
-all configurable aspects of the system.
+NVIDIA FLARE の動作は設定ファイルによって制御されます。このセクションでは、
+システムの設定可能なあらゆる側面について説明します。
 
 .. toctree::
    :maxdepth: 1
@@ -16,18 +16,18 @@ all configurable aspects of the system.
    variable_resolution
    server_port_consolidation
 
-Configuration Formats & Files
-=============================
+設定フォーマットとファイル
+================================
 
-- :doc:`Configuration Files <configurations>` -- Supported formats, search order, and configuration reference
+- :doc:`設定ファイル <configurations>` -- サポートされるフォーマット、検索順序、設定リファレンス
 
-Communication & Networking
-==========================
+通信とネットワーク
+========================
 
-- :doc:`Communication Configuration <communication_configuration>` -- CellNet, gRPC, and connectivity settings
-- :doc:`Single-Port Server Deployment <server_port_consolidation>` -- Simplified single-port setup
+- :doc:`通信設定 <communication_configuration>` -- CellNet、gRPC、および接続に関する設定
+- :doc:`シングルポートでのサーバーデプロイ <server_port_consolidation>` -- 簡素化されたシングルポート構成
 
-Job Configuration
-=================
+ジョブ設定
+================
 
-- :doc:`Variable Resolution <variable_resolution>` -- Variable substitution in job configs
+- :doc:`変数解決 <variable_resolution>` -- ジョブ設定における変数の置換

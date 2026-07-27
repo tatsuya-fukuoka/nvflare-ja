@@ -1,114 +1,113 @@
 .. _helm_chart:
 
-###########################
-Running FLARE in Kubernetes
-###########################
+##############################################
+Kubernetes での FLARE の実行
+##############################################
 
 .. contents::
    :local:
    :depth: 2
 
-NVIDIA FLARE can be deployed to Kubernetes by first provisioning normal startup
-kits and then preparing each server or client kit for the Kubernetes runtime.
-The prepared kit contains a participant-specific Helm chart plus the
-``startup/`` and ``local/`` folders that must be staged into Kubernetes storage.
+NVIDIA FLARE は、まず通常のスタートアップキットをプロビジョニングし、次に各サーバーまたは
+クライアントのキットを Kubernetes ランタイム向けに準備することで、Kubernetes にデプロイ
+できます。準備されたキットには、参加者固有の Helm チャートと、Kubernetes ストレージへ
+ステージングする必要のある ``startup/`` および ``local/`` フォルダが含まれます。
 
-For example scripts that automate temporary Kubernetes, OpenShift, and managed
-cloud cluster testing flows, see
-:github_nvflare_link:`examples/devops <examples/devops>`. These scripts are
-for development, smoke testing, demos, and learning only; they are not
-production deployment guidance.
+一時的な Kubernetes、OpenShift、マネージドクラウドクラスタのテストフローを自動化する
+サンプルスクリプトについては、
+:github_nvflare_link:`examples/devops <examples/devops>` を参照してください。これらの
+スクリプトは開発、スモークテスト、デモ、学習のみを目的としたものであり、本番デプロイの
+ガイダンスではありません。
 
-Prerequisites
+前提条件
 =============
 
-Before you start, make sure you have:
+作業を始める前に、以下が揃っていることを確認してください。
 
-* ``nvflare`` installed on the workstation where you provision and run
-  ``nvflare deploy prepare``.
-* ``kubectl`` configured for the target cluster. Use a ``kubectl`` version that
-  is compatible with the Kubernetes API server.
-* ``tar`` installed locally and in any temporary pod image used with
-  ``kubectl cp``. The staging examples below use ``busybox:1.36``, which
-  includes ``tar``.
-* Helm 3.
-* A Kubernetes cluster with standard ``apps/v1`` Deployment,
-  ``rbac.authorization.k8s.io/v1`` Role/RoleBinding, Service, Secret, and PVC
-  support.
-* An actively supported Kubernetes release. The generated chart uses stable
-  Kubernetes APIs and does not depend on provider-specific extensions.
-* A default ``StorageClass`` or an explicit ``storageClassName`` for every PVC.
-  Check with ``kubectl get storageclass``.
-* A container registry that every server and client cluster can pull from.
-* NVIDIA GPU Operator or NVIDIA device plugin installed on clusters that will
-  run jobs with ``resource_spec[site].num_of_gpus``. See
-  `Cloud GPU Setup References`_.
-* For Kubernetes job launching, a Kubernetes API-server CA chain that passes
-  Python 3.13+ strict X.509 validation. CA certificates must include required
-  RFC 5280 extensions such as ``keyUsage`` with certificate signing allowed.
+* プロビジョニングと ``nvflare deploy prepare`` を実行するワークステーションに
+  ``nvflare`` がインストールされていること。
+* 対象クラスタ向けに ``kubectl`` が設定されていること。Kubernetes API サーバーと
+  互換性のある ``kubectl`` のバージョンを使用してください。
+* ローカル環境、および ``kubectl cp`` で使用する一時的な Pod イメージの両方に ``tar``
+  がインストールされていること。以下のステージング例では ``tar`` を含む ``busybox:1.36``
+  を使用します。
+* Helm 3。
+* 標準の ``apps/v1`` Deployment、``rbac.authorization.k8s.io/v1``
+  Role/RoleBinding、Service、Secret、PVC をサポートする Kubernetes クラスタ。
+* 現在サポートされている Kubernetes リリース。生成されるチャートは安定した Kubernetes
+  API を使用しており、プロバイダ固有の拡張には依存しません。
+* デフォルトの ``StorageClass``、またはすべての PVC に対する明示的な
+  ``storageClassName``。``kubectl get storageclass`` で確認してください。
+* すべてのサーバークラスタおよびクライアントクラスタから pull できるコンテナレジストリ。
+* ``resource_spec[site].num_of_gpus`` を指定したジョブを実行するクラスタには、NVIDIA GPU
+  Operator または NVIDIA デバイスプラグインがインストールされていること。
+  `クラウド GPU セットアップの参考資料`_ を参照してください。
+* Kubernetes でのジョブ起動には、Python 3.13 以降の厳格な X.509 検証を通過する
+  Kubernetes API サーバーの CA チェーンが必要です。CA 証明書には、証明書署名が許可された
+  ``keyUsage`` など、RFC 5280 で必須とされる拡張が含まれている必要があります。
 
-The generated charts do not install a Kubernetes cluster, storage class, GPU
-device plugin, ingress controller, or registry credentials.
+生成されるチャートは、Kubernetes クラスタ、ストレージクラス、GPU デバイスプラグイン、
+Ingress コントローラ、レジストリ認証情報のインストールは行いません。
 
-Cloud GPU Setup References
---------------------------
+クラウド GPU セットアップの参考資料
+-----------------------------------
 
-Managed Kubernetes services differ in how they handle GPU drivers, the NVIDIA
-Container Toolkit, the NVIDIA GPU Operator, and the NVIDIA Kubernetes device
-plugin. Before running GPU jobs, verify that GPU nodes advertise allocatable
-``nvidia.com/gpu`` resources.
+マネージド Kubernetes サービスでは、GPU ドライバ、NVIDIA Container Toolkit、
+NVIDIA GPU Operator、NVIDIA Kubernetes デバイスプラグインの扱い方が異なります。
+GPU ジョブを実行する前に、GPU ノードが割り当て可能な ``nvidia.com/gpu`` リソースを
+公開していることを確認してください。
 
-Use the current provider documentation for your cluster:
+お使いのクラスタについては、プロバイダの最新ドキュメントを参照してください。
 
-* Amazon Elastic Kubernetes Service (EKS): `Manage NVIDIA GPU devices on Amazon
-  EKS <https://docs.aws.amazon.com/eks/latest/userguide/device-management-nvidia.html>`__
-  and `GPU support in eksctl
-  <https://docs.aws.amazon.com/eks/latest/eksctl/gpu-support.html>`__.
-* Google Kubernetes Engine (GKE): `Manage the GPU Stack with the NVIDIA GPU
-  Operator on GKE
-  <https://cloud.google.com/kubernetes-engine/docs/how-to/gpu-operator>`__ and
-  `About GPUs in GKE
-  <https://cloud.google.com/kubernetes-engine/docs/concepts/gpus>`__.
-* Azure Kubernetes Service (AKS): `Use GPUs on AKS
-  <https://learn.microsoft.com/en-us/azure/aks/use-nvidia-gpu>`__ and `NVIDIA
-  GPU Operator with AKS
-  <https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/microsoft-aks.html>`__.
+* Amazon Elastic Kubernetes Service (EKS): `Amazon EKS での NVIDIA GPU デバイスの管理
+  <https://docs.aws.amazon.com/eks/latest/userguide/device-management-nvidia.html>`__
+  および `eksctl での GPU サポート
+  <https://docs.aws.amazon.com/eks/latest/eksctl/gpu-support.html>`__。
+* Google Kubernetes Engine (GKE): `GKE で NVIDIA GPU Operator を使って GPU スタックを
+  管理する
+  <https://cloud.google.com/kubernetes-engine/docs/how-to/gpu-operator>`__ および
+  `GKE における GPU について
+  <https://cloud.google.com/kubernetes-engine/docs/concepts/gpus>`__。
+* Azure Kubernetes Service (AKS): `AKS で GPU を使用する
+  <https://learn.microsoft.com/en-us/azure/aks/use-nvidia-gpu>`__ および `AKS での
+  NVIDIA GPU Operator
+  <https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/microsoft-aks.html>`__。
 * NVIDIA: `NVIDIA GPU Operator
-  <https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/>`__.
+  <https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/>`__。
 
-Kubernetes Runtime Model
-========================
+Kubernetes ランタイムモデル
+============================
 
-Kubernetes deployment has two runtime layers:
+Kubernetes デプロイには 2 つのランタイムレイヤーがあります。
 
-* A **parent pod** runs the long-lived FLARE server or client process. Helm
-  installs this pod from the per-participant ``helm_chart/`` generated by
-  ``nvflare deploy prepare``. The parent pod mounts the configured workspace PVC
-  at ``parent.workspace_mount_path`` and reads ``startup/`` and ``local/`` from
-  that PVC. Its Python executable is set by ``parent.python_path`` or, when
-  omitted, defaults to ``/usr/local/bin/python3``.
-* A **job pod** is created dynamically by ``ServerK8sJobLauncher`` or
-  ``ClientK8sJobLauncher`` for each submitted job. Job pod image, Python path,
-  CPU, memory, GPU, and ephemeral storage settings come from the submitted
-  job's ``launcher_spec`` and from the ``job_launcher`` defaults in
-  ``k8s.yaml``.
+* **親 Pod** は、長時間稼働する FLARE サーバーまたはクライアントのプロセスを実行します。
+  Helm は、``nvflare deploy prepare`` が生成した参加者ごとの ``helm_chart/`` から
+  この Pod をインストールします。親 Pod は、設定されたワークスペース PVC を
+  ``parent.workspace_mount_path`` にマウントし、その PVC から ``startup/`` と
+  ``local/`` を読み込みます。Python 実行ファイルは ``parent.python_path`` で設定され、
+  省略された場合は ``/usr/local/bin/python3`` がデフォルトになります。
+* **ジョブ Pod** は、送信されたジョブごとに ``ServerK8sJobLauncher`` または
+  ``ClientK8sJobLauncher`` によって動的に作成されます。ジョブ Pod のイメージ、Python
+  パス、CPU、メモリ、GPU、エフェメラルストレージの設定は、送信されたジョブの
+  ``launcher_spec`` と ``k8s.yaml`` 内の ``job_launcher`` デフォルト値から取得されます。
 
-The generated Helm chart does not run submitted jobs directly. It installs the
-parent participant process, its Kubernetes Service, its ServiceAccount, and the
-Role/RoleBinding that allow the launcher to create job pods.
+生成される Helm チャートは、送信されたジョブを直接実行するわけではありません。親となる
+参加者プロセス、その Kubernetes Service、その ServiceAccount、そしてランチャーが
+ジョブ Pod を作成できるようにする Role/RoleBinding をインストールします。
 
-When ``job_launcher.config_file_path`` is omitted or set to ``null``, the
-launcher uses Kubernetes in-cluster config from the parent pod's ServiceAccount.
+``job_launcher.config_file_path`` が省略されるか ``null`` に設定されている場合、
+ランチャーは親 Pod の ServiceAccount によるクラスタ内 (in-cluster) の Kubernetes
+設定を使用します。
 
-The parent Service is the stable in-cluster address for dynamically launched job
-pods. ``nvflare deploy prepare`` patches the prepared kit's internal
-communication settings to use the generated Service name and ``parent_port``.
-``parent_port`` is the parent-process port used by job pods for internal
-parent/job communication; it is not the federated learning port that remote
-clients use to reach the server. If you rename or replace the Service, keep the
-Service name, Service port, and prepared kit communication settings consistent.
+親 Service は、動的に起動されるジョブ Pod にとってのクラスタ内の安定したアドレスです。
+``nvflare deploy prepare`` は、準備されたキットの内部通信設定にパッチを当て、生成された
+Service 名と ``parent_port`` を使用するようにします。``parent_port`` は、親／ジョブ間の
+内部通信のためにジョブ Pod が使用する親プロセスのポートであり、リモートクライアントが
+サーバーへ到達するために使用する連合学習用のポートではありません。Service の名前を変更
+したり置き換えたりする場合は、Service 名、Service のポート、準備済みキットの通信設定を
+一貫させてください。
 
-The runtime shape is:
+ランタイムの構成は次のとおりです。
 
 .. code-block:: text
 
