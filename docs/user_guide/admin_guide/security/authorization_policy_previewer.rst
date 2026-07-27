@@ -1,63 +1,64 @@
 :orphan:
 
 .. deprecated:: 2.7
-   This tool is deprecated.
+   このツールは非推奨です。
 
 .. _authorization_policy_previewer:
 
 ******************************
-Authorization Policy Previewer
+認可ポリシープレビューア
 ******************************
 
-:ref:`Authorization <federated_authorization>` is an important security feature of NVFLARE. Since NVFLARE 2.2, each site defines its own authorization policies.
-Since authorization policy is vital for system security, and many people can now define policies, it's important to be able
-to validate the policies before deploying them to production.
+:ref:`認可 <federated_authorization>` は NVFLARE の重要なセキュリティ機能です。NVFLARE 2.2 以降、各サイトは独自の認可ポリシーを定義します。
+認可ポリシーはシステムのセキュリティにとって不可欠であり、また多くの人がポリシーを定義できるようになったため、
+本番環境にデプロイする前にポリシーを検証できることが重要です。
 
-The Authorization Policy Previewer is a tool for validating authorization policy definitions. The tool provides an interactive
-user interface and commands for users to validate different aspects of policy definitions:
+認可ポリシープレビューアは、認可ポリシーの定義を検証するためのツールです。このツールは、ポリシー定義のさまざまな側面を
+検証するための対話型ユーザーインターフェースとコマンドを提供します。
 
-    - Show defined roles and rights
-    - Show the content of the policy definition
-    - Show the permission matrix (role/right/conditions)
-    - Evaluate a right against a specified user
+    - 定義されているロールと権限を表示する
+    - ポリシー定義の内容を表示する
+    - パーミッションマトリクス (ロール/権限/条件) を表示する
+    - 指定したユーザーに対して権限を評価する
 
-Start Authorization Policy Previewer
+認可ポリシープレビューアの起動
 ======================================
-To start the Authorization Policy Previewer, enter this command on a terminal:
+認可ポリシープレビューアを起動するには、ターミナルで次のコマンドを入力します。
 
 .. code-block:: shell
 
   nvflare authz_preview -p <authorization_policy_file>
 
-The authorization_policy_file must be a JSON file that follows authorization file format.
+authorization_policy_file は、認可ファイルの形式に従った JSON ファイルである必要があります。
 
-If the file is not a valid JSON file or does not follow authorization file format, this command will exit with exception.
+ファイルが有効な JSON ファイルでない場合、または認可ファイルの形式に従っていない場合、このコマンドは例外を発生させて終了します。
 
-Execute Authorization Policy Previewer Commands
+認可ポリシープレビューアのコマンドの実行
 ------------------------------------------------
-If the Authorization Policy Previewer is successfully started, the prompt ``>`` will be displayed and for command input.
+認可ポリシープレビューアが正常に起動すると、コマンド入力用のプロンプト ``>`` が表示されます。
 
-To get the complete list of commands, enter "?" on the prompt.
+コマンドの完全な一覧を取得するには、プロンプトで "?" を入力します。
 
-Most commands are self-explanatory, except for the "eval_right". With this command, you can evaluate a specified right against a
-specified user (name:org:role) to make sure the result is correct.
+ほとんどのコマンドは説明不要ですが、"eval_right" は例外です。このコマンドを使うと、指定した権限を指定したユーザー
+(name:org:role) に対して評価し、結果が正しいことを確認できます。
 
-Role Rights
------------
-Most permissions in the policy file may be defined with Command Categories. However, once the policy file is loaded, categories are
-already resolved to individual commands, following the fallback mechanism.
+ロールの権限
+--------------------
+ポリシーファイル内のほとんどのパーミッションは、コマンドカテゴリを使って定義できます。ただし、ポリシーファイルが読み込まれると、
+カテゴリはフォールバックメカニズムに従ってすでに個々のコマンドへと解決されています。
 
-Use the ``show_role_rights command`` to verify that all commands have the right permissions for all roles.
+``show_role_rights command`` を使用して、すべてのロールについてすべてのコマンドが正しいパーミッションを持っていることを
+確認してください。
 
-Evaluate a Right
+権限の評価
 ----------------
-The syntax of the ``eval_right`` command is:
+``eval_right`` コマンドの構文は次のとおりです。
 
 .. code-block:: shell
 
   eval_right site_org right_name user_name:org:role [submitter_name:org:role]
 
-where:
+各項目の意味は次のとおりです。
 
 .. code-block::
 
@@ -66,8 +67,8 @@ where:
     User specification - a user spec has three pieces of information separated by colons. Name is the name of the user; org is the organization that the user belongs to; and role is the user's role. You can use the "show_roles" command to list all available roles.
     Submitter specification - some job related commands can evaluate the relation between the user and the submitter of a job. Submitter spec has the same format as user spec.
 
-Please refer to :ref:`Federated Authorization <federated_authorization>` for details on the right definition and evaluation.
+権限の定義と評価の詳細については、 :ref:`Federated Authorization <federated_authorization>` を参照してください。
 
-Stop Authorization Policy Previewer
+認可ポリシープレビューアの停止
 --------------------------------------
-To exit from the Authorization Policy Previewer, enter the "bye" command at the prompt.
+認可ポリシープレビューアを終了するには、プロンプトで "bye" コマンドを入力します。

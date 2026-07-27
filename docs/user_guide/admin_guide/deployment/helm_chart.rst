@@ -354,15 +354,15 @@ PVC コピー方式を使用するサーバーキットでは、管理者ファ�
      # If your cluster has no default StorageClass, uncomment and set this.
      # storageClassName: <storage-class-name>
 
-Use a larger size if the server's job history, snapshots, or logs need more
-space. Use a distinct workspace claim per participant when multiple
-participants run in the same namespace.
+サーバーのジョブ履歴、スナップショット、ログにより多くの容量が必要な場合は、より大きな
+サイズを指定してください。複数の参加者が同じネームスペースで実行される場合は、参加者ごとに
+別々のワークスペースクレームを使用してください。
 
-Method 1: copy into the workspace PVC
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+方法 1: ワークスペース PVC へコピーする
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For example, with a prepared folder named ``server-k8s`` and a workspace PVC
-named ``nvflws``, copy ``startup/`` and ``local/`` directly into the PVC root:
+例として、``server-k8s`` という名前の準備済みフォルダと ``nvflws`` という名前の
+ワークスペース PVC を使い、``startup/`` と ``local/`` を PVC のルートへ直接コピーします。
 
 .. code-block:: bash
 
@@ -405,77 +405,75 @@ named ``nvflws``, copy ``startup/`` and ``local/`` directly into the PVC root:
    kubectl -n "$NAMESPACE" exec nvflare-pvc-copy -- ls -la /mnt/nvflws
    kubectl -n "$NAMESPACE" delete pod nvflare-pvc-copy
 
-The OpenShift helper
+OpenShift 用のヘルパースクリプト
 :github_nvflare_link:`examples/devops/openshift/scripts/k8s_deploy.sh <examples/devops/openshift/scripts/k8s_deploy.sh>`
-shows this PVC-copy method end to end. Its ``stage_workspace_pvc`` helper in
+は、この PVC コピー方式を一連の流れとして示しています。
 :github_nvflare_link:`examples/devops/openshift/scripts/k8s_common.sh <examples/devops/openshift/scripts/k8s_common.sh>`
-creates a temporary copy pod, copies ``startup/`` and ``local/`` into the PVC,
-and then the script runs Helm for each participant.
+内の ``stage_workspace_pvc`` ヘルパーが一時的なコピー用 Pod を作成し、``startup/`` と
+``local/`` を PVC へコピーします。その後、スクリプトが参加者ごとに Helm を実行します。
 
-The PVC root must contain ``startup/`` and ``local/`` directly. At runtime,
-those folders appear under the configured workspace mount path
-(``parent.workspace_mount_path``, rendered as
-``persistence.workspace.mountPath``). With the example default, the parent
-expects ``/var/tmp/nvflare/workspace/startup`` and
-``/var/tmp/nvflare/workspace/local``. If the PVC root contains a nested
-``server-k8s/`` or ``site-1-k8s/`` folder instead, the parent pod will not find
-those folders under the configured mount path.
+PVC のルートには ``startup/`` と ``local/`` が直接含まれている必要があります。実行時、
+これらのフォルダは設定されたワークスペースのマウントパス (``parent.workspace_mount_path``。
+``persistence.workspace.mountPath`` として反映されます) の配下に現れます。例のデフォルト
+設定では、親は ``/var/tmp/nvflare/workspace/startup`` と
+``/var/tmp/nvflare/workspace/local`` を想定します。PVC のルートに代わりに
+``server-k8s/`` や ``site-1-k8s/`` のような入れ子のフォルダが含まれている場合、親 Pod は
+設定されたマウントパス配下でこれらのフォルダを見つけられません。
 
-Method 2: stage ConfigMap and Secret
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+方法 2: ConfigMap と Secret をステージングする
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As an alternative to copying ``startup/`` and ``local/`` into the PVC, run
-``nvflare deploy k8s stage`` to create read-only Kubernetes resources for those
-folders. ``nvflare deploy k8 stage`` is accepted as an alias.
+``startup/`` と ``local/`` を PVC にコピーする代わりに、``nvflare deploy k8s stage``
+を実行して、これらのフォルダ用の読み取り専用の Kubernetes リソースを作成することもできます。
+``nvflare deploy k8 stage`` もエイリアスとして受け付けられます。
 
 .. code-block:: bash
 
    nvflare deploy k8s stage "$PREPARED_KIT" --namespace "$NAMESPACE"
 
-Use ``--kubectl oc`` when staging into OpenShift with ``oc`` instead of
-``kubectl``. This creates a ConfigMap for ``local/`` and a Secret for
-``startup/``, then patches ``helm_chart/values.yaml`` so the parent pod mounts them at
-``/var/tmp/nvflare/workspace/local`` and
-``/var/tmp/nvflare/workspace/startup``. The workspace PVC is still mounted at
-the workspace root for writable runtime state such as jobs, snapshots, logs, and
-``transfer/``. After this staging command succeeds, run the printed
-``helm_command`` or the equivalent ``helm upgrade --install`` command for the
-prepared chart. The staged ConfigMap and Secret are separate from the Helm
-release. After uninstalling the release, run the printed ``cleanup_command``
-or the equivalent command below to remove them:
+``kubectl`` ではなく ``oc`` を使って OpenShift へステージングする場合は、
+``--kubectl oc`` を使用してください。このコマンドは ``local/`` 用の ConfigMap と
+``startup/`` 用の Secret を作成し、その後 ``helm_chart/values.yaml`` にパッチを当てて、
+親 Pod がそれらを ``/var/tmp/nvflare/workspace/local`` と
+``/var/tmp/nvflare/workspace/startup`` にマウントするようにします。ワークスペース PVC は
+引き続きワークスペースのルートにマウントされ、ジョブ、スナップショット、ログ、
+``transfer/`` などの書き込み可能なランタイム状態に使用されます。このステージングコマンドが
+成功したら、表示された ``helm_command``、または準備済みチャートに対する同等の
+``helm upgrade --install`` コマンドを実行してください。ステージングされた ConfigMap と
+Secret は Helm リリースとは独立しています。リリースをアンインストールした後、表示された
+``cleanup_command`` または以下の同等のコマンドを実行してこれらを削除してください。
 
 .. code-block:: bash
 
    helm uninstall "$RELEASE_NAME" --namespace "$NAMESPACE"
    nvflare deploy k8s unstage "$PREPARED_KIT"
 
-The stage command records the namespace and exact resource names in the
-prepared chart values, so they do not need to be repeated. Pass
-``--namespace`` when cleaning up a kit staged by an older NVFlare version that
-did not record it. Run unstage after Helm uninstall because the parent pod
-depends on the staged volumes while it is installed.
+stage コマンドは、ネームスペースと正確なリソース名を準備済みチャートの値に記録するため、
+それらを繰り返し指定する必要はありません。記録機能のない古いバージョンの NVFlare で
+ステージングされたキットをクリーンアップする場合は、``--namespace`` を指定してください。
+親 Pod はインストールされている間ステージングされたボリュームに依存するため、unstage は
+Helm のアンインストール後に実行してください。
 
-The dynamically launched job pod does **not** mount this workspace PVC. Each job
-pod receives its own writable ``emptyDir`` mounted at the configured workspace
-mount path. The launcher transfers the needed ``local/`` and job workspace
-content into that ``emptyDir`` when the pod starts and uploads the job results
-back to the parent process when the job exits. The job pod workspace size is
-controlled by
-``launcher_spec[site][k8s].ephemeral_storage`` when set, or by the launcher
-default otherwise. The same value is also used for the container
-``ephemeral-storage`` request and limit.
+動的に起動されるジョブ Pod は、このワークスペース PVC を **マウントしません** 。各ジョブ
+Pod には、設定されたワークスペースのマウントパスにマウントされた、書き込み可能な専用の
+``emptyDir`` が与えられます。ランチャーは、Pod の起動時に必要な ``local/`` とジョブ
+ワークスペースの内容をその ``emptyDir`` へ転送し、ジョブの終了時にジョブの結果を親プロセス
+へアップロードします。ジョブ Pod のワークスペースサイズは、設定されている場合は
+``launcher_spec[site][k8s].ephemeral_storage`` によって、設定されていない場合は
+ランチャーのデフォルト値によって制御されます。同じ値がコンテナの ``ephemeral-storage``
+のリクエストおよびリミットにも使用されます。
 
-Study Data PVC
---------------
+スタディデータ PVC
+-------------------
 
-Study data PVCs are separate from the parent workspace PVC. Configure optional
-study data mappings in ``local/study_runtime.yaml`` inside the prepared kit
-before copying ``local/`` into the workspace PVC (``nvflare deploy prepare``
-writes a commented template; the launcher auto-discovers the file, so no
-launcher arguments are needed). If the kit is already staged, edit the file on
-the PVC or restage ``local/``.
+スタディデータ PVC は、親のワークスペース PVC とは別のものです。``local/`` をワークスペース
+PVC へコピーする前に、準備済みキット内の ``local/study_runtime.yaml`` で任意のスタディ
+データマッピングを設定してください (``nvflare deploy prepare`` はコメント付きのテンプレート
+を書き出します。ランチャーはこのファイルを自動的に検出するため、ランチャーへの引数は不要
+です)。キットが既にステージング済みの場合は、PVC 上のファイルを編集するか、``local/`` を
+再ステージングしてください。
 
-Example ``study_runtime.yaml``:
+``study_runtime.yaml`` の例を示します。
 
 .. code-block:: yaml
 
@@ -487,32 +485,32 @@ Example ``study_runtime.yaml``:
            source: nvfldata
            mode: ro
 
-For Kubernetes, each dataset ``source`` value is a PVC claim name. The job pod
-mounts the dataset at ``/data/<study>/<dataset>``, for example
-``/data/default/data``. ``mode`` must be ``ro`` or ``rw``. Missing entries for
-a job's study mean no study-data PVCs are mounted for that job. The same file
-also configures per-study env vars, secret-backed env vars and mounts, and Pod
-templates; the launcher re-reads it on every job launch. Any template files
-referenced by ``pod_template`` must be staged with ``local/``.
+Kubernetes の場合、各データセットの ``source`` の値は PVC のクレーム名です。ジョブ Pod は
+データセットを ``/data/<study>/<dataset>`` (例: ``/data/default/data``) にマウントします。
+``mode`` は ``ro`` または ``rw`` でなければなりません。ジョブのスタディに対応するエントリ
+がない場合、そのジョブにはスタディデータ PVC はマウントされません。同じファイルでは、
+スタディごとの環境変数、Secret に基づく環境変数とマウント、Pod テンプレートも設定できます。
+ランチャーはジョブ起動のたびにこのファイルを読み直します。``pod_template`` から参照される
+テンプレートファイルは、``local/`` と一緒にステージングする必要があります。
 
-Legacy v1 kits that still use ``local/study_data.yaml`` keep working:
-``nvflare deploy prepare`` then emits the launcher's
-``study_data_pvc_file_path`` pointing at that file and does not write a
-``study_runtime.yaml`` template. The two files must not coexist; to migrate,
-move all studies into ``study_runtime.yaml`` and delete ``study_data.yaml``.
+``local/study_data.yaml`` を引き続き使用する従来の v1 キットも動作します。その場合、
+``nvflare deploy prepare`` はそのファイルを指すランチャーの
+``study_data_pvc_file_path`` を出力し、``study_runtime.yaml`` のテンプレートは書き出し
+ません。この 2 つのファイルを共存させてはいけません。移行するには、すべてのスタディを
+``study_runtime.yaml`` へ移し、``study_data.yaml`` を削除してください。
 
-When a study's ``local/study_runtime.yaml`` entry sets ``pod_template``,
-matching jobs use the study-specific Pod template, and ``datasets`` entries
-from the same study are added as PVC volume mounts. The launcher always
-replaces template ``workspace-job`` and ``startup-kit`` volumes and
-job-container mounts with its generated workspace ``emptyDir`` and startup-kit
-Secret mounts.
+あるスタディの ``local/study_runtime.yaml`` エントリで ``pod_template`` が設定されている
+場合、該当するジョブはそのスタディ固有の Pod テンプレートを使用し、同じスタディの
+``datasets`` エントリが PVC ボリュームマウントとして追加されます。ランチャーは常に、
+テンプレートの ``workspace-job`` および ``startup-kit`` ボリュームとジョブコンテナの
+マウントを、自身が生成したワークスペース ``emptyDir`` とスタートアップキットの Secret
+マウントで置き換えます。
 
-Minimal Study Job Pod Template
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+最小構成のスタディジョブ Pod テンプレート
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Reference the template per study in ``local/study_runtime.yaml`` (paths resolve
-relative to ``local/``; an inline pod mapping is also accepted):
+``local/study_runtime.yaml`` でスタディごとにテンプレートを参照します (パスは ``local/``
+からの相対パスとして解決されます。インラインの pod マッピングも受け付けられます)。
 
 .. code-block:: yaml
 

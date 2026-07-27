@@ -1,52 +1,52 @@
 .. _serialization:
 
-Message Serialization
-=====================
-NVFLARE uses a secure mechanism called FOBS (Flare OBject Serializer) for message serialization and
-deserialization when exchanging data between the server and clients.
+メッセージのシリアライゼーション
+================================
+NVFLARE は、サーバーとクライアントの間でデータをやり取りする際のメッセージのシリアライゼーションおよび
+デシリアライゼーションに、FOBS (Flare OBject Serializer) と呼ばれる安全な仕組みを使用します。
 
 
 Flare Object Serializer (FOBS)
 ------------------------------
 
 
-Overview
+概要
 ~~~~~~~~
 
-FOBS is a drop-in replacement for Pickle for security purposes. It uses **MessagePack** to
-serialize objects.
+FOBS はセキュリティ上の目的で用意された Pickle の代替 (ドロップイン置換) です。オブジェクトの
+シリアライズには **MessagePack** を使用します。
 
-FOBS sacrifices convenience for security. With Pickle, most objects are supported
-automatically using introspection. To serialize an object using FOBS, a **Decomposer**
-must be registered for the class. A few decomposers for commonly used classes are
-pre-registered with the module.
+FOBS は利便性を犠牲にしてセキュリティを確保しています。Pickle ではイントロスペクションによって
+ほとんどのオブジェクトが自動的にサポートされます。FOBS でオブジェクトをシリアライズするには、
+そのクラス用の **Decomposer** を登録しておく必要があります。よく使われるいくつかのクラスに対する
+decomposer は、モジュールにあらかじめ登録されています。
 
-FOBS supports enum types by registering decomposers automatically for all classes that
-are subclasses of :code:`Enum`.
+FOBS は、 :code:`Enum` のサブクラスであるすべてのクラスに対して decomposer を自動的に登録することで、
+enum 型をサポートします。
 
-FOBS treats all other classes as dataclass by registering a generic decomposer for dataclasses.
-Dataclass is a class whose constructor only changes the state of the object without side-effects.
-Side-effects include changing global variables, creating network connection, files etc.
+FOBS はそれ以外のすべてのクラスを dataclass として扱い、dataclass 用の汎用 decomposer を登録します。
+dataclass とは、コンストラクタが副作用なしにオブジェクトの状態のみを変更するクラスのことです。
+副作用には、グローバル変数の変更、ネットワーク接続の作成、ファイルの作成などが含まれます。
 
-FOBS throws :code:`TypeError` exception when it encounters an object with no decomposer
-registered. For example,
+FOBS は、decomposer が登録されていないオブジェクトに遭遇すると :code:`TypeError` 例外を送出します。
+例えば、次のようになります。
 
 .. code-block::
 
     TypeError: cannot serialize 'xxx' object
 
-Usage
-~~~~~
+使い方
+~~~~~~~~
 
-FOBS defines following 4 functions, similar to Pickle,
+FOBS は Pickle と同様に、以下の 4 つの関数を定義しています。
 
-* :code:`dumps(obj)`: Serializes obj and returns bytes
-* :code:`dump(obj, stream)`: Serializes obj and writes the result to stream
-* :code:`loads(data)`: Deserializes the data and returns an object
-* :code:`load(stream)`: Reads data from stream and deserializes it into an object
+* :code:`dumps(obj)`: obj をシリアライズして bytes を返します
+* :code:`dump(obj, stream)`: obj をシリアライズして結果を stream に書き込みます
+* :code:`loads(data)`: data をデシリアライズしてオブジェクトを返します
+* :code:`load(stream)`: stream からデータを読み取り、オブジェクトにデシリアライズします
 
 
-Examples,
+例を示します。
 
 .. code-block::
 
@@ -59,26 +59,25 @@ Examples,
     data = fobs.dumps(shareable)
     new_shareable = fobs.loads(data)
 
-Decomposers
-~~~~~~~~~~~
+デコンポーザー
+~~~~~~~~~~~~~~~~
 
-Decomposers are classes that inherit abstract base class :code:`fobs.Decomposer`. FOBS
-uses decomposers to break an object into **serializable objects** before serializing it
-using MessagePack.
+デコンポーザー (decomposer) は、抽象基底クラス :code:`fobs.Decomposer` を継承したクラスです。FOBS は
+MessagePack を使ってオブジェクトをシリアライズする前に、decomposer を使ってオブジェクトを
+**シリアライズ可能なオブジェクト** に分解します。
 
-Decomposers are very similar to serializers, except that they don't have to convert object
-into bytes directly, they can just break the object into other objects that are serializable.
+decomposer はシリアライザーによく似ていますが、オブジェクトを直接 bytes に変換する必要はなく、
+シリアライズ可能な別のオブジェクトへ分解するだけでよい点が異なります。
 
-An object is serializable if its type is supported by MessagePack or a decomposer is
-registered for its class.
+オブジェクトは、その型が MessagePack でサポートされているか、あるいはそのクラス用の decomposer が
+登録されている場合に、シリアライズ可能となります。
 
-FOBS recursively decomposes objects till all objects are of types supported by MessagePack.
-Decomposing looping must be avoided, which causes stack overflow. Decomposers form a loop
-when one class is decomposed into another class which is eventually decomposed into the
-original class. For example, this scenario forms the simplest loop: X decomposes into Y
-and Y decomposes back into X.
+FOBS は、すべてのオブジェクトが MessagePack でサポートされる型になるまで、再帰的にオブジェクトを
+分解します。分解のループはスタックオーバーフローを引き起こすため、避けなければなりません。あるクラスが
+別のクラスに分解され、それが最終的に元のクラスに分解される場合、decomposer はループを形成します。
+例えば、次のシナリオが最も単純なループです。X が Y に分解され、Y が X に分解し戻される場合です。
 
-MessagePack supports following types natively,
+MessagePack は以下の型をネイティブにサポートしています。
 
 * None
 * bool
@@ -91,7 +90,7 @@ MessagePack supports following types natively,
 * list
 * dict
 
-Decomposers for following classes are included with `fobs` module and auto-registered,
+以下のクラスに対する decomposer は `fobs` モジュールに含まれており、自動的に登録されます。
 
 * tuple
 * set
@@ -116,8 +115,8 @@ Decomposers for following classes are included with `fobs` module and auto-regis
 * numpy.int64
 * numpy.ndarray
 
-All classes defined in :code:`fobs/decomposers` folder are automatically registered.
-Other decomposers must be registered manually like this,
+:code:`fobs/decomposers` フォルダに定義されているすべてのクラスは自動的に登録されます。
+それ以外の decomposer は、次のように手動で登録する必要があります。
 
 .. code-block::
 
@@ -125,20 +124,19 @@ Other decomposers must be registered manually like this,
     fobs.register(BarDecomposer())
 
 
-:code:`fobs.register` takes either a class or an instance as the argument. Decomposer whose
-constructor takes arguments must be registered as instance.
+:code:`fobs.register` は、引数としてクラスまたはインスタンスのいずれかを受け取ります。コンストラクタが
+引数を取る decomposer は、インスタンスとして登録する必要があります。
 
-A decomposer can either serialize the class into bytes or decompose it into objects of
-serializable types. In most cases, it only involves saving members as a list and reconstructing
-the object from the list.
+decomposer は、クラスを bytes にシリアライズすることも、シリアライズ可能な型のオブジェクトに分解する
+こともできます。ほとんどの場合、メンバーをリストとして保存し、そのリストからオブジェクトを再構築する
+だけで済みます。
 
-MessagePack can't handle items larger than 4GB in dict. To work around this issue, FOBS can externalize
-the large item and just stores a reference in the buffer. :code:`DatumManager` is used to handle the
-externalized data. For most objects which don't deal with dict items larger than 4GB, the DatumManager
-is not needed.
+MessagePack は dict の中で 4GB を超える項目を扱えません。この問題を回避するため、FOBS は大きな項目を
+外部化し、バッファには参照のみを保存できます。外部化されたデータの処理には :code:`DatumManager` が
+使用されます。4GB を超える dict 項目を扱わないほとんどのオブジェクトでは、DatumManager は不要です。
 
-Here is an example of a simple decomposer. Even though :code:`datetime` is not supported
-by MessagePack, a decomposer is included in `fobs` module so no need to further decompose it.
+以下は単純な decomposer の例です。 :code:`datetime` は MessagePack でサポートされていませんが、
+`fobs` モジュールに decomposer が含まれているため、それ以上分解する必要はありません。
 
 .. code-block::
 
@@ -173,32 +171,30 @@ by MessagePack, a decomposer is included in `fobs` module so no need to further 
     assert isinstance(obj.timestamp, datetime)
 
 
-The same decomposer can be registered multiple times. Only first one takes effect, the others
-are ignored with a warning message.
+同じ decomposer を複数回登録することもできます。有効になるのは最初の 1 つだけで、それ以外は警告
+メッセージとともに無視されます。
 
-Note that ``fobs_initialize()`` may need to be called if decomposers are not registered.
+なお、decomposer が登録されていない場合は ``fobs_initialize()`` の呼び出しが必要になることがあります。
 
-Enum Types
+Enum 型
 ~~~~~~~~~~
 
-All classes derived from :code:`Enum` are automatically handled by the default enum decomposer,
-which is already registered for you.
-This means you don't need to manually configure anything for these enums;
-they come with built-in support for serialization and deserialization.
+:code:`Enum` から派生したすべてのクラスは、すでに登録済みのデフォルトの enum decomposer によって
+自動的に処理されます。
+つまり、これらの enum に対して手動で何かを設定する必要はありません。
+シリアライゼーションとデシリアライゼーションのサポートが組み込みで提供されます。
 
-In rare cases where a class derived from :code:`Enum`
-is too complex for the generic decomposer to handle,
-you can write and register a special decomposer.
-This will prevent FOBS from using the generic decomposer for that class.
+まれに、 :code:`Enum` から派生したクラスが複雑すぎて汎用の decomposer では処理できない場合には、
+専用の decomposer を作成して登録できます。
+これにより、FOBS がそのクラスに対して汎用 decomposer を使用しないようにできます。
 
-Dataclass Types
+Dataclass 型
 ~~~~~~~~~~~~~~~
 
-All dataclass are automatically handled by the default dataclass decomposer,
-which is already registered for you.
-This means you don't need to manually configure anything for those classes.
+すべての dataclass は、すでに登録済みのデフォルトの dataclass decomposer によって自動的に処理されます。
+つまり、これらのクラスに対して手動で何かを設定する必要はありません。
 
-An example of dataclass:
+dataclass の例を示します。
 
 .. code-block:: python
 
@@ -209,36 +205,36 @@ An example of dataclass:
         name: str
         height: int
 
-Custom Types
+カスタム型
 ~~~~~~~~~~~~
 
-To support custom types with FOBS, the decomposers for the types must be included
-with the custom code and registered.
+FOBS でカスタム型をサポートするには、その型に対する decomposer をカスタムコードに含め、登録する必要が
+あります。
 
-The decomposers must be registered in both server and client code before FOBS is used.
-A good place for registration is the constructors for controllers and executors. It
-can also be done in ``START_RUN`` event handler.
+decomposer は、FOBS を使用する前にサーバー側とクライアント側の両方のコードで登録しなければなりません。
+登録場所としては、コントローラーやエグゼキューターのコンストラクタが適しています。 ``START_RUN``
+イベントハンドラーで行うこともできます。
 
-Custom object cannot be put in ``shareable`` directly,
-it must be serialized using FOBS first. Assuming ``custom_data`` contains custom type,
-this is how data can be stored in shareable:
+カスタムオブジェクトを ``shareable`` に直接入れることはできません。
+まず FOBS を使ってシリアライズする必要があります。 ``custom_data`` がカスタム型を含むとすると、
+shareable にデータを格納する方法は次のとおりです。
 
 ::
 
     shareable[CUSTOM_DATA] = fobs.dumps(custom_data)
 
-On the receiving end:
+受信側では次のようにします。
 
 ::
 
     custom_data = fobs.loads(shareable[CUSTOM_DATA])
 
-This doesn't work:
+以下は正しく動作しません。
 
 ::
 
     shareable[CUSTOM_DATA] = custom_data
 
 
-When using custom types with FOBS,
-please place each custom type, such as class ``CustomType``, in its own file within the custom folder of the app directory.
+FOBS でカスタム型を使用する場合は、 ``CustomType`` クラスのような各カスタム型を、アプリケーション
+ディレクトリの custom フォルダ内でそれぞれ独立したファイルに配置してください。
