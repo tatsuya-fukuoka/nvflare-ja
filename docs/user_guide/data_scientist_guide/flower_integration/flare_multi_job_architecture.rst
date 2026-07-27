@@ -1,23 +1,22 @@
-****************************
-FLARE Multi-Job Architecture
-****************************
+**********************************
+FLARE のマルチジョブアーキテクチャ
+**********************************
 
-To maximize the utilization of compute resources, FLARE supports multiple jobs running at the
-same time, where each job is an independent FL experiment.
+計算リソースの利用効率を最大化するため、FLARE は複数のジョブを同時に実行することをサポートしています。
+各ジョブはそれぞれ独立した FL 実験です。
 
 .. image:: ../../../resources/system_architecture.png
 
-As shown in the diagram above, there is the Server Control Process (SCP) on the Server host, and there is a
-Client Control Process (CCP) on each client host. The SCP communicates with CCPs to manage jobs (schedule,
-deploy, monitor, and abort jobs). When a job is scheduled by the SCP, the job is sent to the CCPs of all sites,
-which creates separate processes for the job. These processes form a “Job Network” for the job. This network
-goes away when the job is finished.
+上の図に示すように、サーバーホスト上にはサーバー制御プロセス (SCP) があり、各クライアントホスト上には
+クライアント制御プロセス (CCP) があります。SCP は CCP と通信してジョブを管理します（ジョブのスケジュール、
+デプロイ、監視、中止）。ジョブが SCP によってスケジュールされると、そのジョブは全サイトの CCP に送られ、
+CCP がそのジョブ用の個別プロセスを生成します。これらのプロセスがそのジョブの「ジョブネットワーク」を
+形成します。このネットワークはジョブが終了すると消滅します。
 
-The diagram shows 3 jobs (J1, J2, J3) in different colors on server and client(s). For example, all J1 processes
-form the “job network” for Job 1.
+図では、サーバーとクライアント上に 3 つのジョブ (J1、J2、J3) が異なる色で示されています。たとえば、
+すべての J1 プロセスがジョブ 1 の「ジョブネットワーク」を形成します。
 
-By default, processes of the same job network are not connected directly. Instead, they only connect to the SCP,
-and all messages between job processes are relayed through the SCP. However, if network policy permits, direct
-P2P connections could be established automatically between the job processes to obtain maximum communication
-speed. The underlying communication path is transparent to applications and only requires config changes to
-enable direct communication.
+デフォルトでは、同じジョブネットワークのプロセス同士は直接接続されません。代わりに SCP にのみ接続し、
+ジョブプロセス間のすべてのメッセージは SCP を経由して中継されます。ただし、ネットワークポリシーが許可すれば、
+通信速度を最大化するために、ジョブプロセス間で直接の P2P 接続を自動的に確立することもできます。
+基盤となる通信経路はアプリケーションからは透過的であり、直接通信を有効にするには設定変更のみが必要です。

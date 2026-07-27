@@ -1,10 +1,10 @@
 ********************
-Flower Job Structure
+Flower ジョブ構造
 ********************
-Even though Flower Programming is out of the scope of FLARE/Flower integration, you need to have a good
-understanding of the Flower Job Structure when submitting to FLARE.
+Flower のプログラミング自体は FLARE/Flower 連携の対象範囲外ですが、FLARE にジョブを送信する際には
+Flower のジョブ構造を十分に理解しておく必要があります。
 
-A Flower job is a regular FLARE job with special requirements for the ``custom`` directory, as shown below.
+Flower ジョブは、以下に示すように ``custom`` ディレクトリに対する特別な要件を持つ通常の FLARE ジョブです。
 
 .. code-block:: none
 
@@ -15,21 +15,21 @@ A Flower job is a regular FLARE job with special requirements for the ``custom``
     │   └── task.py     # <-- task-specific code (model, data)
     └── pyproject.toml  # <-- Flower project file
 
-Project Folder
-==============
-All Flower app code must be placed in a subfolder in the ``custom`` directory of the job. This subfolder is called
-the project folder of the app. In this example, the project folder is named ``flwr_pt``. Typically, this folder
-contains ``server.py``, ``client.py``, and the ``__init__.py``. Though you could organize them differently (see discussion
-below), we recommend always including the ``__init__.py`` so that the project folder is guaranteed to be a valid Python
-package, regardless of Python versions.
+プロジェクトフォルダ
+======================
+Flower アプリのコードはすべて、ジョブの ``custom`` ディレクトリ内のサブフォルダに配置する必要があります。
+このサブフォルダをアプリのプロジェクトフォルダと呼びます。この例では、プロジェクトフォルダの名前は ``flwr_pt`` です。
+通常、このフォルダには ``server.py`` 、 ``client.py`` 、および ``__init__.py`` が含まれます。
+別の構成にすることもできますが (以下の説明を参照)、Python のバージョンに関係なくプロジェクトフォルダが
+確実に有効な Python パッケージとなるよう、常に ``__init__.py`` を含めることを推奨します。
 
 Pyproject.toml
 --------------
-The ``pyproject.toml`` file exists in the job's ``custom`` folder. It is an important file that contains server and
-client app definition and configuration information. Such information is used by the Flower system to find the
-server app and the client app, and to pass app-specific configuration to the apps.
+``pyproject.toml`` ファイルはジョブの ``custom`` フォルダに存在します。これはサーバーアプリとクライアント
+アプリの定義および設定情報を含む重要なファイルです。この情報は Flower システムがサーバーアプリと
+クライアントアプリを見つけ、アプリ固有の設定をアプリに渡すために使用されます。
 
-Here is an example of ``pyproject.toml``, taken from :github_nvflare_link:`this example <examples/hello-world/hello-flower/flwr-pt/pyproject.toml>`.
+以下は :github_nvflare_link:`この例 <examples/hello-world/hello-flower/flwr-pt/pyproject.toml>` から引用した ``pyproject.toml`` の例です。
 
 .. code-block:: toml
 
@@ -73,68 +73,66 @@ Here is an example of ``pyproject.toml``, taken from :github_nvflare_link:`this 
     momentum = 0.9
 
 
-.. note:: Note that the information defined in pyproject.toml must match the code in the project folder!
+.. note:: pyproject.toml で定義される情報は、プロジェクトフォルダ内のコードと一致していなければならない点に注意してください。
 
-.. note:: For NVFlare-managed Flower jobs, NVFlare creates a job-scoped
-   ``$FLWR_HOME/config.toml`` with the SuperLink connection details. You do not
-   need to define a ``[tool.flwr.federations]`` section in ``pyproject.toml`` for
-   FLARE execution.
+.. note:: NVFlare が管理する Flower ジョブでは、NVFlare が SuperLink の接続情報を含むジョブスコープの
+   ``$FLWR_HOME/config.toml`` を作成します。FLARE での実行にあたって、 ``pyproject.toml`` に
+   ``[tool.flwr.federations]`` セクションを定義する必要はありません。
 
-.. note:: Flower 1.26+ support requires the NVFlare 2.8 release candidate line
-   (``nvflare~=2.8.0rc``), or NVFlare installed from current ``main``. If you
-   are using released NVFlare 2.7.x, use ``flwr>=1.16,<1.26`` and the 2.7 branch
-   or tag of the Flower examples.
+.. note:: Flower 1.26 以降のサポートには、NVFlare 2.8 のリリース候補系列 ( ``nvflare~=2.8.0rc`` )、
+   または現在の ``main`` からインストールした NVFlare が必要です。リリース済みの NVFlare 2.7.x を
+   使用している場合は、 ``flwr>=1.16,<1.26`` と Flower サンプルの 2.7 ブランチまたはタグを使用してください。
 
-Project Name
-~~~~~~~~~~~~
-The project name should match the name of the project folder, though not a requirement. In this example, it is ``flwr_pt``. 
-Server App Specification
+プロジェクト名
+~~~~~~~~~~~~~~~~
+プロジェクト名はプロジェクトフォルダの名前と一致させるべきですが、必須ではありません。この例では ``flwr_pt`` です。
+サーバーアプリの指定
 
-This value is specified following this format:
+この値は次の形式で指定します。
 
 .. code-block::
 
     <server_app_module>:<server_app_var_name>
 
-where:
+ここで:
 
-    - The <server_app_module> is the module that contains the server app code. This module is usually defined as ``server.py`` in the project folder (flwr_pt in this example). 
-    - The <server_app_var_name> is the name of the variable that holds the ServerApp object in the <server_app_module>. This variable is usually defined as ``app``:
+    - <server_app_module> は、サーバーアプリのコードを含むモジュールです。このモジュールは通常、プロジェクトフォルダ (この例では flwr_pt) 内の ``server.py`` として定義されます。
+    - <server_app_var_name> は、<server_app_module> 内で ServerApp オブジェクトを保持する変数の名前です。この変数は通常 ``app`` として定義されます。
 
 .. code-block:: python
 
     app = ServerApp(server_fn=server_fn)
 
 
-Client App Specification
-~~~~~~~~~~~~~~~~~~~~~~~~
-This value is specified following this format:
+クライアントアプリの指定
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+この値は次の形式で指定します。
 
 .. code-block::
 
 	<client_app_module>:<client_app_var_name>
 
-where:
+ここで:
 
-	- The <client_app_module> is the module that contains the client app code. This module is usually defined as ``client.py`` in the project folder (flwr_pt in this example). 
-	- The <client_app_var_name> is the name of the variable that holds the ClientApp object in the <client_app_module>. This variable is usually defined as ``app``:
+	- <client_app_module> は、クライアントアプリのコードを含むモジュールです。このモジュールは通常、プロジェクトフォルダ (この例では flwr_pt) 内の ``client.py`` として定義されます。
+	- <client_app_var_name> は、<client_app_module> 内で ClientApp オブジェクトを保持する変数の名前です。この変数は通常 ``app`` として定義されます。
 
 .. code-block:: python
 
     app = ClientApp(client_fn=client_fn)
 
 
-App Configuration
-~~~~~~~~~~~~~~~~~
-The pyproject.toml file can contain app config information, in the ``[tool.flwr.app.config]`` section. In this example,
-it defines the number of rounds:
+アプリの設定
+~~~~~~~~~~~~~~
+pyproject.toml ファイルには、 ``[tool.flwr.app.config]`` セクションでアプリの設定情報を含めることができます。
+この例では、ラウンド数を定義しています。
 
 .. code-block:: toml
 
     [tool.flwr.app.config]
     num-server-rounds = 3
 
-The content of this section is specific to the server app code. The ``server.py`` in the example shows how this is used:
+このセクションの内容はサーバーアプリのコードに固有のものです。この例の ``server.py`` は、その使い方を示しています。
 
 .. code-block:: python
 
@@ -147,12 +145,11 @@ The content of this section is specific to the server app code. The ``server.py`
 
         return ServerAppComponents(strategy=strategy, config=config)
 
-Note that you can also pass `run_config` arguments directly through the job definition via 
-`FlowerRecipe(..., run_config={"num-server-rounds": 5})` to override the default values listed in `pyproject.toml`.
+なお、 `FlowerRecipe(..., run_config={"num-server-rounds": 5})` のようにジョブ定義を通じて `run_config` の引数を
+直接渡し、 `pyproject.toml` に記載された既定値を上書きすることもできます。
 
-Simulation Profiles
-~~~~~~~~~~~~~~~~~~~
-If you run the Flower job directly with Flower simulation instead of submitting it
-as a FLARE job, configure the simulation profile using Flower's current simulation
-configuration mechanism. This is separate from the NVFlare execution path, where
-NVFlare manages the SuperLink connection through ``$FLWR_HOME/config.toml``.
+シミュレーションプロファイル
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Flower ジョブを FLARE ジョブとして送信するのではなく、Flower のシミュレーションで直接実行する場合は、
+Flower の現行のシミュレーション設定メカニズムを使ってシミュレーションプロファイルを設定してください。
+これは、NVFlare が ``$FLWR_HOME/config.toml`` を通じて SuperLink 接続を管理する NVFlare の実行経路とは別のものです。

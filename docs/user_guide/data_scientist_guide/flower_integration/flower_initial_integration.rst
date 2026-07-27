@@ -1,28 +1,29 @@
-*******************
-Initial Integration
-*******************
+**********
+初期統合
+**********
 
-Architecturally, Flower uses client/server communication. Clients communicate with the server
-via gRPC. FLARE uses the same architecture with the enhancement that multiple jobs can run at
-the same time (each job requires one set of clients/server) without requiring multiple ports to
-be open on the server host.
+アーキテクチャ上、Flower はクライアント／サーバー通信を採用しています。クライアントは gRPC 経由で
+サーバーと通信します。FLARE も同じアーキテクチャを採用していますが、サーバーホスト上で複数のポートを
+開放することなく、複数のジョブ（各ジョブにクライアント／サーバーが 1 セット必要）を同時に実行できるという
+拡張が加えられています。
 
-Since both frameworks follow the same communication architecture, it is fairly easy to make a
-Flower application a FLARE job by using FLARE as the communicator for the Flower app, as shown below.
+両フレームワークが同じ通信アーキテクチャに従っているため、以下に示すように、Flower アプリの
+コミュニケーターとして FLARE を使用することで、Flower アプリケーションを FLARE のジョブにするのは
+かなり容易です。
 
 .. image:: ../../../resources/FLARE_as_flower_communicator.png
 
-In this approach, Flower Clients no longer directly interact with the Flower Server, instead all
-communications are through FLARE.
+このアプローチでは、Flower クライアントは Flower サーバーと直接やり取りすることはなくなり、
+すべての通信は FLARE を経由します。
 
-The integration with FLARE-based communication has some unique benefits:
+FLARE ベースの通信との統合には、いくつかの独自の利点があります。
 
-   - Provisioning of startup kits, including certificates
-   - Deployment of custom code (apps)
-   - User authentication and authorization
-   - :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>` mechanism to counter connection stability issues
-   - Multiple communication schemes (gRPC, HTTP, TCP, Redis, etc.) are available
-   - P2P communication: anyone can talk to anyone else without needing topology changes
-   - Support of P2P communication encryption (on top of SSL)
-   - Multi-job system that allows multiple Flower apps to run at the same time without needing extra ports on the server host
-   - Use additional NVFlare features like experiment tracking
+   - 証明書を含むスタートアップキットのプロビジョニング
+   - カスタムコード（アプリ）のデプロイ
+   - ユーザーの認証と認可
+   - 接続の安定性の問題に対処する :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>` メカニズム
+   - 複数の通信方式（gRPC、HTTP、TCP、Redis など）が利用可能
+   - P2P 通信: トポロジーを変更することなく、誰でも他の誰とでも通信可能
+   - P2P 通信の暗号化（SSL の上に重ねる形）をサポート
+   - サーバーホスト上に追加のポートを必要とせず、複数の Flower アプリを同時に実行できるマルチジョブシステム
+   - 実験トラッキングなど、NVFlare の追加機能を利用可能

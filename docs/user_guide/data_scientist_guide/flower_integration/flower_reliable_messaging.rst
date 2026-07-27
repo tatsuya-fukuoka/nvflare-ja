@@ -1,19 +1,17 @@
-******************
-Reliable Messaging
-******************
+******************************
+信頼性のあるメッセージング
+******************************
 
-The interaction between the FLARE Clients and Server is through reliable messaging. 
-First, the requester tries to send the request to the peer. If it fails to send it, it will retry a moment later.
-This process keeps repeating until the request is sent successfully or the amount of time has passed (which will
-cause the job to abort).
+FLARE のクライアントとサーバー間のやり取りは、信頼性のあるメッセージングを通じて行われます。
+まず、リクエスト送信側がピアにリクエストを送信しようとします。送信に失敗した場合は、しばらくしてから再試行します。
+この処理は、リクエストの送信に成功するか、一定の時間が経過する (この場合はジョブが中断されます) まで繰り返されます。
 
-Secondly, once the request is sent, the requester waits for the response. Once the peer finishes processing, it
-sends the result to the requester immediately (which could be successful or unsuccessful). At the same time, the
-requester repeatedly sends queries to get the result from the peer, until the result is received or the max amount
-of time has passed (which will cause the job to abort). The result could be received in one of the following ways:
+次に、リクエストが送信されると、送信側はレスポンスを待ちます。ピアは処理を終えると、その結果 (成功・失敗のいずれか) を
+直ちに送信側へ返します。同時に、送信側は結果を受け取るか最大時間が経過する (この場合はジョブが中断されます) まで、
+ピアから結果を取得するためのクエリを繰り返し送信します。結果は次のいずれかの方法で受け取られます。
 
-    - The result is received from the response message sent by the peer when it finishes the processing
-    - The result is received from the response to the query message of the requester
+    - ピアが処理を終えた際に送信するレスポンスメッセージから結果を受け取る
+    - 送信側のクエリメッセージに対するレスポンスから結果を受け取る
 
-For details of :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`,
-see :ref:`ReliableMessage Timeout <reliable_xgboost_timeout>`.
+:class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>` の詳細については、
+:ref:`ReliableMessage のタイムアウト <reliable_xgboost_timeout>` を参照してください。
