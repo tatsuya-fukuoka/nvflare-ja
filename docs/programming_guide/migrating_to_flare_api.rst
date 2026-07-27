@@ -3,28 +3,28 @@
 .. _migrating_to_flare_api:
 
 .. deprecated:: 2.7
-   This migration guide is no longer actively maintained. Use the :ref:`Client API <client_api>` for new projects.
+   この移行ガイドはすでに積極的にメンテナンスされていません。新しいプロジェクトでは :ref:`Client API <client_api>` を使用してください。
 
-Migrating to FLARE API from FLAdminAPI
-======================================
+FLAdminAPI から FLARE API への移行
+====================================================
 
-:mod:`FLARE API<nvflare.fuel.flare_api.flare_api>` is the :ref:`fladmin_api` redesigned for a better user experience in version 2.3.
-Like the FLAdminAPI, the FLARE API is a wrapper for admin commands that can be issued to the FL server, and you can use a provisioned admin
-client's certs and keys to initialize a :class:`Session<nvflare.fuel.flare_api.flare_api.Session>` to use the commands of the API.
+:mod:`FLARE API<nvflare.fuel.flare_api.flare_api>` は、バージョン 2.3 でより良いユーザー体験を実現するために再設計された :ref:`fladmin_api` です。
+FLAdminAPI と同様に、FLARE API は FL サーバーに発行できる管理コマンドのラッパーであり、プロビジョニングされた管理
+クライアントの証明書と鍵を使って :class:`Session<nvflare.fuel.flare_api.flare_api.Session>` を初期化し、API のコマンドを利用できます。
 
-The legacy FLAdminAPI modules discussed here have been removed from NVFlare. This page is kept as historical mapping
-guidance for migrating old code to the FLARE API.
+ここで説明しているレガシーの FLAdminAPI モジュールは NVFlare から削除されています。このページは、古いコードを
+FLARE API へ移行するための歴史的な対応表として残されています。
 
 .. _migrating_to_flare_api_initialization:
 
-Migrating API Initialization
+API 初期化の移行
 ----------------------------
-Initialization of the FLAdminAPI was cumbersome due to all the necessary arguments including paths to certs, so an
+FLAdminAPI の初期化は、証明書へのパスを含む多数の引数が必要だったため煩雑でした。そのため、管理ユーザーの
+ユーザー名と管理スタートアップキットのディレクトリへのパスを指定して FLAdminAPI を初期化するために
 ``FLAdminAPIRunner``
-was used for initializing the FLAdminAPI
-with the username of the admin user and the path to the admin startup kit directory.
+が使われていました。
 
-Initializing the FLAdminAPI:
+FLAdminAPI の初期化:
 
 .. code-block:: python
 
@@ -37,7 +37,7 @@ Initializing the FLAdminAPI:
         user_name="super@nvidia.com"
     )
 
-Initializing the FLAdminAPIRunner, which initializes FLAdminAPI with the values in fed_admin.json of the startup kit in the provided admin_dir:
+FLAdminAPIRunner の初期化。指定された admin_dir 内のスタートアップキットの fed_admin.json の値を使って FLAdminAPI を初期化します:
 
 .. code-block:: python
 
@@ -46,10 +46,10 @@ Initializing the FLAdminAPIRunner, which initializes FLAdminAPI with the values 
         admin_dir="/workspace/example_project/prod_00/super@nvidia.com"
     )
 
-:ref:`flare_api_initialization` is similar to ``FLAdminAPIRunner``
-with :func:`new_secure_session<nvflare.fuel.flare_api.flare_api.new_secure_session>` taking two required arguments of
-the username and the path to the root admin directory containing the startup folder with the admin client's
-certs and keys:
+:ref:`flare_api_initialization` は ``FLAdminAPIRunner`` と似ており、
+:func:`new_secure_session<nvflare.fuel.flare_api.flare_api.new_secure_session>` は、ユーザー名と、管理クライアントの
+証明書および鍵を含む startup フォルダを持つルート管理ディレクトリへのパスという 2 つの必須引数を
+取ります:
 
 .. code-block:: python
 
@@ -61,76 +61,76 @@ certs and keys:
     )
 
 
-Logging in is automatically handled, and commands can be executed with the session object returned (``sess`` in the preceding code block).
-This is in contrast to :ref:`fladmin_api` where the command was issued through the API object itself, or in the case of ``FLAdminAPIRunner``,
-``self.api`` (in the code blocks below, ``runner.api`` is used for the FLAdminAPI).
+ログインは自動的に処理され、返されたセッションオブジェクト(前のコードブロックの ``sess``)でコマンドを実行できます。
+これは、API オブジェクト自体を通じてコマンドを発行していた :ref:`fladmin_api` や、``FLAdminAPIRunner`` の場合の
+``self.api`` とは対照的です(以下のコードブロックでは FLAdminAPI に対して ``runner.api`` を使用しています)。
 
 
-General Notes on Migrating to FLARE API
----------------------------------------
+FLARE API への移行に関する一般的な注意事項
+---------------------------------------------------
 
-Return Structure
+戻り値の構造
 ^^^^^^^^^^^^^^^^
-The return structure for FLAdminAPI commands was an ``FLAdminAPIResponse`` object that contained the status, details, and raw response from the server.
-This required parsing the response to get the status or other information to then use or output. The FLARE API no longer returns an object with a
-status and a dictionary of details, but the response depends on the command and is greatly simplified. See the details of what each command returns below
-or in the docstrings at: :mod:`FLARE API<nvflare.fuel.flare_api.flare_api>`.
+FLAdminAPI のコマンドの戻り値の構造は、ステータス、詳細、サーバーからの生のレスポンスを含む ``FLAdminAPIResponse`` オブジェクトでした。
+そのため、ステータスやその他の情報を利用・出力するにはレスポンスをパースする必要がありました。FLARE API では、ステータスと
+詳細のディクショナリを持つオブジェクトを返すことはなくなり、レスポンスはコマンドに応じて決まり、大幅に簡略化されています。各コマンドが何を返すかの詳細は以下、
+または :mod:`FLARE API<nvflare.fuel.flare_api.flare_api>` の docstring を参照してください。
 
-FLARE API Now Raises Exceptions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Instead of having a status with an error that needs to be parsed in FLAdminAPI, FLARE API will now raise an exception if there is an error or
-something unexpected happens, and the handling of these exceptions will be the responsibility of the code using the FLARE API. This means that in general,
-there is no more need for something like ``api_command_wrapper()`` that parsed the responses from FLAdminAPI.
+FLARE API は例外を送出するようになりました
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLAdminAPI のようにパースが必要なエラー付きのステータスを返すのではなく、FLARE API はエラーや予期しないことが
+発生した場合に例外を送出するようになりました。これらの例外の処理は FLARE API を使用するコード側の責任となります。つまり一般に、
+FLAdminAPI のレスポンスをパースしていた ``api_command_wrapper()`` のようなものはもはや不要です。
 
-Closing the Session
-^^^^^^^^^^^^^^^^^^^
-For FLARE API, use ``close()`` to end the session. It is ideal to execute commands with a session inside a try block with ``close()`` in a ``finally`` block.
-For details, see :ref:`flare_api_implementation_notes`.
+セッションのクローズ
+^^^^^^^^^^^^^^^^^^^^^^^^
+FLARE API では、セッションを終了するために ``close()`` を使用します。``finally`` ブロックに ``close()`` を置き、try ブロックの中でセッションを使ってコマンドを実行するのが理想的です。
+詳細は :ref:`flare_api_implementation_notes` を参照してください。
 
 
 .. _migrating_fladminapi_commands_to_flare_api:
 
-Migrating FLAdminAPI Commands to FLARE API
-------------------------------------------
-This section has a summary of the commands then goes through each command and shows examples of the usage and output from before with FLAdminAPI
-and the new way with FLARE API.
+FLAdminAPI のコマンドを FLARE API へ移行する
+--------------------------------------------------------
+このセクションではまずコマンドの概要を示し、続いて各コマンドについて、これまでの FLAdminAPI での使い方と出力、
+および FLARE API での新しい方法の例を説明します。
 
 .. csv-table::
-    :header: FLAdminAPI,FLARE API,Version Added,Notes
+    :header: FLAdminAPI,FLARE API,追加バージョン,備考
     :widths: 15, 15, 30, 30
 
-    check_status,get_system_info,2.3.0,Simplified and reformatted output (see below for details)
-    submit_job,submit_job,2.3.0,Simplified output (see below for details)
-    list_job,list_job,2.3.0,Simplified output (see below for details)
-    wait_until_server_status,monitor_job,2.3.0,Changed the arg names and function (see below for details)
-    download_job,download_job_result,2.3.0,Simplified output (see below for details)
-    clone_job,clone_job,2.3.0,Simplified output (see below for details)
-    abort_job,abort_job,2.3.0,Simplified output (see below for details)
-    delete_job,delete_job,2.3.0,Simplified output (see below for details)
-    check_status,get_client_job_status,2.4.0,only for client
+    check_status,get_system_info,2.3.0,出力を簡略化し再フォーマット(詳細は後述)
+    submit_job,submit_job,2.3.0,出力を簡略化(詳細は後述)
+    list_job,list_job,2.3.0,出力を簡略化(詳細は後述)
+    wait_until_server_status,monitor_job,2.3.0,引数名と機能を変更(詳細は後述)
+    download_job,download_job_result,2.3.0,出力を簡略化(詳細は後述)
+    clone_job,clone_job,2.3.0,出力を簡略化(詳細は後述)
+    abort_job,abort_job,2.3.0,出力を簡略化(詳細は後述)
+    delete_job,delete_job,2.3.0,出力を簡略化(詳細は後述)
+    check_status,get_client_job_status,2.4.0,クライアント専用
     restart,restart,2.4.0,
     shutdown,shutdown,2.4.0,
-    set_timeout,set_timeout,2.4.0,changed to session-based
+    set_timeout,set_timeout,2.4.0,セッションベースに変更
     get_available_apps_to_upload,get_available_apps_to_upload,2.4.0,
     shutdown_system,shutdown_system,2.4.0,
     ls_target,ls_target,2.4.0,
     cat_target,cat_target,2.4.0,
-    ,tail_target,2.4.0,added for consistency
+    ,tail_target,2.4.0,一貫性のために追加
     tail_target_log,tail_target_log,2.4.0,
-    ,head_target,2.4.0,new
-    ,head_target_log,2.4.0,new
+    ,head_target,2.4.0,新規
+    ,head_target_log,2.4.0,新規
     grep_target,grep_target,2.4.0,
     get_working_directory,get_working_directory,2.4.0,
-    show_stats,show_stats,2.4.0,return structure changed
-    show_errors,show_errors,2.4.0,return structure changed
+    show_stats,show_stats,2.4.0,戻り値の構造を変更
+    show_errors,show_errors,2.4.0,戻り値の構造を変更
     reset_errors,reset_errors,2.4.0,
     get_connected_client_list,get_connected_client_list,2.4.0,
-    abort,,2.4.0,obsolete
-    remove_client,remove_client,2.4.0,Releases the active client token only; use disable_client to prevent reconnect
+    abort,,2.4.0,廃止
+    remove_client,remove_client,2.4.0,アクティブなクライアントトークンを解放するのみです。再接続を防ぐには disable_client を使用してください
 
-Get System Info from Check Status
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Getting the system information before with the FLAdminAPI was primarily done through the ``check_status()`` command:
+Check Status から Get System Info へ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+これまで FLAdminAPI でシステム情報を取得するには、主に ``check_status()`` コマンドを使用していました:
 
 .. code-block:: python
 
@@ -175,16 +175,16 @@ Getting the system information before with the FLAdminAPI was primarily done thr
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
 
-With the FLARE API, the new command ``get_system_info()`` returns a SystemInfo object consisting of server_info
-(server status and start time), client_info (each connected client and the last connect time for that client), and job_info
-(the list of current jobs with the job_id and app_name).
+FLARE API では、新しいコマンド ``get_system_info()`` が、server_info(サーバーのステータスと起動時刻)、
+client_info(接続中の各クライアントとそのクライアントの最終接続時刻)、job_info(job_id と app_name を含む現在のジョブ一覧)
+から成る SystemInfo オブジェクトを返します。
 
 .. code-block:: python
 
     sess.get_system_info()
 
-Calling print on the :class:`SystemInfo<nvflare.fuel.flare_api.api_spec.SystemInfo>` object will give a result like the following,
-or you can access the server_info, client_info, and job_info variables to access the data within.
+:class:`SystemInfo<nvflare.fuel.flare_api.api_spec.SystemInfo>` オブジェクトに対して print を呼び出すと以下のような結果が得られます。
+また、server_info、client_info、job_info の各変数にアクセスして内部のデータを取得することもできます。
 
 .. code-block:: bash
 
@@ -198,10 +198,10 @@ or you can access the server_info, client_info, and job_info variables to access
     app_name: hello-numpy
 
 
-Submit Job
-^^^^^^^^^^
-The ``submit_job()`` command for the FLAdminAPI and FLARE API are very similar. The necessary argument is the same for both, the
-path to the job to submit as a string. For ``submit_job()`` with FLAdminAPI:
+ジョブの投入 (Submit Job)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLAdminAPI と FLARE API の ``submit_job()`` コマンドは非常によく似ています。必須の引数は両者で同じで、
+投入するジョブへのパスを文字列で指定します。FLAdminAPI での ``submit_job()``:
 
 .. code-block:: python
 
@@ -223,8 +223,8 @@ path to the job to submit as a string. For ``submit_job()`` with FLAdminAPI:
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
 
-With the FLARE API, ``submit_job()`` returns the job_id of the job if it is successfully submitted so you can save that
-value to use later.
+FLARE API では、``submit_job()`` はジョブの投入に成功した場合にそのジョブの job_id を返すため、その値を
+保存して後で使用できます。
 
 .. code-block:: python
 
@@ -237,10 +237,10 @@ value to use later.
     5d0eaa30-6936-4044-918e-cd9c3f5edf9b was submitted
 
 
-List Jobs
-^^^^^^^^^^
-The ``list_jobs()`` command for FLAdminAPI took an optional argument of a string for the options, and with the FLARE API, the options are
-set as boolean values. For ``list_jobs()`` with FLAdminAPI:
+ジョブの一覧表示 (List Jobs)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLAdminAPI の ``list_jobs()`` コマンドはオプションの引数としてオプション指定の文字列を取っていましたが、FLARE API では
+オプションはブール値として設定します。FLAdminAPI での ``list_jobs()``:
 
 .. code-block:: python
 
@@ -275,7 +275,7 @@ set as boolean values. For ``list_jobs()`` with FLAdminAPI:
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
 
-With the FLARE API, ``list_job()``:
+FLARE API での ``list_job()``:
 
 .. code-block:: python
 
@@ -289,24 +289,24 @@ With the FLARE API, ``list_job()``:
     [{'job_id': '9382ff9e-eb7e-4e0d-9a8e-78c82747b5ac', 'job_name': 'hello-numpy', 'status': 'RUNNING', 'submit_time': '2023-01-26T15:56:30.188836-05:00', 'duration': '0:00:32.686275'}]
 
 
-Monitor Job from Wait Until
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In the FLAdminAPI, there were ``wait_until_server_status()`` and ``wait_until_client_status()`` that you could use to
-monitor the status of the training:
+Wait Until から Monitor Job へ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLAdminAPI には、トレーニングのステータスを監視するために使用できる ``wait_until_server_status()`` と
+``wait_until_client_status()`` がありました:
 
 .. code-block:: python
 
     runner.api.wait_until_server_status()
 
-By default, the ``wait_until`` functions for FLAdminAPI waited until the server engine status was stopped or the clients no longer had
-any active jobs before returning a status of "SUCCESS".
+デフォルトでは、FLAdminAPI の ``wait_until`` 系の関数は、サーバーエンジンのステータスが stopped になるか、クライアントにアクティブな
+ジョブがなくなるまで待機してから "SUCCESS" のステータスを返していました。
 
 .. code-block:: bash
 
     {'status': <APIStatus.SUCCESS: 'SUCCESS'>}
 
-With the FLARE API, ``monitor_job()`` provides a similar function but takes a required argument of a job_id to continuously retrieve the
-job meta information for the job status until that job is done.
+FLARE API では、``monitor_job()`` が同様の機能を提供しますが、必須の引数として job_id を取り、そのジョブが完了するまで
+ジョブのメタ情報を継続的に取得します。
 
 .. code-block:: python
 
@@ -316,17 +316,17 @@ job meta information for the job status until that job is done.
 
     <MonitorReturnCode.JOB_FINISHED: 0>
 
-The additional optional arguments have been slightly modified with ``interval`` becoming ``poll_interval`` and type float instead of int,
-``timeout`` remaining the same name but type float instead of int, and ``callback`` to ``cb``.
+追加のオプション引数は少し変更されており、``interval`` は ``poll_interval`` になって型が int から float に変わり、
+``timeout`` は名前は同じですが型が int から float に変わり、``callback`` は ``cb`` になりました。
 
-The ``monitor_job()`` command of the FLARE API is intended to be customizable with callbacks, see :ref:`flare_api_monitor_job` for more details.
+FLARE API の ``monitor_job()`` コマンドはコールバックによってカスタマイズできるように設計されています。詳細は :ref:`flare_api_monitor_job` を参照してください。
 
 
-Download Job Result from Download Job
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``download_job()`` command for FLAdminAPI has been renamed to ``download_job_result()``. It took a required argument of job_id as a string,
-and this remains the same for the FLARE API. The behavior of the command remains the same, with the output being simplified just to the path
-to the downloaded job. With FLAdminAPI:
+Download Job から Download Job Result へ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FLAdminAPI の ``download_job()`` コマンドは ``download_job_result()`` に名前が変更されました。必須の引数として job_id を文字列で取る点は
+FLARE API でも同じです。コマンドの動作も同じままですが、出力はダウンロードされたジョブへのパスのみに
+簡略化されています。FLAdminAPI の場合:
 
 .. code-block:: python
 
@@ -342,7 +342,7 @@ to the downloaded job. With FLAdminAPI:
     'info': '',
     'job_id': '5d0eaa30-6936-4044-918e-cd9c3f5edf9b'}}}
 
-With the FLARE API, ``download_job_result()``:
+FLARE API での ``download_job_result()``:
 
 .. code-block:: python
 
@@ -353,10 +353,10 @@ With the FLARE API, ``download_job_result()``:
     '/workspace/workspace/hello-example/prod_00/admin@nvidia.com/transfer/5d0eaa30-6936-4044-918e-cd9c3f5edf9b'
 
 
-Clone Job
-^^^^^^^^^
-The usage for the ``clone_job()`` command is the same for FLAdminAPI and the FLARE API with just the job_id as a string as the required argument.
-The behavior of the command remains the same, with the output being simplified just to the job_id of the newly cloned job. With FLAdminAPI:
+ジョブのクローン (Clone Job)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``clone_job()`` コマンドの使い方は FLAdminAPI と FLARE API で同じで、必須の引数は job_id の文字列のみです。
+コマンドの動作も同じままですが、出力は新しくクローンされたジョブの job_id のみに簡略化されています。FLAdminAPI の場合:
 
 .. code-block:: python
 
@@ -376,7 +376,7 @@ The behavior of the command remains the same, with the output being simplified j
     'job_id': '4a2cf195-314d-4476-9ea5-c69bed397e3a'},
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
-With the FLARE API, ``clone_job()``:
+FLARE API での ``clone_job()``:
 
 .. code-block:: python
 
@@ -387,10 +387,10 @@ With the FLARE API, ``clone_job()``:
     '4a2cf195-314d-4476-9ea5-c69bed397e3a'
 
 
-Abort Job
-^^^^^^^^^
-The ``abort_job()`` command is the same for FLAdminAPI and the FLARE API with just the job_id as a string as the required argument.
-The behavior of the command remains the same, with the output being simplified to None. With FLAdminAPI:
+ジョブの中止 (Abort Job)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``abort_job()`` コマンドは FLAdminAPI と FLARE API で同じで、必須の引数は job_id の文字列のみです。
+コマンドの動作も同じままですが、出力は None に簡略化されています。FLAdminAPI の場合:
 
 .. code-block:: python
 
@@ -407,7 +407,7 @@ The behavior of the command remains the same, with the output being simplified t
     'meta': {'status': 'ok', 'info': ''},
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
-With the FLARE API, ``abort_job()``:
+FLARE API での ``abort_job()``:
 
 .. code-block:: python
 
@@ -418,10 +418,10 @@ With the FLARE API, ``abort_job()``:
     None
 
 
-Delete Job
-^^^^^^^^^^
-The ``delete_job()`` command is the same for FLAdminAPI and the FLARE API with just the job_id as a string as the required argument.
-The behavior of the command remains the same, with the output being simplified to nothing. With FLAdminAPI:
+ジョブの削除 (Delete Job)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``delete_job()`` コマンドは FLAdminAPI と FLARE API で同じで、必須の引数は job_id の文字列のみです。
+コマンドの動作も同じままですが、出力は何も返さないように簡略化されています。FLAdminAPI の場合:
 
 .. code-block:: python
 
@@ -438,13 +438,13 @@ The behavior of the command remains the same, with the output being simplified t
     'meta': {'status': 'ok', 'info': ''},
     'status': <APIStatus.SUCCESS: 'SUCCESS'>}}
 
-With the FLARE API, ``delete_job()``:
+FLARE API での ``delete_job()``:
 
 .. code-block:: python
 
     sess.delete_job(job_id)
 
-Migrating All Other FLAdminAPI Commands to FLARE API
-----------------------------------------------------
-The remaining FLAdminAPI commands have been added to the FLARE API in 2.4.0.
-For more details, see the notes in the table above, and the :mod:`FLARE API<nvflare.fuel.flare_api.flare_api>` definitions.
+その他すべての FLAdminAPI コマンドの FLARE API への移行
+--------------------------------------------------------------------
+残りの FLAdminAPI コマンドは 2.4.0 で FLARE API に追加されました。
+詳細については、上の表の備考および :mod:`FLARE API<nvflare.fuel.flare_api.flare_api>` の定義を参照してください。

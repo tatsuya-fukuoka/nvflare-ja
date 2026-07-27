@@ -1,28 +1,28 @@
 .. _notebook_testing:
 
-#################
-Notebook Testing
-#################
+##############################
+ノートブックのテスト
+##############################
 
-NVIDIA FLARE uses `nbmake <https://github.com/treebeardtech/nbmake>`__ to test Jupyter notebooks.
-This ensures that example notebooks remain functional as the codebase evolves.
+NVIDIA FLARE は Jupyter ノートブックのテストに `nbmake <https://github.com/treebeardtech/nbmake>`__ を使用しています。
+これにより、コードベースが進化してもサンプルノートブックが動作し続けることを保証します。
 
 .. note::
 
-   **Not all notebooks are ready for automated testing yet.** Some notebooks require external 
-   infrastructure (running FLARE servers, provisioned environments, specific datasets) or contain 
-   interactive elements that cannot run in CI. Notebook test coverage is being improved over time.
+   **すべてのノートブックが自動テストに対応しているわけではありません。** 一部のノートブックは外部の
+   インフラ(稼働中の FLARE サーバー、プロビジョニング済み環境、特定のデータセット)を必要とするか、CI で実行できない
+   対話的な要素を含んでいます。ノートブックのテストカバレッジは今後改善していく予定です。
 
-For general ``runtest.sh`` usage (dependency caching, verbose mode, etc.), see :ref:`developer_testing`.
+``runtest.sh`` の一般的な使い方(依存関係のキャッシュ、詳細出力モードなど)については :ref:`developer_testing` を参照してください。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Quick Start
-===========
+クイックスタート
+================
 
-Use the ``runtest.sh`` script to run notebook tests:
+ノートブックのテストを実行するには ``runtest.sh`` スクリプトを使用します:
 
 .. code:: bash
 
@@ -35,32 +35,32 @@ Use the ``runtest.sh`` script to run notebook tests:
    # Test with verbose output
    ./runtest.sh -n -v examples/tutorials/flare_simulator.ipynb
 
-Notebook-Specific Options
-=========================
+ノートブック固有のオプション
+=============================
 
-These options are specific to notebook testing (``-n``):
+以下のオプションはノートブックのテスト(``-n``)に固有のものです:
 
 .. list-table::
    :widths: 25 15 60
    :header-rows: 1
 
-   * - Argument
-     - Default
-     - Description
+   * - 引数
+     - デフォルト
+     - 説明
    * - ``--timeout=SECONDS``
      - 1200
-     - Timeout in seconds for each notebook execution
+     - 各ノートブックの実行に対するタイムアウト(秒)
    * - ``--nb-clean=MODE``
      - on-success
-     - When to clean outputs: ``always``, ``on-success``, ``never``
+     - 出力をクリアするタイミング: ``always``、``on-success``、``never``
    * - ``--kernel=NAME``
      - python3
-     - Jupyter kernel name (defaults to ``python3`` if available)
+     - Jupyter カーネル名(利用可能であればデフォルトは ``python3``)
    * - ``-v`` / ``--verbose``
      - off
-     - Pass ``-v`` to pytest for verbose output
+     - pytest に ``-v`` を渡して詳細な出力を得ます
 
-Examples
+例
 --------
 
 .. code:: bash
@@ -77,10 +77,10 @@ Examples
    # Combine multiple options with verbose output
    ./runtest.sh -n -v --timeout=1800 --kernel=python3 examples/tutorials/
 
-Direct pytest Usage
-===================
+pytest を直接使用する
+=======================
 
-You can also run nbmake directly with pytest:
+nbmake を pytest で直接実行することもできます:
 
 .. code:: bash
 
@@ -89,102 +89,102 @@ You can also run nbmake directly with pytest:
    # With specific kernel
    pytest --nbmake --nbmake-timeout=1200 --kernel=python3 examples/tutorials/
 
-Skipping Cells in Notebooks
-===========================
+ノートブック内のセルをスキップする
+====================================
 
-To skip specific cells during automated testing (e.g., Colab setup cells, interactive 
-visualizations, or cells that require user input), add one of these tags to the cell metadata:
+自動テスト中に特定のセルをスキップするには(例: Colab のセットアップセル、対話的な
+可視化、ユーザー入力が必要なセルなど)、セルのメタデータに以下のいずれかのタグを追加します:
 
 - ``skip-execution``
 - ``skip``
 - ``colab``
 
-Adding Tags in Jupyter
-----------------------
+Jupyter でタグを追加する
+--------------------------
 
-**In Jupyter Lab:**
+**Jupyter Lab の場合:**
 
-1. Select the cell you want to skip
-2. Click the gear icon in the right sidebar (or View → Right Sidebar → Show Property Inspector)
-3. Under "Common Tools" → "Cell Tags", add: ``skip-execution``
+1. スキップしたいセルを選択します
+2. 右サイドバーの歯車アイコンをクリックします(または View → Right Sidebar → Show Property Inspector)
+3. "Common Tools" → "Cell Tags" で ``skip-execution`` を追加します
 
-**In Jupyter Notebook (classic):**
+**Jupyter Notebook (クラシック) の場合:**
 
-1. Select the cell
+1. セルを選択します
 2. View → Cell Toolbar → Tags
-3. Add tag: ``skip-execution``
+3. タグを追加します: ``skip-execution``
 
-**In VS Code:**
+**VS Code の場合:**
 
-1. Click on the cell
-2. Click "..." menu on the cell
-3. Select "Add Cell Tag"
-4. Enter: ``skip-execution``
+1. セルをクリックします
+2. セルの "..." メニューをクリックします
+3. "Add Cell Tag" を選択します
+4. ``skip-execution`` を入力します
 
-How It Works
+仕組み
 ============
 
-The testing framework (implemented in ``conftest.py``) automatically:
+テストフレームワーク(``conftest.py`` に実装)は自動的に以下を行います:
 
-1. **Before test**: Creates a ``.backup`` of the original notebook
-2. **Filters cells**: Removes cells tagged with ``skip-execution``, ``skip``, or ``colab``
-3. **Updates kernel**: Adjusts kernel spec to match the specified or detected kernel
-4. **Executes**: nbmake runs the notebook through the Jupyter kernel
-5. **Restores**: Original notebook is restored from backup
-6. **Cleans outputs**: Cell outputs are cleared based on ``--nbmake-clean`` setting
+1. **テスト前**: 元のノートブックの ``.backup`` を作成します
+2. **セルのフィルタリング**: ``skip-execution``、``skip``、``colab`` のタグが付いたセルを除去します
+3. **カーネルの更新**: 指定または検出されたカーネルに合わせてカーネルスペックを調整します
+4. **実行**: nbmake が Jupyter カーネルを通じてノートブックを実行します
+5. **復元**: 元のノートブックをバックアップから復元します
+6. **出力のクリア**: ``--nbmake-clean`` の設定に基づいてセルの出力をクリアします
 
-This ensures:
+これにより次のことが保証されます:
 
-- The test does not modify the committed notebook (original is restored from backup)
-- Notebooks can contain Colab-specific or interactive cells that won't break CI
-- Consistent kernel usage across different development environments
+- テストがコミット済みのノートブックを変更しないこと(元のノートブックはバックアップから復元されます)
+- ノートブックに Colab 固有のセルや対話的なセルが含まれていても CI が壊れないこと
+- 異なる開発環境間で一貫したカーネルが使用されること
 
-Troubleshooting
-===============
+トラブルシューティング
+========================
 
-Kernel Not Found
-----------------
+カーネルが見つからない
+------------------------
 
-If you see "Kernel not found" errors:
+"Kernel not found" エラーが表示される場合:
 
-1. Ensure your virtual environment is activated
-2. Install ipykernel: ``pip install ipykernel``
-3. Register your kernel: ``python -m ipykernel install --user --name=my_env``
-4. Or specify an existing kernel: ``./runtest.sh -n --kernel=python3``
+1. 仮想環境が有効になっていることを確認します
+2. ipykernel をインストールします: ``pip install ipykernel``
+3. カーネルを登録します: ``python -m ipykernel install --user --name=my_env``
+4. あるいは既存のカーネルを指定します: ``./runtest.sh -n --kernel=python3``
 
-Timeout Errors
---------------
+タイムアウトエラー
+--------------------
 
-For long-running notebooks, increase the timeout:
+実行時間の長いノートブックの場合は、タイムアウトを延ばします:
 
 .. code:: bash
 
    ./runtest.sh -n --timeout=3600 examples/advanced/
 
-Notebook Requires External Infrastructure
------------------------------------------
+外部インフラを必要とするノートブック
+--------------------------------------------
 
-Some notebooks (e.g., ``flare_api.ipynb``) require a running FLARE server or provisioned 
-environment. These notebooks will fail in automated testing unless the infrastructure is set up.
+一部のノートブック(例: ``flare_api.ipynb``)は、稼働中の FLARE サーバーやプロビジョニング済みの
+環境を必要とします。これらのノートブックは、インフラが用意されていない限り自動テストで失敗します。
 
-For such notebooks, consider:
+そのようなノートブックについては、以下を検討してください:
 
-1. Running them manually in an interactive environment
-2. Adding ``skip-execution`` tags to cells that require external services
-3. Creating a simplified version for automated testing
+1. 対話的な環境で手動で実行する
+2. 外部サービスを必要とするセルに ``skip-execution`` タグを追加する
+3. 自動テスト用に簡略化したバージョンを作成する
 
-Best Practices
-==============
+ベストプラクティス
+====================
 
-1. **Tag cells appropriately**: Mark Colab setup, interactive widgets, and user-input cells with ``skip-execution``
+1. **セルに適切にタグを付ける**: Colab のセットアップ、対話的なウィジェット、ユーザー入力のセルには ``skip-execution`` を付けます
 
-2. **Keep notebooks focused**: Smaller notebooks are faster to test and easier to debug
+2. **ノートブックを絞り込んだ内容に保つ**: 小さなノートブックほどテストが速く、デバッグも容易です
 
-3. **Use reasonable timeouts**: Increase ``--timeout`` based on expected execution time plus buffer
+3. **妥当なタイムアウトを使用する**: 想定される実行時間にバッファを加えて ``--timeout`` を増やします
 
-4. **Test locally before pushing**: Run ``./runtest.sh -n`` on your notebooks before committing
+4. **プッシュ前にローカルでテストする**: コミット前にノートブックに対して ``./runtest.sh -n`` を実行します
 
-5. **Clean outputs before committing**: Use ``--nb-clean=always`` or manually clear outputs to keep git diffs clean
+5. **コミット前に出力をクリアする**: ``--nb-clean=always`` を使うか手動で出力をクリアし、git の差分をきれいに保ちます
 
-6. **Use self-contained examples**: Notebooks that use the simulator (like ``flare_simulator.ipynb``) are easier to test than those requiring external servers
+6. **自己完結したサンプルを使用する**: シミュレータを使うノートブック(``flare_simulator.ipynb`` など)は、外部サーバーを必要とするものよりテストが容易です
 

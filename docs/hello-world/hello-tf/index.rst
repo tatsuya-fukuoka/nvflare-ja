@@ -1,52 +1,52 @@
 Hello TensorFlow
 ================
 
-This example demonstrates how to use `NVIDIA FLARE <https://nvflare.readthedocs.io/en/main/index.html>`_ with TensorFlow to train an image classifier using federated averaging (`FedAvg <https://arxiv.org/abs/1602.05629>`_). TensorFlow serves as the deep learning training framework in this example.
+この例では、`NVIDIA FLARE <https://nvflare.readthedocs.io/en/main/index.html>`_ を TensorFlow と組み合わせて、フェデレーテッドアベレージング（`FedAvg <https://arxiv.org/abs/1602.05629>`_）により画像分類器を学習する方法を示します。この例では TensorFlow がディープラーニングの学習フレームワークとして機能します。
 
-For detailed documentation, see the `Hello TensorFlow <https://www.tensorflow.org/datasets/catalog/mnist>`_ example page.
+詳細なドキュメントについては `Hello TensorFlow <https://www.tensorflow.org/datasets/catalog/mnist>`_ のサンプルページを参照してください。
 
-We recommend using the `NVIDIA TensorFlow docker <https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorflow>`_ for GPU support. If GPU is not required, a Python virtual environment is sufficient.
+GPU をサポートするには `NVIDIA TensorFlow docker <https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorflow>`_ の利用を推奨します。GPU が不要であれば、Python の仮想環境で十分です。
 
-To run this example with the FLARE API, refer to the :github_nvflare_link:`hello_world notebook <examples/hello-world/hello_world.ipynb>`.
+この例を FLARE API で実行するには、:github_nvflare_link:`hello_world notebook <examples/hello-world/hello_world.ipynb>` を参照してください。
 
-Run NVIDIA TensorFlow Container
--------------------------------
+NVIDIA TensorFlow コンテナの実行
+------------------------------------------
 
-Ensure the `NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html>`_ is installed. Then execute the following command:
+`NVIDIA container toolkit <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html>`_ がインストールされていることを確認してください。その後、次のコマンドを実行します。
 
 .. code-block:: bash
 
    docker run --gpus=all -it --rm -v [path_to_NVFlare]:/NVFlare nvcr.io/nvidia/tensorflow:xx.xx-tf2-py3
 
-NVIDIA FLARE Installation
--------------------------
+NVIDIA FLARE のインストール
+------------------------------------
 
-For complete installation instructions, visit `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_.
+インストール手順の詳細については `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_ を参照してください。
 
 .. code-block:: bash
 
    pip install nvflare
 
-clone the example code from GitHub:
+GitHub からサンプルコードをクローンします。
 
 .. code-block:: bash
 
    git clone https://github.com/NVIDIA/NVFlare.git
 
-Navigate to the hello-tf directory:
+hello-tf ディレクトリに移動します。
 
 .. code-block:: bash
 
    git switch <release branch>
    cd examples/hello-world/hello-tf
 
-Install the dependencies:
+依存関係をインストールします。
 
 .. code-block:: bash
 
    pip install -r requirements.txt
 
-Code Structure
+コード構造
 --------------
 
 .. code-block:: text
@@ -58,22 +58,22 @@ Code Structure
    |-- job.py            # job recipe that defines client and server configurations
    |-- requirements.txt  # dependencies
 
-Data
-----
+データ
+--------
 
-This example uses the `MNIST <https://www.tensorflow.org/datasets/catalog/mnist>`_ handwritten digits dataset, which is loaded within the trainer code.
+この例では `MNIST <https://www.tensorflow.org/datasets/catalog/mnist>`_ の手書き数字データセットを使用し、trainer のコード内で読み込みます。
 
-Model
------
+モデル
+--------
 
-The `model.py` file defines a simple neural network using TensorFlow's Keras API. The `Net` model is a sequential architecture designed for image classification, featuring:
+`model.py` ファイルでは、TensorFlow の Keras API を使用してシンプルなニューラルネットワークを定義しています。`Net` モデルは画像分類向けに設計されたシーケンシャルなアーキテクチャで、次の要素を備えています。
 
-- **Flatten Layer**: Prepares input data for dense layers.
-- **Dense Layer**: 128 units with ReLU activation for non-linearity.
-- **Dropout Layer**: 20% dropout rate to mitigate overfitting.
-- **Output Layer**: 10 units for classifying MNIST digits.
+- **Flatten レイヤ**: 全結合レイヤ向けに入力データを整形します。
+- **Dense レイヤ**: 非線形性のための ReLU 活性化関数を持つ 128 ユニット。
+- **Dropout レイヤ**: 過学習を抑制するための 20% のドロップアウト率。
+- **出力レイヤ**: MNIST の数字を分類するための 10 ユニット。
 
-This model is used in federated learning with NVIDIA FLARE, trained across clients using the FedAvg algorithm.
+このモデルは NVIDIA FLARE によるフェデレーテッドラーニングで使用され、FedAvg アルゴリズムを用いて複数のクライアントにまたがって学習されます。
 
 
 .. literalinclude:: ../../../examples/hello-world/hello-tf/model.py
@@ -81,12 +81,12 @@ This model is used in federated learning with NVIDIA FLARE, trained across clien
     :linenos:
     :caption: model code (model.py)
     :lines: 14-
- 
 
-Client Code
------------
 
-The client code ``client.py`` is responsible for training. The training code closely resembles standard PyTorch training code, with additional lines to handle data exchange with the server.
+クライアントコード
+--------------------
+
+クライアントコード ``client.py`` は学習を担当します。学習コードは標準的な PyTorch の学習コードとよく似ており、サーバとのデータ交換を扱う行が追加されています。
 
 .. literalinclude:: ../../../examples/hello-world/hello-tf/client.py
     :language: python
@@ -95,15 +95,15 @@ The client code ``client.py`` is responsible for training. The training code clo
     :lines: 14-
 
 
-Server Code
------------
+サーバコード
+--------------
 
-In federated averaging, the server code aggregates model updates from clients, following a scatter-gather workflow pattern. This example uses the default federated averaging algorithm provided by NVFlare, eliminating the need for custom server code.
+フェデレーテッドアベレージングでは、サーバコードは scatter-gather のワークフローパターンに従って、クライアントからのモデル更新を集約します。この例では NVFlare が提供するデフォルトのフェデレーテッドアベレージングアルゴリズムを使用するため、カスタムのサーバコードは不要です。
 
-Job Recipe Code
----------------
+Job Recipe のコード
+-----------------------
 
-The job recipe includes `client.py` and the built-in FedAvg algorithm.
+job recipe には `client.py` と組み込みの FedAvg アルゴリズムが含まれます。
 
 
 .. literalinclude:: ../../../examples/hello-world/hello-tf/job.py
@@ -112,15 +112,15 @@ The job recipe includes `client.py` and the built-in FedAvg algorithm.
     :caption: job recipe (job.py)
     :lines: 14-
 
-Model Input Options
-^^^^^^^^^^^^^^^^^^^
+モデル入力のオプション
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``model`` parameter accepts two formats:
+``model`` パラメータは 2 つの形式を受け付けます。
 
-1. **Class instance (subclassed Keras model)**: ``model=Net()`` - Convenient and Pythonic
-2. **Dict config**: ``model={"class_path": "model.Net", "args": {}}`` - Better for large models
+1. **クラスインスタンス（サブクラス化した Keras モデル）**: ``model=Net()`` - 手軽で Python らしい書き方です
+2. **dict 設定**: ``model={"class_path": "model.Net", "args": {}}`` - 大きなモデルに適しています
 
-To resume from pre-trained weights:
+事前学習済みの重みから再開するには、次のようにします。
 
 .. code-block:: python
 
@@ -132,34 +132,34 @@ To resume from pre-trained weights:
 
 .. note::
 
-   For TensorFlow/Keras, use a subclassed Keras class instance (for example, ``Net()``) or dict config for ``model``.
-   SavedModel or .h5 files contain both architecture and weights, so ``initial_ckpt`` can be used without ``model``.
+   TensorFlow/Keras の場合、``model`` にはサブクラス化した Keras クラスのインスタンス（例: ``Net()``）または dict 設定を使用してください。
+   SavedModel や .h5 ファイルにはアーキテクチャと重みの両方が含まれるため、``model`` を指定せずに ``initial_ckpt`` を使用できます。
 
-Run the Experiment
+実験を実行する
 ------------------
 
-Execute the script using the job API to create the job and run it with the simulator:
+job API を使用してジョブを作成し、シミュレータで実行するスクリプトを実行します。
 
 .. code-block:: bash
 
    TF_FORCE_GPU_ALLOW_GROWTH=true TF_GPU_ALLOCATOR=cuda_malloc_async python3 job.py
 
-Access the Logs and Results
----------------------------
+ログと結果を確認する
+------------------------------
 
-Find the running logs and results inside the simulator's workspace:
+実行時のログと結果は、シミュレータのワークスペース内で確認できます。
 
 .. code-block:: bash
 
    $ ls /tmp/nvflare/jobs/workdir
 
-Notes on Running with GPUs
---------------------------
+GPU を使って実行する際の注意点
+------------------------------------------
 
-When using GPUs, TensorFlow attempts to allocate all available GPU memory at startup. To prevent this in multi-client scenarios, set the following flags:
+GPU を使用する場合、TensorFlow は起動時に利用可能な GPU メモリをすべて確保しようとします。複数クライアントのシナリオでこれを防ぐには、次のフラグを設定します。
 
 .. code-block:: bash
 
    TF_FORCE_GPU_ALLOW_GROWTH=true TF_GPU_ALLOCATOR=cuda_malloc_async
 
-If you have more GPUs than clients, consider running one client per GPU using the `--gpu` argument during simulation, e.g., `nvflare simulator -n 2 --gpu 0,1 [job]`.
+クライアント数よりも GPU の数が多い場合は、シミュレーション時に `--gpu` 引数を使用して GPU ごとに 1 クライアントを実行することを検討してください（例: `nvflare simulator -n 2 --gpu 0,1 [job]`）。

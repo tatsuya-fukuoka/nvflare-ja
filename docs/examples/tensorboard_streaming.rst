@@ -1,119 +1,119 @@
 .. _tensorboard_streaming:
 
-FL Experiment Tracking with TensorBoard Streaming
-=================================================
+TensorBoard ストリーミングによるFL実験トラッキング
+====================================================
 
-Introduction
+はじめに
 -------------
 
-In this exercise, you will learn how to stream TensorBoard events from the clients
-to the server in order to visualize live training metrics from a central place on the server.
+この演習では、クライアントからサーバーへ TensorBoard のイベントをストリーミングし、サーバー上の一箇所から
+ライブの学習メトリクスを可視化する方法を学びます。
 
-This exercise will be working with the ``tensorboard`` example in the advanced examples folder under experiment-tracking,
-which builds upon :doc:`hello_pt_job_api` by adding TensorBoard streaming.
+この演習では、advanced examples フォルダの experiment-tracking 配下にある ``tensorboard`` の例を使用します。
+これは :doc:`hello_pt_job_api` に TensorBoard ストリーミングを追加したものです。
 
-The setup of this exercise consists of one **server** and two **clients**.
+この演習のセットアップは、1つの **サーバー** と2つの **クライアント** で構成されます。
 
 .. note::
 
-  This exercise differs from :doc:`hello_pt_job_api`, as it uses the ``Learner`` API along with the ``LearnerExecutor``.
-  In short, the execution flow is abstracted away into the ``LearnerExecutor``, allowing you to only need to implement the required methods in the ``Learner`` class.
-  For more about those APIs, see :class:`Learner<nvflare.app_common.abstract.learner_spec.Learner>`
-  and :class:`LearnerExecutor<nvflare.app_common.executors.learner_executor.LearnerExecutor>`.
+  この演習は :doc:`hello_pt_job_api` とは異なり、``Learner`` API を ``LearnerExecutor`` とともに使用します。
+  簡単に言えば、実行フローは ``LearnerExecutor`` に抽象化されており、``Learner`` クラスで必要なメソッドを実装するだけで済みます。
+  これらの API の詳細については、:class:`Learner<nvflare.app_common.abstract.learner_spec.Learner>`
+  および :class:`LearnerExecutor<nvflare.app_common.executors.learner_executor.LearnerExecutor>` を参照してください。
 
 
-Let's get started. Make sure you have an environment with NVIDIA FLARE installed as described in
-:ref:`getting_started`. First clone the repo:
+では始めましょう。:ref:`getting_started` で説明されているとおり、NVIDIA FLARE がインストールされた環境を
+用意してください。まずリポジトリをクローンします。
 
 .. code-block:: shell
 
   $ git clone https://github.com/NVIDIA/NVFlare.git
 
-Now remember to activate your NVIDIA FLARE Python virtual environment from the installation guide.
-And install the required dependencies in the example folder (NVFlare/examples/advanced/experiment-tracking/tensorboard).
+インストールガイドで作成した NVIDIA FLARE の Python 仮想環境を有効化することを忘れないでください。
+そして、example フォルダ (NVFlare/examples/advanced/experiment-tracking/tensorboard) で必要な依存関係をインストールします。
 
 .. code-block:: shell
 
   (nvflare-env) $ python3 -m pip install -r requirements.txt
 
 
-Adding TensorBoard Streaming to Configurations
-------------------------------------------------
+設定への TensorBoard ストリーミングの追加
+--------------------------------------------
 
-Inside the example, job configuration and TensorBoard setup are defined in:
+この例では、ジョブ構成と TensorBoard のセットアップは次のファイルで定義されています。
 
 - :github_nvflare_link:`job.py <examples/advanced/experiment-tracking/tensorboard/job.py>`
 - :github_nvflare_link:`client.py <examples/advanced/experiment-tracking/tensorboard/client.py>`
 
-Take a look at the components section of the client config at line 24.
-The first component is the ``pt_learner`` which contains the initialization, training, and validation logic.
-``learner_with_tb.py`` (under NVFlare/examples/advanced/experiment-tracking/pt) is where we will add our TensorBoard streaming changes.
+クライアント設定の24行目にある components セクションを見てみましょう。
+最初のコンポーネントは ``pt_learner`` で、初期化、学習、検証のロジックを含んでいます。
+``learner_with_tb.py`` (NVFlare/examples/advanced/experiment-tracking/pt 配下) が、TensorBoard ストリーミングの変更を加える場所です。
 
-Next we have the :class:`TBWriter<nvflare.app_opt.tracking.tb.tb_writer.TBWriter>`,
-which implements some common methods that follow the signatures from the PyTorch SummaryWriter.
-This makes it easy for the ``pt_learner`` to log metrics and send events.
+次に :class:`TBWriter<nvflare.app_opt.tracking.tb.tb_writer.TBWriter>` があります。
+これは PyTorch の SummaryWriter のシグネチャに従った一般的なメソッドをいくつか実装しています。
+これにより、``pt_learner`` はメトリクスの記録とイベントの送信を簡単に行えます。
 
-Finally, we have the :class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>`,
-which converts local events to federated events.
-This changes the event ``analytix_log_stats`` into a fed event ``fed.analytix_log_stats``,
-which will then be streamed from the clients to the server.
+最後に :class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` があり、
+ローカルイベントをフェデレーテッドイベントに変換します。
+これにより ``analytix_log_stats`` イベントは fed イベント ``fed.analytix_log_stats`` に変換され、
+クライアントからサーバーへストリーミングされます。
 
-Under the component section in the server config, we have the
-:class:`TBAnalyticsReceiver<nvflare.app_common.pt.tb_receiver.TBAnalyticsReceiver>`
-of type :class:`AnalyticsReceiver<nvflare.app_common.widgets.streaming.AnalyticsReceiver>`.
+サーバー設定の components セクションには、
+:class:`AnalyticsReceiver<nvflare.app_common.widgets.streaming.AnalyticsReceiver>` 型の
+:class:`TBAnalyticsReceiver<nvflare.app_common.pt.tb_receiver.TBAnalyticsReceiver>` があります。
 
-This component receives TensorBoard events from the clients and saves them to a specified folder
-(default ``tb_events``) under the server's run folder.
+このコンポーネントはクライアントから TensorBoard のイベントを受け取り、サーバーの実行フォルダ配下の
+指定されたフォルダ (デフォルトは ``tb_events``) に保存します。
 
-Notice how the accepted event type ``"fed.analytix_log_stats"`` matches the output of
-:class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` in the client config.
+受け付けるイベントタイプ ``"fed.analytix_log_stats"`` が、クライアント設定の
+:class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` の出力と一致していることに注目してください。
 
 
-Adding TensorBoard Streaming to your Code
--------------------------------------------
+コードへの TensorBoard ストリーミングの追加
+---------------------------------------------
 
-In this exercise, TensorBoard logging is implemented in:
+この演習では、TensorBoard のロギングは次のファイルに実装されています。
 
 - :github_nvflare_link:`client.py <examples/advanced/experiment-tracking/tensorboard/client.py>`
 
-First we must initialize our TensorBoard writer to the ``AnalyticsSender`` we defined in the client config:
+まず、クライアント設定で定義した ``AnalyticsSender`` に TensorBoard writer を初期化する必要があります。
 
-The ``LearnerExecutor`` passes in the component dictionary into the ``parts`` parameter of ``initialize()``.
-We can then access the ``AnalyticsSender`` component we defined in ``config_fed_client.json``
-by using the ``self.analytic_sender_id`` as the key in the ``parts`` dictionary.
-Note that ``self.analytic_sender_id`` defaults to ``"analytic_sender"``,
-but we can also define it in the client config to be passed into the constructor.
+``LearnerExecutor`` はコンポーネントの辞書を ``initialize()`` の ``parts`` パラメータに渡します。
+``parts`` 辞書のキーとして ``self.analytic_sender_id`` を使うことで、``config_fed_client.json`` で定義した
+``AnalyticsSender`` コンポーネントにアクセスできます。
+``self.analytic_sender_id`` のデフォルト値は ``"analytic_sender"`` ですが、
+クライアント設定で定義してコンストラクタに渡すこともできます。
 
-Now that our TensorBoard writer is set to ``AnalyticsSender``,
-we can write and stream training metrics to the server in ``local_train()``:
+TensorBoard writer が ``AnalyticsSender`` に設定されたので、
+``local_train()`` の中で学習メトリクスを書き込み、サーバーへストリーミングできます。
 
-The script uses ``add_scalar(tag, scalar, global_step)`` to send training metrics and validation accuracy.
+このスクリプトは ``add_scalar(tag, scalar, global_step)`` を使って学習メトリクスと検証精度を送信します。
 
-You can learn more about other supported writer methods in
-:class:`AnalyticsSender<nvflare.app_common.widgets.streaming.AnalyticsSender>`.
+その他のサポートされている writer のメソッドについては
+:class:`AnalyticsSender<nvflare.app_common.widgets.streaming.AnalyticsSender>` で詳しく学べます。
 
 
-Train the Model, Federated!
----------------------------
+モデルをフェデレーテッドに学習しよう！
+--------------------------------------
 
 .. |ExampleApp| replace:: tensorboard-streaming
 .. include:: run_fl_system.rst
 
 
-Viewing the TensorBoard Dashboard during Training
---------------------------------------------------
+学習中の TensorBoard ダッシュボードの表示
+--------------------------------------------
 
-On the client side, the ``AnalyticsSender`` works as a TensorBoard SummaryWriter.
-Instead of writing to TB files, it actually generates NVFLARE events of type ``analytix_log_stats``.
+クライアント側では、``AnalyticsSender`` は TensorBoard の SummaryWriter として機能します。
+ただし TB ファイルに書き込む代わりに、実際には ``analytix_log_stats`` 型の NVFLARE イベントを生成します。
 
-The ``ConvertToFedEvent`` widget will turn the event ``analytix_log_stats`` into a fed event
-``fed.analytix_log_stats``, which will be delivered to the server side.
+``ConvertToFedEvent`` ウィジェットは ``analytix_log_stats`` イベントを fed イベント
+``fed.analytix_log_stats`` に変換し、サーバー側に配信します。
 
-On the server side, the ``TBAnalyticsReceiver`` is configured to process ``fed.analytix_log_stats`` events,
-which writes received TB data into appropriate TB files on the server
-(defaults to ``server/[JOB ID]/tb_events``).
+サーバー側では、``TBAnalyticsReceiver`` が ``fed.analytix_log_stats`` イベントを処理するように構成されており、
+受け取った TB データをサーバー上の適切な TB ファイル
+(デフォルトは ``server/[JOB ID]/tb_events``) に書き込みます。
 
-To view training metrics that are being streamed to the server, run:
+サーバーへストリーミングされている学習メトリクスを表示するには、次を実行します。
 
 .. code-block:: shell
 
@@ -121,8 +121,8 @@ To view training metrics that are being streamed to the server, run:
 
 .. note::
 
-    if the server is running on a remote machine, use port forwarding to view the TensorBoard dashboard in a browser.
-    For example:
+    サーバーがリモートマシンで実行されている場合は、ポートフォワーディングを使ってブラウザで TensorBoard ダッシュボードを表示してください。
+    例:
 
     .. code-block:: shell
 
@@ -130,21 +130,21 @@ To view training metrics that are being streamed to the server, run:
 
 .. attention::
 
-   The ``server/[JOB ID]`` folder only exists when job is running.
-   After the job is finished, please use `download_job [JOB ID]` to get the workspace data as explained below.
+   ``server/[JOB ID]`` フォルダはジョブの実行中のみ存在します。
+   ジョブが終了した後は、以下で説明するように `download_job [JOB ID]` を使ってワークスペースのデータを取得してください。
 
 .. include:: access_result.rst
 
 .. include:: shutdown_fl_system.rst
 
-Congratulations!
+おめでとうございます！
 
-Now you will be able to see the live training metrics of each client from a central place on the server.
+これで、各クライアントのライブ学習メトリクスをサーバー上の一箇所から確認できるようになりました。
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/advanced/experiment-tracking/tensorboard <examples/advanced/experiment-tracking/tensorboard>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/advanced/experiment-tracking/tensorboard <examples/advanced/experiment-tracking/tensorboard>` にあります。
 
-Previous Versions of TensorBoard Streaming
-------------------------------------------
+TensorBoard ストリーミングの過去バージョン
+--------------------------------------------
 
    - `tensorboard-streaming for 2.3 <https://github.com/NVIDIA/NVFlare/tree/2.3/examples/advanced/experiment-tracking/tensorboard-streaming>`_

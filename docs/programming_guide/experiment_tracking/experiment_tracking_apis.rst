@@ -1,23 +1,23 @@
 .. _experiment_tracking_apis:
 
-########################
-Experiment Tracking APIs
-########################
+##########################
+実験トラッキング API
+##########################
 
 .. figure:: ../../resources/experiment_tracking_diagram.png
     :height: 500px
 
-To track training metrics such as accuracy or loss or AUC, we need to log these metrics with one of the experiment tracking systems.
-Here we will discuss the following topics:
+精度や損失、AUC といった学習メトリクスを追跡するには、いずれかの実験トラッキングシステムでこれらのメトリクスを記録する必要があります。
+ここでは以下のトピックについて説明します。
 
-- Logging metrics with MLflow, TensorBoard, or Weights & Biases
-- Streaming metrics to the FL server
-- Streaming to FL clients
+- MLflow、TensorBoard、Weights & Biases によるメトリクスのロギング
+- FL サーバーへのメトリクスのストリーミング
+- FL クライアントへのストリーミング
 
-Logging metrics with MLflow, TensorBoard, or Weights & Biases
-=============================================================
+MLflow、TensorBoard、Weights & Biases によるメトリクスのロギング
+================================================================
 
-Integrate MLflow logging to efficiently stream metrics to the MLflow server with just three lines of code:
+わずか 3 行のコードで MLflow のロギングを統合し、効率的にメトリクスを MLflow サーバーへストリーミングできます。
 
 .. code-block:: python
 
@@ -27,17 +27,17 @@ Integrate MLflow logging to efficiently stream metrics to the MLflow server with
 
   mlflow.log_metric("loss", running_loss / 2000, global_step)
 
-In this setup, we use ``MLflowWriter`` instead of using the MLflow API directly.
-This abstraction is important, as it enables users to flexibly redirect your logging metrics to any destination, which we discuss in more detail later.
+この構成では、MLflow の API を直接使う代わりに ``MLflowWriter`` を使用します。
+この抽象化は重要で、後ほど詳しく説明するように、ロギングしたメトリクスを任意の宛先へ柔軟にリダイレクトできるようになります。
 
-The use of MLflow, TensorBoard, or Weights & Biases syntax will all work to stream the collected metrics to any supported experiment tracking system.
-Choosing to use TBWriter, MLflowWriter, or WandBWriter is user preference based on your existing code and requirements.
+MLflow、TensorBoard、Weights & Biases のいずれの記法を使っても、収集したメトリクスをサポートされている任意の実験トラッキングシステムへストリーミングできます。
+TBWriter、MLflowWriter、WandBWriter のどれを使うかは、既存のコードや要件に応じたユーザーの好みによります。
 
-- ``MLflowWriter`` uses the Mlflow API operation syntax ``log_metric()``
-- ``TBWriter`` uses the TensorBoard SummaryWriter operation ``add_scalar()``
-- ``WandBWriter`` uses the Weights & Biases API operation ``log()``
+- ``MLflowWriter`` は MLflow API の操作記法 ``log_metric()`` を使用します
+- ``TBWriter`` は TensorBoard の SummaryWriter の操作 ``add_scalar()`` を使用します
+- ``WandBWriter`` は Weights & Biases API の操作 ``log()`` を使用します
 
-Here are the APIs:
+API は次のとおりです。
 
 .. code-block:: python
 
@@ -60,15 +60,15 @@ Here are the APIs:
       def set_tags(self, tags: dict) -> None:
 
 
-After you've modified the training code, you can use the NVFlare's job configuration to configure the system to stream the logs appropriately.
+学習コードを修正したら、NVFlare のジョブ設定を使って、ログが適切にストリーミングされるようにシステムを構成できます。
 
-Streaming metrics to FL server
-==============================
+FL サーバーへのメトリクスのストリーミング
+=========================================
 
-All metric key values are captured as events, with the flexibility to stream them to the most suitable destinations.
-Let's add the ``ConvertToFedEvent`` to convert these metrics events to federated events so they will be sent to the server.
+すべてのメトリクスのキーと値はイベントとして取得され、最も適した宛先へ柔軟にストリーミングできます。
+これらのメトリクスイベントをフェデレーテッドイベントに変換してサーバーへ送るために、``ConvertToFedEvent`` を追加しましょう。
 
-Add this component to config_fed_client.json:
+config_fed_client.json に次のコンポーネントを追加します。
 
 .. code-block:: json
 
@@ -78,8 +78,8 @@ Add this component to config_fed_client.json:
         "args": {"events_to_convert": ["analytix_log_stats"], "fed_event_prefix": "fed."}
     }
 
-If using the subprocess Client API with the ClientAPILauncherExecutor (rather than the in-process Client API with the InProcessClientAPIExecutor),
-we need to add the ``MetricRelay`` to fire fed events, a ``CellPipe`` for metrics, and an ``ExternalConfigurator`` for client api initialization.
+InProcessClientAPIExecutor によるインプロセスの Client API ではなく、ClientAPILauncherExecutor によるサブプロセスの Client API を使用する場合は、
+フェデレーテッドイベントを発火するための ``MetricRelay``、メトリクス用の ``CellPipe``、そして Client API 初期化のための ``ExternalConfigurator`` を追加する必要があります。
 
 .. code-block::
 
@@ -113,14 +113,14 @@ we need to add the ``MetricRelay`` to fire fed events, a ``CellPipe`` for metric
     }
 
 
-On the server, configure the experiment tracking system in ``config_fed_server.conf`` using one of the following receivers.
-Note that any of the receivers can be used regardless of the which writer is used.
+サーバー側では、``config_fed_server.conf`` で以下のいずれかのレシーバーを使って実験トラッキングシステムを設定します。
+どの Writer を使用しているかに関わらず、いずれのレシーバーも使用できる点に注意してください。
 
-- ``MLflowReceiver`` for MLflow
-- ``TBAnalyticsReceiver`` for TensorBoard
-- ``WandBReceiver`` for Weights & Biases
+- MLflow には ``MLflowReceiver``
+- TensorBoard には ``TBAnalyticsReceiver``
+- Weights & Biases には ``WandBReceiver``
 
-For example, here we add the ``MLflowReceiver`` component to the components configuration array:
+例えば、ここでは components の設定配列に ``MLflowReceiver`` コンポーネントを追加します。
 
 .. code-block:: yaml
 
@@ -143,10 +143,10 @@ For example, here we add the ``MLflowReceiver`` component to the components conf
     }
   }
 
-Notice the args{} are user defined, such as tracking_uri, experiment_name, tags etc., and will be specific to which receiver is configured.
+args{} は tracking_uri、experiment_name、tags などのようにユーザーが定義するものであり、どのレシーバーを設定するかによって内容が異なる点に注意してください。
 
-The MLflow tracking URL argument ``tracking_uri`` is None by default, which uses the MLflow default URL, ``http://localhost:5000``.
-To make this accessible from another machine, make sure to change it to the correct URL, or point to to the ``mlruns`` directory in the workspace.
+MLflow のトラッキング URL の引数 ``tracking_uri`` はデフォルトでは None であり、その場合は MLflow のデフォルト URL である ``http://localhost:5000`` が使用されます。
+別のマシンからアクセスできるようにするには、正しい URL に変更するか、ワークスペース内の ``mlruns`` ディレクトリを指すようにしてください。
 
 ::
 
@@ -156,9 +156,9 @@ To make this accessible from another machine, make sure to change it to the corr
 
   tracking_uri = "file:///{WORKSPACE}/{JOB_ID}/mlruns"
 
-You can change other arguments such as experiments, run_name, tags (using Markdown syntax), and artifact location.
+experiments、run_name、tags (Markdown 記法を使用)、アーティファクトの保存場所など、その他の引数も変更できます。
 
-Start the MLflow server with one of the following commands:
+次のいずれかのコマンドで MLflow サーバーを起動します。
 
 ::
 
@@ -169,16 +169,16 @@ Start the MLflow server with one of the following commands:
   mlflow ui -port 5000
 
 
-Streaming metrics to FL clients
-===============================
+FL クライアントへのメトリクスのストリーミング
+=============================================
 
-If streaming metrics to the FL server isn't preferred due to privacy or other concerns, users can alternatively stream metrics to the FL client.
-In such cases, there's no need to add the ``ConvertToFedEvent`` component on the client side.
-Additionally, since we're not streaming to the server side, there's no requirement to configure receivers in the server configuration.
+プライバシーやその他の理由で FL サーバーへのメトリクスのストリーミングが望ましくない場合、ユーザーは代わりに FL クライアントへメトリクスをストリーミングできます。
+その場合、クライアント側に ``ConvertToFedEvent`` コンポーネントを追加する必要はありません。
+また、サーバー側へストリーミングしないため、サーバー設定でレシーバーを構成する必要もありません。
 
-Instead to receive records on the client side, configure the metrics receiver in the client configuration instead of the server configuration.
+代わりに、クライアント側でレコードを受け取るために、サーバー設定ではなくクライアント設定でメトリクスのレシーバーを構成します。
 
-For example, in the TensorBoard configuration, add this component to ``config_fed_client.conf``:
+例えば TensorBoard の設定では、``config_fed_client.conf`` に次のコンポーネントを追加します。
 
 .. code-block:: yaml
 
@@ -188,10 +188,10 @@ For example, in the TensorBoard configuration, add this component to ``config_fe
     "args": {"events": ["analytix_log_stats"]}
   }
 
-Note that the ``events`` argument is ``analytix_log_stats``, not ``fed.analytix_log_stats``, indicating that this is a local event.
+``events`` 引数が ``fed.analytix_log_stats`` ではなく ``analytix_log_stats`` になっている点に注意してください。これはローカルイベントであることを示しています。
 
-If using the ``MetricRelay`` component, we can similarly component event_type value from ``fed.analytix_log_stats`` to ``analytix_log_stats`` for convention.
-We then must set the ``MetricRelay`` argument ``fed_event`` to ``false`` to fire local events rather than the default fed events.
+``MetricRelay`` コンポーネントを使用する場合も同様に、慣例としてコンポーネントの event_type の値を ``fed.analytix_log_stats`` から ``analytix_log_stats`` に変更できます。
+さらに、デフォルトのフェデレーテッドイベントではなくローカルイベントを発火させるために、``MetricRelay`` の引数 ``fed_event`` を ``false`` に設定する必要があります。
 
 .. code-block:: yaml
 
@@ -207,4 +207,4 @@ We then must set the ``MetricRelay`` argument ``fed_event`` to ``false`` to fire
     }
   }
 
-Then, the metrics will stream to the client.
+これにより、メトリクスはクライアントへストリーミングされます。

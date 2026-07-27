@@ -1,53 +1,55 @@
 .. _memory_management:
 
-###################
-Memory Management
-###################
+###################################
+メモリ管理
+###################################
 
-This guide describes memory management techniques for long-running federated learning jobs
-using Python, PyTorch, and glibc/jemalloc.
+このガイドでは、Python、PyTorch、glibc/jemalloc を使用する長時間実行のフェデレーテッド
+ラーニングジョブ向けのメモリ管理手法を説明します。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Overview
-========
+概要
+====================
 
-Federated learning jobs can run for hours or days. Without proper memory management,
-RSS (Resident Set Size) can grow continuously due to:
+フェデレーテッドラーニングのジョブは数時間から数日にわたって実行されることがあります。
+適切なメモリ管理を行わないと、以下の理由で RSS (Resident Set Size) が増加し続ける
+可能性があります。
 
-- Long-lived references that keep large model params alive between rounds (primary cause on clients)
-- glibc memory arena fragmentation (freed memory not returned to the OS)
-- PyTorch CUDA cache retention
-- Cyclic references delaying Python garbage collection (supplementary; usually not the main driver)
+- ラウンド間で大きなモデルパラメータを保持し続ける長寿命の参照(クライアント側の主な原因)
+- glibc のメモリアリーナの断片化(解放されたメモリが OS に返却されない)
+- PyTorch の CUDA キャッシュの保持
+- Python のガベージコレクションを遅延させる循環参照(副次的要因。通常は主因ではありません)
 
-NVFlare provides utilities and configuration options to manage memory effectively on
-both server and client sides. The framework automatically detects the memory allocator
-in use (glibc or jemalloc) and adapts its cleanup strategy accordingly.
+NVFlare は、サーバ側とクライアント側の双方でメモリを効果的に管理するためのユーティリティ
+と設定オプションを提供します。フレームワークは使用中のメモリアロケータ (glibc または
+jemalloc) を自動的に検出し、それに応じてクリーンアップ戦略を適応させます。
 
-Allocator Support
-=================
+アロケータのサポート
+========================
 
-NVFlare supports two memory allocators:
+NVFlare は2つのメモリアロケータをサポートしています。
 
-**glibc (default on most Linux)**
-    Uses ``malloc_trim()`` to release free heap pages to the OS.
-    Requires ``MALLOC_ARENA_MAX`` for optimal memory behavior.
+**glibc (ほとんどの Linux でのデフォルト)**
+    ``malloc_trim()`` を使用して、空きヒープページを OS に返却します。
+    最適なメモリ挙動のために ``MALLOC_ARENA_MAX`` の設定が必要です。
 
-**jemalloc (recommended for PyTorch)**
-    Uses auto-decay for memory management. Configure via ``MALLOC_CONF``.
-    No ``malloc_trim()`` calls needed (jemalloc handles this automatically).
+**jemalloc (PyTorch に推奨)**
+    メモリ管理に auto-decay を使用します。``MALLOC_CONF`` で設定します。
+    ``malloc_trim()`` の呼び出しは不要です (jemalloc が自動的に処理します)。
 
-NVFlare automatically detects which allocator is in use at runtime.
+NVFlare は、実行時にどちらのアロケータが使用されているかを自動的に検出します。
 
-Platform Compatibility
-======================
+プラットフォーム互換性
+==========================
 
-Not all memory management features work on all platforms. The table below summarizes compatibility:
+すべてのメモリ管理機能がすべてのプラットフォームで動作するわけではありません。
+以下の表に互換性をまとめます。
 
 +---------------------------+-------------+-------------+-------------+
-| Feature                   | Linux/glibc | Linux/musl  | macOS       |
+| 機能                      | Linux/glibc | Linux/musl  | macOS       |
 +===========================+=============+=============+=============+
 | ``gc.collect()``          | ✓           | ✓           | ✓           |
 +---------------------------+-------------+-------------+-------------+
@@ -58,50 +60,52 @@ Not all memory management features work on all platforms. The table below summar
 | ``torch.cuda.empty_cache``| ✓           | ✓           | ✓           |
 +---------------------------+-------------+-------------+-------------+
 
-**Notes:**
+**注記:**
 
-- **Linux/glibc**: Standard Linux distributions (Ubuntu, RHEL, Debian, etc.)
-- **Linux/musl**: Alpine Linux and other musl-based distributions
-- **macOS**: ``malloc_trim()`` is silently skipped (safe no-op)
+- **Linux/glibc**: 標準的な Linux ディストリビューション (Ubuntu、RHEL、Debian など)
+- **Linux/musl**: Alpine Linux およびその他の musl ベースのディストリビューション
+- **macOS**: ``malloc_trim()`` は警告なくスキップされます (安全な no-op です)
 
 .. warning::
 
-   For maximum memory efficiency, use Linux with glibc. Alpine Linux (musl) and
-   macOS still benefit from client-side parameter reference release (and optional
-   ``gc.collect()``), but cannot release fragmented heap memory back to the OS
-   via ``malloc_trim()``.
+   メモリ効率を最大化するには、glibc を使用する Linux を利用してください。
+   Alpine Linux (musl) と macOS でも、クライアント側のパラメータ参照の解放
+   (および任意の ``gc.collect()``) による恩恵は得られますが、``malloc_trim()`` を
+   介して断片化したヒープメモリを OS に返却することはできません。
 
-Environment Variables
-=====================
+環境変数
+====================
 
-Set these environment variables before starting NVFlare processes:
+NVFlare のプロセスを起動する前に、以下の環境変数を設定してください。
 
-Client (Training Nodes)
------------------------
+クライアント (学習ノード)
+-----------------------------
 
 .. code-block:: bash
 
     export MALLOC_ARENA_MAX=2
 
-**Why:** Clients typically have limited CPU memory. Setting ``MALLOC_ARENA_MAX=2``
-prevents arena explosion and reduces memory fragmentation.
+**理由:** クライアントは通常、CPU メモリが限られています。``MALLOC_ARENA_MAX=2``
+を設定することで、アリーナの増大を防ぎ、メモリの断片化を軽減します。
 
-Server (Aggregation Node)
--------------------------
+サーバ (集約ノード)
+-----------------------------
 
 .. code-block:: bash
 
     export MALLOC_ARENA_MAX=4
 
-**Why:** Servers are CPU memory heavy (4-7× model size) with multi-threaded networking.
-``MALLOC_ARENA_MAX=4`` balances throughput vs memory. Use ``8`` for high parallelism.
+**理由:** サーバは CPU メモリの消費が大きく (モデルサイズの4〜7倍)、マルチスレッドの
+ネットワーク処理を行います。``MALLOC_ARENA_MAX=4`` はスループットとメモリのバランスを
+取ります。並列度が高い場合は ``8`` を使用してください。
 
-Server-Side Memory Cleanup
-==========================
+サーバ側のメモリクリーンアップ
+==================================
 
-The FedAvg controller supports automatic memory cleanup via the ``server_memory_gc_rounds`` parameter.
+FedAvg の Controller は、``server_memory_gc_rounds`` パラメータによる自動メモリ
+クリーンアップをサポートしています。
 
-Server-Side Configuration
+サーバ側の設定
 --------------------------
 
 .. code-block:: python
@@ -116,61 +120,63 @@ Server-Side Configuration
         server_memory_gc_rounds=5,  # Cleanup every 5 rounds
     )
 
-**Values:**
+**値:**
 
-- ``0`` = Disabled (default for FedAvg-based recipes)
-- ``1`` = Cleanup every round (default for FedOpt, FedAvgHE, and Cyclic recipes)
-- ``5`` = Cleanup every 5 rounds (recommended for server)
+- ``0`` = 無効 (FedAvg ベースのレシピのデフォルト)
+- ``1`` = 毎ラウンドでクリーンアップ (FedOpt、FedAvgHE、Cyclic レシピのデフォルト)
+- ``5`` = 5ラウンドごとにクリーンアップ (サーバでの推奨値)
 
-Server Cleanup Effects
-----------------------
+サーバのクリーンアップの効果
+--------------------------------
 
-When enabled, at the end of every N rounds:
+有効な場合、N ラウンドごとの終了時に以下が実行されます。
 
-1. Runs Python garbage collection (``gc.collect()``)
-2. Returns free heap pages to OS (``malloc_trim()``, Linux/glibc only)
+1. Python のガベージコレクションを実行します (``gc.collect()``)
+2. 空きヒープページを OS に返却します (``malloc_trim()``、Linux/glibc のみ)
 
-Performance Impact
-------------------
+パフォーマンスへの影響
+------------------------------
 
-Memory cleanup has minimal overhead in typical federated learning workloads:
+一般的なフェデレーテッドラーニングのワークロードでは、メモリクリーンアップの
+オーバーヘッドはごくわずかです。
 
-+---------------------------+------------------+--------------------------------+
-| Operation                 | Typical Duration | Notes                          |
-+===========================+==================+================================+
-| ``gc.collect()``          | 10-500 ms        | Depends on Python object count |
-+---------------------------+------------------+--------------------------------+
-| ``malloc_trim()``         | < 1 ms           | Very fast (page table ops)     |
-+---------------------------+------------------+--------------------------------+
++---------------------------+------------------+------------------------------------+
+| 処理                      | 所要時間の目安   | 備考                               |
++===========================+==================+====================================+
+| ``gc.collect()``          | 10-500 ms        | Python オブジェクト数に依存        |
++---------------------------+------------------+------------------------------------+
+| ``malloc_trim()``         | < 1 ms           | 非常に高速 (ページテーブル操作)    |
++---------------------------+------------------+------------------------------------+
 
-**Overhead analysis:**
+**オーバーヘッドの分析:**
 
-- **Training round duration**: Typically 30 seconds to 10+ minutes
-- **Cleanup duration**: 10-500 ms total
-- **Overhead per round**: Usually < 1%
+- **学習ラウンドの所要時間**: 通常30秒から10分以上
+- **クリーンアップの所要時間**: 合計10〜500 ms
+- **1ラウンドあたりのオーバーヘッド**: 通常1%未満
 
-**With** ``server_memory_gc_rounds=5``:
+``server_memory_gc_rounds=5`` の**場合**:
 
-- Cleanup runs once every 5 rounds
-- Total overhead: < 0.2% of training time
+- クリーンアップは5ラウンドに1回実行されます
+- 合計オーバーヘッド: 学習時間の0.2%未満
 
-**Recommendation**: Using ``server_memory_gc_rounds=5`` provides good memory
-management with negligible performance impact. Only disable (``=0``) if you've
-measured and confirmed RSS is stable without cleanup.
+**推奨事項**: ``server_memory_gc_rounds=5`` を使用すると、パフォーマンスへの影響を
+ほとんど与えずに良好なメモリ管理が得られます。無効化 (``=0``) するのは、クリーンアップ
+なしでも RSS が安定していることを実測して確認した場合のみにしてください。
 
-Client-Side Memory Cleanup
-==========================
+クライアント側のメモリクリーンアップ
+========================================
 
-The primary client-side memory control is ``clear_cache=True`` (the default) in
-``flare.send()``, which immediately releases parameter references after serialization.
-In CPython, this reference release is what actually frees large tensor/array memory —
-no explicit GC call is needed for that.
+クライアント側の主要なメモリ制御は、``flare.send()`` の ``clear_cache=True``
+(デフォルト) であり、シリアライズ後に直ちにパラメータの参照を解放します。
+CPython では、この参照の解放こそが実際に大きなテンソル/配列のメモリを解放するものであり、
+そのために明示的な GC 呼び出しは必要ありません。
 
-``client_memory_gc_rounds`` and ``cuda_empty_cache`` provide *supplemental* cleanup on
-top of the reference release: periodic ``gc.collect()`` for cyclic objects,
-``malloc_trim()`` to return freed pages to the OS, and optional CUDA cache clearing.
+``client_memory_gc_rounds`` と ``cuda_empty_cache`` は、参照の解放に加えて実行される
+*補助的な*クリーンアップを提供します。すなわち、循環参照のオブジェクトに対する定期的な
+``gc.collect()``、解放済みページを OS に返却する ``malloc_trim()``、および任意の
+CUDA キャッシュのクリアです。
 
-Client-Side Configuration
+クライアント側の設定
 --------------------------
 
 .. code-block:: python
@@ -191,11 +197,12 @@ Client-Side Configuration
         cuda_empty_cache=True, # Clear GPU cache
     )
 
-Swarm Learning Configuration
-----------------------------
+Swarm Learning の設定
+------------------------------
 
-Swarm Learning uses ``memory_gc_rounds`` (not ``client_memory_gc_rounds``) and
-``cuda_empty_cache`` on ``SwarmLearningRecipe``:
+Swarm Learning では、``SwarmLearningRecipe`` において
+(``client_memory_gc_rounds`` ではなく) ``memory_gc_rounds`` と
+``cuda_empty_cache`` を使用します。
 
 .. code-block:: python
 
@@ -214,101 +221,106 @@ Swarm Learning uses ``memory_gc_rounds`` (not ``client_memory_gc_rounds``) and
 
 .. note::
 
-   ``memory_gc_rounds`` and ``cuda_empty_cache`` are top-level Swarm recipe arguments.
-   Do not pass them inside ``train_args`` (they are reserved keys).
+   ``memory_gc_rounds`` と ``cuda_empty_cache`` は Swarm レシピのトップレベル引数です。
+   これらを ``train_args`` の中に渡さないでください (予約キーです)。
 
-**Parameters:**
+**パラメータ:**
 
-- ``client_memory_gc_rounds``: Run *supplemental* cleanup (``gc.collect()`` + ``malloc_trim()``) every N rounds on client (0 = disabled). The primary cleanup is reference release via ``clear_cache=True`` in ``flare.send()``.
-- ``cuda_empty_cache``: If True, call ``torch.cuda.empty_cache()`` on cleanup
-- ``memory_gc_rounds`` (Swarm): Run supplemental cleanup every N rounds (0 = disabled)
+- ``client_memory_gc_rounds``: クライアント側で N ラウンドごとに*補助的な*クリーンアップ (``gc.collect()`` + ``malloc_trim()``) を実行します (0 = 無効)。主要なクリーンアップは ``flare.send()`` の ``clear_cache=True`` による参照の解放です。
+- ``cuda_empty_cache``: True の場合、クリーンアップ時に ``torch.cuda.empty_cache()`` を呼び出します
+- ``memory_gc_rounds`` (Swarm): N ラウンドごとに補助的なクリーンアップを実行します (0 = 無効)
 
-When to use ``client_memory_gc_rounds > 1``
--------------------------------------------
+``client_memory_gc_rounds > 1`` を使用すべき場合
+--------------------------------------------------
 
-Use values greater than ``1`` only when memory is already stable and you are tuning
-for lower cleanup overhead:
+``1`` より大きい値は、メモリがすでに安定していて、クリーンアップのオーバーヘッドを
+下げるためにチューニングする場合にのみ使用してください。
 
-- RSS trend is flat/bounded across rounds
-- No CPU/GPU OOM pressure
-- You want slightly better throughput/latency
+- RSS の推移がラウンド間で平坦/上限内に収まっている
+- CPU/GPU の OOM 圧力がない
+- スループット/レイテンシをわずかでも改善したい
 
-Start with ``client_memory_gc_rounds=1``, then tune to ``2`` and optionally ``5`` while monitoring RSS.
-If RSS begins to climb or OOM risk increases, revert to ``1``.
+まず ``client_memory_gc_rounds=1`` から始め、RSS を監視しながら ``2``、必要に応じて
+``5`` へとチューニングしてください。RSS が上昇し始めたり OOM のリスクが高まったりした
+場合は、``1`` に戻してください。
 
-Client Cleanup Effects
-----------------------
+クライアントのクリーンアップの効果
+--------------------------------------
 
-After each ``flare.send()`` on the client (with default ``clear_cache=True``):
+クライアントで ``flare.send()`` を実行するたびに (デフォルトの ``clear_cache=True``
+の場合)、以下が行われます。
 
-1. FLARE releases references to sent and received model params.
-2. In CPython, this reference release is the primary mechanism that reclaims large tensors/arrays.
+1. FLARE が送信済みおよび受信済みのモデルパラメータへの参照を解放します。
+2. CPython では、この参照の解放が大きなテンソル/配列を回収する主要な仕組みです。
 
-Supplemental cleanup is also available and configurable:
+さらに、補助的なクリーンアップも利用可能で、設定できます。
 
-3. Runs Python garbage collection (``gc.collect()``), mainly for cyclic references.
-4. For glibc: returns free heap pages to OS (``malloc_trim()``).
-5. For jemalloc: relies on auto-decay (no manual action needed).
-6. Optionally clears PyTorch CUDA cache.
-
-.. note::
-
-   RSS may not drop immediately even after object release because allocators can retain memory
-   for reuse. A flat RSS trend across rounds is typically the expected healthy behavior.
+3. Python のガベージコレクション (``gc.collect()``) を実行します。主に循環参照のためです。
+4. glibc の場合: 空きヒープページを OS に返却します (``malloc_trim()``)。
+5. jemalloc の場合: auto-decay に依存します (手動の操作は不要です)。
+6. 任意で PyTorch の CUDA キャッシュをクリアします。
 
 .. note::
 
-   The lifecycle handling is transparent to user training scripts. No code changes are required
-   in ``train.py`` for default behavior.
+   アロケータが再利用のためにメモリを保持することがあるため、オブジェクトを解放しても
+   RSS がすぐに下がるとは限りません。ラウンド間で RSS の推移が平坦であることが、通常は
+   期待される健全な挙動です。
 
-Client Training Process Memory Cleanup
----------------------------------------
+.. note::
 
-For subprocess-mode jobs (``launch_external_process=True``), memory cleanup runs
-across all stages of the client training process — not just the training subprocess.
-After each round result is forwarded, the same GC and heap-trim cycle is applied
-to every stage of the client training process, preventing RSS growth across long jobs.
+   ライフサイクルの処理はユーザーの学習スクリプトに対して透過的です。デフォルトの
+   動作のために ``train.py`` にコード変更を加える必要はありません。
 
-The cleanup frequency and GPU cache behavior are controlled by the same
-``memory_gc_rounds`` / ``client_memory_gc_rounds`` and ``cuda_empty_cache`` parameters
-already documented above.
+クライアント学習プロセスのメモリクリーンアップ
+--------------------------------------------------
 
-RSS profiling across all stages can be enabled with the environment variable
-``NVFLARE_CLIENT_MEMORY_PROFILE=1``, which emits per-stage RSS log markers after each
-send and receive for easy grep-based analysis.
+サブプロセスモードのジョブ (``launch_external_process=True``) では、メモリクリーン
+アップは学習サブプロセスだけでなく、クライアント学習プロセスのすべてのステージに
+わたって実行されます。各ラウンドの結果が転送された後、同じ GC およびヒープトリムの
+サイクルがクライアント学習プロセスの各ステージに適用され、長時間のジョブでの RSS の
+増加を防ぎます。
 
-External Process Settings
+クリーンアップの頻度と GPU キャッシュの挙動は、上ですでに説明した同じ
+``memory_gc_rounds`` / ``client_memory_gc_rounds`` および ``cuda_empty_cache``
+パラメータで制御されます。
+
+すべてのステージにわたる RSS のプロファイリングは、環境変数
+``NVFLARE_CLIENT_MEMORY_PROFILE=1`` で有効化できます。これにより、送信と受信のたびに
+ステージごとの RSS ログマーカーが出力され、grep による分析が容易になります。
+
+外部プロセスの設定
 --------------------------
 
-For external process execution (``launch_external_process=True``), memory settings
-are passed via environment variables:
+外部プロセスでの実行 (``launch_external_process=True``) では、メモリ設定は環境変数を
+介して渡されます。
 
-- ``NVFLARE_CLIENT_MEMORY_GC_ROUNDS``: Cleanup interval
-- ``NVFLARE_CUDA_EMPTY_CACHE``: GPU cache cleanup (``true``/``false``)
-- ``NVFLARE_CLIENT_MEMORY_PROFILE``: Set to ``1`` to enable per-round RSS logging
+- ``NVFLARE_CLIENT_MEMORY_GC_ROUNDS``: クリーンアップの間隔
+- ``NVFLARE_CUDA_EMPTY_CACHE``: GPU キャッシュのクリーンアップ (``true``/``false``)
+- ``NVFLARE_CLIENT_MEMORY_PROFILE``: ラウンドごとの RSS ログを有効にするには ``1`` を設定
 
-Recommended Settings
+推奨設定
 ====================
 
-+--------+-----------------------------+-----------------------------+----------------------+----------------------+
-| Role   | ``server_memory_gc_rounds`` | ``client_memory_gc_rounds`` | ``MALLOC_ARENA_MAX`` | ``cuda_empty_cache`` |
-+========+=============================+=============================+======================+======================+
-| Server | 5                           | N/A                         | 4                    | N/A                  |
-+--------+-----------------------------+-----------------------------+----------------------+----------------------+
-| Client | N/A                         | 1                           | 2                    | True (for GPU)       |
-+--------+-----------------------------+-----------------------------+----------------------+----------------------+
++---------------+-----------------------------+-----------------------------+----------------------+----------------------+
+| ロール        | ``server_memory_gc_rounds`` | ``client_memory_gc_rounds`` | ``MALLOC_ARENA_MAX`` | ``cuda_empty_cache`` |
++===============+=============================+=============================+======================+======================+
+| サーバ        | 5                           | N/A                         | 4                    | N/A                  |
++---------------+-----------------------------+-----------------------------+----------------------+----------------------+
+| クライアント  | N/A                         | 1                           | 2                    | True (GPU の場合)    |
++---------------+-----------------------------+-----------------------------+----------------------+----------------------+
 
-Using jemalloc
-==============
+jemalloc の使用
+====================
 
-For PyTorch workloads, jemalloc is recommended over glibc malloc. NVFlare startup
-scripts preload jemalloc only when explicitly enabled via
-``NVFLARE_ENABLE_JEMALLOC_PRELOAD=true`` and jemalloc is available.
+PyTorch のワークロードでは、glibc の malloc よりも jemalloc が推奨されます。NVFlare の
+起動スクリプトは、``NVFLARE_ENABLE_JEMALLOC_PRELOAD=true`` によって明示的に有効化され、
+かつ jemalloc が利用可能な場合にのみ jemalloc をプリロードします。
 
-Startup Script
---------------
+起動スクリプト
+--------------------
 
-The generated ``sub_start.sh`` script includes opt-in jemalloc preload:
+生成される ``sub_start.sh`` スクリプトには、オプトイン方式の jemalloc プリロードが
+含まれています。
 
 .. code-block:: bash
 
@@ -325,8 +337,8 @@ The generated ``sub_start.sh`` script includes opt-in jemalloc preload:
         done
     fi
 
-Installing jemalloc
--------------------
+jemalloc のインストール
+------------------------------
 
 .. code-block:: bash
 
@@ -336,8 +348,8 @@ Installing jemalloc
     # RHEL/CentOS
     yum install jemalloc
 
-API Reference
-=============
+API リファレンス
+====================
 
 cleanup_memory
 --------------
@@ -348,14 +360,14 @@ cleanup_memory
 
     cleanup_memory(cuda_empty_cache=True)
 
-**Signature:** ``cleanup_memory(cuda_empty_cache: bool = False) -> None``
+**シグネチャ:** ``cleanup_memory(cuda_empty_cache: bool = False) -> None``
 
-Performs allocator-aware memory cleanup:
+アロケータを考慮したメモリクリーンアップを実行します。
 
-1. Runs ``gc.collect()``
-2. For glibc: Calls ``malloc_trim(0)``
-3. For jemalloc: Relies on auto-decay (no action needed)
-4. Optionally calls ``torch.cuda.empty_cache()``
+1. ``gc.collect()`` を実行します
+2. glibc の場合: ``malloc_trim(0)`` を呼び出します
+3. jemalloc の場合: auto-decay に依存します (操作は不要です)
+4. 任意で ``torch.cuda.empty_cache()`` を呼び出します
 
 get_allocator_type
 ------------------
@@ -366,9 +378,9 @@ get_allocator_type
 
     allocator = get_allocator_type()  # "glibc", "jemalloc", or "unknown"
 
-**Signature:** ``get_allocator_type() -> str``
+**シグネチャ:** ``get_allocator_type() -> str``
 
-Detects which memory allocator is in use at runtime. Result is cached.
+実行時にどのメモリアロケータが使用されているかを検出します。結果はキャッシュされます。
 
 try_malloc_trim
 ---------------
@@ -379,42 +391,42 @@ try_malloc_trim
 
     result = try_malloc_trim()
 
-**Signature:** ``try_malloc_trim() -> Optional[int]``
+**シグネチャ:** ``try_malloc_trim() -> Optional[int]``
 
-Low-level function to return free heap pages to OS.
+空きヒープページを OS に返却する低レベル関数です。
 
-**Returns:**
+**戻り値:**
 
-- ``1`` if memory was released
-- ``0`` if no memory to release
-- ``None`` if not available (non-Linux or non-glibc)
+- メモリが解放された場合は ``1``
+- 解放するメモリがない場合は ``0``
+- 利用できない場合 (非 Linux または非 glibc) は ``None``
 
-Troubleshooting
-===============
+トラブルシューティング
+==========================
 
-High RSS on Server
-------------------
+サーバでの RSS 過大
+------------------------
 
-1. Check ``MALLOC_ARENA_MAX`` is set
-2. Enable ``server_memory_gc_rounds=5``
-3. Consider using jemalloc (LD_PRELOAD)
-4. Monitor with ``top`` or ``htop``
+1. ``MALLOC_ARENA_MAX`` が設定されているか確認します
+2. ``server_memory_gc_rounds=5`` を有効にします
+3. jemalloc (LD_PRELOAD) の使用を検討します
+4. ``top`` または ``htop`` で監視します
 
-High RSS on Client
-------------------
+クライアントでの RSS 過大
+------------------------------
 
-1. Confirm ``flare.send()`` uses default ``clear_cache=True`` (or explicitly set it)
-2. Check ``MALLOC_ARENA_MAX=2`` is set
-3. Start with ``client_memory_gc_rounds=1``
-4. Increase to ``2`` or ``5`` only if RSS is already stable and you are tuning performance
-5. Enable ``cuda_empty_cache=True`` for GPU
-6. Consider using jemalloc
+1. ``flare.send()`` がデフォルトの ``clear_cache=True`` を使用していることを確認します (または明示的に設定します)
+2. ``MALLOC_ARENA_MAX=2`` が設定されているか確認します
+3. ``client_memory_gc_rounds=1`` から始めます
+4. RSS がすでに安定していてパフォーマンスをチューニングする場合にのみ ``2`` または ``5`` に増やします
+5. GPU の場合は ``cuda_empty_cache=True`` を有効にします
+6. jemalloc の使用を検討します
 
-OOM Errors
-----------
+OOM エラー
+--------------------
 
-1. Reduce batch size
-2. Confirm ``flare.send()`` uses default ``clear_cache=True`` — this is the primary client fix
-3. Enable supplemental cleanup every round (``client_memory_gc_rounds=1`` or ``server_memory_gc_rounds=1``)
-4. Check for memory leaks in training code
-5. Use jemalloc with appropriate decay settings
+1. バッチサイズを小さくします
+2. ``flare.send()`` がデフォルトの ``clear_cache=True`` を使用していることを確認します — これがクライアント側の主要な対処です
+3. 毎ラウンドの補助的なクリーンアップを有効にします (``client_memory_gc_rounds=1`` または ``server_memory_gc_rounds=1``)
+4. 学習コードにメモリリークがないか確認します
+5. 適切な decay 設定で jemalloc を使用します

@@ -1,59 +1,59 @@
 Hello Differential Privacy
 ===========================
 
-This example demonstrates how to use NVIDIA FLARE with PyTorch and **Differential Privacy (DP)** to train a fraud detection model using federated averaging (FedAvg) with privacy guarantees. The example uses `Opacus <https://opacus.ai>`_ to implement DP-SGD (Differentially Private Stochastic Gradient Descent) during local client training on each client. This achieves sample-level differential privacy. The complete example code can be found in the `hello-dp directory <examples/hello-world/hello-dp/>`_. It is recommended to create a virtual environment and run everything within a virtualenv.
+この例では、NVIDIA FLARE を PyTorch および **差分プライバシー（Differential Privacy, DP）** と組み合わせて、プライバシー保証を伴うフェデレーテッドアベレージング（FedAvg）により不正検知モデルを学習する方法を示します。この例では `Opacus <https://opacus.ai>`_ を使用して、各クライアントでのローカル学習中に DP-SGD（差分プライベート確率的勾配降下法）を実装します。これによりサンプルレベルの差分プライバシーを実現します。完全なサンプルコードは `hello-dp directory <examples/hello-world/hello-dp/>`_ にあります。仮想環境を作成し、その中ですべてを実行することを推奨します。
 
-What is Differential Privacy?
+差分プライバシーとは？
 ------------------------------
 
-`Differential Privacy (DP) <https://en.wikipedia.org/wiki/Differential_privacy>`_ is a mathematical framework that provides strong privacy guarantees when handling sensitive data. In Federated Learning, DP protects user information by adding carefully calibrated noise to the model training process.
+`Differential Privacy (DP) <https://en.wikipedia.org/wiki/Differential_privacy>`_ は、機微なデータを扱う際に強力なプライバシー保証を提供する数学的なフレームワークです。フェデレーテッドラーニングにおいて、DP はモデルの学習過程に慎重に調整されたノイズを加えることでユーザー情報を保護します。
 
-**DP-SGD** adds noise during each optimization step:
+**DP-SGD** は各最適化ステップでノイズを加えます。
 
-1. **Gradient Clipping**: Gradients are clipped to bound sensitivity
-2. **Noise Addition**: Gaussian noise is added to clipped gradients
-3. **Privacy Accounting**: Privacy budget (ε, δ) is tracked
+1. **勾配クリッピング**: 感度を抑えるために勾配をクリッピングします
+2. **ノイズの付加**: クリッピングされた勾配にガウスノイズを加えます
+3. **プライバシー会計**: プライバシー予算 (ε, δ) を追跡します
 
-The privacy-utility trade-off is controlled by epsilon (ε):
+プライバシーと有用性のトレードオフはイプシロン (ε) によって制御されます。
 
-- **Lower ε** = Stronger privacy, more noise, lower accuracy
-- **Higher ε** = Weaker privacy, less noise, higher accuracy
+- **ε が小さい** = プライバシーがより強力、ノイズがより多い、精度がより低い
+- **ε が大きい** = プライバシーがより弱い、ノイズがより少ない、精度がより高い
 
-Typical values:
+代表的な値は次のとおりです。
 
-- **ε ≤ 1.0**: Strong privacy (recommended for sensitive data)
-- **ε = 1.0-3.0**: Moderate privacy (good balance) - default is 1.0
-- **ε > 10**: Weak privacy (minimal protection)
+- **ε ≤ 1.0**: 強力なプライバシー（機微なデータに推奨）
+- **ε = 1.0-3.0**: 中程度のプライバシー（バランスが良い） - デフォルトは 1.0
+- **ε > 10**: 弱いプライバシー（保護は最小限）
 
-NVIDIA FLARE Installation
---------------------------
+NVIDIA FLARE のインストール
+------------------------------------
 
-For complete installation instructions, see `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_.
+インストール手順の詳細については `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_ を参照してください。
 
 .. code-block:: bash
 
    pip install nvflare
 
-First get the example code from github:
+まず GitHub からサンプルコードを取得します。
 
 .. code-block:: bash
 
    git clone https://github.com/NVIDIA/NVFlare.git
 
-Then navigate to the hello-dp directory:
+次に hello-dp ディレクトリに移動します。
 
 .. code-block:: bash
 
    git switch <release branch>
    cd examples/hello-world/hello-dp
 
-Install the dependencies:
+依存関係をインストールします。
 
 .. code-block:: bash
 
    pip install -r requirements.txt
 
-Code Structure
+コード構造
 --------------
 
 .. code-block:: bash
@@ -65,32 +65,32 @@ Code Structure
    |-- job.py                # job recipe that defines client and server configurations
    |-- requirements.txt      # dependencies
 
-Data
-----
+データ
+--------
 
-This example uses the `Credit Card Fraud Detection dataset <https://www.openml.org/d/1597>`_ from OpenML - a binary classification problem to detect fraudulent credit card transactions.
+この例では、OpenML の `Credit Card Fraud Detection dataset <https://www.openml.org/d/1597>`_ を使用します。これは不正なクレジットカード取引を検出する二値分類問題です。
 
-**Dataset characteristics:**
+**データセットの特徴:**
 
-- ~284,000 samples (Normal: 284,315, Fraud: 492)
-- 29 features (anonymized transaction features V1-V28, Amount)
-- 2 classes: Normal (0) and Fraud (1)
-- **Highly imbalanced**: ~99.8% normal, ~0.17% fraud
+- 約 284,000 サンプル（正常: 284,315、不正: 492）
+- 29 個の特徴量（匿名化された取引特徴量 V1-V28、Amount）
+- 2 クラス: 正常 (0) と不正 (1)
+- **非常に不均衡**: 約 99.8% が正常、約 0.17% が不正
 
-**Important Note**: This dataset is extremely imbalanced with only 492 fraud cases out of 284,807 transactions. This presents additional challenges for training:
+**重要な注意**: このデータセットは 284,807 件の取引のうち不正がわずか 492 件しかなく、極めて不均衡です。これは学習において次のような追加の課題をもたらします。
 
-- Standard accuracy can be misleading (99.8% accuracy by always predicting "normal")
-- **F1 Score and Precision/Recall** are more meaningful metrics for fraud detection
-- The model must learn to detect the rare fraud class despite the imbalance
+- 標準的な accuracy は誤解を招く可能性があります（常に「正常」と予測するだけで 99.8% の accuracy になります）
+- 不正検知においては **F1 スコアおよび Precision/Recall** の方がより意味のある指標です
+- モデルは不均衡にもかかわらず、まれな不正クラスを検出できるように学習する必要があります
 
-This is a **privacy-sensitive** use case - credit card transaction data requires strong privacy protection, making it ideal for demonstrating differential privacy in federated learning.
+これは **プライバシーに配慮が必要な** ユースケースです。クレジットカード取引データは強力なプライバシー保護を必要とするため、フェデレーテッドラーニングにおける差分プライバシーを示す題材として最適です。
 
-**Data Distribution**: In a real FL experiment, each client would have their own dataset. For this example, the dataset is **automatically partitioned across clients** using a simple split, so each client has a **non-overlapping subset** of the data. This simulates a basic federated scenario where data is distributed across multiple institutions.
+**データ分布**: 実際の FL 実験では、各クライアントが独自のデータセットを持ちます。この例では、データセットは単純な分割によって **クライアント間で自動的に分割** され、各クライアントは **重複しないサブセット** を持ちます。これは、データが複数の機関に分散している基本的なフェデレーションのシナリオをシミュレートしています。
 
-Model
------
+モデル
+--------
 
-The model is a simple Multi-Layer Perceptron (MLP) for binary classification. The implementation can be found in `model.py <model.py>`_.
+モデルは二値分類のためのシンプルな多層パーセプトロン（MLP）です。実装は `model.py <model.py>`_ にあります。
 
 .. code-block:: python
 
@@ -98,35 +98,35 @@ The model is a simple Multi-Layer Perceptron (MLP) for binary classification. Th
 
    class TabularMLP(nn.Module):
        """Simple Multi-Layer Perceptron for tabular data classification"""
-       
+
        def __init__(self, input_dim=29, hidden_dims=[64, 32], output_dim=2):
            super(TabularMLP, self).__init__()
-           
+
            layers = []
            prev_dim = input_dim
-           
+
            # Build hidden layers
            for hidden_dim in hidden_dims:
                layers.append(nn.Linear(prev_dim, hidden_dim))
                layers.append(nn.ReLU())
                layers.append(nn.Dropout(0.2))
                prev_dim = hidden_dim
-           
+
            # Output layer
            layers.append(nn.Linear(prev_dim, output_dim))
-           
+
            self.model = nn.Sequential(*layers)
 
-The architecture:
+アーキテクチャは次のとおりです。
 
-- **Input layer**: 29 features (transaction data)
-- **Hidden layers**: 64 → 32 neurons with ReLU activation and dropout
-- **Output layer**: 2 neurons (normal vs fraud)
+- **入力層**: 29 個の特徴量（取引データ）
+- **隠れ層**: ReLU 活性化関数とドロップアウトを伴う 64 → 32 ニューロン
+- **出力層**: 2 ニューロン（正常 vs 不正）
 
-Client Code with Differential Privacy
---------------------------------------
+差分プライバシーを用いたクライアントコード
+--------------------------------------------------------
 
-The client code `client.py <client.py>`_ implements DP-SGD using **Opacus**. The key difference from standard training is adding the ``PrivacyEngine``:
+クライアントコード `client.py <client.py>`_ は **Opacus** を使用して DP-SGD を実装します。標準的な学習との主な違いは ``PrivacyEngine`` を追加する点です。
 
 .. code-block:: python
 
@@ -142,13 +142,13 @@ The client code `client.py <client.py>`_ implements DP-SGD using **Opacus**. The
    while flare.is_running():
        input_model = flare.receive()
        model.load_state_dict(input_model.params)
-       
+
        # === Apply Differential Privacy (First Round Only) ===
        # Privacy budget accumulates across ALL federated rounds
        if input_model.current_round == 0:
            # Calculate total epochs across all rounds for privacy accounting
            total_epochs = args.epochs * input_model.total_rounds
-           
+
            privacy_engine = PrivacyEngine()
            model, optimizer, train_loader = privacy_engine.make_private_with_epsilon(
                module=model,
@@ -162,7 +162,7 @@ The client code `client.py <client.py>`_ implements DP-SGD using **Opacus**. The
            # Noise multiplier is computed automatically
            print(f"Noise multiplier: {optimizer.noise_multiplier:.4f}")
        # ==================================
-       
+
        # Train as usual - PrivacyEngine handles gradient clipping & noise
        for epoch in range(args.epochs):
            for data, target in train_loader:
@@ -170,38 +170,38 @@ The client code `client.py <client.py>`_ implements DP-SGD using **Opacus**. The
                loss = criterion(model(data), target)
                loss.backward()
                optimizer.step()
-       
+
        # Check cumulative privacy budget spent
        epsilon = privacy_engine.get_epsilon(args.target_delta)
        print(f"Cumulative privacy spent: (ε = {epsilon:.2f}, δ = {args.target_delta})")
 
-The ``PrivacyEngine.make_private_with_epsilon()`` method:
+``PrivacyEngine.make_private_with_epsilon()`` メソッドは次を行います。
 
-1. Wraps the model to enable per-sample gradient computation
-2. Automatically computes the noise multiplier for target epsilon
-3. Modifies the optimizer to clip gradients and add noise
-4. Wraps the data loader for privacy accounting
-5. Tracks privacy budget cumulatively across all federated rounds
+1. サンプルごとの勾配計算を有効にするためにモデルをラップします
+2. 目標のイプシロンに対するノイズ乗数を自動的に計算します
+3. 勾配をクリッピングしノイズを加えるようにオプティマイザを変更します
+4. プライバシー会計のためにデータローダーをラップします
+5. すべてのフェデレーテッドラウンドにわたってプライバシー予算を累積的に追跡します
 
-Server-Side Workflow
---------------------
+サーバ側のワークフロー
+------------------------------
 
-This example uses the `FedAvgRecipe <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.app_opt.pt.recipes.fedavg.html>`_, which implements the `FedAvg <https://proceedings.mlr.press/v54/mcmahan17a>`_ algorithm. The Recipe API handles all server-side logic automatically:
+この例では `FedAvg <https://proceedings.mlr.press/v54/mcmahan17a>`_ アルゴリズムを実装した `FedAvgRecipe <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.app_opt.pt.recipes.fedavg.html>`_ を使用します。Recipe API がサーバ側のロジックをすべて自動的に処理します。
 
-1. Initialize the global model
-2. For each training round:
+1. グローバルモデルを初期化します
+2. 各学習ラウンドで次を行います。
 
-   - Sample available clients
-   - Send the global model to selected clients
-   - Wait for client updates
-   - Aggregate client models into a new global model
+   - 利用可能なクライアントをサンプリングします
+   - 選択されたクライアントにグローバルモデルを送信します
+   - クライアントからの更新を待ちます
+   - クライアントのモデルを集約して新しいグローバルモデルを生成します
 
-With the Recipe API, **there is no need to write custom server code**. The federated averaging workflow is provided by NVFlare.
+Recipe API を使用すると、**カスタムのサーバコードを書く必要はありません**。フェデレーテッドアベレージングのワークフローは NVFlare によって提供されます。
 
-Job Recipe Code
----------------
+Job Recipe のコード
+-----------------------
 
-The ``FedAvgRecipe`` combines the client training script with DP parameters:
+``FedAvgRecipe`` はクライアントの学習スクリプトと DP パラメータを組み合わせます。
 
 .. code-block:: python
 
@@ -222,133 +222,133 @@ The ``FedAvgRecipe`` combines the client training script with DP parameters:
    env = SimEnv(num_clients=n_clients)
    recipe.execute(env=env)
 
-DP-SGD protects each client's local training. In ``client.py``, the client explicitly computes
-local-minus-global parameters and returns ``FLModel(params_type=ParamsType.DIFF)``. That
-``params_type`` is the authoritative description of the client result; the recipe cannot infer
-the result kind from an arbitrary training script at construction time. The recipe validates
-server-side settings it owns, including a custom aggregator's declared ``expected_data_kind``.
+DP-SGD は各クライアントのローカル学習を保護します。``client.py`` では、クライアントが明示的に
+ローカルパラメータからグローバルパラメータを引いた値を計算し、``FLModel(params_type=ParamsType.DIFF)`` を返します。この
+``params_type`` はクライアント結果を規定する正式な記述です。recipe は構築時に任意の学習スクリプトから
+結果の種類を推論することはできません。recipe は、カスタムアグリゲータが宣言する ``expected_data_kind`` を含め、
+自身が管理するサーバ側の設定を検証します。
 
-**Important**: Privacy budget (ε) accumulates across ALL federated rounds. The ``target_epsilon`` parameter specifies the total privacy budget for the entire training process, not per round.
+**重要**: プライバシー予算 (ε) はすべてのフェデレーテッドラウンドにわたって累積されます。``target_epsilon`` パラメータは、ラウンドごとではなく学習プロセス全体に対する合計のプライバシー予算を指定します。
 
-Run Job
--------
+ジョブの実行
+--------------
 
-From terminal simply run the job script to execute the job in a simulation environment.
+ターミナルから job スクリプトを実行するだけで、シミュレーション環境でジョブを実行できます。
 
 .. code-block:: bash
 
    python job.py
 
-To customize parameters:
+パラメータをカスタマイズするには次のようにします。
 
 .. code-block:: bash
 
    python job.py --n_clients 2 --num_rounds 10 --target_epsilon 1.0
 
-Parameters:
+パラメータ:
 
-- ``--n_clients``: Number of federated clients (default: 2)
-- ``--num_rounds``: Number of federated rounds (default: 10)
-- ``--batch_size``: Training batch size (default: 64)
-- ``--target_epsilon``: **Total** privacy budget across all rounds - **lower = stronger privacy** (default: 1.0)
+- ``--n_clients``: フェデレーテッドクライアントの数（デフォルト: 2）
+- ``--num_rounds``: フェデレーテッドラウンドの数（デフォルト: 10）
+- ``--batch_size``: 学習のバッチサイズ（デフォルト: 64）
+- ``--target_epsilon``: 全ラウンドにわたる **合計** プライバシー予算 - **小さいほどプライバシーが強力**（デフォルト: 1.0）
 
 .. note::
-   As part of the job script, use ``add_experiment_tracking(recipe, tracking_type="tensorboard")`` to stream training metrics to the server using NVIDIA FLARE's `SummaryWriter <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.client.tracking.html#nvflare.client.tracking.SummaryWriter>`_ in `client.py <client.py>`_.
+   job スクリプトの一部として ``add_experiment_tracking(recipe, tracking_type="tensorboard")`` を使用すると、`client.py <client.py>`_ 内で NVIDIA FLARE の `SummaryWriter <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.client.tracking.html#nvflare.client.tracking.SummaryWriter>`_ を用いて学習メトリクスをサーバへストリーミングできます。
 
-Visualize Results
+結果の可視化
 -----------------
 
-View training metrics and privacy budget in TensorBoard:
+TensorBoard で学習メトリクスとプライバシー予算を確認します。
 
 .. code-block:: bash
 
    tensorboard --logdir /tmp/nvflare/simulation/hello-dp
 
-Open http\://localhost:6006 to see:
+http\://localhost:6006 を開くと、次の内容を確認できます。
 
-- Training loss over time
-- **Accuracy** and **F1 Score** (fraud detection metrics)
-- Privacy epsilon spent per client
+- 時間経過に伴う学習損失
+- **Accuracy** と **F1 スコア**（不正検知のメトリクス）
+- クライアントごとに消費されたプライバシーイプシロン
 
-Privacy-Utility Trade-off
---------------------------
+プライバシーと有用性のトレードオフ
+--------------------------------------------
 
-Differential Privacy involves a trade-off between privacy and model utility. The privacy budget (ε) accumulates across all federated rounds:
+差分プライバシーには、プライバシーとモデルの有用性の間のトレードオフが伴います。プライバシー予算 (ε) はすべてのフェデレーテッドラウンドにわたって累積されます。
 
-.. list-table:: Privacy Levels
+.. list-table:: プライバシーレベル
    :widths: 15 20 20 45
    :header-rows: 1
 
-   * - Epsilon (ε)
-     - Privacy Level
-     - Model Accuracy
-     - Use Case
+   * - イプシロン (ε)
+     - プライバシーレベル
+     - モデルの精度
+     - ユースケース
    * - ε ≤ 0.5
-     - Very Strong
-     - Lower
-     - Highly sensitive (medical)
+     - 非常に強力
+     - 低い
+     - 極めて機微（医療）
    * - ε = 0.5-1.0
-     - Strong
-     - Moderate
-     - Sensitive (financial)
+     - 強力
+     - 中程度
+     - 機微（金融）
    * - ε = 1.0-3.0
-     - Moderate
-     - Good (default)
-     - General private data
+     - 中程度
+     - 良好（デフォルト）
+     - 一般的なプライベートデータ
    * - ε = 3.0-10
-     - Weak
-     - Better
-     - Lightly sensitive
+     - 弱い
+     - より良い
+     - 軽度に機微
    * - ε > 10
-     - Minimal
-     - Best
-     - Not recommended for privacy
+     - 最小限
+     - 最良
+     - プライバシー目的には非推奨
 
-**Important Notes:**
+**重要な注意点:**
 
-- The epsilon value is **cumulative** across all federated rounds
-- Lower epsilon = stronger privacy but may require more rounds or lower accuracy
-- The noise multiplier is automatically computed to meet your target epsilon
+- イプシロンの値はすべてのフェデレーテッドラウンドにわたって **累積** されます
+- イプシロンが小さいほどプライバシーは強力ですが、より多くのラウンドが必要になったり精度が低下したりする場合があります
+- ノイズ乗数は、目標のイプシロンを満たすように自動的に計算されます
 
-**Recommendations:**
+**推奨事項:**
 
-- Start with ``--target_epsilon 1.0`` (default) for a good privacy-utility balance
-- For highly sensitive data (medical, financial), use ε ≤ 1.0
-- Adjust ``max_grad_norm`` (gradient clipping) if needed
-- Consider pre-training on public data before fine-tuning on private data
-- Monitor cumulative epsilon across rounds
+- プライバシーと有用性のバランスを取るため、まずは ``--target_epsilon 1.0``（デフォルト）から始めてください
+- 極めて機微なデータ（医療、金融）の場合は ε ≤ 1.0 を使用してください
+- 必要に応じて ``max_grad_norm``（勾配クリッピング）を調整してください
+- プライベートデータでファインチューニングする前に、公開データで事前学習することを検討してください
+- ラウンドをまたいだ累積イプシロンを監視してください
 
-Output Summary
+出力の概要
 --------------
 
-Initialization
+初期化
 ~~~~~~~~~~~~~~
 
-* **TensorBoard**: Logs available at /tmp/nvflare/simulation/hello-dp/server/simulate_job/tb_events
-* **Workflow**: FedAvg controller initialized with DP-enabled clients
-* **Privacy**: Privacy engine initialized in round 0, tracks cumulative budget
+* **TensorBoard**: ログは /tmp/nvflare/simulation/hello-dp/server/simulate_job/tb_events で確認できます
+* **ワークフロー**: DP を有効にしたクライアントで FedAvg コントローラが初期化されます
+* **プライバシー**: プライバシーエンジンはラウンド 0 で初期化され、累積予算を追跡します
 
-Each Round
-~~~~~~~~~~
+各ラウンド
+~~~~~~~~~~~~~~
 
-* **Model Distribution**: Global model sent to clients
-* **Local Training**: Each client trains with DP-SGD using Opacus
-* **Privacy Tracking**: Cumulative epsilon (ε) logged for each client
-* **Aggregation**: DP-trained weight differences aggregated on server
+* **モデルの配布**: グローバルモデルがクライアントに送信されます
+* **ローカル学習**: 各クライアントは Opacus を用いた DP-SGD で学習します
+* **プライバシーの追跡**: クライアントごとに累積イプシロン (ε) が記録されます
+* **集約**: DP で学習された重み差分がサーバ上で集約されます
 
-Completion
-~~~~~~~~~~
+完了
+~~~~~~~~
 
-* **Final Model**: Trained model with privacy guarantees
-* **Privacy Budget**: Final cumulative privacy budget reported (should be ≤ target_epsilon)
-* **Expected Performance** (with default ε=1.0, 5 rounds, 2 clients):
+* **最終モデル**: プライバシー保証を備えた学習済みモデル
+* **プライバシー予算**: 最終的な累積プライバシー予算が報告されます（target_epsilon 以下になるはずです）
+* **想定される性能**（デフォルトの ε=1.0、5 ラウンド、2 クライアントの場合）:
 
-  - Global Test Accuracy: **99.95%**
-  - Global Test F1 Score: **81.58%**
-  - These results demonstrate effective fraud detection while maintaining strong privacy protection
+  - グローバルテスト Accuracy: **99.95%**
+  - グローバルテスト F1 スコア: **81.58%**
+  - これらの結果は、強力なプライバシー保護を維持しながら効果的な不正検知が行えることを示しています
 
-References
-----------
+参考文献
+------------
 
 1. Abadi, M., et al. (2016). `Deep Learning with Differential Privacy <https://arxiv.org/abs/1607.00133>`_. ACM CCS 2016.
 2. McMahan, B., et al. (2017). `Communication-Efficient Learning of Deep Networks from Decentralized Data <https://proceedings.mlr.press/v54/mcmahan17a>`_. AISTATS 2017.

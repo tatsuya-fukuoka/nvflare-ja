@@ -1,245 +1,245 @@
 .. _flare_overview:
 
-#####################
-NVIDIA FLARE Overview
-#####################
+##############################
+NVIDIA FLARE の概要
+##############################
 
-**NVIDIA FLARE** (NVIDIA Federated Learning Application Runtime Environment) is a domain-agnostic, open-source,
-extensible Python SDK that allows researchers, data scientists, and data engineers to adapt existing ML/DL and
-compute workflows to a federated paradigm. With the FLARE platform, developers can create secure and privacy-preserving
-solutions for decentralized data computing, facilitating distributed multi-party collaboration.
+**NVIDIA FLARE** (NVIDIA Federated Learning Application Runtime Environment) は、ドメインに依存しないオープンソースの
+拡張可能な Python SDK であり、研究者、データサイエンティスト、データエンジニアが既存の ML/DL や計算のワークフローを
+フェデレーテッドのパラダイムへ適応させることを可能にします。FLARE プラットフォームを使うことで、開発者は分散データ計算のための
+安全でプライバシーを保護するソリューションを構築し、複数の関係者による分散協調を促進できます。
 
-FLARE supports **end-to-end federated learning**—from local simulation to large-scale production deployment—for both
-**cross-silo** (institutional) and **cross-device** (edge/mobile) scenarios.
+FLARE は、ローカルシミュレーションから大規模な本番デプロイメントまで、**cross-silo** (機関間) と
+**cross-device** (エッジ/モバイル) の両方のシナリオにおける **エンドツーエンドのフェデレーテッドラーニング** をサポートします。
 
 
-Key Features
+主な機能
 ============
 
-Open & Developer-Friendly
--------------------------
-
-- Apache 2.0 licensed with rich APIs and tooling
-- Data scientist-friendly APIs requiring minimal code changes
-- Comprehensive documentation and examples
-
-Enterprise-Scale & Production-Ready
------------------------------------
-
-- Mature, secure, and scalable architecture
-- Battle-tested in healthcare, financial services, and autonomous vehicles
-- Deployed in both cloud and on-premises environments
-
-Flexible Deployment
--------------------
-
-- Supports on-premises, cloud, and hybrid environments
-- Multiple deployment options: sub-processes, Docker, Kubernetes, or HPC
-- Cloud deployment CLI for AWS and Azure
-
-Robust Networking & Communication
----------------------------------
-
-- Multi-protocol support (gRPC, TCP, HTTP)
-- TLS/mTLS security with single-port operation
-- LLM streaming and large data transfer capabilities
-- Bring Your Own Connectivity (BYOConn) support
-
-Framework & Model Agnostic
+オープンで開発者に優しい
 --------------------------
 
-- Supports any ML framework: PyTorch, TensorFlow, scikit-learn, XGBoost, and more
-- Works with any model type: LLMs, deep learning, traditional ML
-- System-agnostic integration with various data processing frameworks
+- Apache 2.0 ライセンスで、豊富な API とツールを提供
+- データサイエンティストに優しい API により、コード変更は最小限
+- 充実したドキュメントと例
 
-Strong Enterprise Security
+エンタープライズ規模で本番運用に対応
+--------------------------------------
+
+- 成熟し、安全でスケーラブルなアーキテクチャ
+- ヘルスケア、金融サービス、自動運転車での実績
+- クラウドとオンプレミスの両環境でのデプロイ実績
+
+柔軟なデプロイメント
+----------------------
+
+- オンプレミス、クラウド、ハイブリッド環境をサポート
+- 複数のデプロイオプション: サブプロセス、Docker、Kubernetes、HPC
+- AWS と Azure 向けのクラウドデプロイ CLI
+
+堅牢なネットワーキングと通信
+------------------------------
+
+- マルチプロトコル対応 (gRPC、TCP、HTTP)
+- 単一ポート運用による TLS/mTLS セキュリティ
+- LLM ストリーミングと大容量データ転送の機能
+- Bring Your Own Connectivity (BYOConn) のサポート
+
+フレームワークとモデルに非依存
+--------------------------------
+
+- あらゆる ML フレームワークをサポート: PyTorch、TensorFlow、scikit-learn、XGBoost など
+- あらゆるモデルタイプに対応: LLM、ディープラーニング、従来型の ML
+- 各種データ処理フレームワークとのシステム非依存な統合
+
+強力なエンタープライズセキュリティ
+------------------------------------
+
+- PKI ベースの認証と認可
+- ローカルポリシー適用によるロールベースアクセス制御
+- TLS 証明書によるセキュアなプロビジョニング
+- 包括的な監査ロギング
+
+プライバシーとコンプライアンス
+--------------------------------
+
+- 差分プライバシーと準同型暗号を標準搭載
+- TEE をサポートするコンフィデンシャルコンピューティング
+- マルチパーティ Private Set Intersection (PSI)
+- GDPR および HIPAA コンプライアンスのサポート
+
+拡張可能なアーキテクチャ
 --------------------------
 
-- PKI-based authentication and authorization
-- Role-based access control with local policy enforcement
-- Secure provisioning with TLS certificates
-- Comprehensive audit logging
+- モジュラーでイベントベース、プラグイン可能な設計
+- あらゆるレイヤーでカスタマイズ可能なコンポーネント
+- FLARE Agent によるサードパーティシステムとの容易な統合
 
-Privacy & Compliance
---------------------
+エンドツーエンドのライフサイクル
+----------------------------------
 
-- Built-in differential privacy and homomorphic encryption
-- Confidential computing with TEE support
-- Multi-party Private Set Intersection (PSI)
-- GDPR and HIPAA compliance support
+- 研究から本番までの完全なワークフロー
+- シミュレーション、POC、本番の各モードで一貫した API
+- LLM のファインチューニングと分散推論を標準サポート
 
-Extensible Architecture
------------------------
-
-- Modular, event-based, and pluggable design
-- Customizable components at every layer
-- Easy integration with third-party systems via FLARE Agent
-
-End-to-End Lifecycle
---------------------
-
-- Complete workflow from research to production
-- Consistent APIs across simulation, POC, and production modes
-- Built-in support for LLM fine-tuning and distributed inference
-
-Capabilities
+できること
 ============
 
-Federated Computing
--------------------
+フェデレーテッドコンピューティング
+------------------------------------
 
-At its core, FLARE is a federated computing framework upon which Federated Learning, Analytics, and
-Evaluation are built. It is agnostic to datasets, workloads, and domains.
+FLARE は本質的にフェデレーテッドコンピューティングのフレームワークであり、その上にフェデレーテッドラーニング、
+アナリティクス、評価が構築されています。データセット、ワークロード、ドメインに依存しません。
 
-Unlike centralized data lake solutions that require copying data to a central location, FLARE brings
-computing directly to distributed datasets. Data remains at each site, with only pre-approved results
-shared among collaborators—ensuring data governance and privacy compliance.
+データを中央に集める必要がある集中型のデータレイクソリューションとは異なり、FLARE は計算を分散したデータセットの側に
+直接持ち込みます。データは各サイトに留まり、事前に承認された結果のみが協力者間で共有されるため、
+データガバナンスとプライバシーコンプライアンスが確保されます。
 
-Federated Training
-------------------
+フェデレーテッドトレーニング
+------------------------------
 
-Train models collaboratively across distributed data without centralizing sensitive information.
+機密情報を集中させることなく、分散したデータをまたいで協調的にモデルを学習します。
 
-- **Models**: LLMs, deep learning, XGBoost, scikit-learn, PyTorch, TensorFlow, PyTorch Lightning
-- **Workflows**: Federated averaging (FedAvg), swarm learning, cyclic training
-- **Algorithms**: Horizontal FL, vertical FL, split learning
-- **MLOps**: Real-time metrics streaming with TensorBoard, MLflow, and Weights & Biases
+- **モデル**: LLM、ディープラーニング、XGBoost、scikit-learn、PyTorch、TensorFlow、PyTorch Lightning
+- **ワークフロー**: フェデレーテッドアベレージング (FedAvg)、swarm learning、cyclic training
+- **アルゴリズム**: 水平FL、垂直FL、split learning
+- **MLOps**: TensorBoard、MLflow、Weights & Biases によるリアルタイムのメトリクスストリーミング
 
-Federated Analytics
--------------------
+フェデレーテッドアナリティクス
+--------------------------------
 
-Compute federated statistics across distributed datasets without direct data access.
+データに直接アクセスすることなく、分散したデータセットにまたがるフェデレーテッド統計を計算します。
 
-- **Statistics**: Histograms, counts, means, min/max across distributed data
-- **Data Exploration**: Privacy-preserving cohort discovery and feature analysis
-- **Validation**: Cross-site data quality checks and schema validation
+- **統計**: 分散データにまたがるヒストグラム、件数、平均、最小/最大
+- **データ探索**: プライバシーを保護したコホート発見と特徴量分析
+- **検証**: クロスサイトのデータ品質チェックとスキーマ検証
 
-Federated Evaluation
---------------------
+フェデレーテッド評価
+----------------------
 
-Assess model performance across distributed data without centralizing test datasets.
+テストデータセットを集中させることなく、分散したデータをまたいでモデル性能を評価します。
 
-- **Model Evaluation**: Evaluate a global model across all participating clients
-- **Cross-Site Evaluation**: Benchmark each client's model against data from other participants
+- **モデル評価**: 参加している全クライアントにわたってグローバルモデルを評価
+- **クロスサイト評価**: 各クライアントのモデルを他の参加者のデータに対してベンチマーク
 
 
-Easy to Use
+使いやすさ
 ===========
 
-FLARE provides intuitive APIs and tools that minimize the learning curve for data scientists and engineers.
+FLARE は直感的な API とツールを提供し、データサイエンティストとエンジニアの学習コストを最小限に抑えます。
 
-FLARE Native APIs
------------------
+FLARE ネイティブAPI
+---------------------
 
-Convert existing ML code to federated learning with minimal changes.
+既存の ML コードを最小限の変更でフェデレーテッドラーニングに変換します。
 
-- **Client API**: Add a few lines to existing training scripts—no FL expertise required
-- **Job Recipe API**: Define complete FL jobs programmatically in Python
-- **Collab API**: Simplified collaborative learning for common and advanced FL patterns
+- **Client API**: 既存の学習スクリプトに数行を追加するだけ。FL の専門知識は不要
+- **Job Recipe API**: 完全な FL ジョブを Python でプログラム的に定義
+- **Collab API**: 一般的かつ高度な FL パターンのための簡素化された協調学習
 
-Flower-FLARE Integration
+Flower と FLARE の統合
 ------------------------
 
-Leverage the Flower ecosystem with FLARE's enterprise capabilities.
+Flower のエコシステムを FLARE のエンタープライズ機能とともに活用します。
 
-- **Native Execution**: Run existing Flower workflows in FLARE without code changes
-- **Enhanced Features**: Add FLARE's metrics streaming, security, and scalability to Flower apps
+- **ネイティブ実行**: 既存の Flower ワークフローをコード変更なしで FLARE 上で実行
+- **強化された機能**: FLARE のメトリクスストリーミング、セキュリティ、スケーラビリティを Flower アプリに追加
 
-Simulation & Deployment
------------------------
+シミュレーションとデプロイメント
+----------------------------------
 
-Seamlessly transition from development to production with consistent APIs.
+一貫した API により、開発から本番へシームレスに移行します。
 
-- **Simulator**: Rapid prototyping and debugging on a single machine
-- **POC Mode**: Test federated workflows with realistic multi-process separation
-- **Production**: Deploy to on-premises, cloud, or hybrid environments with full security
-
-
-Industry Use Cases
-==================
-
-NVIDIA FLARE has been deployed across diverse industries worldwide.
-
-**Healthcare & Life Sciences**
-
-- Cancer research consortiums training tumor detection models across major medical centers
-- Drug discovery collaborations among pharmaceutical companies using proprietary data
-- Clinical trial recruitment, population genomics, and rare disease studies
-
-**Financial Services**
-
-- Fraud detection models trained across banking institutions
-- Anti-money laundering (AML) with federated suspicious account detection
-- Credit risk modeling with privacy-preserving data collaboration
-
-**Scientific Computing**
-
-- National laboratory platforms for scientific computing
-- Federated Data mesh for weather prediction and climate research
-- Research collaborations across institutional boundaries
-
-**National Security**
-
-- National laboratory platforms for large language model training
-  under strict data governance and privacy compliance
-- Closed-loop systems linking scientific discovery and national security initiatives
-
-**Autonomous Systems**
-
-- Cross-country autonomous vehicle model training
-- EV battery range prediction and optimization
-- Fleet-wide learning for transportation and logistics
+- **Simulator**: 単一マシン上での迅速なプロトタイピングとデバッグ
+- **POCモード**: 現実的なマルチプロセス分離でフェデレーテッドワークフローをテスト
+- **本番**: 完全なセキュリティを備えてオンプレミス、クラウド、ハイブリッド環境にデプロイ
 
 
-Examples & Tutorials
+業界のユースケース
 ====================
 
-FLARE provides extensive built-in implementations and examples to accelerate development.
+NVIDIA FLARE は世界中の多様な業界で導入されています。
 
-**Federated Training Workflows**
+**ヘルスケアとライフサイエンス**
 
-- Server-controlled: scatter-and-gather, cyclic weight transfer, federated evaluation
-- Client-controlled: swarm learning, cross-site model evaluation
-- Split learning: vertical partitioning for feature-distributed data
+- 主要な医療センターにまたがって腫瘍検出モデルを学習するがん研究コンソーシアム
+- 独自データを用いた製薬企業間の創薬コラボレーション
+- 臨床試験の被験者募集、集団ゲノミクス、希少疾患の研究
 
-**Learning Algorithms**
+**金融サービス**
 
-- Aggregation: FedAvg, FedOpt, FedProx, SCAFFOLD
-- Personalization: Ditto, FedSM, Fed AutoRL
-- Advanced: Hierarchical FL, asynchronous FL (FedBuff)
+- 銀行機関をまたいで学習される不正検知モデル
+- フェデレーテッドな不審口座検出によるマネーロンダリング対策 (AML)
+- プライバシーを保護したデータ協調による信用リスクモデリング
 
-**Privacy-Preserving Techniques**
+**科学計算**
 
-- Homomorphic encryption for secure aggregation
-- Differential privacy for gradient protection
-- Multi-party Private Set Intersection (PSI)
+- 科学計算のための国立研究所のプラットフォーム
+- 気象予測と気候研究のためのフェデレーテッドデータメッシュ
+- 機関の枠を越えた研究コラボレーション
 
-**Domain Applications**
+**国家安全保障**
 
-- LLM fine-tuning and distributed inference
-- Medical imaging and healthcare AI
-- Financial services (fraud detection, AML)
-- Traditional ML (XGBoost, Random Forest, SVM, K-means)
-- Graph neural networks and NLP
+- 厳格なデータガバナンスとプライバシーコンプライアンスのもとで大規模言語モデルを学習する
+  国立研究所のプラットフォーム
+- 科学的発見と国家安全保障の取り組みを結ぶクローズドループシステム
 
-**Getting Started Tutorials**
+**自律システム**
 
-- Step-by-step ML-to-FL conversion guides
-- Simulator, POC mode, and production deployment
-- Job Recipe API and Client API walkthrough
-
-See :ref:`getting_started` and :ref:`tutorials` for comprehensive guides.
+- 国をまたぐ自動運転車のモデル学習
+- EV バッテリーの航続距離予測と最適化
+- 輸送と物流におけるフリート全体での学習
 
 
-References
+例とチュートリアル
+====================
+
+FLARE は開発を加速するために、豊富な組み込み実装とサンプルを提供しています。
+
+**フェデレーテッドトレーニングのワークフロー**
+
+- サーバー制御型: scatter-and-gather、cyclic weight transfer、フェデレーテッド評価
+- クライアント制御型: swarm learning、クロスサイトモデル評価
+- Split learning: 特徴量が分散したデータのための垂直分割
+
+**学習アルゴリズム**
+
+- 集約: FedAvg、FedOpt、FedProx、SCAFFOLD
+- パーソナライゼーション: Ditto、FedSM、Fed AutoRL
+- 高度な手法: 階層型FL、非同期FL (FedBuff)
+
+**プライバシー保護技術**
+
+- セキュアな集約のための準同型暗号
+- 勾配を保護するための差分プライバシー
+- マルチパーティ Private Set Intersection (PSI)
+
+**ドメイン別アプリケーション**
+
+- LLM のファインチューニングと分散推論
+- 医用画像とヘルスケアAI
+- 金融サービス (不正検知、AML)
+- 従来型ML (XGBoost、ランダムフォレスト、SVM、K-means)
+- グラフニューラルネットワークとNLP
+
+**入門チュートリアル**
+
+- ML から FL への変換をステップバイステップで解説するガイド
+- Simulator、POCモード、本番デプロイメント
+- Job Recipe API と Client API のウォークスルー
+
+包括的なガイドについては :ref:`getting_started` と :ref:`tutorials` を参照してください。
+
+
+参考情報
 ==========
 
-For more detailed information, see:
+より詳しい情報については、次を参照してください。
 
-- :ref:`flare_system_architecture` - Core system design and components
-- :ref:`flare_security_overview` - Security architecture and features
-- :ref:`client_api` - Client-side API for FL development
-- :ref:`job_recipe` - Programmatic job definition
-- :ref:`provisioning` - Secure deployment and provisioning
-- :ref:`federated_statistics` - Federated analytics implementation
-- :ref:`hello_pt` - Getting started with PyTorch examples
+- :ref:`flare_system_architecture` - コアとなるシステム設計とコンポーネント
+- :ref:`flare_security_overview` - セキュリティアーキテクチャと機能
+- :ref:`client_api` - FL 開発のためのクライアント側 API
+- :ref:`job_recipe` - プログラムによるジョブ定義
+- :ref:`provisioning` - セキュアなデプロイメントとプロビジョニング
+- :ref:`federated_statistics` - フェデレーテッドアナリティクスの実装
+- :ref:`hello_pt` - PyTorch の例で始める

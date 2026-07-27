@@ -1,71 +1,70 @@
 .. _provisioning:
 
-############################
-Provisioning in NVIDIA FLARE
-############################
-A necessary first step in establishing a federation is provisioning to establish the identities of the server, clients,
-and admin clients.
+##################################################
+NVIDIA FLARE におけるプロビジョニング
+##################################################
+フェデレーションを構築する上で最初に必要となるステップは、サーバー、クライアント、
+管理クライアントのアイデンティティを確立するためのプロビジョニングです。
 
-When operating federated learning, communication channels use shared TLS certificates generated
-during provisioning to establish the identities and secure communication between participants.
+フェデレーテッドラーニングを運用する際、通信チャネルはプロビジョニング時に生成された共有 TLS 証明書を使用して、
+参加者間のアイデンティティを確立し、安全な通信を実現します。
 
-Provisioning in NVIDIA FLARE generates mutual-trusted system-wide configurations for all participants
-so all of them can join the NVIDIA FLARE system across different locations. To achieve this, a provisioning tool powered
-by the Open Provision API and its builder modules is included in NVIDIA FLARE (:mod:`nvflare.lighter`)
-to create a startup kit for each participant with the necessary configuration artifacts.
+NVIDIA FLARE のプロビジョニングは、すべての参加者が異なる場所から NVIDIA FLARE システムに参加できるように、
+相互に信頼されたシステム全体の構成を生成します。これを実現するために、Open Provision API とその Builder モジュールを
+基盤としたプロビジョニングツールが NVIDIA FLARE (:mod:`nvflare.lighter`) に含まれており、
+各参加者に必要な構成成果物を含むスタートアップキットを作成します。
 
-The configurations usually include, but are not limited to, the following information:
+構成には通常、以下の情報が含まれます(ただしこれらに限定されません):
 
-    - network discovery, such as domain names, port numbers or IP addresses
-    - credentials for authentication, such as certificates of participants and root authority
-    - authorization policy, such as roles, rights and rules
-    - tamper-proof mechanism, such as signatures
-    - convenient commands, such as shell scripts with default command line options to easily start an individual participant
+    - ドメイン名、ポート番号、IP アドレスなどのネットワーク探索情報
+    - 参加者やルート認証局の証明書などの認証用クレデンシャル
+    - ロール、権限、ルールなどの認可ポリシー
+    - 署名などの改ざん防止メカニズム
+    - 個々の参加者を簡単に起動するためのデフォルトのコマンドラインオプション付きシェルスクリプトなどの便利なコマンド
 
-In order to enable developers to freely add / modify / remove the above configurations to fit their own requirements,
-we created the Open Provision API. Now developers can take advantage of this API to perform the provisioning tasks
-which meet their own requirements in addition to the default provisioning before for creating packages for the
-server, client, and administrators.
+開発者が自身の要件に合わせて上記の構成を自由に追加・変更・削除できるようにするために、
+私たちは Open Provision API を作成しました。開発者はこの API を活用して、サーバー、クライアント、管理者向けの
+パッケージを作成する従来のデフォルトのプロビジョニングに加えて、自身の要件を満たすプロビジョニングタスクを
+実行できるようになりました。
 
 *******************************
 NVIDIA FLARE Open Provision API
 *******************************
 
-Architecture
-============
+アーキテクチャ
+================
 
 .. image:: ../resources/Open_Provision_API.png
     :height: 350px
 
-The above diagram describes the architecture of NVIDIA FLARE Open Provision API in blue. Those two green blocks are the
-sample python code (provision.py) collecting project configuration information (project.yml) and interacting with
-components of Open Provision API to accomplish a provisioning task. The Provisioner and blocks inside the blue box are
-classes or subclasses of Open Provision API.
+上の図は、NVIDIA FLARE Open Provision API のアーキテクチャを青色で示しています。2 つの緑色のブロックは、
+プロジェクトの構成情報 (project.yml) を収集し、Open Provision API のコンポーネントと連携してプロビジョニングタスクを
+実行するサンプルの Python コード (provision.py) です。Provisioner と青枠の中のブロックは、
+Open Provision API のクラスまたはそのサブクラスです。
 
-Details
+詳細
 =======
 
 project.yml
 -----------
-This is a simple yaml file, describing participants and builders.  Note that Open Provision API itself does not define
-the format of this file.  Any developer can create his/her own file that describes participants and builders in a
-different format.  The developer can even store such information in one URL as long as there is code
-(provision.py in the above sample diagram) that can load the information and convert such information to calls
-to Open Provision API.
+これは参加者と Builder を記述する単純な yaml ファイルです。Open Provision API 自体はこのファイルの
+フォーマットを定義していない点に注意してください。開発者は、参加者と Builder を別のフォーマットで記述した
+独自のファイルを作成できます。情報を読み込んで Open Provision API の呼び出しに変換するコード
+(上のサンプル図の provision.py)がある限り、開発者はそうした情報を 1 つの URL に保存することさえ可能です。
 
 provision.py
 ------------
-This python file is the sample application to interact with the Open Provision API.  It also loads project.yml, parses
-command line options, instantiates classes/subclasses defined from Open Provision API and displays helpful messages to users.
-As mentioned previously, developers are encouraged to modify provision.py or write their own applications that fit their own requirements.
-It is also possible to completely utilize Open Provision API without any standalone applications.  For example, if
-developers have their existing applications and would like to add provisioning capabilities for the NVIDIA FLARE system,
-they can add API calls to Open Provision API to generate required outputs.
+この Python ファイルは、Open Provision API と連携するサンプルアプリケーションです。また、project.yml を読み込み、
+コマンドラインオプションをパースし、Open Provision API で定義されたクラス/サブクラスをインスタンス化し、ユーザーに役立つメッセージを表示します。
+前述のとおり、開発者は provision.py を変更したり、自身の要件に合った独自のアプリケーションを作成することが推奨されます。
+スタンドアロンのアプリケーションを一切使わずに Open Provision API を完全に活用することも可能です。たとえば、
+既存のアプリケーションを持っていて NVIDIA FLARE システムのプロビジョニング機能を追加したい開発者は、
+Open Provision API への API 呼び出しを追加して必要な出力を生成できます。
 
 Provisioner
 -----------
-This is the container class that owns all instances of Project, Workspace, Provision Context, Builders and Participants,
-as shown in the above diagram.  A typical usage of this class is like the following:
+これは、上の図に示すように、Project、Workspace、Provision Context、Builder、Participant のすべてのインスタンスを保持する
+コンテナクラスです。このクラスの典型的な使い方は次のとおりです:
 
 .. code-block:: python
 
@@ -75,8 +74,8 @@ as shown in the above diagram.  A typical usage of this class is like the follow
 
 Project
 -------
-The Project class keeps information about participants.  Therefore, information of any participant can be retrieved from
-the Project instance:
+Project クラスは参加者に関する情報を保持します。したがって、任意の参加者の情報は
+Project インスタンスから取得できます:
 
 .. code-block:: python
 
@@ -104,9 +103,9 @@ the Project instance:
 
 Participant
 -----------
-Each participant is one entity that communicates with other participants inside the NVIDIA FLARE system during runtime.
-Each participant has the following attributes: type, name, org, and props.  The attribute ``props`` is a dictionary and
-stores additional information:
+各参加者は、実行時に NVIDIA FLARE システム内で他の参加者と通信する 1 つのエンティティです。
+各参加者は type、name、org、props という属性を持ちます。属性 ``props`` はディクショナリで、
+追加情報を格納します:
 
 .. code-block:: python
 
@@ -118,40 +117,40 @@ stores additional information:
            self.subject = name
            self.props = kwargs
 
-The name of each participant must be unique.  This is enforced in Project's __init__ method.  The type
-defines the behavior of this participant when it is alive in the NVIDIA FLARE system.  For example, type = 'server' defines
-that the participant acts as a server.  Three types are commonly used for a typical NVIDIA FLARE system: server, client, and
-admin.  However, developers can freely add other types when needed, such as 'gateway,' 'proxy,' or 'database.'  The
-builders can take such information into consideration so that they can generate relevant results based on the type
-attribute.
+各参加者の name は一意でなければなりません。これは Project の __init__ メソッドで強制されます。type は、
+その参加者が NVIDIA FLARE システム内で稼働する際の振る舞いを定義します。たとえば type = 'server' は、
+その参加者がサーバーとして動作することを定義します。典型的な NVIDIA FLARE システムでは、server、client、
+admin の 3 つの type が一般的に使用されます。ただし、開発者は必要に応じて 'gateway'、'proxy'、'database' などの
+他の type を自由に追加できます。Builder はそうした情報を考慮に入れ、type 属性に基づいて
+関連する結果を生成できます。
 
 Builder
 -------
-The builders in the above diagram are provided as a convenient way to generate commonly used zip files for a typical
-NVIDIA FLARE system.  Developers are encouraged to add / modify or even remove those builders to fit their own requirements.
+上の図の Builder は、典型的な NVIDIA FLARE システムで一般的に使用される zip ファイルを生成する便利な手段として
+提供されています。開発者は、自身の要件に合わせてこれらの Builder を追加・変更、あるいは削除することが推奨されます。
 
-Each builder is responsible for taking the information from project, its own __init__ arguments, and provisioner to
-generate data. For example, the HEBuilder is responsible for generating tenseal context files for server and client,
-but not admin. Additionally, the context for the server does not include either public key or secret key while the
-context for clients include both. Its __init__ arguments consist of poly_modules_degree, coeff_mod_bit_sizes,
-scale_bits and scheme. With all of the information, HEBuilder can output context files correctly.
+各 Builder は、project からの情報、自身の __init__ 引数、および provisioner からデータを生成する責任を持ちます。
+たとえば HEBuilder は、サーバーとクライアント向けの tenseal コンテキストファイルを生成する責任を持ちますが、
+admin 向けには生成しません。さらに、サーバー用のコンテキストには公開鍵も秘密鍵も含まれませんが、
+クライアント用のコンテキストには両方が含まれます。その __init__ 引数は poly_modules_degree、coeff_mod_bit_sizes、
+scale_bits、scheme から成ります。これらすべての情報により、HEBuilder は正しくコンテキストファイルを出力できます。
 
-Provisioner calls each builder's initialize method first during provisioning time in a loop.  This allows builders to
-prepare information and to populate their instance variables.  After calling each builder's initialize method, the
-Provisioner calls each builder's build method in another loop.  This method is usually implemented to execute the
-actual build process (generating necessary files).  At the end, the provisioner calls the finalize method of each
-builder in REVERSE ORDER in the third loop so all builders have a chance to wrap up their states.  This comes from
-the convention that the earlier a builder's initialize method is called, the later its finalize method should be called.
+Provisioner はプロビジョニング時に、まずループ内で各 Builder の initialize メソッドを呼び出します。これにより Builder は
+情報を準備し、インスタンス変数を設定できます。各 Builder の initialize メソッドを呼び出した後、
+Provisioner は別のループで各 Builder の build メソッドを呼び出します。このメソッドには通常、
+実際のビルド処理(必要なファイルの生成)が実装されます。最後に、Provisioner は 3 番目のループで各 Builder の
+finalize メソッドを逆順で呼び出し、すべての Builder が状態を後始末する機会を得られるようにします。これは、
+Builder の initialize メソッドが早く呼び出されたものほど、その finalize メソッドは遅く呼び出されるべきという慣例に由来します。
 
-The iterations in each of the above three loops are always determined by the builders list, the second argument
-passed to Provisioner class.  Therefore, different orders in the builders list affect the results.
+上記の 3 つのループにおける反復は、常に Provisioner クラスに渡される 2 番目の引数である builders リストによって
+決まります。したがって、builders リストの順序が異なると結果に影響します。
 
-For example, when one builder's finalize method cleans up and removes the wip folder which is shared by all builders,
-builders being called after it will not be able to access the wip folder.
+たとえば、ある Builder の finalize メソッドが、すべての Builder で共有される wip フォルダをクリーンアップして削除する場合、
+その後に呼び出される Builder は wip フォルダにアクセスできなくなります。
 
-.. note:: The collaboration among all builders is the responsibility of Open Provision API developers.
+.. note:: すべての Builder 間の協調は Open Provision API の開発者の責任です。
 
-Every builder has to subclass the Builder class and override one or more of these three methods:
+すべての Builder は Builder クラスをサブクラス化し、次の 3 つのメソッドのうち 1 つ以上をオーバーライドする必要があります:
 
 .. code-block:: python
 
@@ -167,35 +166,35 @@ Every builder has to subclass the Builder class and override one or more of thes
 
 Workspace
 ---------
-Each builder can access four folders under provision workspace which is managed by Provisioner (see Provisioner's
-first argument).  Those folders are 'wip' (for working-in-progress), 'kit_dir' (a subfolder in 'wip'), 'state' (used
-to persist information between different revisions) and 'resources' (for read-only / static information).
+各 Builder は、Provisioner が管理するプロビジョニングワークスペース(Provisioner の第 1 引数を参照)配下の 4 つの
+フォルダにアクセスできます。それらは 'wip'(作業中の意味)、'kit_dir'('wip' 内のサブフォルダ)、'state'(異なるリビジョン間で
+情報を永続化するために使用)、および 'resources'(読み取り専用/静的な情報用)です。
 
 Provision Context
 -----------------
-Provision context is created by Provisioner and can be read / written by all participants and builders.  A builder
-might add a piece of information to it so that another builder can retrieve it.  As a hypothetical example, developers
-might want to add a second homomorphic encryption builder to generate a different set of HE contexts based on
-certificates from CertBuilder and the context of the first HE builder.  To achieve this, the developers can write
-certificates to provision context at CertBuilder and he context to provision context at HEBuilder.  The information
-is automatically available to the second HE builder.
+Provision Context は Provisioner によって作成され、すべての参加者と Builder が読み書きできます。ある Builder が
+情報を追加し、別の Builder がそれを取得することも可能です。仮の例として、開発者が CertBuilder による証明書と
+最初の HE Builder のコンテキストに基づいて別の HE コンテキストのセットを生成する 2 つ目の準同型暗号 Builder を
+追加したいとします。これを実現するには、開発者は CertBuilder で証明書を Provision Context に書き込み、
+HEBuilder でコンテキストを Provision Context に書き込めばよいのです。その情報は
+2 つ目の HE Builder から自動的に利用できるようになります。
 
-Open Provision API Case Studies
-===============================
-Before we start, please remember that the builders have three methods to be implemented optionally, initialize, build
-and finalize.  The Provisioner calls initialize methods of all builders, then build methods of all builders.  Both in
-the order of builders list.  However, the finalize methods of all builders are called by Provisioner in REVERSE order.
-Please keep this in mind.
+Open Provision API のケーススタディ
+======================================
+始める前に、Builder には任意で実装できる 3 つのメソッド initialize、build、finalize があることを思い出してください。
+Provisioner はすべての Builder の initialize メソッドを呼び出し、その後すべての Builder の build メソッドを呼び出します。どちらも
+builders リストの順序で実行されます。しかし、すべての Builder の finalize メソッドは Provisioner によって逆順で呼び出されます。
+この点を念頭に置いてください。
 
-For example, in Case 2, the builders is a list and append method adds the WebPostDistributionBuilder to the end of the
-builder list.  As mentioned above, the initialize and build methods are called in the order of the builder list while
-the finalize method is called in the reverse order.  We can expect the finalize method of the WebPostDistributionBuilder
-is called before other builders' finalize methods and before other builders' build methods.
+たとえば Case 2 では、builders はリストであり、append メソッドは WebPostDistributionBuilder を
+builder リストの末尾に追加します。前述のとおり、initialize と build のメソッドは builder リストの順序で呼び出される一方、
+finalize メソッドは逆順で呼び出されます。したがって WebPostDistributionBuilder の finalize メソッドは、
+他の Builder の finalize メソッドより前に、そして他の Builder の build メソッドより後に呼び出されると予想できます。
 
-Case 1: generating additional files
------------------------------------
-The developers would like to add a configuration file about a database server to admin participants.  The configuration
-is like this:
+Case 1: 追加のファイルを生成する
+-------------------------------------
+開発者が、データベースサーバーに関する構成ファイルを admin 参加者に追加したいとします。その構成は
+次のようなものです:
 
 .. code-block:: yaml
 
@@ -204,7 +203,7 @@ is like this:
     db_port = port_number
     user_name = admin's name
 
-As this requires adding one file to every admin participant, the developer can write a DBBuilder as follows:
+これはすべての admin 参加者に 1 つのファイルを追加することを必要とするため、開発者は次のような DBBuilder を書けます:
 
 .. code-block:: python
 
@@ -222,7 +221,7 @@ As this requires adding one file to every admin participant, the developer can w
                    f.write(f"db_port = {self.db_port}\n")
                    f.write(f"user_name = {admin.name}\n")
 
-And in project.yml, add an entry in the builders section:
+そして project.yml の builders セクションにエントリを追加します:
 
 .. code-block:: yaml
 
@@ -231,11 +230,11 @@ And in project.yml, add an entry in the builders section:
         db_server: example.com
         db_port: 5432
 
-Case 2: enhancing an existing builder
--------------------------------------
-The developer would like to push zip files of each generated folder, to
-a web server via a POST method.  This can be done easily by implementing a new builder as
-follows (after pip install requests):
+Case 2: 既存の Builder を拡張する
+-------------------------------------------
+開発者が、生成された各フォルダの zip ファイルを POST メソッドで Web サーバーに
+プッシュしたいとします。これは次のように新しい Builder を実装するだけで簡単に実現できます
+(pip install requests の実行後):
 
 .. code-block:: python
 
@@ -252,7 +251,7 @@ follows (after pip install requests):
                files = {"upload_file": open(dest_zip_file, "rb")}
                r = requests.post(self.url, files=files)
 
-And just replace the existing one with the new builder under Builders in the project.yml:
+あとは project.yml の Builders 配下で既存のものを新しい Builder に置き換えるだけです:
 
 .. code-block:: yaml
 
@@ -260,8 +259,8 @@ And just replace the existing one with the new builder under Builders in the pro
       args:
         url: https://example.com/nvflare/provision
 
-For the above two cases, if developers opt to use Open Provision API directly instead of project.yml, they can do this
-(some code omitted for clarity):
+上記 2 つのケースについて、開発者が project.yml ではなく Open Provision API を直接使用することを選ぶ場合は、
+次のようにできます(わかりやすさのため一部のコードは省略しています):
 
 .. code-block:: python
 
@@ -275,10 +274,10 @@ For the above two cases, if developers opt to use Open Provision API directly in
     # Instantiate Provisioner
     provisioner = Provisioner(workspace_full_path, builders)
 
-Case 3: adding both new builders and participants of new types
---------------------------------------------------------------
-The developers would like to add participants of type = 'gateway.'  In order to handle this type of participants, a new
-builder is needed to write gateway specific configuration.  First, specify that in project.yml:
+Case 3: 新しい Builder と新しい type の参加者の両方を追加する
+------------------------------------------------------------------------
+開発者が type = 'gateway' の参加者を追加したいとします。この type の参加者を扱うためには、
+gateway 固有の構成を書き込む新しい Builder が必要です。まず、それを project.yml で指定します:
 
 .. code-block:: yaml
 
@@ -287,7 +286,7 @@ builder is needed to write gateway specific configuration.  First, specify that 
       org: nvidia
       port: 8102
 
-or in API style:
+あるいは API スタイルでは:
 
 .. code-block:: python
 
@@ -295,7 +294,7 @@ or in API style:
     p = Participant(name="gateway1", type="gateway", org="nvidia", port=8102)
     participants.append(p)
 
-A new builder to write 'gateway.conf' can be implemented as follows (for reference):
+'gateway.conf' を書き込む新しい Builder は次のように実装できます(参考):
 
 .. code-block:: python
 
@@ -311,10 +310,10 @@ A new builder to write 'gateway.conf' can be implemented as follows (for referen
 
 .. _distribution_builder:
 
-Case 4: adding a builder for enabling the creation of zip archives for the startup kits
----------------------------------------------------------------------------------------
-DistributionBuilder was included in NVIDIA FLARE before version 2.2.1 but has been removed from the
-default builders. You can make this builder available and add it as a builder in project.yml if you want to zip the startup kits:
+Case 4: スタートアップキットの zip アーカイブ作成を有効にする Builder を追加する
+--------------------------------------------------------------------------------------------
+DistributionBuilder はバージョン 2.2.1 より前の NVIDIA FLARE に含まれていましたが、
+デフォルトの Builder からは削除されました。スタートアップキットを zip 化したい場合は、この Builder を利用可能にして project.yml に Builder として追加できます:
 
 .. code-block:: python
 
@@ -366,7 +365,7 @@ default builders. You can make this builder available and add it as a builder in
                 else:
                     shutil.make_archive(dest_zip_file, "zip", root_dir=os.path.join(wip_dir, dir), base_dir="startup")
 
-If the above code is made available at ``nvflare.lighter.impl.workspace.DistributionBuilder``, add the following to your project.yml at the bottom of the list of builders:
+上記のコードを ``nvflare.lighter.impl.workspace.DistributionBuilder`` として利用可能にした場合は、project.yml の builders リストの末尾に次を追加します:
 
 .. code-block:: yaml
 
@@ -374,35 +373,35 @@ If the above code is made available at ``nvflare.lighter.impl.workspace.Distribu
     args:
       zip_password: true
 
-Takeaways for Custom Builders
------------------------------
-From the cases shown previously, implementing your own Builders only requires the following steps:
+カスタム Builder のポイント
+--------------------------------
+これまでに示したケースからわかるように、独自の Builder を実装するには次のステップだけが必要です:
 
-#. Subclass the Builder class
-#. Implement the required methods (initialize, build, finalize).  Not all of them have to be implemented.
-#. The builder can locate the working-in-progress space from the return value of this method self.get_wip_dir(ctx).  This
-   space is shared by all builders.
-#. Builder writes participant-specific files to the kit directory which is the return value of self.get_kit_dir(participant, ctx)
-#. Builders have to coordinate with one another.  For example, the WebPostDistributionBuilder generates zip files from the
-   contents inside kit directories.  That implies some other builders have to write those contents first.
+#. Builder クラスをサブクラス化します
+#. 必要なメソッド(initialize、build、finalize)を実装します。すべてを実装する必要はありません。
+#. Builder は self.get_wip_dir(ctx) メソッドの戻り値から作業中のスペースを特定できます。この
+   スペースはすべての Builder で共有されます。
+#. Builder は、self.get_kit_dir(participant, ctx) の戻り値である kit ディレクトリに参加者固有のファイルを書き込みます
+#. Builder どうしは互いに協調する必要があります。たとえば WebPostDistributionBuilder は kit ディレクトリ内の
+   内容から zip ファイルを生成します。これは、他の Builder が先にその内容を書き込んでおく必要があることを意味します。
 
 .. _bundled_builders:
 
-Bundled builders
-================
-The following is the list of bundled builders included by default in the NVIDIA FLARE package.  They are provided as a
-convenient tool.  As mentioned previously, developers are encouraged to add / modify / remove builders based on their
-own requirements:
+同梱の Builder
+==================
+以下は、NVIDIA FLARE パッケージにデフォルトで含まれている同梱 Builder の一覧です。これらは便利なツールとして
+提供されています。前述のとおり、開発者は自身の要件に基づいて Builder を追加・変更・削除することが
+推奨されます:
 
     - :class:`WorkspaceBuilder<nvflare.lighter.impl.workspace.WorkspaceBuilder>`
     - :class:`TemplateBuilder<nvflare.lighter.impl.template.TemplateBuilder>`
-    - :class:`DockerBuilder<nvflare.lighter.impl.docker.DockerBuilder>` (legacy Docker Compose builder)
+    - :class:`DockerBuilder<nvflare.lighter.impl.docker.DockerBuilder>` (レガシーの Docker Compose Builder)
     - :class:`StaticFileBuilder<nvflare.lighter.impl.static_file.StaticFileBuilder>`
     - :class:`CertBuilder<nvflare.lighter.impl.cert.CertBuilder>`
     - :class:`SignatureBuilder<nvflare.lighter.impl.signature.SignatureBuilder>`
 
-Current Docker and Kubernetes runtime launch preparation is handled after
-startup kits are created with ``nvflare deploy prepare``.
+現在の Docker および Kubernetes のランタイム起動準備は、スタートアップキットの作成後に
+``nvflare deploy prepare`` で処理されます。
 
 ::
 
@@ -430,15 +429,15 @@ startup kits are created with ``nvflare deploy prepare``.
         └── state
 
 
-The prod_NN folders contain the provisioning results.  The number, NN, increases every time the provision command runs successfully.
+prod_NN フォルダにはプロビジョニングの結果が含まれます。番号 NN は、provision コマンドが成功するたびに増加します。
 
-*****************
-Project yaml file
-*****************
+****************************************
+プロジェクト yaml ファイル
+****************************************
 
-This is the key file that describes the information which provisioning tool will be using to generate startup kits for server, clients and admins.
-If there is no ``project.yml`` in your current working directory, simply run ``provision`` without any option.  It
-will ask you if you would like to have one sample copy of this file created.
+これは、プロビジョニングツールがサーバー、クライアント、管理者用のスタートアップキットを生成するために使用する情報を記述する重要なファイルです。
+現在の作業ディレクトリに ``project.yml`` がない場合は、オプションを付けずに ``provision`` を実行してください。
+このファイルのサンプルを 1 部作成するかどうかを尋ねられます。
 
 .. code-block:: console
 
@@ -447,35 +446,35 @@ will ask you if you would like to have one sample copy of this file created.
   Would you like to generate a sample project.yml file? (y/n) 
 
 
-Edit the project.yml configuration file to meet your project requirements:
+プロジェクトの要件に合わせて project.yml 構成ファイルを編集してください:
 
-    - "api_version" should be set to 3 or 4. Version 4 adds support for multi-study configuration (see :ref:`multi_study_guide`)
-    - "name" is used to identify this project.
-    - "participants" describes the different parties in the FL system, distinguished by type. For all participants, "name"
-      should be unique, and "org" should be defined in AuthPolicyBuilder. The "name" of the server should
-      be in the format of a fully qualified domain name. It is possible to use a unique hostname rather than FQDN, with
-      the IP mapped to the hostname by having it added to ``/etc/hosts``:
+    - "api_version" は 3 または 4 に設定する必要があります。バージョン 4 はマルチスタディ構成のサポートを追加します(:ref:`multi_study_guide` を参照)
+    - "name" はこのプロジェクトを識別するために使用されます。
+    - "participants" は FL システム内のさまざまな関係者を type によって区別して記述します。すべての参加者について、"name"
+      は一意である必要があり、"org" は AuthPolicyBuilder で定義されている必要があります。サーバーの "name" は
+      完全修飾ドメイン名の形式である必要があります。``/etc/hosts`` に追加して IP をホスト名にマッピングすれば、
+      FQDN ではなく一意のホスト名を使用することも可能です:
 
-        - Type "server" describes the FL server, with the "org", "name", "fed_learn_port", "admin_port", and "enable_byoc":
+        - type "server" は FL サーバーを記述し、"org"、"name"、"fed_learn_port"、"admin_port"、"enable_byoc" を持ちます:
 
-            - "fed_learn_port" is the port number for communication between the FL server and FL clients
-            - "admin_port" is the port number for communication between the FL server and FL administration client
-        - Type "client" describes the FL clients, with one "org" and "name" for each client as well as "enable_byoc" settings.
-        - Type "admin" describes the admin clients with the name being a unique email. The role must be one of "project_admin", "org_admin", "lead" and "member".
-    - "builders" contains all of the builders and the args to be passed into each. See the details in docstrings of the :ref:`bundled_builders`.
-    - "studies" (optional, requires ``api_version: 4``): defines named studies with per-study site enrollment and admin role mappings. See :ref:`multi_study_guide` for the full schema and examples.
+            - "fed_learn_port" は FL サーバーと FL クライアント間の通信用のポート番号です
+            - "admin_port" は FL サーバーと FL 管理クライアント間の通信用のポート番号です
+        - type "client" は FL クライアントを記述し、各クライアントごとに 1 つの "org" と "name"、および "enable_byoc" の設定を持ちます。
+        - type "admin" は管理クライアントを記述し、name は一意のメールアドレスになります。role は "project_admin"、"org_admin"、"lead"、"member" のいずれかである必要があります。
+    - "builders" には、すべての Builder と各 Builder に渡す引数が含まれます。詳細は :ref:`bundled_builders` の docstring を参照してください。
+    - "studies" (オプション、``api_version: 4`` が必要): スタディごとのサイト登録と管理者ロールのマッピングを持つ名前付きスタディを定義します。完全なスキーマと例については :ref:`multi_study_guide` を参照してください。
 
 .. _project_yml:
 
-Default project.yml file
-========================
+デフォルトの project.yml ファイル
+====================================
 
-The following is an example of the default project.yml file.
+以下はデフォルトの project.yml ファイルの例です。
 
 .. literalinclude:: ../../nvflare/lighter/dummy_project.yml
   :language: yaml
 
-.. attention:: Please make sure that the FL server ports are accessible by all participating sites.
+.. attention:: FL サーバーのポートが、参加するすべてのサイトからアクセス可能であることを確認してください。
 
 .. _provision_command:
 
@@ -484,15 +483,15 @@ The following is an example of the default project.yml file.
 .. _provisioning_output:
 
 *************************
-Provisioning Output
+プロビジョニングの出力
 *************************
-NVFLARE 2.2 supports the concept of "Site Config" to enable Org Admin to manage their own policies for resource management (resources.json), data privacy (privacy.json), as well as security control (authorization.json). The content of the Site Config is managed by the Org Admin for their own sites.
+NVFLARE 2.2 は「Site Config」の概念をサポートしており、Org Admin がリソース管理 (resources.json)、データプライバシー (privacy.json)、およびセキュリティ制御 (authorization.json) に関する独自のポリシーを管理できるようにします。Site Config の内容は、各サイトの Org Admin によって管理されます。
 
-To help Org Admin easily understand and manage their Site Config, the provisioning system will create the Site Config with default policy files.
+Org Admin が Site Config を容易に理解・管理できるようにするため、プロビジョニングシステムはデフォルトのポリシーファイルを含む Site Config を作成します。
 
-Furthermore, to help Org Admin install and operate their NVFLARE sites more easily, the Provision system will create a Readme.txt file that describes how to manage their sites.
+さらに、Org Admin が NVFLARE のサイトをより簡単にインストール・運用できるように、プロビジョニングシステムはサイトの管理方法を説明する Readme.txt ファイルを作成します。
 
-The output from the Provision process is a package (called Site Installation Kit). The Installation Kit is a folder of this structure::
+プロビジョニング処理の出力はパッケージ(Site Installation Kit と呼ばれます)です。Installation Kit は次の構造のフォルダです::
 
     Installation Kit
         startup 
@@ -504,17 +503,17 @@ The output from the Provision process is a package (called Site Installation Kit
         Readme.txt: describe how to use scripts to install startup and site; how to manage content in the "site" folder
 
 
-Changes to Startup Kit Content
+スタートアップキットの内容に対する変更
 
-1) Move authorization.json from "startup" to "site".
-2) For client sites, remove resource manager and resource consumer configuration from fed_client.json in "startup", and put them into resources.json in "site".
-3) For server sites, remove job scheduler configuration from fed_server.json in "startup", and put them into resources.json in "site".
+1) authorization.json を "startup" から "site" に移動しました。
+2) クライアントサイトについては、"startup" の fed_client.json からリソースマネージャーとリソースコンシューマーの構成を削除し、"site" の resources.json に移しました。
+3) サーバーサイトについては、"startup" の fed_server.json からジョブスケジューラーの構成を削除し、"site" の resources.json に移しました。
 
 
-During the runtime, the workspace used by each participant will be updated, resulting in the following workspace structure:
+実行時には、各参加者が使用するワークスペースが更新され、次のようなワークスペース構造になります:
 
-Workspace Structure
-===================
+ワークスペースの構造
+========================
 
 .. code-block:: shell
 

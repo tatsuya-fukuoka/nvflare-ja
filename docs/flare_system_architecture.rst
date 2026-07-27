@@ -1,7 +1,7 @@
 .. _flare_system_architecture:
 
-NVIDIA FLARE System Architecture
-=================================
+NVIDIA FLARE システムアーキテクチャ
+=======================================
 
 .. |flare_overview| image:: resources/flare_overview.png
    :alt: FLARE Architecture Overview
@@ -14,247 +14,247 @@ NVIDIA FLARE System Architecture
 |flare_overview| |system_arch|
 
 
-This document describes the overall system architecture of NVIDIA FLARE, including its layered structure, major subsystems,
-and how they interact. It covers the runtime components on both server and client sides, the communication framework,
-and the process model.
+本ドキュメントでは、NVIDIA FLARE の全体的なシステムアーキテクチャについて、レイヤ構造、主要なサブシステム、
+およびそれらがどのように相互作用するかを説明します。サーバ側とクライアント側の両方のランタイムコンポーネント、通信フレームワーク、
+そしてプロセスモデルを扱います。
 
-The FLARE architecture (shown above) comprises three main layers:
+FLARE のアーキテクチャ（上図）は、3 つの主要なレイヤで構成されます。
 
-- **Foundation Layer** - Communication infrastructure, messaging protocols, privacy preservation tools, and secure platform management.
-- **Application Layer** - Building blocks for federated learning, including federation workflows and learning algorithms.
-- **Tooling** - FL Simulator and POC CLI for experimentation and simulation, plus deployment and management tools for production workflows.
+- **基盤レイヤ（Foundation Layer）** - 通信インフラストラクチャ、メッセージングプロトコル、プライバシー保護ツール、およびセキュアなプラットフォーム管理。
+- **アプリケーションレイヤ（Application Layer）** - フェデレーションワークフローや学習アルゴリズムを含む、フェデレーテッドラーニングのためのビルディングブロック。
+- **ツール（Tooling）** - 実験やシミュレーションのための FL Simulator と POC CLI、加えて本番ワークフローのためのデプロイおよび管理ツール。
 
 
 
-Core Components and Code Structure
-----------------------------------
+コアコンポーネントとコード構造
+------------------------------------
 
-Primary System Modules
-######################
+主要なシステムモジュール
+##############################
 
-.. list-table:: **FLARE Core Components**
+.. list-table:: **FLARE のコアコンポーネント**
    :header-rows: 1
    :widths: 20 35 45
 
-   * - Component
-     - Primary Classes/Modules
-     - Purpose
+   * - コンポーネント
+     - 主なクラス／モジュール
+     - 目的
    * - FL Runtime
      - ServerEngine, ClientEngine, JobRunner
-     - Core federated learning orchestration and execution
+     - フェデレーテッドラーニングの中核的なオーケストレーションと実行
    * - Job Management
-     - Job definition, storage, scheduling
+     - ジョブの定義、ストレージ、スケジューリング
    * - Communication
      - Cell, CoreCell, StreamCell, Pipe
-     - Secure inter-party communication with streaming support
+     - ストリーミングをサポートする、参加者間のセキュアな通信
    * - Client Integration
      - ClientAPI (flare.receive(), flare.send()), LauncherExecutor
-     - ML framework integration and external process management
+     - ML フレームワークとの統合と外部プロセスの管理
    * - Administration
-     - Dashboard and Programmatic and GUI-based system management
+     - ダッシュボードおよびプログラマティック／GUI ベースのシステム管理
    * - Deployment
      - ProvisionerSpec, WorkspaceBuilder
-     - Certificate generation, configuration, and secure deployment
+     - 証明書の生成、設定、およびセキュアなデプロイ
    * - Workflows
      - ScatterAndGather, FedAvg, ModelController
-     - Built-in federated learning algorithms and patterns
+     - 組み込みのフェデレーテッドラーニングアルゴリズムとパターン
 
 
-Process Responsibilities
+プロセスの責務
 #########################
 
 **Server Parent (SP)**
 
-- Runs FederatedServer 
-- Manages client registration and heartbeat monitoring
-- Houses ServerEngine which orchestrates job scheduling via JobRunner
-- Spawns Server Job (SJ) processes or docker/pod for each active job for different job launcher.
+- FederatedServer を実行します
+- クライアントの登録とハートビート監視を管理します
+- JobRunner を介してジョブスケジューリングを統括する ServerEngine を保持します
+- ジョブランチャーに応じて、アクティブなジョブごとに Server Job (SJ) プロセスまたは docker／pod を起動します。
 
 **Server Job (SJ)**
 
-- Runs ServerRunner 
-- Executes workflow Controllers (e.g., ScatterAndGather)
-- Broadcasts tasks to client jobs and aggregates results
-- Separate process per job for isolation
+- ServerRunner を実行します
+- ワークフローの Controller（例: ScatterAndGather）を実行します
+- クライアントジョブへタスクをブロードキャストし、結果を集約します
+- 分離のため、ジョブごとに別プロセスとなります
 
 **Client Parent (CP)**
 
-- Runs FederatedClient 
-- Manages client registration with server
-- Houses ClientEngine which coordinates job execution
-- Spawns Client Job (CJ) processes or docker/pod for each assigned job for different job launcher.
+- FederatedClient を実行します
+- サーバへのクライアント登録を管理します
+- ジョブ実行を調整する ClientEngine を保持します
+- ジョブランチャーに応じて、割り当てられたジョブごとに Client Job (CJ) プロセスまたは docker／pod を起動します。
 
 **Client Job (CJ)**
 
-- Runs ClientRunner 
-- Pulls tasks from server via Cell network
-- Launches training processes using JobExecutor
-- Routes task data to/from training process via Pipe
+- ClientRunner を実行します
+- Cell ネットワークを介してサーバからタスクを取得します
+- JobExecutor を使用して学習プロセスを起動します
+- Pipe を介して学習プロセスとの間でタスクデータをルーティングします
 
 
 **Training Process**
 
-- User's ML training script
-- Uses Client API: flare.init(), flare.receive(), flare.send()
-- Communicates with CJ via FilePipe (file-based) or CellPipe (network-based)
+- ユーザーの ML 学習スクリプトです
+- Client API を使用します: flare.init(), flare.receive(), flare.send()
+- FilePipe（ファイルベース）または CellPipe（ネットワークベース）を介して CJ と通信します
 
-Communication Mechanisms
+通信メカニズム
 ########################
 
-**Cell Network**: All parent and job processes communicate via F3 Cell objects that provide:
+**Cell ネットワーク**: すべての親プロセスおよびジョブプロセスは、次の機能を提供する F3 Cell オブジェクトを介して通信します。
 
-- FQCN (Fully Qualified Cell Name) addressing (e.g., server.job_123)
-- Channel-based routing (SERVER_MAIN, CLIENT_MAIN, AUX_COMMUNICATION)
-- Secure, encrypted messaging with authentication
-- Streaming support for large data transfers
-  
-**Pipe Abstraction**: CJ-to-training-process communication uses Pipe interface:
+- FQCN（Fully Qualified Cell Name）によるアドレッシング（例: server.job_123）
+- チャネルベースのルーティング（SERVER_MAIN, CLIENT_MAIN, AUX_COMMUNICATION）
+- 認証を伴うセキュアで暗号化されたメッセージング
+- 大容量データ転送のためのストリーミングサポート
 
-- FilePipe: File system-based IPC for same-machine processes
-- CellPipe: Network-based IPC allowing training process on different machine
+**Pipe 抽象化**: CJ と学習プロセス間の通信には Pipe インターフェースを使用します。
 
-Deployment Modes
+- FilePipe: 同一マシン上のプロセス向けの、ファイルシステムベースの IPC
+- CellPipe: 学習プロセスを別マシン上で実行できる、ネットワークベースの IPC
+
+デプロイモード
 ################
 
-NVFLARE provides three deployment modes that share the same core runtime but differ in packaging, security, and deployment complexity. This design ensures consistency from development to production.
+NVFLARE は 3 つのデプロイモードを提供します。これらは同じコアランタイムを共有しますが、パッケージング、セキュリティ、デプロイの複雑さが異なります。この設計により、開発から本番までの一貫性が確保されます。
 
-Deployment Modes Comparison
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+デプロイモードの比較
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. list-table:: Deployment Modes Comparison
+.. list-table:: デプロイモードの比較
    :header-rows: 1
    :widths: 15 30 15 20 20
 
-   * - Mode
-     - Use Case
-     - Security
-     - Processes
-     - Setup Time
+   * - モード
+     - ユースケース
+     - セキュリティ
+     - プロセス
+     - セットアップ時間
    * - Simulator
-     - Rapid prototyping, algorithm testing
-     - None
-     - multiple threads, some cases if may create multiple process
-     - Seconds
+     - 迅速なプロトタイピング、アルゴリズムのテスト
+     - なし
+     - 複数スレッド（場合によっては複数プロセスを生成することもあります）
+     - 数秒
    * - POC
-     - Local multi-client testing, workflow validation
-     - Optional
-     - Multiple processes on one machine
-     - Minutes
+     - ローカルでのマルチクライアントテスト、ワークフローの検証
+     - オプション
+     - 1 台のマシン上の複数プロセス
+     - 数分
    * - Production
-     - Real-world deployment
-     - Full PKI/TLS
-     - Distributed processes across machines
-     - Hours (with provisioning)
+     - 実世界でのデプロイ
+     - 完全な PKI/TLS
+     - 複数マシンにまたがる分散プロセス
+     - 数時間（プロビジョニングを含む）
 
 
-Core FL Runtime
----------------
+コア FL ランタイム
+------------------------
 
-The Core FL Runtime is the execution engine that manages federated learning job processes and orchestration.
-This page documents the runtime components responsible for process lifecycle management, task coordination, and execution modes.
+コア FL ランタイムは、フェデレーテッドラーニングのジョブプロセスとオーケストレーションを管理する実行エンジンです。
+本ページでは、プロセスのライフサイクル管理、タスクの調整、および実行モードを担うランタイムコンポーネントについて説明します。
 
-Scope and Components
-####################
+スコープとコンポーネント
+############################
 
-The Core FL Runtime consists of:
+コア FL ランタイムは次の要素で構成されます。
 
-- **ServerEngine** : Server-side process orchestration and job lifecycle management
-- **ClientEngine** : Client-side process management and communication handling
-- **JobRunner** : Job scheduling, deployment, and monitoring
-- **SimulatorRunner** : Single-machine simulation for development
+- **ServerEngine** : サーバ側のプロセスオーケストレーションとジョブのライフサイクル管理
+- **ClientEngine** : クライアント側のプロセス管理と通信処理
+- **JobRunner** : ジョブのスケジューリング、デプロイ、監視
+- **SimulatorRunner** : 開発向けの単一マシンシミュレーション
 
- 
-Process Types
+
+プロセスタイプ
 #############
 
-.. list-table:: **Process Types**
+.. list-table:: **プロセスタイプ**
    :header-rows: 1
    :widths: 20 35 45
 
-   * - Process Type
-     - Code Symbol
-     - Description
+   * - プロセスタイプ
+     - コードシンボル
+     - 説明
    * - SP
      - ProcessType.SERVER_PARENT
-     - Server parent process running ServerEngine
+     - ServerEngine を実行するサーバ親プロセス
    * - SJ
      - ProcessType.SERVER_JOB
-     - Server job process running ServerRunner
+     - ServerRunner を実行するサーバジョブプロセス
    * - CP
      - ProcessType.CLIENT_PARENT
-     - Client parent process running ClientEngine
+     - ClientEngine を実行するクライアント親プロセス
    * - CJ
      - ProcessType.CLIENT_JOB
-     - Client job process running ClientRunner
-  
+     - ClientRunner を実行するクライアントジョブプロセス
 
-Inter-Process Communication
+
+プロセス間通信
 ###########################
 
-The runtime uses Cell-based communication between parent and job processes.
+ランタイムは、親プロセスとジョブプロセスの間で Cell ベースの通信を使用します。
 
-Cell Communication Channels
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Cell 通信チャネル
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. list-table:: **Cell Communication Channels**
+.. list-table:: **Cell 通信チャネル**
    :header-rows: 1
    :widths: 35 35 30
 
-   * - Channel
-     - Purpose
-     - Used By
+   * - チャネル
+     - 目的
+     - 利用者
    * - CellChannel.SERVER_MAIN
-     - Client-to-server FL messages
-     - CP to SP
+     - クライアントからサーバへの FL メッセージ
+     - CP から SP へ
    * - CellChannel.CLIENT_MAIN
-     - Server-to-client FL messages
-     - SP to CP
+     - サーバからクライアントへの FL メッセージ
+     - SP から CP へ
    * - CellChannel.SERVER_COMMAND
-     - Commands to server job
-     - SP to SJ
+     - サーバジョブへのコマンド
+     - SP から SJ へ
    * - CellChannel.CLIENT_COMMAND
-     - Commands to client job
-     - CP to CJ
+     - クライアントジョブへのコマンド
+     - CP から CJ へ
    * - CellChannel.SERVER_PARENT_LISTENER
-     - Parent commands from SJ
-     - SJ to SP
+     - SJ からの親プロセス向けコマンド
+     - SJ から SP へ
    * - CellChannel.AUX_COMMUNICATION
-     - Auxiliary messages
-     - All processes
+     - 補助メッセージ
+     - すべてのプロセス
 
 
-JobRunner Architecture
-######################
+JobRunner のアーキテクチャ
+###############################
 
-JobRunner Component Structure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+JobRunner のコンポーネント構造
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: resources/job_runner_architecture.png
    :alt: FLARE Job Runner Architecture
    :align: center
    :height: 300px
 
-Communication Framework
------------------------
+通信フレームワーク
+-----------------------------
 
-Purpose and Scope
+目的とスコープ
 #################
 
-The Communication Framework, also known as F3 (FLARE Foundation Framework) and Cellnet, provides the foundational messaging infrastructure for all
-communication in NVIDIA FLARE. It implements a secure, scalable, and feature-rich messaging layer that handles all
-interactions between servers, clients, and administrative components.
+通信フレームワークは F3（FLARE Foundation Framework）または Cellnet とも呼ばれ、NVIDIA FLARE における
+すべての通信の基盤となるメッセージングインフラストラクチャを提供します。サーバ、クライアント、および管理コンポーネント間の
+すべてのやり取りを処理する、セキュアでスケーラブルかつ機能豊富なメッセージングレイヤを実装しています。
 
-This section provides an overview of the communication framework architecture, core components, and basic concepts. 
+このセクションでは、通信フレームワークのアーキテクチャ、コアコンポーネント、および基本的な概念の概要を説明します。
 
-- **CellNet Architecture** - Detailed architecture and design patterns
-- **Cell Communication Patterns** - Message sending patterns and channel routing
-- **Streaming and Data Transfer** - Large data transfer and streaming protocols
-- **Security and Encryption** - Certificate management and message encryption
+- **CellNet アーキテクチャ** - 詳細なアーキテクチャとデザインパターン
+- **Cell 通信パターン** - メッセージ送信パターンとチャネルルーティング
+- **ストリーミングとデータ転送** - 大容量データ転送とストリーミングプロトコル
+- **セキュリティと暗号化** - 証明書管理とメッセージの暗号化
 
-for mode details please refer to cellnet architecture :ref:`cellnet_architecture`
+詳細については cellnet アーキテクチャ :ref:`cellnet_architecture` を参照してください
 
 
-Security Architecture
----------------------
+セキュリティアーキテクチャ
+--------------------------------
 
-Please refer to :ref:`flare_security_overview` for the security architecture.
+セキュリティアーキテクチャについては :ref:`flare_security_overview` を参照してください。

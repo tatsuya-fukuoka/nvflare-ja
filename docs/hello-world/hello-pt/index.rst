@@ -1,24 +1,24 @@
 Hello PyTorch
 =============
 
-This example demonstrates how to use NVIDIA FLARE with PyTorch to train an image classifier using federated averaging (FedAvg). The complete example code can be found in the `hello-pt directory <examples/hello-world/hello-pt/>`. It is recommended to create a virtual environment and run everything within a virtualenv.
+この例では、NVIDIA FLARE を PyTorch と組み合わせて、フェデレーテッドアベレージング（FedAvg）により画像分類器を学習する方法を示します。完全なサンプルコードは `hello-pt directory <examples/hello-world/hello-pt/>` にあります。仮想環境を作成し、その中ですべてを実行することを推奨します。
 
-Install NVFLARE and Dependencies
---------------------------------
+NVFLARE と依存関係のインストール
+------------------------------------------
 
-for the complete installation instructions, see `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_
+インストール手順の詳細については `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_ を参照してください。
 
 .. code-block:: text
 
     pip install nvflare
 
-First get the example code from github:
+まず GitHub からサンプルコードを取得します。
 
 .. code-block:: bash
 
    git clone https://github.com/NVIDIA/NVFlare.git
 
-Then navigate to the hello-pt directory:
+次に hello-pt ディレクトリに移動します。
 
 .. code-block:: bash
 
@@ -26,7 +26,7 @@ Then navigate to the hello-pt directory:
    cd examples/hello-world/hello-pt
 
 
-Install the dependency
+依存関係をインストールします。
 
 .. code-block:: text
 
@@ -34,7 +34,7 @@ Install the dependency
 
 
 
-Code Structure
+コード構造
 --------------
 
 .. code-block:: bash
@@ -46,36 +46,36 @@ Code Structure
    |-- job.py                # job recipe that defines client and server configurations
    |-- requirements.txt      # dependencies
 
-NVIDIA FLARE Installation
--------------------------
+NVIDIA FLARE のインストール
+------------------------------------
 
-Here, we install nvflare with the PT extensions. For the complete installation instructions, see `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_
+ここでは PT 拡張付きの nvflare をインストールします。インストール手順の詳細については `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_ を参照してください。
 
 .. code-block:: bash
 
    pip install nvflare[PT]
 
-Install all dependencies
+すべての依存関係をインストールします。
 
 .. code-block:: bash
 
    pip install -r requirements.txt
 
-Data
-----
+データ
+--------
 
-This example uses the `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ dataset. You can download the CIFAR10 dataset from the Internet via torchvision's datasets module.
+この例では `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ データセットを使用します。CIFAR10 データセットは torchvision の datasets モジュールを介してインターネットからダウンロードできます。
 
-In a real FL experiment, each client would have their own dataset used for their local training. 
-You could split the datasets for different clients, so that each client has its own dataset. 
-Here for simplicity's sake, we will be using the same dataset on each client.
+実際の FL 実験では、各クライアントがローカル学習に使用する独自のデータセットを持ちます。
+各クライアントが自身のデータセットを持つように、データセットをクライアントごとに分割することもできます。
+ここでは簡単のため、各クライアントで同じデータセットを使用します。
 
-Model
------
+モデル
+--------
 
-In PyTorch, neural networks are implemented by defining a class (e.g., ``SimpleNetwork``) that extends ``nn.Module``. 
-The network's architecture is set up in the __init__ method, while the forward method determines how input data flows
-through the layers. For faster computations, the model is transferred to a hardware accelerator (such as NVIDIA GPUs) if available; otherwise, it runs on the CPU. The implementation of this model can be found in :github_nvflare_link:`model.py <examples/hello-world/hello-pt/model.py>`.
+PyTorch では、``nn.Module`` を継承したクラス（例: ``SimpleNetwork``）を定義することでニューラルネットワークを実装します。
+ネットワークのアーキテクチャは __init__ メソッドで構築し、forward メソッドで入力データがレイヤをどのように流れるかを
+決定します。計算を高速化するため、利用可能であればモデルはハードウェアアクセラレータ（NVIDIA GPU など）に転送され、そうでなければ CPU 上で実行されます。このモデルの実装は :github_nvflare_link:`model.py <examples/hello-world/hello-pt/model.py>` にあります。
 
 .. code-block:: python
 
@@ -102,66 +102,66 @@ through the layers. For faster computations, the model is transferred to a hardw
            x = self.fc3(x)
            return x
 
-Client Code
------------
+クライアントコード
+--------------------
 
-On the client side, the training workflow is as follows:
+クライアント側の学習ワークフローは次のとおりです。
 
-1. Receive the model from the FL server.
-2. Perform local training on the received global model and/or evaluate the received global model for model selection.
-3. Send the new model back to the FL server.
+1. FL サーバからモデルを受信します。
+2. 受信したグローバルモデルに対してローカル学習を行う、または／およびモデル選択のために受信したグローバルモデルを評価します。
+3. 新しいモデルを FL サーバに送り返します。
 
-The client code (:github_nvflare_link:`client.py <examples/hello-world/hello-pt/client.py>`) is responsible for implementing this training workflow. Notice the training code is almost identical to a standard training PyTorch code. 
-The only difference is that we added a few lines to receive and send data to the server.
+クライアントコード（:github_nvflare_link:`client.py <examples/hello-world/hello-pt/client.py>`）は、この学習ワークフローの実装を担当します。学習コードが標準的な PyTorch の学習コードとほぼ同じである点に注目してください。
+唯一の違いは、サーバとの間でデータを受信・送信するための数行を追加していることです。
 
-Using NVFlare's client API, we can easily adapt machine learning code that was written for centralized training and apply it in a federated scenario.
-For a general use case, there are three essential methods to achieve this using the Client API :
+NVFlare の Client API を使用すると、集中学習向けに書かれた機械学習コードを容易に適応させ、フェデレーテッドのシナリオに適用できます。
+一般的なユースケースでは、Client API を使ってこれを実現するために必要なメソッドは 3 つです。
 
-- ``init()``: Initializes NVFlare Client API environment.
-- ``receive()``: Receives model from the FL server.
-- ``send()``: Sends the model to the FL server.
+- ``init()``: NVFlare Client API 環境を初期化します。
+- ``receive()``: FL サーバからモデルを受信します。
+- ``send()``: FL サーバにモデルを送信します。
 
-With these simple methods, the developers can use the Client API
-to change their centralized training code to an FL scenario with
-five lines of code changes as shown below.
+これらのシンプルなメソッドにより、開発者は Client API を使用して、
+以下に示すように 5 行のコード変更で集中学習のコードを
+FL のシナリオへ変更できます。
 
 .. code-block:: python
 
    import nvflare.client as flare
-       
+
    flare.init() # 1. Initializes NVFlare Client API environment.
    input_model = flare.receive() # 2. Receives model from the FL server.
    params = input_model.params # 3. Obtain the required information from the received model.
-       
+
    # original local training code
    new_params = local_train(params)
-       
+
    output_model = flare.FLModel(params=new_params) # 4. Put the results in a new `FLModel`
-   flare.send(output_model) # 5. Sends the model to the FL server.  
+   flare.send(output_model) # 5. Sends the model to the FL server.
 
-Server Code
------------
+サーバコード
+--------------
 
-In federated averaging, the server code is responsible for distributing the global model and aggregating model updates from clients. 
+フェデレーテッドアベレージングでは、サーバコードはグローバルモデルの配布と、クライアントからのモデル更新の集約を担当します。
 
-First, we provide a robust implementation of the `FedAvg <https://proceedings.mlr.press/v54/mcmahan17a?ref=https://githubhelp.com>`_ algorithm with NVFlare. 
+まず、NVFlare による `FedAvg <https://proceedings.mlr.press/v54/mcmahan17a?ref=https://githubhelp.com>`_ アルゴリズムの堅牢な実装を提供します。
 
-The server implements these main steps:
+サーバは次の主要なステップを実行します。
 
-1. FL server initializes an initial model.
-2. For each round (global iteration):
-   - FL server samples available clients.
-   - FL server sends the global model to clients and waits for their updates.
-   - FL server aggregates all the ``results`` and produces a new global model.
+1. FL サーバが初期モデルを初期化します。
+2. 各ラウンド（グローバルイテレーション）で次を行います。
+   - FL サーバが利用可能なクライアントをサンプリングします。
+   - FL サーバがグローバルモデルをクライアントに送信し、その更新を待ちます。
+   - FL サーバがすべての ``results`` を集約し、新しいグローバルモデルを生成します。
 
-In this example, we will directly use the default federated averaging algorithm provided by NVFlare utilizing the `FedAvgRecipe <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.app_opt.pt.recipes.fedavg.html#nvflare.app_opt.pt.recipes.fedavg.FedAvgRecipe>`_ for PyTorch. 
+この例では、PyTorch 向けの `FedAvgRecipe <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.app_opt.pt.recipes.fedavg.html#nvflare.app_opt.pt.recipes.fedavg.FedAvgRecipe>`_ を利用し、NVFlare が提供するデフォルトのフェデレーテッドアベレージングアルゴリズムをそのまま使用します。
 
-There is no need to define a customized server code for this example.
+この例では、カスタマイズしたサーバコードを定義する必要はありません。
 
-Job Recipe Code
----------------
+Job Recipe のコード
+-----------------------
 
-The Job Recipe specifies the ``client.py`` and selects the built-in federated averaging algorithm.
+Job Recipe は ``client.py`` を指定し、組み込みのフェデレーテッドアベレージングアルゴリズムを選択します。
 
 .. code-block:: python
 
@@ -180,15 +180,15 @@ The Job Recipe specifies the ``client.py`` and selects the built-in federated av
    env = SimEnv(num_clients=n_clients, num_threads=n_clients)
    recipe.execute(env=env)
 
-Model Input Options
-^^^^^^^^^^^^^^^^^^^
+モデル入力のオプション
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``model`` parameter accepts two formats:
+``model`` パラメータは 2 つの形式を受け付けます。
 
-1. **Class instance** (shown above): ``model=SimpleNetwork()`` - Convenient and Pythonic
-2. **Dict config**: ``model={"class_path": "model.SimpleNetwork", "args": {}}`` - Better for large models
+1. **クラスインスタンス**（上記の例）: ``model=SimpleNetwork()`` - 手軽で Python らしい書き方です
+2. **dict 設定**: ``model={"class_path": "model.SimpleNetwork", "args": {}}`` - 大きなモデルに適しています
 
-To resume training from pre-trained weights, use ``initial_ckpt``:
+事前学習済みの重みから学習を再開するには ``initial_ckpt`` を使用します。
 
 .. code-block:: python
 
@@ -200,53 +200,53 @@ To resume training from pre-trained weights, use ``initial_ckpt``:
 
 .. note::
 
-   Class instances are converted to configuration files before job submission. For large models, use dict config to avoid unnecessary instantiation overhead.
+   クラスインスタンスは、ジョブ送信前に設定ファイルへ変換されます。大きなモデルの場合は、不要なインスタンス化のオーバーヘッドを避けるために dict 設定を使用してください。
 
-Run Job
--------
+ジョブの実行
+--------------
 
-From terminal simply run the job script to execute the job in a simulation environment.
+ターミナルから job スクリプトを実行するだけで、シミュレーション環境でジョブを実行できます。
 
 .. code-block:: bash
 
    python job.py
 
 .. note::
-   As part of the job script, use ``add_experiment_tracking(recipe, tracking_type="tensorboard")`` to stream training metrics to the server using NVIDIA FLARE's `SummaryWriter <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.client.tracking.html#nvflare.client.tracking.SummaryWriter>`_ in :github_nvflare_link:`client.py <examples/hello-world/hello-pt/client.py>`.
+   job スクリプトの一部として ``add_experiment_tracking(recipe, tracking_type="tensorboard")`` を使用すると、:github_nvflare_link:`client.py <examples/hello-world/hello-pt/client.py>` 内で NVIDIA FLARE の `SummaryWriter <https://nvflare.readthedocs.io/en/main/apidocs/nvflare.client.tracking.html#nvflare.client.tracking.SummaryWriter>`_ を用いて学習メトリクスをサーバへストリーミングできます。
 
-Notebook
---------
-
-For an interactive version of this example, see this :github_nvflare_link:`notebook <examples/hello-world/hello-pt/hello-pt.ipynb>`, which can be executed in Google Colab.
-
-Output summary
+ノートブック
 --------------
 
-Initialization
+この例のインタラクティブ版については、Google Colab で実行できる :github_nvflare_link:`notebook <examples/hello-world/hello-pt/hello-pt.ipynb>` を参照してください。
+
+出力の概要
+--------------
+
+初期化
 ~~~~~~~~~~~~~~~
 
-- **TensorBoard**: Logs available at /tmp/nvflare/simulation/hello-pt/server/simulate_job/tb_events.
-- **Workflow**: BaseModelController initialized.
+- **TensorBoard**: ログは /tmp/nvflare/simulation/hello-pt/server/simulate_job/tb_events で確認できます。
+- **ワークフロー**: BaseModelController が初期化されます。
 
-Round 0
-~~~~~~~
+ラウンド 0
+~~~~~~~~~~~~
 
-- **Model Loading**: Initial model loaded from persistor.
-- **Clients Sampled**: site-1, site-2.
-- **Training**:
-  - Tasks sent to both sites.
-  - Two epochs completed with loss reported.
-- **Aggregation**: Models aggregated and persisted on the server.
+- **モデルの読み込み**: persistor から初期モデルが読み込まれます。
+- **サンプリングされたクライアント**: site-1、site-2。
+- **学習**:
+  - 両方のサイトにタスクが送信されます。
+  - 2 エポックが完了し、損失が報告されます。
+- **集約**: モデルが集約され、サーバ上に永続化されます。
 
-Round 1
-~~~~~~~
+ラウンド 1
+~~~~~~~~~~~~
 
-- **Clients Sampled**: site-1, site-2.
-- **Training**:
-  - Similar process as Round 0.
-  - **Aggregation**: Models aggregated and persisted.
+- **サンプリングされたクライアント**: site-1、site-2。
+- **学習**:
+  - ラウンド 0 と同様のプロセスです。
+  - **集約**: モデルが集約され、永続化されます。
 
-Completion
-~~~~~~~~~~
+完了
+~~~~~~~~
 
-- **FedAvg Process**: Successfully finished with the final model persisted.
+- **FedAvg プロセス**: 最終モデルが永続化され、正常に完了します。

@@ -3,94 +3,93 @@
 Hello Cross-Site Validation
 ===========================
 
-Before You Start
+始める前に
 ----------------
 
-Before jumping into this guide, make sure you have an environment
-with `NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ installed.
+このガイドに進む前に、`NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ がインストールされた環境が
+用意されていることを確認してください。
 
-You can follow :ref:`getting_started` on the general concept of setting up a
-Python virtual environment (the recommended environment) and how to install NVIDIA FLARE.
+Python 仮想環境 (推奨環境) のセットアップと NVIDIA FLARE のインストール方法という一般的な概念については、
+:ref:`getting_started` を参照してください。
 
-Prerequisite
+前提条件
 -------------
 
-This example builds on the :doc:`Hello NumPy <hello_numpy>` example
-based on the :class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>` workflow.
+この例は、:class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>` ワークフローに基づく
+:doc:`Hello NumPy <hello_numpy>` の例を土台にしています。
 
-Please make sure you go through it completely as the concepts are heavily tied.
+概念が密接に関連しているため、必ず最後まで目を通しておいてください。
 
-Introduction
+はじめに
 -------------
 
-This tutorial is meant to solely demonstrate how the NVIDIA FLARE system works,
-without introducing any actual deep learning concepts.
+このチュートリアルは、実際のディープラーニングの概念を導入することなく、NVIDIA FLARE システムがどのように動作するかを
+示すことだけを目的としています。
 
-Through this exercise, you will learn how to use NVIDIA FLARE with numpy to perform cross site validation
-after training.
+この演習を通じて、学習後にクロスサイト検証を実行するために NVIDIA FLARE を numpy と組み合わせて使う方法を学びます。
 
-The training process is explained in the :doc:`Hello NumPy <hello_numpy>` example.
+学習プロセスについては :doc:`Hello NumPy <hello_numpy>` の例で説明しています。
 
-Using simplified weights and metrics, you will be able to clearly see how NVIDIA FLARE performs
-validation across different sites with little extra work.
+簡略化された重みとメトリクスを使うことで、NVIDIA FLARE がわずかな追加作業だけで異なるサイト間の検証を
+どのように実行するかを明確に確認できます。
 
-The setup of this exercise consists of one **server** and two **clients**.
-The server-side model starts with weights ``[[1, 2, 3], [4, 5, 6], [7, 8, 9]]``.
+この演習のセットアップは、1つの **サーバー** と2つの **クライアント** で構成されます。
+サーバー側のモデルは重み ``[[1, 2, 3], [4, 5, 6], [7, 8, 9]]`` から始まります。
 
-Cross site validation consists of the following steps:
+クロスサイト検証は次のステップで構成されます。
 
-    - During the initial phase of training with the :class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>`
-      workflow, NPTrainer saves the local model to disk for the clients.
-    - The :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>` workflow
-      gets the client models with the ``submit_model`` task.
-    - The ``validate`` task is broadcast to the all participating clients with the model shareable containing the model data,
-      and results from the ``validate`` task are saved.
+    - :class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>` ワークフローによる
+      学習の初期フェーズで、NPTrainer がクライアントのローカルモデルをディスクに保存します。
+    - :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>` ワークフローが
+      ``submit_model`` タスクでクライアントのモデルを取得します。
+    - モデルデータを含む model shareable とともに ``validate`` タスクが参加している全クライアントにブロードキャストされ、
+      ``validate`` タスクの結果が保存されます。
 
-During this exercise, we will see how NVIDIA FLARE takes care of most of the above steps with little work from the user.
-We will be working with the ``hello-numpy-cross-val`` application in the examples folder.
-Custom FL applications can contain the folders:
+この演習では、NVIDIA FLARE が上記のほとんどのステップをユーザーのわずかな作業だけで処理してくれることを確認します。
+examples フォルダにある ``hello-numpy-cross-val`` アプリケーションを使って作業します。
+カスタム FL アプリケーションは次のフォルダを含むことができます。
 
- #. **custom**: contains the custom components (``np_trainer.py``, ``np_model_persistor.py``, ``np_validator.py``, ``np_model_locator``, ``np_formatter``)
- #. **config**: contains client and server configurations (``config_fed_client.json``, ``config_fed_server.json``)
- #. **resources**: contains the logger config (``log_config.json``)
+ #. **custom**: カスタムコンポーネント (``np_trainer.py``、``np_model_persistor.py``、``np_validator.py``、``np_model_locator``、``np_formatter``) を含みます
+ #. **config**: クライアントとサーバーの設定 (``config_fed_client.json``、``config_fed_server.json``) を含みます
+ #. **resources**: ロガー設定 (``log_config.json``) を含みます
 
-Let's get started. First clone the repo, if you haven't already:
+では始めましょう。まだクローンしていない場合は、まずリポジトリをクローンします。
 
 .. code-block:: shell
 
   $ git clone https://github.com/NVIDIA/NVFlare.git
 
-Remember to activate your NVIDIA FLARE Python virtual environment from the installation guide.
-Ensure numpy is installed.
+インストールガイドで作成した NVIDIA FLARE の Python 仮想環境を有効化することを忘れないでください。
+numpy がインストールされていることを確認します。
 
 .. code-block:: shell
 
   (nvflare-env) $ python3 -m pip install numpy
 
-Now that you have all your dependencies installed, let's implement the Federated Learning system.
+必要な依存関係がすべてインストールできたので、フェデレーテッドラーニングシステムを実装しましょう。
 
 
-Training
+学習
 --------------------------------
 
-In the :doc:`Hello NumPy <hello_numpy>` example, we implemented the ``NPTrainer`` object.
-In this example, we use the same ``NPTrainer`` but extend it to process the ``submit_model`` task to
-work with the :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
-workflow to get the client models.
+:doc:`Hello NumPy <hello_numpy>` の例では、``NPTrainer`` オブジェクトを実装しました。
+この例では同じ ``NPTrainer`` を使いますが、クライアントのモデルを取得する
+:class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
+ワークフローと連携できるよう、``submit_model`` タスクを処理するように拡張します。
 
-The code in ``np_trainer.py`` saves the model to disk after each step of training in the model.
+``np_trainer.py`` のコードは、モデルの学習の各ステップの後にモデルをディスクに保存します。
 
-Note that the server also produces a global model.
-The :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
-workflow submits the server model for evaluation after the client models.
+サーバーもグローバルモデルを生成することに注意してください。
+:class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
+ワークフローは、クライアントのモデルの後にサーバーのモデルを評価のために提出します。
 
-Implementing the Validator
+Validatorの実装
 --------------------------
 
-The validator is an Executor that is called for validating the models received from the server during
-the :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>` workflow.
+Validator は Executor であり、:class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
+ワークフローの間にサーバーから受け取ったモデルを検証するために呼び出されます。
 
-These models could be from other clients or models generated on server.
+これらのモデルは、他のクライアントのものである場合もあれば、サーバー上で生成されたものである場合もあります。
 
 .. literalinclude:: ../../nvflare/app_common/np/np_validator.py
    :language: python
@@ -99,41 +98,41 @@ These models could be from other clients or models generated on server.
    :linenos:
    :caption: np_validator.py
 
-The validator is an Executor and implements the **execute** function which receives a Shareable.
+Validator は Executor であり、Shareable を受け取る **execute** 関数を実装します。
 
-It handles the ``validate`` task by performing a calculation to find the sum divided by the max of the data
-and adding a ``random_epsilon`` before returning the results packaged with a DXO into a Shareable.
+``validate`` タスクを処理する際は、データの合計を最大値で割り、``random_epsilon`` を加える計算を行い、
+その結果を DXO とともに Shareable にパッケージして返します。
 
 .. note::
 
-  Note that in our hello-examples, we are demonstrating Federated Learning using data that does not have to do with deep learning.
-  NVIDIA FLARE can be used with any data packaged inside a :ref:`Shareable <shareable>` object (subclasses ``dict``), and
-  :ref:`DXO <data_exchange_object>` is recommended as a way to manage that data in a standard way.
+  hello 系の例では、ディープラーニングとは関係のないデータを使ってフェデレーテッドラーニングを示していることに注意してください。
+  NVIDIA FLARE は :ref:`Shareable <shareable>` オブジェクト (``dict`` のサブクラス) 内にパッケージされたあらゆるデータで利用でき、
+  そのデータを標準的な方法で管理する手段として :ref:`DXO <data_exchange_object>` の使用が推奨されます。
 
-Cross site validation!
+クロスサイト検証！
 ----------------------
 
-We can run it using NVFlare simulator
+NVFlare シミュレータを使って実行できます。
 
 .. code-block:: bash
 
   python3 job_train_and_cse.py
 
 
-During the first phase, the model will be trained.
+第1フェーズでは、モデルが学習されます。
 
-During the second phase, cross site validation will happen.
+第2フェーズでは、クロスサイト検証が行われます。
 
-The workflow on the client will change to :class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
-as it enters this second phase.
+この第2フェーズに入ると、クライアント上のワークフローは
+:class:`CrossSiteModelEval<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>` に切り替わります。
 
-During cross site model evaluation, every client validates other clients' models and server models (if present).
-This can produce a lot of results. All the results will be kept in the job's workspace when it is completed.
+クロスサイトモデル評価では、すべてのクライアントが他のクライアントのモデルとサーバーのモデル (存在する場合) を検証します。
+これにより多くの結果が生成されることがあります。すべての結果は、ジョブが完了した時点でジョブのワークスペースに保存されます。
 
-Understanding the Output
+出力の理解
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can find the running logs and results inside the simulator's workspace:
+実行ログと結果は、シミュレータのワークスペース内で確認できます。
 
 .. code-block:: bash
 
@@ -141,21 +140,21 @@ You can find the running logs and results inside the simulator's workspace:
   server/  site-1/  site-2/  startup/
 
 
-The cross-site validation results:
+クロスサイト検証の結果:
 
 .. code-block:: bash
 
   cat /tmp/nvflare/jobs/workdir/server/simulate_job/cross_site_val/cross_val_results.json
 
-Congratulations!
+おめでとうございます！
 
-You've successfully run your numpy federated learning system with cross site validation.
+numpy を使ったフェデレーテッドラーニングシステムをクロスサイト検証付きで実行できました。
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/hello-world/hello-numpy-cross-val <examples/hello-world/hello-numpy-cross-val/>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/hello-world/hello-numpy-cross-val <examples/hello-world/hello-numpy-cross-val/>` にあります。
 
-Previous Versions of Hello Cross-Site Validation
-------------------------------------------------
+Hello Cross-Site Validationの過去バージョン
+--------------------------------------------------
 
   - `hello-numpy-cross-val for 2.0 <https://github.com/NVIDIA/NVFlare/tree/2.0/examples/hello-numpy-cross-val>`_
   - `hello-numpy-cross-val for 2.1 <https://github.com/NVIDIA/NVFlare/tree/2.1/examples/hello-numpy-cross-val>`_

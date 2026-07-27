@@ -1,46 +1,47 @@
 .. _live_log_streaming:
 
-####################
-Live Log Streaming
-####################
+##########################################
+ライブログストリーミング
+##########################################
 
-FLARE can stream a job's log files from each client to the server **as the job
-runs**, so an operator can ``tail -f`` the server-side copy in real time.
-Streamed logs are written under the server workspace and, when a job manager
-is available, automatically attached to the job's persisted artifacts.
+FLARE は、ジョブの**実行中に**各クライアントからサーバへジョブのログファイルを
+ストリーミングできるため、運用者はサーバ側のコピーをリアルタイムに ``tail -f``
+できます。ストリーミングされたログはサーバのワークスペース配下に書き込まれ、
+ジョブマネージャが利用可能な場合は、自動的にジョブの永続化されたアーティファクトに
+添付されます。
 
-This page describes how the feature works and how to enable it. To opt out at
-a particular site, see :ref:`allow_log_streaming` in
-:ref:`site_config`.
+このページでは、この機能の仕組みと有効化の方法を説明します。特定のサイトで
+オプトアウトする方法については、:ref:`site_config` 内の
+:ref:`allow_log_streaming` を参照してください。
 
-Overview
-========
+概要
+====
 
-The feature is a simple producer / consumer pair built on top of FLARE's
-existing object-streaming machinery:
+この機能は、FLARE の既存のオブジェクトストリーミング機構の上に構築された、
+シンプルなプロデューサ / コンシューマのペアです。
 
-- The **producer** runs inside the client's job subprocess. It tails one or
-  more log files (``log.txt``, ``error_log.txt``, custom files) and pushes
-  new bytes to the server as they are written.
-- The **consumer** runs in the server process. It opens a destination file
-  per stream and writes incoming chunks directly, so the file is readable
-  with ``tail -f`` while the job is still running. When the stream closes
-  (normal end, abort, or idle timeout) the file is handed to the job
-  manager for storage.
+- **プロデューサ**はクライアントのジョブサブプロセス内で動作します。1つ以上の
+  ログファイル(``log.txt``、``error_log.txt``、カスタムファイル)を tail し、
+  書き込まれた新しいバイト列をサーバへプッシュします。
+- **コンシューマ**はサーバプロセス内で動作します。ストリームごとに出力先ファイルを
+  開き、届いたチャンクを直接書き込むため、ジョブの実行中でもそのファイルを
+  ``tail -f`` で読むことができます。ストリームがクローズされると(正常終了、
+  アボート、またはアイドルタイムアウト)、そのファイルは保存のためジョブマネージャに
+  引き渡されます。
 
-A third widget, the **system streamer**, lives in the client's
-``resources.json`` and saves users from declaring a streamer in every job
-config — it auto-injects a ``JobLogStreamer`` into each job before launch.
+3つ目のウィジェットである**システムストリーマ**はクライアントの
+``resources.json`` に配置され、すべてのジョブ設定でストリーマを宣言する手間を
+省いてくれます。起動前に各ジョブへ ``JobLogStreamer`` を自動的に注入します。
 
-Components
-==========
+コンポーネント
+==============
 
-JobLogStreamer (client, in-job)
--------------------------------
+JobLogStreamer (クライアント、ジョブ内)
+-----------------------------------------
 
-:class:`~nvflare.app_common.logging.job_log_streamer.JobLogStreamer` runs
-inside the job subprocess (``CLIENT_JOB``). It belongs in the **job-level**
-client configuration (``config_fed_client.json``):
+:class:`~nvflare.app_common.logging.job_log_streamer.JobLogStreamer` はジョブの
+サブプロセス(``CLIENT_JOB``)内で動作します。これは**ジョブレベル**のクライアント
+設定(``config_fed_client.json``)に記述します。
 
 .. code-block:: json
 
@@ -54,7 +55,8 @@ client configuration (``config_fed_client.json``):
       ]
     }
 
-To stream more than one log file, declare one component per file:
+複数のログファイルをストリーミングするには、ファイルごとに1つのコンポーネントを
+宣言します。
 
 .. code-block:: json
 
@@ -73,43 +75,43 @@ To stream more than one log file, declare one component per file:
       ]
     }
 
-**Constructor arguments**
+**コンストラクタ引数**
 
-``log_file_name`` (str, default ``"log.txt"``)
-    Base name of the log file to stream. Must be a relative file name; absolute
-    paths and ``..`` traversal are rejected. The actual file is located by
-    inspecting the active Python file handler and reusing its directory, so
-    streaming works the same way under the simulator and in production
-    without any workspace path arithmetic.
+``log_file_name`` (str、デフォルト ``"log.txt"``)
+    ストリーミングするログファイルのベース名です。相対ファイル名でなければならず、
+    絶対パスや ``..`` によるトラバーサルは拒否されます。実際のファイルは、
+    アクティブな Python ファイルハンドラを調べてそのディレクトリを再利用することで
+    特定されます。そのため、ワークスペースのパス計算を行わなくても、シミュレータでも
+    本番環境でも同じようにストリーミングが機能します。
 
-``liveness_interval`` (float, default ``10.0``)
-    Seconds between heartbeat messages when the log file has produced no new
-    bytes. Must be **strictly less than** the receiver's ``idle_timeout`` so
-    heartbeats keep the stream alive during quiet periods.
+``liveness_interval`` (float、デフォルト ``10.0``)
+    ログファイルに新しいバイトが生成されていないときのハートビートメッセージの
+    間隔(秒)です。静穏期間中もハートビートによってストリームを維持できるよう、
+    受信側の ``idle_timeout`` より**厳密に小さく**する必要があります。
 
-``poll_interval`` (float, default ``0.5``)
-    Seconds between polls when the log file has no new data.
+``poll_interval`` (float、デフォルト ``0.5``)
+    ログファイルに新しいデータがないときのポーリング間隔(秒)です。
 
-**Lifecycle**
+**ライフサイクル**
 
-The streamer fires on three events:
+ストリーマは3つのイベントで動作します。
 
-- ``START_RUN`` — opens the stream and starts a daemon tailing thread.
-- ``ABOUT_TO_END_RUN`` — signals the streaming thread to drain and stop, but
-  does not block, so post-event log lines still land in the file and are
-  picked up by the drain.
-- ``END_RUN`` — joins the streaming thread (with a 60-second timeout) so the
-  server has received the EOF before the client's ``client_run`` returns.
+- ``START_RUN`` — ストリームを開き、デーモンの tail スレッドを開始します。
+- ``ABOUT_TO_END_RUN`` — ストリーミングスレッドに対してドレイン(排出)して停止するよう
+  シグナルを送りますが、ブロックはしません。そのため、イベント後のログ行も
+  ファイルに書き込まれ、ドレインによって拾われます。
+- ``END_RUN`` — ストリーミングスレッドを join します(タイムアウトは60秒)。これにより、
+  クライアントの ``client_run`` が返る前にサーバが EOF を受信していることが保証されます。
 
-JobLogReceiver (server)
------------------------
+JobLogReceiver (サーバ)
+-------------------------
 
-:class:`~nvflare.app_common.logging.job_log_receiver.JobLogReceiver` opens a
-destination file per incoming stream and writes chunks as they arrive. It can
-be placed either in **site-level resources** so every job is covered, or
-in **job-level configuration** to scope the receiver to a single job.
+:class:`~nvflare.app_common.logging.job_log_receiver.JobLogReceiver` は、
+受信するストリームごとに出力先ファイルを開き、届いたチャンクを書き込みます。
+すべてのジョブを対象とするために**サイトレベルのリソース**に配置することも、
+受信側を単一のジョブに限定するために**ジョブレベルの設定**に配置することもできます。
 
-Site-level (``resources.json`` on the server, recommended)::
+サイトレベル(サーバ上の ``resources.json``、推奨)::
 
     {
       "components": [
@@ -121,47 +123,47 @@ Site-level (``resources.json`` on the server, recommended)::
       ]
     }
 
-Job-level (``config_fed_server.json``) — declare the same component there if
-you want the receiver to register only for that job. The widget keys off the
-``SYSTEM_START`` event in system mode and ``START_RUN`` in job mode, so the
-underlying stream handler is registered exactly once.
+ジョブレベル(``config_fed_server.json``) — 受信側をそのジョブでのみ登録したい場合は、
+同じコンポーネントをそこに宣言します。このウィジェットは、システムモードでは
+``SYSTEM_START`` イベント、ジョブモードでは ``START_RUN`` イベントを起点とするため、
+下層のストリームハンドラはちょうど1回だけ登録されます。
 
-In the Job API, you can attach a job-level receiver with:
+Job API では、次のようにしてジョブレベルの受信側をアタッチできます。
 
 .. code-block:: python
 
     job.to_server(JobLogReceiver())
 
-**Constructor arguments**
+**コンストラクタ引数**
 
-``dest_dir`` (str, default ``None``)
-    Directory where incoming log files are written. Defaults to the system
-    temporary directory.
+``dest_dir`` (str、デフォルト ``None``)
+    受信したログファイルを書き込むディレクトリです。デフォルトはシステムの一時
+    ディレクトリです。
 
-``idle_timeout`` (float, default ``30.0``)
-    Seconds without any message (data or heartbeat) before the receiver
-    declares the sender dead and closes the stream. Set to ``0`` to disable.
+``idle_timeout`` (float、デフォルト ``30.0``)
+    受信側が送信側を停止したと判断してストリームを閉じるまでの、メッセージ
+    (データまたはハートビート)が一切ない状態の秒数です。``0`` に設定すると無効化されます。
 
-**File layout**
+**ファイルレイアウト**
 
-Each chunk is appended to::
+各チャンクは次のパスに追記されます::
 
     {dest_dir}/{job_id}/{client_name}/{log_file_name}
 
-so an operator can find logs while the job is still running. When the stream
-ends successfully, the file is handed to the job manager (if registered) for
-permanent storage; otherwise — for example under the simulator — it is
-moved into the job's workspace run directory alongside the other artifacts.
+そのため、ジョブの実行中でも運用者はログを見つけることができます。ストリームが
+正常に終了すると、ファイルは(登録されていれば)ジョブマネージャに引き渡されて
+永続的に保存されます。そうでない場合 — たとえばシミュレータ配下では —
+他のアーティファクトと並んでジョブのワークスペースの run ディレクトリへ移動されます。
 
-If the stream ends with a non-OK return code (e.g. idle timeout), the
-**partial** file is retained at the path above and a warning is logged.
+ストリームが OK 以外のリターンコード(例: アイドルタイムアウト)で終了した場合、
+**部分的な**ファイルが上記のパスに保持され、警告がログ出力されます。
 
-SiteLogStreamer (client, site widget)
--------------------------------------
+SiteLogStreamer (クライアント、サイトウィジェット)
+----------------------------------------------------
 
-:class:`~nvflare.app_common.logging.site_log_streamer.SiteLogStreamer` is
-a convenience widget that lives in the **client's** ``resources.json`` and
-removes the need to declare a streamer in every job:
+:class:`~nvflare.app_common.logging.site_log_streamer.SiteLogStreamer` は
+**クライアント**の ``resources.json`` に配置される便利なウィジェットで、
+すべてのジョブでストリーマを宣言する必要をなくします。
 
 .. code-block:: json
 
@@ -175,50 +177,48 @@ removes the need to declare a streamer in every job:
       ]
     }
 
-On ``BEFORE_JOB_LAUNCH`` (after the deployed job config has been written to
-disk but before the subprocess starts), it reads the deployed
-``config_fed_client.json``, and if no ``JobLogStreamer`` is already declared
-it appends one with the configured arguments. The job subprocess then loads
-the modified config and runs ``JobLogStreamer`` as if the user had declared
-it explicitly.
+``BEFORE_JOB_LAUNCH`` 時(デプロイされたジョブ設定がディスクに書き込まれた後、
+サブプロセスが開始される前)に、デプロイされた ``config_fed_client.json`` を読み込み、
+``JobLogStreamer`` がまだ宣言されていなければ、設定された引数とともに1つ追記します。
+その後、ジョブサブプロセスは修正された設定を読み込み、ユーザーが明示的に宣言したかの
+ように ``JobLogStreamer`` を実行します。
 
-When configured for ``error_log.txt``, ``SiteLogStreamer`` also uploads a
-post-mortem snapshot from the client parent process on ``JOB_COMPLETED``.
-This guarantees error-log delivery for failures that happen so early in the
-job that ``JobLogStreamer`` never reaches ``START_RUN``.
+``error_log.txt`` 向けに設定されている場合、``SiteLogStreamer`` は
+``JOB_COMPLETED`` 時にクライアントの親プロセスから事後解析用のスナップショットも
+アップロードします。これにより、``JobLogStreamer`` が ``START_RUN`` に到達しないほど
+ジョブの初期段階で発生した障害についても、エラーログの配送が保証されます。
 
-The constructor takes the same ``log_file_name``, ``liveness_interval`` and
-``poll_interval`` arguments as :class:`JobLogStreamer`; any non-default values
-are forwarded to the injected component.
+コンストラクタは :class:`JobLogStreamer` と同じ ``log_file_name``、
+``liveness_interval``、``poll_interval`` の各引数を受け取ります。デフォルト以外の値は
+注入されるコンポーネントへ転送されます。
 
-Site control
-============
+サイトによる制御
+================
 
-Live log streaming is **enabled by default**. A site can opt out by setting
-``"allow_log_streaming": false`` in its ``resources.json``; see
-:ref:`allow_log_streaming` for the full description of how each component
-behaves when streaming is disabled, including the server-side check that
-logs an error if a chunk arrives from a site that has disabled it.
+ライブログストリーミングは**デフォルトで有効**です。サイトは ``resources.json`` に
+``"allow_log_streaming": false`` を設定することでオプトアウトできます。ストリーミングが
+無効な場合に各コンポーネントがどのように振る舞うか(無効化したサイトからチャンクが
+届いた場合にエラーをログ出力するサーバ側のチェックを含む)の詳細な説明は、
+:ref:`allow_log_streaming` を参照してください。
 
-Wire protocol
-=============
+ワイヤプロトコル
+================
 
-Streaming uses FLARE's :class:`LogStreamer` over the
-``log_streaming`` channel with topic ``live_log``. The stream context carries
-the trusted client name and job ID derived from the peer FL context, so
-filenames on disk reflect the actual sender — they cannot be spoofed by the
-streaming client through the stream payload. Each chunk is a sequence of
-log bytes; heartbeats are sent every ``liveness_interval`` seconds when no
-bytes have been written.
+ストリーミングは、FLARE の :class:`LogStreamer` を ``log_streaming`` チャネル、
+トピック ``live_log`` で使用します。ストリームコンテキストには、ピアの FL コンテキストから
+導出された信頼できるクライアント名とジョブ ID が含まれるため、ディスク上のファイル名は
+実際の送信者を反映します。ストリーミングクライアントがストリームのペイロードを通じて
+これを偽装することはできません。各チャンクはログのバイト列であり、バイトが書き込まれて
+いない場合は ``liveness_interval`` 秒ごとにハートビートが送信されます。
 
-Behavior under abort
-====================
+アボート時の挙動
+================
 
-The streaming thread runs in a fresh FL context whose abort signal is never
-triggered, so an aborted job's still-buffered log bytes can drain to the
-server before the run actually shuts down. Graceful shutdown is signaled
-exclusively via the streamer's stop event, set in ``ABOUT_TO_END_RUN`` and
-joined in ``END_RUN``. If the join exceeds 60 seconds, a warning is logged
-and the run continues to shut down — the server will see the stream close
-with an idle-timeout return code rather than EOF, and will retain whatever
-partial log has been written so far.
+ストリーミングスレッドは、アボートシグナルが決してトリガーされない新しい FL コンテキストで
+動作します。そのため、アボートされたジョブでバッファに残っているログのバイト列は、
+実行が実際にシャットダウンする前にサーバへ排出されます。グレースフルシャットダウンは、
+``ABOUT_TO_END_RUN`` でセットされ ``END_RUN`` で join されるストリーマの停止イベント
+のみによってシグナルされます。join が60秒を超えた場合は警告がログ出力され、実行は
+そのままシャットダウンを続けます。この場合サーバは、EOF ではなくアイドルタイムアウトの
+リターンコードでストリームがクローズされたことを検知し、それまでに書き込まれた部分的な
+ログを保持します。

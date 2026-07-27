@@ -2,55 +2,54 @@
 
 .. _performance_tuning:
 
-#####################
-Performance Tuning
-#####################
+##################################
+パフォーマンスチューニング
+##################################
 
 .. note::
-   This guide is coming soon. It will cover performance optimization techniques
-   for NVIDIA FLARE deployments.
+   このガイドは近日公開予定です。NVIDIA FLARE のデプロイにおけるパフォーマンス最適化の手法を
+   扱う予定です。
 
-Overview
+概要
 ========
 
-This guide covers techniques for optimizing NVIDIA FLARE performance in production
-deployments, including communication optimization, aggregation tuning, and
-resource management.
+このガイドでは、通信の最適化、集約のチューニング、リソース管理を含め、本番デプロイにおける
+NVIDIA FLARE のパフォーマンスを最適化する手法を扱います。
 
-Communication Optimization
+通信の最適化
 ============================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 次の内容を扱う予定です。
 
-- Message compression and quantization (see :doc:`/programming_guide/message_quantization`)
-- Bandwidth estimation and tuning
-- gRPC configuration tuning
-- Network latency mitigation strategies
+- メッセージの圧縮と量子化（:doc:`/programming_guide/message_quantization` を参照）
+- 帯域幅の推定とチューニング
+- gRPC 設定のチューニング
+- ネットワークレイテンシの緩和戦略
 
-Aggregation Performance
+集約のパフォーマンス
 ========================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 次の内容を扱う予定です。
 
-- Server-side aggregation optimization
-- Partial participation strategies
-- Asynchronous aggregation tuning
+- サーバ側の集約の最適化
+- 部分参加（partial participation）の戦略
+- 非同期集約のチューニング
 
-Memory & Resource Management
+メモリとリソースの管理
 ==============================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 次の内容を扱う予定です。
 
-- Memory management for large models (see :doc:`/programming_guide/memory_management`)
-- GPU memory optimization
-- Tensor downloading for memory-constrained environments (see :doc:`/programming_guide/tensor_downloader`)
+- 大規模モデルのメモリ管理（:doc:`/programming_guide/memory_management` を参照）
+- GPU メモリの最適化
+- メモリ制約のある環境向けのテンソルダウンロード（:doc:`/programming_guide/tensor_downloader` を参照）
 
-Scaling Guidelines
-==================
+スケーリングのガイドライン
+==================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 次の内容を扱う予定です。
 
-- Scaling from 2 clients to 100+ clients
-- Hardware sizing recommendations
-- Network bandwidth requirements
-- Hierarchical architecture for large-scale deployments (see :ref:`flare_hierarchical_architecture`)
+- 2 クライアントから 100 クライアント以上へのスケーリング
+- ハードウェアのサイジングに関する推奨事項
+- ネットワーク帯域幅の要件
+- 大規模デプロイ向けの階層型アーキテクチャ（:ref:`flare_hierarchical_architecture` を参照）

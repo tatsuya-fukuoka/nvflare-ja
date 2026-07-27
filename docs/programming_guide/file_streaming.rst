@@ -1,37 +1,37 @@
 .. _file_streaming:
 
-####################
-FLARE File Streaming
-####################
+##########################################
+FLARE ファイルストリーミング
+##########################################
 
-File streaming is a function that allows a file to be shared with one or more receivers. The file owner could be the FL Server or any FL Client. File streaming can be an effective alternative to sending large amounts of data with messages.
+ファイルストリーミングは、1つのファイルを1つ以上の受信者と共有できるようにする機能です。ファイルの所有者は FL サーバでも任意の FL クライアントでもかまいません。ファイルストリーミングは、大量のデータをメッセージで送信する方法に代わる効果的な手段となります。
 
-There are two main issues with sending large messages:
-- A large memory space is required to serialize the message into bytes before sending it. Once memory is saturated, everything becomes very slow.
-- A large byte array sent as a single message could saturate the network, slowing down overall processing.
+大きなメッセージを送信する場合、主に2つの問題があります。
+- 送信前にメッセージをバイト列へシリアライズするために、大きなメモリ空間が必要になります。メモリが飽和すると、すべての処理が非常に遅くなります。
+- 単一のメッセージとして送信される大きなバイト配列はネットワークを飽和させ、全体の処理速度を低下させる可能性があります。
 
-File streaming, on the other hand, sends the big file with many small messages, each containing a chunk of file data. The big file is never loaded into memory completely. Since only small messages are sent over the network, it is less likely to bog down the network.
+一方でファイルストリーミングは、大きなファイルを多数の小さなメッセージに分けて送信し、各メッセージにはファイルデータのチャンクが含まれます。大きなファイルがメモリに完全にロードされることはありません。ネットワーク上には小さなメッセージしか送信されないため、ネットワークが滞る可能性も低くなります。
 
-Push vs. Pull
-=============
+プッシュ vs. プル
+==================
 
-There are two ways to get the file sent from one place to another: push and pull.
+ファイルをある場所から別の場所へ送る方法には、プッシュとプルの2種類があります。
 
-- **Push**: The file owner sends the file to recipient(s). The push process is somewhat strict; if the file is sent to multiple recipients, all must process the same chunks simultaneously. If any one of them fails, the whole sending process fails. Hence, it is most useful when sending the file to a single recipient. The “push” method is implemented with the `FileStreamer` class.
+- **プッシュ**: ファイルの所有者が受信者にファイルを送信します。プッシュの処理はやや厳格で、複数の受信者にファイルを送信する場合、すべての受信者が同じチャンクを同時に処理しなければなりません。いずれか1つでも失敗すると、送信処理全体が失敗します。したがって、単一の受信者にファイルを送信する場合に最も有用です。「プッシュ」方式は `FileStreamer` クラスで実装されています。
 
-- **Pull**: The file owner first prepares the file and gets the Reference ID (RID) for the file. It then sends the RID to all recipients in whatever way it wants (e.g., broadcast). Once the RID is received, each recipient pulls the file chunk by chunk until the whole file is received. Pulling is more relaxed as recipients are not synchronized. Each recipient can pull the file at its own pace, which is useful when sharing a file with multiple recipients. The “pull” method is implemented with the `FileDownloader` class.
+- **プル**: ファイルの所有者はまずファイルを準備し、そのファイルの参照 ID (RID) を取得します。次に、任意の方法(ブロードキャストなど)で RID をすべての受信者に送信します。RID を受信した各受信者は、ファイル全体を受信し終わるまでチャンク単位でファイルをプルします。プルは受信者間で同期が不要なため、より緩やかな方式です。各受信者は自分のペースでファイルをプルできるため、複数の受信者とファイルを共有する場合に有用です。「プル」方式は `FileDownloader` クラスで実装されています。
 
-File Life Cycle Management
-==========================
+ファイルのライフサイクル管理
+=============================
 
-Though file download (pull) is more robust for multiple recipients, there is the issue of file management. Ultimately, it’s the file owner’s responsibility to remove the file (if necessary) when it is no longer needed.
+ファイルのダウンロード(プル)は複数の受信者に対してより堅牢ですが、ファイル管理という課題があります。最終的には、不要になったファイルを(必要に応じて)削除するのはファイル所有者の責任です。
 
-Since each recipient can download the file at its own pace, there is no definitive time that the file is no longer needed at the file owner's side. One effective way is activity timeout: if there has been no downloading activity from any recipient for a specified period, we can assume the file is no longer needed.
+各受信者が自分のペースでファイルをダウンロードできるため、ファイル所有者側でそのファイルが不要になる確定的な時点は存在しません。有効な方法の1つはアクティビティタイムアウトです。指定した期間、どの受信者からもダウンロード活動がなければ、そのファイルはもう必要ないと見なすことができます。
 
 FileStreamer
 ============
 
-Since `FileStreamer` (push) sends a file to recipients unannounced, the recipients must be set up in advance to process the received file. This is done by calling `FileStreamer.register_stream_processing`.
+`FileStreamer` (プッシュ) は予告なしに受信者へファイルを送信するため、受信者は受信したファイルを処理できるよう事前にセットアップしておく必要があります。これは `FileStreamer.register_stream_processing` を呼び出すことで行います。
 
 .. code-block:: python
 
@@ -62,9 +62,9 @@ Since `FileStreamer` (push) sends a file to recipients unannounced, the recipien
           Notes: the stream_done_cb must follow stream_done_cb_signature as defined in apis.streaming.
           """
 
-A channel and topic must be arranged between the sender and all receivers for them to share files. All recipients must call this method once for each channel and topic expected to receive files. Typically, this call is made at the beginning of the application in an event handler that handles the START_RUN event.
+ファイルを共有するには、送信側とすべての受信側の間でチャネルとトピックを取り決めておく必要があります。すべての受信者は、ファイルの受信が想定されるチャネルとトピックごとに、このメソッドを1回呼び出さなければなりません。通常、この呼び出しはアプリケーションの開始時に、START_RUN イベントを処理するイベントハンドラの中で行われます。
 
-The `stream_done_cb` is called to notify the application when the file is completely received. It must follow the following signature:
+`stream_done_cb` は、ファイルが完全に受信された際にアプリケーションへ通知するために呼び出されます。以下のシグネチャに従う必要があります。
 
 .. code-block:: python
 
@@ -79,9 +79,9 @@ The `stream_done_cb` is called to notify the application when the file is comple
       Returns: None
       """
 
-The `stream_ctx` contains information about the stream, including the information from the file owner when it calls `stream_file` to send the file.
+`stream_ctx` にはストリームに関する情報が含まれており、ファイル所有者が `stream_file` を呼び出してファイルを送信する際に指定した情報も含まれます。
 
-The received data is saved in a temporary file. Use the following methods to get file information from the `stream_ctx`:
+受信したデータは一時ファイルに保存されます。`stream_ctx` からファイル情報を取得するには、以下のメソッドを使用します。
 
 .. code-block:: python
 
@@ -122,12 +122,12 @@ The received data is saved in a temporary file. Use the following methods to get
       Returns: size (in bytes) of the received file
       """
 
-Note that it’s your responsibility to decide what to do with the received file and whether/when to delete the file.
+受信したファイルをどう扱うか、またそのファイルを削除するかどうか・いつ削除するかは、あなたの責任であることに注意してください。
 
-Sending File
-============
+ファイルの送信
+==============
 
-The file owner sends a file to one or more recipients by calling the `stream_file` function, as defined in the `FileStreamer` module.
+ファイルの所有者は、`FileStreamer` モジュールで定義されている `stream_file` 関数を呼び出すことで、1つ以上の受信者にファイルを送信します。
 
 .. code-block:: python
 
@@ -164,21 +164,21 @@ The file owner sends a file to one or more recipients by calling the `stream_fil
       Notes: this is a blocking call - only returns after the streaming is done.
       """
 
-The arguments are self-explanatory. Note that you can send any additional information through the `stream_ctx`, which is a dict. The information will be available to the recipient’s registered `stream_done_cb`.
+引数は見ての通りです。追加情報は dict である `stream_ctx` を通じて送信できる点に注意してください。この情報は、受信者側で登録された `stream_done_cb` から利用できます。
 
 FileDownloader
 ==============
 
-The file downloading process requires three steps:
+ファイルのダウンロード処理には3つのステップが必要です。
 
-1. The data owner prepares the file(s) to be shared with recipients and obtains one reference id (RID) for each file.
-2. The data owner sends the RID(s) to all recipients. This is usually done with a broadcast message.
-3. Recipients download the files one by one with received RIDs.
+1. データ所有者は受信者と共有するファイルを準備し、各ファイルに対して1つの参照 ID (RID) を取得します。
+2. データ所有者は RID をすべての受信者に送信します。通常はブロードキャストメッセージで行われます。
+3. 受信者は受け取った RID を使って、ファイルを1つずつダウンロードします。
 
-Download Preparation
+ダウンロードの準備
 --------------------
 
-The data owner first prepares files to be shared with other recipients using the `FileDownloader`’s `new_transaction` and `add_file` methods, defined as follows:
+データ所有者はまず、`FileDownloader` の `new_transaction` メソッドと `add_file` メソッドを使って、他の受信者と共有するファイルを準備します。これらは次のように定義されています。
 
 .. code-block:: python
 
@@ -232,21 +232,21 @@ The data owner first prepares files to be shared with other recipients using the
           cb(ref_id: str, to_receiver: str, status: str, file_name: str, **cb_kwargs)
           """
 
-First, you call the `new_transaction` method to get a transaction id. A transaction can include one or more files to be downloaded. The arguments are self-explanatory. The cell is for messaging with the recipients. You can get it from a `FLContext` object as follows:
+まず `new_transaction` メソッドを呼び出してトランザクション ID を取得します。1つのトランザクションには、ダウンロード対象のファイルを1つ以上含めることができます。引数は見ての通りです。cell は受信者とのメッセージングに使用します。cell は次のようにして `FLContext` オブジェクトから取得できます。
 
 .. code-block:: python
 
    engine = fl_ctx.get_engine()
    cell = engine.get_cell()
 
-The timeout specifies when the transaction should time out: it is the maximum time within which no downloading activity is received from any recipient for any file in the transaction! Due to the distributed nature of recipients, they can download the file(s) at their own pace - some are downloading one file while others are downloading another file. The transaction is considered timed out only if no recipient is downloading any file of the transaction for the specified amount of time. The registered `timeout_cb` will be called with all the file names of the transaction. You can then decide what to do with these files.
+timeout はトランザクションがいつタイムアウトするかを指定します。これは、そのトランザクション内のいずれのファイルについても、どの受信者からもダウンロード活動が受信されない最大時間です。受信者は分散した存在であるため、それぞれ自分のペースでファイルをダウンロードできます。ある受信者が1つのファイルをダウンロードしている一方で、別の受信者は別のファイルをダウンロードしていることもあります。指定した時間の間、どの受信者もそのトランザクションのどのファイルもダウンロードしていない場合にのみ、トランザクションはタイムアウトしたと見なされます。登録された `timeout_cb` が、そのトランザクションのすべてのファイル名とともに呼び出されます。その後、これらのファイルをどう扱うかを決定できます。
 
-You call the `add_file` method for each file to be downloaded. You receive a file reference id (RID) for each file added. You then send the RIDs to all recipients with a message.
+ダウンロードする各ファイルについて `add_file` メソッドを呼び出します。追加したファイルごとにファイル参照 ID (RID) が返されます。その後、RID をメッセージですべての受信者に送信します。
 
-Download File
--------------
+ファイルのダウンロード
+------------------------
 
-Once the recipient receives RID(s), it calls the function to download the referenced file from the data owner.
+受信者は RID を受け取ると、データ所有者から参照されたファイルをダウンロードする関数を呼び出します。
 
 .. code-block:: python
 
@@ -275,11 +275,10 @@ Once the recipient receives RID(s), it calls the function to download the refere
       Returns: tuple of (error message if any, full path of the downloaded file).
       """
 
-The arguments are self-explanatory. If the downloading is successful, you will get the full path to the downloaded file. It’s up to you what to do with the file.
+引数は見ての通りです。ダウンロードが成功すると、ダウンロードされたファイルのフルパスが取得できます。そのファイルをどう扱うかはあなた次第です。
 
 
-Large Object Serialization with File Streaming or Download
-----------------------------------------------------------
+ファイルストリーミングまたはダウンロードによる大きなオブジェクトのシリアライズ
+--------------------------------------------------------------------------------
 
-please refer to :ref:`decomposer_for_large_object`
-
+:ref:`decomposer_for_large_object` を参照してください。

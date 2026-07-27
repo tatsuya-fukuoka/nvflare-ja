@@ -1,64 +1,64 @@
 .. _fl_introduction:
 
-###########################
-What is Federated Learning?
-###########################
+##########################################
+フェデレーテッドラーニングとは何か？
+##########################################
 
-Federated Learning is a distributed learning paradigm where training occurs across multiple clients, each with their own local datasets.
-This enables the creation of common robust models without sharing sensitive local data, helping solve issues of data privacy and security.
+フェデレーテッドラーニングは、それぞれが独自のローカルデータセットを持つ複数のクライアントにまたがって学習が行われる分散学習のパラダイムです。
+これにより、機密性の高いローカルデータを共有することなく共通の頑健なモデルを構築でき、データのプライバシーとセキュリティの問題を解決する助けとなります。
 
-How does Federated Learning Work?
-=================================
-The federated learning (FL) server orchestrates the collaboration of multiple clients by first sending an initial model to the FL clients.
-The clients perform training on their local datasets, then send the model updates back to the FL server for aggregation to form a global model.
-This process forms a single round of federated learning and after a number of rounds, a robust global model can be developed.
+フェデレーテッドラーニングはどのように動作するのか？
+=========================================================
+フェデレーテッドラーニング (FL) サーバーは、まず初期モデルを FL クライアントに送信することで、複数のクライアントの協調をオーケストレーションします。
+クライアントは自身のローカルデータセットで学習を行い、その後モデルの更新を FL サーバーに送り返して集約し、グローバルモデルを形成します。
+このプロセスがフェデレーテッドラーニングの1ラウンドを構成し、複数のラウンドを経ることで頑健なグローバルモデルを開発できます。
 
 .. image:: resources/fl_diagram.png
     :height: 500px
     :align: center
 
-FL Terms and Definitions
-========================
+FL の用語と定義
+================
 
-- FL server: manages job lifecycle, orchestrates workflow, assigns tasks to clients, performs aggregation
-- FL client: executes tasks, performs local computation/learning with local dataset, submits result back to FL server
-- FL algorithms: FedAvg, FedOpt, FedProx etc. implemented as workflows
+- FLサーバー: ジョブのライフサイクルを管理し、ワークフローをオーケストレーションし、クライアントにタスクを割り当て、集約を実行します
+- FLクライアント: タスクを実行し、ローカルデータセットを使ってローカルな計算・学習を行い、結果を FL サーバーに提出します
+- FLアルゴリズム: FedAvg、FedOpt、FedProx など、ワークフローとして実装されます
 
 .. note::
 
-    Here we describe the centralized version of FL, where the FL server has the role of the aggregator node. However in a decentralized version such as 
-    swarm learning, FL clients can serve as the aggregator node instead.
+    ここでは、FL サーバーがアグリゲータノードの役割を担う中央集権型の FL を説明しています。ただし、swarm learning のような
+    分散型のバージョンでは、代わりに FL クライアントがアグリゲータノードとして機能することもあります。
 
-- Types of FL
+- FL の種類
 
-  - horizontal FL: clients hold different data samples over the same features
-  - vertical FL: clients hold different features over an overlapping set of data samples
-  - swarm learning: a decentralized subset of FL where orchestration and aggregation is performed by the clients
+  - 水平FL (horizontal FL): クライアントが同じ特徴量について異なるデータサンプルを保持します
+  - 垂直FL (vertical FL): クライアントが重複するデータサンプルの集合について異なる特徴量を保持します
+  - swarm learning: オーケストレーションと集約をクライアントが行う、FL の分散型サブセットです
 
-Main Benefits
+主なメリット
 =============
 
-Enhanced Data Privacy and Security
-----------------------------------
-Federated learning facilitates data privacy and data locality by ensuring that the data remains at each site.
-Additionally, privacy preserving techniques such as homomorphic encryption and differential privacy filters can also be leveraged to further protect the transferred data.
+データのプライバシーとセキュリティの向上
+------------------------------------------
+フェデレーテッドラーニングは、データが各サイトに留まることを保証することで、データのプライバシーとデータのローカリティを促進します。
+さらに、準同型暗号や差分プライバシーのフィルタといったプライバシー保護技術を活用して、転送されるデータをさらに保護することもできます。
 
-Improved Accuracy and Diversity
--------------------------------
-By training with a variety of data sources across different clients, a robust and generalizable global model can be developed to better represent heterogeneous datasets.
+精度と多様性の向上
+-------------------
+異なるクライアントにまたがる多様なデータソースで学習することで、不均質なデータセットをより良く表現する、頑健で汎化性能の高いグローバルモデルを開発できます。
 
-Scalability and Network Efficiency
-----------------------------------
-With the ability to perform training at the edge, federated learning can be highly scalable across the globe.
-Additionally only needing to transfer the model weights rather than entire datasets enables efficient use of network resources.
+スケーラビリティとネットワーク効率
+------------------------------------
+エッジで学習を実行できる能力により、フェデレーテッドラーニングは世界規模で高いスケーラビリティを持てます。
+さらに、データセット全体ではなくモデルの重みだけを転送すればよいため、ネットワークリソースを効率的に利用できます。
 
-Applications
-============
-An important application of federated learning is in the healthcare sector, where data privacy regulations and patient record confidentiality make training models challenging.
-Federated learning can help break down these healthcare data silos to allow hospitals and medical institutions to collaborate and pool their medical knowledge without the need to share their data.
-Some common use cases involve classification and detection tasks, drug discovery with federated protein LLMs, and federated analytics on medical devices.
+応用分野
+=========
+フェデレーテッドラーニングの重要な応用分野の一つはヘルスケア分野です。この分野では、データプライバシー規制や患者記録の機密性のためにモデルの学習が難しくなっています。
+フェデレーテッドラーニングは、こうしたヘルスケアデータのサイロを打ち破り、病院や医療機関がデータを共有することなく協調して医療知識を持ち寄れるようにします。
+一般的なユースケースには、分類・検出タスク、フェデレーテッドなタンパク質LLMによる創薬、医療機器上でのフェデレーテッドアナリティクスなどがあります。
 
-Furthermore there are many other areas and industries such as financial fraud detection, autonomous vehicles, HPC, mobile applications, etc. 
-where the ability to use distributed data silos while maintaining data privacy is essential for the development of better models.
+さらに、金融の不正検知、自動運転車、HPC、モバイルアプリケーションなど、他にも多くの領域や産業があり、
+そこではデータのプライバシーを維持しながら分散したデータサイロを活用できることが、より良いモデルの開発に不可欠です。
 
-Read on to learn how FLARE is built as a flexible federated computing framework to enable federated learning from research to production.
+FLARE が、研究から本番環境までのフェデレーテッドラーニングを実現する柔軟なフェデレーテッドコンピューティングフレームワークとしてどのように構築されているかを、この先で読み進めてください。

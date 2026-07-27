@@ -6,23 +6,23 @@ Model Learner
 
 .. warning::
 
-   The Model Learner pattern is deprecated. It remains available for backward compatibility, but for new
-   projects use the :ref:`job_recipe` with :ref:`client_api`.
+   Model Learner のパターンは非推奨です。後方互換性のために引き続き利用可能ですが、新規の
+   プロジェクトでは :ref:`job_recipe` と :ref:`client_api` を使用してください。
 
 
-Introduction
-============
+はじめに
+========
 
-The goal of :github_nvflare_link:`ModelLearner <nvflare/app_common/abstract/model_learner.py>` is to make it easier to write learning logic by minimizing FLARE specific concepts exposed to the user.
+:github_nvflare_link:`ModelLearner <nvflare/app_common/abstract/model_learner.py>` の目的は、ユーザーに公開される FLARE 固有の概念を最小限に抑えることで、学習ロジックを書きやすくすることです。
 
-The central concept of the ModelLearner is :github_nvflare_link:`FLModel <nvflare/app_common/abstract/fl_model.py>`, which defines a structure to support federated learning functions with familiar learning terms.
-To create a concrete model learner, the researcher will implement the training and validation methods only with the FLModel object. 
-The researcher no longer needs to deal with FLARE specific concepts such as Shareable and FLContext, though they are still available for advanced cases where FLModel is not enough.
+ModelLearner の中心的な概念は :github_nvflare_link:`FLModel <nvflare/app_common/abstract/fl_model.py>` であり、これは馴染みのある学習用語でフェデレーテッドラーニングの機能をサポートする構造を定義します。
+具体的な Model Learner を作成する際、研究者は FLModel オブジェクトのみを用いて学習および検証のメソッドを実装します。
+研究者は Shareable や FLContext といった FLARE 固有の概念を扱う必要がなくなりますが、FLModel だけでは不十分な高度なケースのためにそれらも引き続き利用できます。
 
-How to Create Model Learner
-===========================
+Model Learner の作成方法
+========================
 
-To create a concrete model learner, you extend from the ModelLearner class. The following shows the example of NPLearner:
+具体的な Model Learner を作成するには、ModelLearner クラスを継承します。以下は NPLearner の例です。
 
 .. code-block:: python
 
@@ -32,7 +32,7 @@ To create a concrete model learner, you extend from the ModelLearner class. The 
 
    class NPLearner(ModelLearner):
 
-The following methods must be implemented:
+以下のメソッドを実装する必要があります。
 
 .. code-block:: python
 
@@ -44,27 +44,27 @@ The following methods must be implemented:
       def abort(self)
       def finalize(self)
 
-Please see the docstrings of these methods for explanation at :class:`ModelLearner<nvflare.app_common.abstract.model_learner.ModelLearner>`.
+これらのメソッドの説明については、:class:`ModelLearner<nvflare.app_common.abstract.model_learner.ModelLearner>` の docstring を参照してください。
 
-Initialization and Finalization
--------------------------------
+初期化と終了処理
+----------------
 
-In the case that the ModelLearner requires initialization, put your initialization logic in the ``initialize`` method, which is called only once before the learning job starts.
-The ModelLearner base class provides many convenience methods that you may use in the initialization logic. 
+ModelLearner に初期化が必要な場合は、``initialize`` メソッドに初期化ロジックを記述してください。このメソッドは学習ジョブの開始前に一度だけ呼び出されます。
+ModelLearner の基底クラスは、初期化ロジックで利用できる多くの便利なメソッドを提供しています。
 
-Similarly your ModelLearner may need to be properly ended.
-If so, put such logic in the ``finalize`` method, which is called only once when the learning job is finished.
+同様に、ModelLearner を適切に終了させる必要がある場合もあります。
+その場合は、そのロジックを ``finalize`` メソッドに記述してください。このメソッドは学習ジョブの終了時に一度だけ呼び出されます。
 
-Learning Logic
---------------
+学習ロジック
+------------
 
-Your learning logic is implemented in the ``train`` and ``validate`` methods. All learning information is contained in the FLModel object.
-Similarly the result of the learning methods is either a FLModel object (when processing succeeds) or a str for the ReturnCode when processing fails for some reason.
+学習ロジックは ``train`` メソッドと ``validate`` メソッドに実装します。すべての学習情報は FLModel オブジェクトに含まれています。
+同様に、学習メソッドの結果は、処理が成功した場合は FLModel オブジェクト、何らかの理由で処理が失敗した場合は ReturnCode を表す str のいずれかになります。
 
-You should check the FLModel object's params_type to ensure that it has the params you expected.
+FLModel オブジェクトの params_type を確認し、期待するパラメータが含まれていることを確かめてください。
 
-If possible, you should periodically check whether the ModelLearner has been asked to abort in your learning logic, especially before or after a long-running step.
-You can do so by calling the ``self.is_aborted()`` method. The typical usage pattern is:
+可能であれば、学習ロジックの中で、特に長時間実行されるステップの前後で、ModelLearner に中断が要求されていないかを定期的に確認すべきです。
+これは ``self.is_aborted()`` メソッドを呼び出すことで確認できます。典型的な使用パターンは次のとおりです。
 
 .. code-block:: python
 
@@ -72,34 +72,34 @@ You can do so by calling the ``self.is_aborted()`` method. The typical usage pat
    		return ReturnCode.TASK_ABORTED
 
 
-If you run into a case that prevents the learning logic from proceeding, you can simply return a proper ReturnCode from the learning method.
+学習ロジックを継続できない状況に陥った場合は、学習メソッドから適切な ReturnCode を返すだけで構いません。
 
-Return Requested Model
+要求されたモデルの返却
 ----------------------
 
-The ModelLearner may be asked to return a specified type of model (e.g. best model).
-For example, when training is done, the server may ask you to return the best local model so then it can send it to other sites to validate. 
-To support this, you need to implement the ``get_model`` method and return the requested model.
+ModelLearner は、指定された種類のモデル (例: ベストモデル) を返すよう要求されることがあります。
+例えば、学習が完了したとき、サーバーはローカルのベストモデルを返すよう要求し、それを他のサイトへ送って検証させることがあります。
+これをサポートするには、``get_model`` メソッドを実装し、要求されたモデルを返す必要があります。
 
-Dynamic Configuration
----------------------
+動的な設定
+----------
 
-If you want to configure the ModelLearner dynamically based on information sent from the server (instead of statically based on locally configured information), you can do so by implementing the ``configure`` method.
-The FLModel object should specify the config parameters for the model learning functions.
+ローカルに設定された情報に基づく静的な設定ではなく、サーバーから送られてくる情報に基づいて ModelLearner を動的に設定したい場合は、``configure`` メソッドを実装することで実現できます。
+FLModel オブジェクトには、モデル学習機能のための設定パラメータを指定します。
 
-Abort Gracefully
+グレースフルな中断
+------------------
+
+ModelLearner は、学習メソッドの実行中に中断を要求されることがあります (例: ユーザーが ``abort_job`` コマンドを発行する、サーバーの Controller がタスクの中断を決定するなど)。
+学習メソッドが使用しているフレームワーク (MONAI、Ignite、TensorFlow など) によっては、学習フレームワークをグレースフルに中断させるために何らかの処理が必要になる場合があります。
+その場合は、そのロジックを ``abort`` メソッドに記述します。
+
+``abort`` メソッドは任意です。学習フレームワークが中断できない、または中断する必要がない場合は、このメソッドを実装する必要はありません。
+
+ロギングメソッド
 ----------------
 
-The ModelLearner may be asked to abort during the execution of its learning methods (e.g. the user may issue the ``abort_job`` command, or the server's controller may decide to abort the task).
-Depending on the framework your learning method uses (e.g. MONAI, Ignite, TensorFlow, etc.), you may need to do something to make the training framework abort gracefully. 
-In this case, you will put such logic in the ``abort`` method.
-
-The ``abort`` method is optional. You don't need to implement this method if your training framework cannot be interrupted or does not need to be interrupted.
-
-Logging Methods
----------------
-
-The ModelLearner base class provides convenience methods for logging: 
+ModelLearner の基底クラスは、ロギングのための便利なメソッドを提供しています。
 
 .. code-block:: python
 
@@ -110,56 +110,56 @@ The ModelLearner base class provides convenience methods for logging:
    def exception(self, msg: str)
    def critical(self, msg: str)
 
-You can use these methods to create log messages at different log levels in your learning logic.
+これらのメソッドを使って、学習ロジックの中でさまざまなログレベルのログメッセージを作成できます。
 
-Get Additional Component
+追加コンポーネントの取得
 ------------------------
 
-FLARE runtime provides many service components (e.g. stats logging, security, config service) that you can use in your learner implementation. 
-You can get these objects via this method provided by the ModelLearner class:
+FLARE ランタイムは、Learner の実装で利用できる多くのサービスコンポーネント (統計ロギング、セキュリティ、設定サービスなど) を提供しています。
+これらのオブジェクトは、ModelLearner クラスが提供する次のメソッドで取得できます。
 
 .. code-block:: python
 
    def get_component(self, component_id: str) -> Any
 
-You usually should call this when initializing the learner.
+通常、これは Learner の初期化時に呼び出すべきです。
 
-Here is an example of using an AnalyticsSender client component in CIFAR10ModelLearner:
+以下は、CIFAR10ModelLearner で AnalyticsSender クライアントコンポーネントを利用する例です。
 
 .. code-block:: python
 
    self.writer = self.get_component(
       self.analytic_sender_id
-   ) 
+   )
 
-Get Contextual Information
---------------------------
+コンテキスト情報の取得
+----------------------
 
-The FLModel object contains essential information about the learning task. There is still other contextual information that you may need:
+FLModel オブジェクトには学習タスクに関する重要な情報が含まれています。さらに、次のようなコンテキスト情報が必要になる場合があります。
 
-- site_name: the name of the training site
-- engine: the FLARE engine that provides additional information and services
-- workspace: the workspace that you can use to retrieve and/or write data to
-- job_id: the ID of the job
-- app_root: the root directory of the current job in the workspace.
-- shareable: the Shareable object that comes with the task
-- fl_ctx: the FLContext object that comes with the task
+- site_name: 学習サイトの名前
+- engine: 追加の情報とサービスを提供する FLARE エンジン
+- workspace: データの読み書きに使用できるワークスペース
+- job_id: ジョブの ID
+- app_root: ワークスペース内の現在のジョブのルートディレクトリ
+- shareable: タスクに付随する Shareable オブジェクト
+- fl_ctx: タスクに付随する FLContext オブジェクト
 
-These are directly available in your learner object (self).
+これらは Learner オブジェクト (self) から直接利用できます。
 
-The ModelLearner base class also provides additional convenience methods for you to get properties in the Shareable and FLContext objects:
+ModelLearner の基底クラスは、Shareable および FLContext オブジェクトのプロパティを取得するための便利なメソッドも提供しています。
 
 .. code-block:: python
 
    def get_shareable_header(self, key: str, default=None)
    def get_context_prop(self, key: str, default=None)
 
-How to Install Model Learner
-============================
+Model Learner のインストール方法
+================================
 
-Once your model learner is developed, you need to install it to the training client. 
-The model learner must work with the ModelLearnerExecutor that FLARE provides. 
-The following example shows how the model learner is configured in the job's ``config_fed_client.json``:
+Model Learner を開発したら、それを学習クライアントにインストールする必要があります。
+Model Learner は FLARE が提供する ModelLearnerExecutor と組み合わせて動作させる必要があります。
+以下の例は、ジョブの ``config_fed_client.json`` で Model Learner をどのように設定するかを示しています。
 
 .. code-block:: json
 
@@ -192,15 +192,15 @@ The following example shows how the model learner is configured in the job's ``c
       ]
    }
 
-Pay attention to the following:
+次の点に注意してください。
 
-- The ``path`` of the ``executor`` must be ``nvflare.app_common.executors.model_learner_executor.ModelLearnerExecutor``.
-- The ``learner_id`` in the ``executor`` and the ``id`` in the ``components`` must match (In this example it is ``np_learner``).
-- The path of the ``np_learner`` component must point to your model learner implementation.
+- ``executor`` の ``path`` は ``nvflare.app_common.executors.model_learner_executor.ModelLearnerExecutor`` でなければなりません。
+- ``executor`` の ``learner_id`` と ``components`` の ``id`` は一致していなければなりません (この例では ``np_learner``)。
+- ``np_learner`` コンポーネントの path は、あなたの Model Learner の実装を指している必要があります。
 
-More Resources
-==============
+その他のリソース
+================
 
-In addition to the :github_nvflare_link:`ModelLearner <nvflare/app_common/abstract/model_learner.py>` and :github_nvflare_link:`FLModel <nvflare/app_common/abstract/fl_model.py>` APIs, also take a look at some examples using the ModelLearner:
+:github_nvflare_link:`ModelLearner <nvflare/app_common/abstract/model_learner.py>` と :github_nvflare_link:`FLModel <nvflare/app_common/abstract/fl_model.py>` の API に加えて、ModelLearner を使用した以下の例も参照してください。
 
 - :github_nvflare_link:`CIFAR10 ModelLearner <examples/advanced/cifar10/pt/learners/cifar10_model_learner.py>`

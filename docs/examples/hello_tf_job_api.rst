@@ -1,59 +1,58 @@
 .. _hello_tf_job_api:
 
-Hello TensorFlow with Job API
-==============================
+Job API を使った Hello TensorFlow
+==================================
 
-Before You Start
+始める前に
 ----------------
-Feel free to refer to the :doc:`detailed documentation <../developer_guide>` at any point
-to learn more about the specifics of `NVIDIA FLARE <https://pypi.org/project/nvflare/>`_.
+`NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ の詳細については、いつでも
+:doc:`詳細ドキュメント <../developer_guide>` を参照してください。
 
-We recommend you first finish the :doc:`Hello NumPy <hello_numpy>` exercise since it introduces the
-federated learning concepts of `NVIDIA FLARE <https://pypi.org/project/nvflare/>`_.
+`NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ のフェデレーテッドラーニングの概念を紹介しているため、
+まず :doc:`Hello NumPy <hello_numpy>` の演習を終えておくことを推奨します。
 
-Make sure you have an environment with NVIDIA FLARE installed.
+NVIDIA FLARE がインストールされた環境を用意してください。
 
-You can follow :ref:`getting_started` on the general concept of setting up a
-Python virtual environment (the recommended environment) and how to install NVIDIA FLARE.
+Python 仮想環境 (推奨環境) のセットアップと NVIDIA FLARE のインストール方法という一般的な概念については、
+:ref:`getting_started` を参照してください。
 
-Here we assume you have already installed NVIDIA FLARE inside a python virtual environment
-and have already cloned the repo.
+ここでは、Python 仮想環境の中に NVIDIA FLARE をすでにインストールし、
+リポジトリもすでにクローンしているものとします。
 
-Introduction
+はじめに
 -------------
-Through this exercise, you will integrate NVIDIA FLARE with the popular deep learning framework
-`TensorFlow <https://www.tensorflow.org/>`_ and learn how to use NVIDIA FLARE to train a convolutional
-network with the MNIST dataset using the :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` workflow.
+この演習を通じて、NVIDIA FLARE を人気のディープラーニングフレームワークである
+`TensorFlow <https://www.tensorflow.org/>`_ と統合し、:class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` ワークフローを使って
+MNIST データセットで畳み込みネットワークを学習する方法を学びます。
 
-You will also be introduced to some new components and concepts, including filters, aggregators, and event handlers.
+また、フィルタ、アグリゲータ、イベントハンドラなど、いくつかの新しいコンポーネントと概念も紹介します。
 
-The setup of this exercise consists of one **server** and two **clients**.
+この演習のセットアップは、1つの **サーバー** と2つの **クライアント** で構成されます。
 
-The following steps compose one cycle of weight updates, called a **round**:
+次のステップが、**ラウンド** と呼ばれる重み更新の1サイクルを構成します。
 
- #. Clients are responsible for generating individual weight-updates for the model using their own MNIST dataset. 
- #. These updates are then sent to the server which will aggregate them to produce a model with new weights. 
- #. Finally, the server sends this updated version of the model back to each client.
+ #. クライアントは、自身の MNIST データセットを使ってモデルの重み更新を個別に生成する役割を担います。
+ #. これらの更新はサーバーに送られ、サーバーはそれらを集約して新しい重みを持つモデルを生成します。
+ #. 最後に、サーバーはこの更新されたモデルを各クライアントに送り返します。
 
-For this exercise, we will be working with the ``hello-tf`` application in the examples folder. 
+この演習では、examples フォルダにある ``hello-tf`` アプリケーションを使って作業します。
 
-Let's get started. Since this task is using TensorFlow, let's go ahead and install the library inside our virtual environment:
+では始めましょう。このタスクは TensorFlow を使用するため、まず仮想環境内にライブラリをインストールしましょう。
 
 .. code-block:: shell
 
   (nvflare-env) $ python3 -m pip install tensorflow
 
-With all the required dependencies installed, you are ready to run a Federated Learning system
-with two clients and one server. If you would like to go ahead and run the exercise now, you can run
-the ``fedavg_script_runner_hello-tf.py`` script which builds the job with the Job API and runs the
-job with the FLARE Simulator.
+必要な依存関係がすべてインストールできたら、2つのクライアントと1つのサーバーからなるフェデレーテッドラーニングシステムを
+実行する準備が整いました。今すぐ演習を実行したい場合は、Job API でジョブを構築し、FLARE Simulator でジョブを実行する
+``fedavg_script_runner_hello-tf.py`` スクリプトを実行できます。
 
 NVIDIA FLARE Job API
 --------------------
-The ``fedavg_script_runner_hello-tf.py`` script for this hello-tf example is very similar to the ``fedavg_script_runner_hello-numpy.py`` script
-for the :doc:`Hello NumPy <hello_numpy>` example and also the script for the :doc:`Hello PyTorch <hello_pt_job_api>`
-example. Other than changes to the names of the job and client script, the only difference is the line to define the initial global model
-for the server:
+この hello-tf の例の ``fedavg_script_runner_hello-tf.py`` スクリプトは、:doc:`Hello NumPy <hello_numpy>` の例の
+``fedavg_script_runner_hello-numpy.py`` スクリプトや、:doc:`Hello PyTorch <hello_pt_job_api>` の例のスクリプトと
+非常によく似ています。ジョブ名とクライアントスクリプト名の変更以外の唯一の違いは、サーバーの初期グローバルモデルを
+定義する行です。
 
 .. code-block:: python
 
@@ -61,54 +60,53 @@ for the server:
    job.to(TFNet(), "server")
 
 
-NVIDIA FLARE Client Training Script
-------------------------------------
-The training script for this example, ``hello-tf_fl.py``, is the main script that will be run on the clients. It contains the TensorFlow specific
-logic for training.
+NVIDIA FLARE クライアント学習スクリプト
+----------------------------------------
+この例の学習スクリプト ``hello-tf_fl.py`` は、クライアント上で実行されるメインスクリプトです。学習のための TensorFlow 固有の
+ロジックが含まれています。
 
-Neural Network
-^^^^^^^^^^^^^^^
-Let's see the simplified MNIST model used in this example:
+ニューラルネットワーク
+^^^^^^^^^^^^^^^^^^^^^^^
+この例で使われている簡略化された MNIST モデルを見てみましょう。
 
 - :github_nvflare_link:`model.py <examples/hello-world/hello-tf/model.py>`
 
-This ``TFNet`` class is the convolutional neural network to train with MNIST dataset.
-This is not related to NVIDIA FLARE, and it is implemented in a file called ``tf_net.py``.
+この ``TFNet`` クラスは、MNIST データセットで学習する畳み込みニューラルネットワークです。
+これは NVIDIA FLARE とは関係がなく、``tf_net.py`` というファイルに実装されています。
 
-Dataset & Setup
-^^^^^^^^^^^^^^^^
-Before starting training, you need to set up your dataset.
-In this exercise, it is downloaded from the Internet via ``tf.keras``'s datasets module
-and split in half to create a separate dataset for each client. Note that this is just for an example since in a real-world scenario,
-you will likely have different datasets for each client.
+データセットとセットアップ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+学習を開始する前に、データセットをセットアップする必要があります。
+この演習では、``tf.keras`` の datasets モジュールを通じてインターネットからダウンロードし、
+クライアントごとに別々のデータセットを作るために半分に分割します。これはあくまで例であり、実際のシナリオでは
+クライアントごとに異なるデータセットを持つことになる点に注意してください。
 
-Additionally, the optimizer and loss function need to be configured.
+さらに、オプティマイザと損失関数も設定する必要があります。
 
-All of this happens before the ``while flare.is_running():`` line in ``client.py``.
-See:
+これらはすべて ``client.py`` の ``while flare.is_running():`` の行より前で行われます。
+次を参照してください。
 
 - :github_nvflare_link:`client.py <examples/hello-world/hello-tf/client.py>`
 
-Client Local Train
+クライアントのローカル学習
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The client code gets the weights from the input_model received from the server then performs a simple :code:`self.model.fit`
-so the client's model is trained with its own dataset:
+クライアントのコードは、サーバーから受け取った input_model から重みを取得し、単純に :code:`self.model.fit` を実行して、
+クライアントのモデルが自身のデータセットで学習されるようにします。
 
-See the full local training implementation in:
+ローカル学習の完全な実装は次を参照してください。
 
 - :github_nvflare_link:`client.py <examples/hello-world/hello-tf/client.py>`
-  
-After finishing the local training, the newly-trained weights are sent back to the NVIDIA FLARE server in the params of
-:mod:`FLModel<nvflare.app_common.abstract.fl_model>`.
+
+ローカル学習が終わると、新しく学習された重みが
+:mod:`FLModel<nvflare.app_common.abstract.fl_model>` の params に入れられて NVIDIA FLARE サーバーへ送り返されます。
 
 
-NVIDIA FLARE Server & Application
----------------------------------
-In this example, the server runs :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` with the default settings.
+NVIDIA FLARE サーバーとアプリケーション
+----------------------------------------
+この例では、サーバーはデフォルト設定で :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` を実行します。
 
-If you export the job with the :func:`export<nvflare.job_config.api.FedJob.export>` function, you will see the
-configurations for the server and each client. The server configuration is ``config_fed_server.json`` in the config folder
-in app_server:
+:func:`export<nvflare.job_config.api.FedJob.export>` 関数でジョブをエクスポートすると、サーバーと各クライアントの
+設定を確認できます。サーバーの設定は、app_server の config フォルダにある ``config_fed_server.json`` です。
 
 .. code-block:: json
 
@@ -153,17 +151,17 @@ in app_server:
       "task_result_filters": []
    }
 
-This is automatically created by the Job API. The server application configuration leverages NVIDIA FLARE built-in components.
+これは Job API によって自動的に作成されます。サーバーアプリケーションの設定は、NVIDIA FLARE の組み込みコンポーネントを活用しています。
 
-Note that ``persistor`` points to ``TFModelPersistor``. This is automatically configured when the model is added
-to the server with the :func:`to<nvflare.job_config.api.FedJob.to>` function. The Job API detects that the model is a TensorFlow model
-and automatically configures :class:`TFModelPersistor<nvflare.app_opt.tf.model_persistor.TFModelPersistor>`.
+``persistor`` が ``TFModelPersistor`` を指していることに注目してください。これは :func:`to<nvflare.job_config.api.FedJob.to>` 関数で
+モデルをサーバーに追加したときに自動的に構成されます。Job API はモデルが TensorFlow のモデルであることを検出し、
+:class:`TFModelPersistor<nvflare.app_opt.tf.model_persistor.TFModelPersistor>` を自動的に構成します。
 
 
-Client Configuration
+クライアントの設定
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The client configuration is ``config_fed_client.json`` in the config folder of each client app folder:
+クライアントの設定は、各クライアントアプリのフォルダの config フォルダにある ``config_fed_client.json`` です。
 
 .. code-block:: json
 
@@ -197,32 +195,31 @@ The client configuration is ``config_fed_client.json`` in the config folder of e
       "task_result_filters": []
    }
 
-The ``task_script_path`` is set to the path of the client training script.
+``task_script_path`` にはクライアントの学習スクリプトのパスが設定されています。
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/hello-tf <examples/hello-world/hello-tf>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/hello-tf <examples/hello-world/hello-tf>` にあります。
 
 
-Notes on running with GPU
+GPU での実行に関する注意
 -------------------------
 
-We recommend using the `NVIDIA TensorFlow Docker container <https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorflow>`_ if you want to use GPU.
+GPU を使用したい場合は、`NVIDIA TensorFlow Docker container <https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorflow>`_ の使用を推奨します。
 
-If you choose to run the example using GPUs, it is important to note that,
-by default, TensorFlow will attempt to allocate all available GPU memory at the start.
-In scenarios where multiple clients are involved, you have to prevent TensorFlow from allocating all GPU memory
-by setting the following flags:
+GPU を使ってこの例を実行する場合、デフォルトでは TensorFlow が開始時に利用可能な GPU メモリをすべて確保しようとする点に
+注意することが重要です。
+複数のクライアントが関わるシナリオでは、次のフラグを設定して TensorFlow がすべての GPU メモリを確保しないように
+する必要があります。
 
 .. code-block:: bash
 
    TF_FORCE_GPU_ALLOW_GROWTH=true TF_GPU_ALLOCATOR=cuda_malloc_async
 
-If you possess more GPUs than clients, a good strategy is to run one client on each GPU.
-This can be achieved by using the `--gpu` argument during simulation, e.g., `nvflare simulator -n 2 --gpu 0,1 [job]`.
+クライアント数より多くの GPU がある場合は、1つの GPU につき1つのクライアントを実行するのが良い方法です。
+これはシミュレーション時に `--gpu` 引数を使うことで実現できます。例: `nvflare simulator -n 2 --gpu 0,1 [job]`
 
-
-Previous Versions of Hello TensorFlow (previously Hello TensorFlow 2)
----------------------------------------------------------------------
+Hello TensorFlow (旧 Hello TensorFlow 2) の過去バージョン
+-----------------------------------------------------------
 
    - `hello-tf2 for 2.0 <https://github.com/NVIDIA/NVFlare/tree/2.0/examples/hello-tf2>`_
    - `hello-tf2 for 2.1 <https://github.com/NVIDIA/NVFlare/tree/2.1/examples/hello-tf2>`_

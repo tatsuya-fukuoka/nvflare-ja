@@ -3,34 +3,34 @@
 Hello NumPy
 ===========
 
-This example demonstrates how to use NVIDIA FLARE with NumPy to train a simple model using federated averaging (FedAvg). The complete example code can be found in the :github_nvflare_link:`hello-numpy directory <examples/hello-world/hello-numpy>`.
-It is recommended to create a virtual environment and run everything within a virtualenv.
+この例では、NVIDIA FLARE を NumPy と組み合わせて使い、フェデレーテッドアベレージング (FedAvg) でシンプルなモデルを学習する方法を示します。完全なサンプルコードは :github_nvflare_link:`hello-numpy ディレクトリ <examples/hello-world/hello-numpy>` にあります。
+仮想環境を作成し、その仮想環境内ですべてを実行することを推奨します。
 
-NVIDIA FLARE Installation
--------------------------
-For the complete installation instructions, see :doc:`../installation`
+NVIDIA FLARE のインストール
+----------------------------
+完全なインストール手順については :doc:`../installation` を参照してください。
 
 .. code-block:: text
 
     pip install nvflare
 
-Install the dependency
+依存関係をインストールします。
 
 .. code-block:: text
 
     pip install -r requirements.txt
 
 
-Code Structure
+コード構成
 --------------
 
-Get the example code from GitHub:
+GitHub からサンプルコードを取得します。
 
 .. code-block:: text
 
     git clone https://github.com/NVIDIA/NVFlare.git
 
-Navigate to the hello-numpy directory:
+hello-numpy ディレクトリに移動します。
 
 .. code-block:: text
 
@@ -48,41 +48,41 @@ Navigate to the hello-numpy directory:
         |-- requirements.txt      # dependencies
 
 
-Data
+データ
 -----------------
-This example uses a simplified synthetic dataset. Each client performs basic operations on a 3x3 weight matrix, adding a small delta to each weight during training. This approach allows you to clearly observe the federated learning aggregation process without the complexity of real data loading and preprocessing.
+この例では、簡略化された合成データセットを使用します。各クライアントは3x3の重み行列に対して基本的な演算を行い、学習中に各重みに小さなデルタを加えます。この方法により、実データの読み込みや前処理の複雑さを伴わずに、フェデレーテッドラーニングの集約プロセスを明確に観察できます。
 
-In a real FL experiment, each client would have their own dataset used for their local training.
-Here for simplicity's sake, we use synthetic data that allows you to clearly see and understand the federated learning aggregation process.
+実際のFL実験では、各クライアントがローカル学習に使う独自のデータセットを持つことになります。
+ここでは簡潔さのために、フェデレーテッドラーニングの集約プロセスをはっきりと確認し理解できるような合成データを使用しています。
 
-Model
+モデル
 ------------------
-This example uses an in-script NumPy model update loop in the client code, using a simple 3x3 weight matrix to
-demonstrate aggregation behavior clearly.
+この例では、クライアントコード内にスクリプト形式で記述された NumPy のモデル更新ループを使用し、シンプルな3x3の重み行列によって
+集約の挙動を分かりやすく示します。
 
-See the full implementation in:
+完全な実装は次を参照してください。
 
 - :github_nvflare_link:`client.py <examples/hello-world/hello-numpy/client.py>`
 
 
 
-Client Code
+クライアントコード
 ------------------
-The client training script follows the standard FL client pattern.
+クライアントの学習スクリプトは、標準的なFLクライアントのパターンに従います。
 
-On the client side, the training workflow is as follows:
+クライアント側では、学習ワークフローは次のようになります。
 
-   1. Receive the model from the FL server
-   2. Perform training on the received global model
-   3. Send the updated model back to the FL server
+   1. FLサーバーからモデルを受け取る
+   2. 受け取ったグローバルモデルに対して学習を行う
+   3. 更新したモデルをFLサーバーに送り返す
 
-Using NVFlare's Client API, there are three essential methods to help achieve this workflow:
+NVFlare の Client API を使う場合、このワークフローを実現するための必須メソッドが3つあります。
 
-   - ``flare.init()``: Initializes NVFlare Client API environment
-   - ``flare.receive()``: Receives model from the FL server
-   - ``flare.send()``: Sends the model to the FL server
+   - ``flare.init()``: NVFlare Client API 環境を初期化します
+   - ``flare.receive()``: FLサーバーからモデルを受け取ります
+   - ``flare.send()``: FLサーバーへモデルを送信します
 
-The following code snippet highlights how these methods are used:
+次のコードスニペットは、これらのメソッドの使い方を示しています。
 
 .. code-block:: python
 
@@ -98,32 +98,32 @@ The following code snippet highlights how these methods are used:
    output_model = flare.FLModel(params=new_params)  # 4. Package results
    flare.send(output_model)  # 5. Send updated model to server
 
-For the complete implementation, see:
+完全な実装は次を参照してください。
 
 - :github_nvflare_link:`client.py <examples/hello-world/hello-numpy/client.py>`
 
 
-Server Code
+サーバーコード
 ------------------
-In federated averaging, the server code is responsible for aggregating model updates from clients. The workflow pattern is similar to scatter-gather.
-In this example, we will directly use the default federated averaging algorithm provided by NVFlare.
-The FedAvg class is defined in `nvflare.app_common.workflows.fedavg.FedAvg`.
-There is no need to define a customized server code for this example.
+フェデレーテッドアベレージングでは、サーバーコードはクライアントからのモデル更新を集約する役割を担います。ワークフローのパターンは scatter-gather に似ています。
+この例では、NVFlare が提供するデフォルトのフェデレーテッドアベレージングアルゴリズムをそのまま使用します。
+FedAvg クラスは `nvflare.app_common.workflows.fedavg.FedAvg` に定義されています。
+この例では、カスタマイズしたサーバーコードを定義する必要はありません。
 
 
-Job Recipe Code
-------------------
-Job Recipe contains the client.py and built-in fedavg algorithm.
+ジョブレシピのコード
+--------------------
+ジョブレシピには client.py と組み込みの fedavg アルゴリズムが含まれます。
 
 
-See the job recipe implementation:
+ジョブレシピの実装は次を参照してください。
 
 - :github_nvflare_link:`job.py <examples/hello-world/hello-numpy/job.py>`
 
 
-Model Input Options
-^^^^^^^^^^^^^^^^^^^
-For NumPy recipes, ``model`` can be a NumPy array or list. To resume from pre-trained weights:
+モデル入力のオプション
+^^^^^^^^^^^^^^^^^^^^^^^
+NumPy のレシピでは、``model`` には NumPy 配列またはリストを指定できます。事前学習済みの重みから再開するには次のようにします。
 
 .. code-block:: python
 
@@ -135,38 +135,38 @@ For NumPy recipes, ``model`` can be a NumPy array or list. To resume from pre-tr
 
 .. note::
 
-   NumPy checkpoints contain the full model data, so ``initial_ckpt`` can be used without ``model``.
+   NumPy のチェックポイントにはモデルデータ全体が含まれるため、``initial_ckpt`` は ``model`` なしで使用できます。
 
 
-Run FL Job
------------
-This section provides the command to execute the federated learning job using the job recipe defined above. Run this command in your terminal.
+FLジョブの実行
+---------------
+このセクションでは、上で定義したジョブレシピを使ってフェデレーテッドラーニングのジョブを実行するコマンドを示します。このコマンドをターミナルで実行してください。
 
 .. note::
 
-    The model starts with weights ``[[1, 2, 3], [4, 5, 6], [7, 8, 9]]`` and each client adds 1 to each weight during training.
-    After aggregation, you should see the weights increase by 1 each round, demonstrating the federated learning process.
+    モデルは重み ``[[1, 2, 3], [4, 5, 6], [7, 8, 9]]`` から始まり、各クライアントは学習中に各重みに1を加えます。
+    集約後、ラウンドごとに重みが1ずつ増えていくのが確認でき、フェデレーテッドラーニングのプロセスが実感できます。
 
 
 
-Command to execute the FL job
------------------------------
+FLジョブを実行するコマンド
+---------------------------
 
-Use the following command in your terminal to start the job with the specified number of rounds and number of clients.
+ターミナルで次のコマンドを使い、指定したラウンド数とクライアント数でジョブを開始します。
 
 .. code-block:: text
 
    python job.py --num_rounds 3 --n_clients 2
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/hello-world/hello-numpy <examples/hello-world/hello-numpy/>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/hello-world/hello-numpy <examples/hello-world/hello-numpy/>` にあります。
 
-Previous Versions of this Example
-----------------------------------
+この例の過去バージョン
+------------------------
 
-For users on older versions of NVIDIA FLARE, this example had different names:
+以前のバージョンの NVIDIA FLARE を使用しているユーザー向けに、この例は異なる名前で提供されていました。
 
-**"Hello Scatter and Gather" (versions 2.0-2.4):**
+**"Hello Scatter and Gather" (バージョン 2.0-2.4):**
 
    - `hello-numpy-sag for 2.0 <https://github.com/NVIDIA/NVFlare/tree/2.0/examples/hello-numpy-sag>`_
    - `hello-numpy-sag for 2.1 <https://github.com/NVIDIA/NVFlare/tree/2.1/examples/hello-numpy-sag>`_
@@ -174,7 +174,7 @@ For users on older versions of NVIDIA FLARE, this example had different names:
    - `hello-numpy-sag for 2.3 <https://github.com/NVIDIA/NVFlare/tree/2.3/examples/hello-world/hello-numpy-sag>`_
    - `hello-numpy-sag for 2.4 <https://github.com/NVIDIA/NVFlare/tree/2.4/examples/hello-world/hello-numpy-sag>`_
 
-**"Hello FedAvg NumPy" (versions 2.5-2.6):**
+**"Hello FedAvg NumPy" (バージョン 2.5-2.6):**
 
    - `hello-fedavg-numpy for 2.5 <https://github.com/NVIDIA/NVFlare/tree/2.5/examples/hello-world/hello-fedavg-numpy>`_
    - `hello-fedavg-numpy for 2.6 <https://github.com/NVIDIA/NVFlare/tree/2.6/examples/hello-world/hello-fedavg-numpy>`_
