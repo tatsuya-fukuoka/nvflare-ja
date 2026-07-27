@@ -134,21 +134,21 @@ Service 名と ``parent_port`` を使用するようにします。``parent_port
        | optional mounts: /data/<study>/<dataset> from study-data PVCs
        | workspace transfer over client parent Service on parent_port
 
-Server and client participants may run in the same Kubernetes cluster or in
-separate clusters. Separate clusters are common because each site controls its
-own compute and data. If participants run in separate clusters, using the same
-namespace and PVC names in each cluster is safe. If multiple participants run in
-one cluster, give each participant its own namespace or its own workspace PVC;
-do not point a server and a client at the same workspace PVC because their
-``startup/`` and ``local/`` contents are different.
+サーバーとクライアントの参加者は、同一の Kubernetes クラスタ内で実行することも、別々の
+クラスタで実行することもできます。各サイトが自身の計算資源とデータを管理するため、
+別々のクラスタを使用するのが一般的です。参加者が別々のクラスタで実行される場合、各クラスタで
+同じネームスペース名と PVC 名を使用しても問題ありません。複数の参加者を 1 つのクラスタで
+実行する場合は、参加者ごとに専用のネームスペースまたは専用のワークスペース PVC を割り当てて
+ください。サーバーとクライアントの ``startup/`` と ``local/`` の内容は異なるため、両者を
+同じワークスペース PVC に向けてはいけません。
 
-Client sites need outbound network access to the server endpoint configured
-during provisioning, usually ``<server-host>:<fed_learn_port>``. A client site
-does not need an inbound FL port or an externally exposed Service. The client
-chart creates an in-cluster Service only so that dynamically launched client job
-pods can reach their client parent pod.
+クライアントサイトには、プロビジョニング時に設定されたサーバーエンドポイント (通常は
+``<server-host>:<fed_learn_port>``) への外向きのネットワークアクセスが必要です。
+クライアントサイトには、受信用の FL ポートも外部公開された Service も必要ありません。
+クライアントのチャートがクラスタ内 Service を作成するのは、動的に起動されるクライアント
+ジョブ Pod が自身のクライアント親 Pod に到達できるようにするためだけです。
 
-Each prepared participant folder contains its own chart:
+準備された各参加者フォルダには、それぞれ専用のチャートが含まれます。
 
 .. code-block:: text
 
@@ -164,52 +164,53 @@ Each prepared participant folder contains its own chart:
      startup/
      transfer/
 
-The ``transfer/`` directory is the normal FLARE admin file-transfer directory.
-For the server, it is used under the mounted workspace when admin storage is
-configured as ``transfer``. It is not the Kubernetes job workspace-transfer
-mechanism and job pods do not mount it. Stage or create it on the server
-workspace PVC when you stage ``startup/`` and ``local/``.
+``transfer/`` ディレクトリは、通常の FLARE 管理者ファイル転送ディレクトリです。サーバーの
+場合、管理者ストレージが ``transfer`` として設定されているときに、マウントされたワーク
+スペース配下で使用されます。これは Kubernetes のジョブワークスペース転送の仕組みではなく、
+ジョブ Pod はこれをマウントしません。``startup/`` と ``local/`` をステージングする際に、
+サーバーのワークスペース PVC 上にこのディレクトリをステージングまたは作成してください。
 
-Build and Push the FLARE Image
-==============================
+FLARE イメージのビルドとプッシュ
+=================================
 
-The Helm charts need a FLARE runtime image that every participating cluster can
-pull. For the image build and registry-push workflow, see
-:ref:`brev_build_push_flare_image`.
+Helm チャートには、すべての参加クラスタが pull できる FLARE ランタイムイメージが必要です。
+イメージのビルドとレジストリへのプッシュのワークフローについては、
+:ref:`brev_build_push_flare_image` を参照してください。
 
-NVIDIA publishes an official NVFlare Docker image in the NGC container registry
-at ``nvcr.io``. Use a tag that matches the NVFlare version used to provision and
-prepare the startup kits, and set that image in ``parent.docker_image`` in
-``k8s.yaml``.
+NVIDIA は、``nvcr.io`` の NGC コンテナレジストリで公式の NVFlare Docker イメージを公開
+しています。スタートアップキットのプロビジョニングと準備に使用した NVFlare のバージョンに
+一致するタグを使用し、そのイメージを ``k8s.yaml`` の ``parent.docker_image`` に設定して
+ください。
 
-Users can also build their own parent runtime image from this repository by
-modifying ``docker/Dockerfile.parent`` and pushing the result to a registry that
-all participating clusters can pull from. Keep the NVFlare ``K8S`` extra, or
-install the Kubernetes Python client explicitly, so the parent server or client
-can create job pods.
+ユーザーは、``docker/Dockerfile.parent`` を変更して独自の親ランタイムイメージをこの
+リポジトリからビルドし、すべての参加クラスタが pull できるレジストリにプッシュすることも
+できます。親サーバーまたは親クライアントがジョブ Pod を作成できるように、NVFlare の
+``K8S`` エクストラを維持するか、Kubernetes Python クライアントを明示的にインストール
+してください。
 
-The parent image comes from ``parent.docker_image`` in ``k8s.yaml`` and is
-rendered into ``helm_chart/values.yaml``. Submitted jobs must also specify a job
-image in ``meta.json`` under ``launcher_spec[site][k8s].image`` or
-``launcher_spec.default.k8s.image``. The parent image and job image can be the
-same image, but they do not have to be.
+親イメージは ``k8s.yaml`` の ``parent.docker_image`` から取得され、
+``helm_chart/values.yaml`` に反映されます。送信されるジョブでも、``meta.json`` の
+``launcher_spec[site][k8s].image`` または ``launcher_spec.default.k8s.image`` で
+ジョブイメージを指定する必要があります。親イメージとジョブイメージは同じイメージでも
+構いませんが、同じである必要はありません。
 
-Prepare Startup Kits
-====================
+スタートアップキットの準備
+===========================
 
-The provisioning step remains responsible for identity material, certificates,
-server host names, FL ports, and FLARE configuration:
+アイデンティティ情報、証明書、サーバーのホスト名、FL ポート、FLARE の設定については、
+引き続きプロビジョニングのステップが担当します。
 
 .. code-block:: bash
 
    nvflare provision -p project.yml -w workspace
 
-The server ``default_host`` and ``host_names`` in ``project.yml`` must match the
-external endpoint that clients and admin consoles will use to reach the server.
-If those values change, reprovision and rerun ``nvflare deploy prepare``.
+``project.yml`` 内のサーバーの ``default_host`` と ``host_names`` は、クライアントや
+管理コンソールがサーバーへ到達するために使用する外部エンドポイントと一致している必要が
+あります。これらの値が変更された場合は、再プロビジョニングしたうえで
+``nvflare deploy prepare`` を再実行してください。
 
-After provisioning, prepare each server or client startup kit with
-``nvflare deploy prepare``:
+プロビジョニング後、``nvflare deploy prepare`` で各サーバーまたはクライアントの
+スタートアップキットを準備します。
 
 .. code-block:: bash
 
@@ -221,7 +222,7 @@ After provisioning, prepare each server or client startup kit with
        --output site-1-k8s \
        --config k8s.yaml
 
-Example ``k8s.yaml``:
+``k8s.yaml`` の例を示します。
 
 .. code-block:: yaml
 

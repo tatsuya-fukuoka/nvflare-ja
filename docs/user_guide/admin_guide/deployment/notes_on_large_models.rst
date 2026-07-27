@@ -1,64 +1,63 @@
 .. _notes_on_large_models:
 
-Large Models
+大規模モデル
 ============
-As the federated learning tasks become more and more complex, their model sizes increase.  Some model sizes may go beyond 2GB and even reach hundreds of GB.  NVIDIA FLARE supports
-large models as long as the system memory of servers and clients is capable of handling it.  However, it requires special consideration on NVIDIA FLARE configuration and the system because
-the network bandwidth and thus the time to transmit such large amount of data during NVIDIA FLARE job runtime varies significantly.  Here we describe 128GB model training jobs to highlight
-the configuration and system that users should consider for successful large model federated learning jobs.
+連合学習のタスクがますます複雑になるにつれて、モデルサイズも増大しています。モデルサイズによっては 2GB を超え、数百 GB に達することもあります。NVIDIA FLARE は、サーバとクライアントのシステムメモリが対応できる限り、
+大規模モデルをサポートします。ただし、NVIDIA FLARE ジョブの実行時にこれほど大量のデータを転送する際のネットワーク帯域幅、ひいては所要時間は大きく変動するため、
+NVIDIA FLARE の設定とシステムについて特別な考慮が必要です。ここでは、大規模モデルの連合学習ジョブを成功させるためにユーザが考慮すべき設定とシステムを明らかにするため、128GB モデルの学習ジョブについて説明します。
 
-System Deployment
-*****************
-Our successful experiments of 128GB model training were running on one NVIDIA FLARE server and two clients.  The server was deployed in Azure west-us region.  One of those two clients
-was deployed in AWS west-us-2 region and the other was in AWS ap-south-1 region.  The system was deployed in such cross-region and cross-cloud-service-provider manner so that we can test
-NVIDIA FLARE system with various conditions on the network bandwidth.
-The Azure VM size of the NVIDIA FLARE server was M32-8ms, which has 875GB memory.  The AWS EC2 instance type of NVIDIA FLARE clients was r5a.16xlarge with 512GB memory.  We also enabled
-128GB swap space on all machines.
+システムのデプロイ
+******************
+128GB モデル学習の実験を成功させた構成は、1 台の NVIDIA FLARE サーバと 2 台のクライアントで実行されました。サーバは Azure の west-us リージョンにデプロイされました。2 台のクライアントのうち 1 台は
+AWS の west-us-2 リージョンに、もう 1 台は AWS の ap-south-1 リージョンにデプロイされました。ネットワーク帯域幅についてさまざまな条件で NVIDIA FLARE システムをテストできるように、
+このようにリージョンをまたぎ、クラウドサービスプロバイダをまたぐ形でシステムをデプロイしました。
+NVIDIA FLARE サーバの Azure VM サイズは M32-8ms で、875GB のメモリを備えています。NVIDIA FLARE クライアントの AWS EC2 インスタンスタイプは r5a.16xlarge で、512GB のメモリを備えています。また、
+すべてのマシンで 128GB のスワップ領域を有効にしました。
 
-For PyTorch FedAvg jobs that use ``enable_tensor_disk_offload=True``, server memory reduction depends on the FL
-server temporary directory being backed by disk. The server IT administrator should set and verify ``TMPDIR`` for the
-server process before starting the server, and should not rely on a RAM-backed ``/tmp`` such as ``tmpfs`` or
-``ramfs``. See :ref:`Starting Federated Learning Servers <starting_fl_servers>` for the server setup note.
+``enable_tensor_disk_offload=True`` を使用する PyTorch FedAvg ジョブでは、サーバのメモリ削減は FL サーバの一時ディレクトリが
+ディスク上に配置されていることに依存します。サーバの IT 管理者は、サーバを起動する前にサーバプロセスの ``TMPDIR`` を設定して確認する必要があり、
+``tmpfs`` や ``ramfs`` のような RAM 上の ``/tmp`` に依存すべきではありません。
+サーバのセットアップに関する注意事項は :ref:`連合学習サーバの起動 <starting_fl_servers>` を参照してください。
 
-Job of 128GB Models
+128GB モデルのジョブ
+********************
+hello-numpy のサンプルを少し変更し、64 個のキーを持つ辞書であるモデルを生成しました。各キーには 2GB の NumPy 配列が含まれています。ローカルの学習タスクは、
+これらの numpy 配列に小さな数値を加算するというものでした。サーバ側のアグリゲータは変更していません。このジョブは少なくとも 2 つのクライアントを必要とし、完了までに 3 ラウンド実行されました。
+
+
+設定
 *******************
-We slightly modified the hello-numpy example to generate a model, which was a dictionary of 64 keys.  Each key contained a 2GB NumPy array.  The local training task was to add a small number to
-those numpy arrays.  The aggregator on the server side was not changed.  This job required at least two clients and ran 3 rounds to finish.
+サーバと west-us-2 クライアントの間の帯域幅を測定しました。クライアントからサーバへのモデル転送には約 2300 秒、サーバからクライアントへは約 2000 秒かかりました。
+ap-south-1 クライアントでは、クライアントからサーバへ約 11000 秒、サーバからクライアントへ約 11500 秒かかりました。このような差異に対応するため、以下の値を更新しました。
+
+    - streaming_read_timeout を 3000 に
+    - streaming_ack_wait を 6000 に
+    - communication_timeout を 6000 に
 
 
-Configuration
+`streaming_read_timeout` は、データのチャンクを受信したものの上位レイヤーによって読み取られていない状態を検出するために使用されます。`streaming_ack_wait` は、送信側が 1 つのチャンクについて受信側から返される確認応答をどれだけ待つかを表します。
+
+
+`communication_timeout` は、単一のリクエストとレスポンスにおける 3 つの連続したステージで使用されます。大きなリクエスト (submit_update) を送信する際、送信側は timeout = `communication_timeout` のタイマーを開始します。
+このタイマーが満了すると、送信側はこの期間中に進捗があったかどうかを確認します。進捗があれば、送信側は同じタイムアウト値でタイマーをリセットして再び待機します。進捗がなければ、このリクエストとレスポンスはタイムアウトで返ります。
+送信が完了すると、送信側は直前のタイマーをキャンセルし、timeout = `communication_timeout` の `remote processing` タイマーを開始します。これは受信側から返される最初のバイトを待つためのものです。
+大規模モデルでは、クライアントが `get_task` リクエストを送信した際、サーバがタスクを準備するのにはるかに長い時間を要します。最初の返却バイトを受信すると、送信側は `remote processing` タイマーをキャンセルし、
+新しいタイマーを開始します。送信時と同様に、受信の進捗を確認します。
+
+
+この実験は hello-numpy をベースにしていたため、ScatterAndGather クラスの引数の 1 つである `train_timeout` を更新する必要がありました。このタイムアウトは学習タスクのスケジューリングを確認するために使用されます。
+この実験では、この引数を 60000 に変更しました。
+
+メモリ使用量
 *******************
-We measured the bandwidth between the server and west-us-2 client.  It took around 2300 seconds to transfer the model from the client to the server and around 2000 seconds from the server to the client.
-On the ap-south-1 client, it took about 11000 seconds from the client to the server and 11500 seconds from the server to the client.  We updated the following values to accommodate such differences.
-
-    - streaming_read_timeout to 3000
-    - streaming_ack_wait to 6000
-    - communication_timeout to 6000
-
-
-The `streaming_read_timeout` is used to check when a chunk of data is received but not read by the upper layer.  The `streaming_ack_wait` is how long the sender should wait for acknowledgement returned by the receiver for one chunk.
-
-
-The `communication_timeout` is used on three consecutive stages for a single request and response.  When sending a large request (submit_update), the sender starts a timer with timeout = `communication_timeout`.
-When this timer expires, the sender checks if any progress is made during this period.  If yes, the sender resets the timer with the same timeout value and waits again.  If not, this request and response returns with timeout.
-After sending completes, the sender cancels the previous timer and starts a `remote processing` timer with timeout = `communication_timeout`.  This is to wait for the first returned byte from the receiver.  On
-large models, the server requires much longer time to prepare the task when the clients send `get_task` requests.  After receiving the first returned byte, the sender cancels the `remote processing` timer and starts
-a new timer.  It checks the receiving progress just like sending.
-
-
-Since the experiment was based on hello-numpy, one of the arguments, `train_timeout` in the ScatterAndGather class had to be updated.  This timeout is used to check the scheduling of training tasks.  We
-changed this argument to 60000 for this experiment.
-
-Memory Usage
-*******************
-During the experiment, the server could use more than 512GB, ie 128GB * 2 clients * 2 (model and runtime space).  The following figure shows the CPU and memory usage of the server.
+実験中、サーバは 512GB 超、すなわち 128GB × 2 クライアント × 2 (モデルとランタイム領域) を使用する可能性がありました。次の図は、サーバの CPU とメモリの使用量を示しています。
 
 .. image:: ../../../resources/128GB_server.png
     :height: 350px
 
-Although most of the time, the server was using less than 512GB, there were a few peaks that reached 700GB or more.
+ほとんどの時間においてサーバの使用量は 512GB 未満でしたが、700GB 以上に達するピークが数回ありました。
 
-The followings are clients, west-us-2 and ap-south-1.
+以下は west-us-2 と ap-south-1 のクライアントです。
 
 .. image:: ../../../resources/128GB_site1.png
     :height: 350px
@@ -68,6 +67,6 @@ The followings are clients, west-us-2 and ap-south-1.
     :height: 350px
 
 
-The west-us-2 client, with its fast bandwidth with the server, received and sent the models in about 100 minutes and entered nearly idle state with little cpu and memory usage.  Both
-clients used about 256GB, ie 128GB * 2 (model and runtime space), but at the end of receiving large models and at the beginning of sending large models, these two clients required more than
-378GB, ie 128GB * 3.
+west-us-2 のクライアントは、サーバとの帯域幅が高速であるため、約 100 分でモデルの受信と送信を完了し、CPU とメモリの使用量がほとんどないほぼアイドル状態に入りました。
+どちらのクライアントも約 256GB、すなわち 128GB × 2 (モデルとランタイム領域) を使用しましたが、大規模モデルの受信の終盤と送信の開始時には、これら 2 つのクライアントは
+378GB 超、すなわち 128GB × 3 を必要としました。

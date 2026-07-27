@@ -3,28 +3,28 @@
 .. _nvflare_security:
 
 ****************************************
-NVIDIA FLARE Security
+NVIDIA FLARE セキュリティ
 ****************************************
 
 .. note::
-   This page has been reorganized. See the :ref:`Security Overview <security>` for the updated security documentation.
+   このページは再構成されました。最新のセキュリティドキュメントについては :ref:`セキュリティ概要 <security>` を参照してください。
 
-The security framework of NVIDIA FLARE has been reworked for better usability and to improve security.
+NVIDIA FLARE のセキュリティフレームワークは、使いやすさの向上とセキュリティの強化のために作り直されました。
 
-Security Framework
-===================
-NVFLARE is an application running in the IT environment of each participating site. The total security of this
-application is the combination of the security measures implemented in this application and the security measures of
-the site's IT infrastructure.
+セキュリティフレームワーク
+==============================
+NVFLARE は、参加する各サイトの IT 環境で動作するアプリケーションです。このアプリケーションの総合的なセキュリティは、
+このアプリケーションに実装されたセキュリティ対策と、サイトの IT インフラストラクチャのセキュリティ対策との組み合わせによって
+成り立ちます。
 
-NVFLARE implements security measures in the following areas (see each section below for details):
+NVFLARE は以下の領域でセキュリティ対策を実装しています (詳細は以下の各セクションを参照してください)。
 
-    - Identity Security: the authentication and authorization of communicating parties
-    - Site Policy Management: the policies for resource management, authorization, and privacy protection defined by each site
-    - Communication Security: the confidentiality of data communication messages
-    - Message Serialization: techniques for ensuring safe serialization/deserialization process between communicating parties
-    - Data Privacy Protection: techniques for preventing local data from being leaked and/or reverse-engineered
-    - Auditing: techniques for keeping audit trails to record events (e.g. commands issued by users, learning/training related events that can be analyzed to understand the final results)
+    - Identity Security (アイデンティティセキュリティ): 通信を行う当事者の認証と認可
+    - Site Policy Management (サイトポリシー管理): 各サイトが定義するリソース管理、認可、プライバシー保護のポリシー
+    - Communication Security (通信セキュリティ): データ通信メッセージの機密性
+    - Message Serialization (メッセージシリアライゼーション): 通信を行う当事者間で安全なシリアライズ/デシリアライズ処理を保証する技術
+    - Data Privacy Protection (データプライバシー保護): ローカルデータの漏洩やリバースエンジニアリングを防ぐ技術
+    - Auditing (監査): イベント (ユーザーが発行したコマンド、最終結果を理解するために分析できる学習/トレーニング関連イベントなど) を記録する監査証跡を保持する技術
 
 .. toctree::
    :maxdepth: 1
@@ -39,35 +39,36 @@ NVFLARE implements security measures in the following areas (see each section be
    security/auditing
    security/unsafe_component_detection
 
-All other security concerns must be handled by the site's IT security infrastructure. These include, but are not limited to:
+その他のすべてのセキュリティ上の懸念は、サイトの IT セキュリティインフラストラクチャによって対処される必要があります。
+これには以下が含まれますが、これらに限定されません。
 
-    - Physical security
-    - Firewall policies
-    - Data management policies: storage, retention, cleaning, distribution, access, etc.
+    - 物理セキュリティ
+    - ファイアウォールポリシー
+    - データ管理ポリシー: 保管、保持、消去、配布、アクセスなど
 
-Security Trust Boundary and Balance of Risk and Usability
+セキュリティの信頼境界とリスク・使いやすさのバランス
 ---------------------------------------------------------
-The security framework does not operate in vacuum; we assume that physical security is already in place for all
-participating server and client machines. TLS provides the authentication mechanism within the trusted environments.
+セキュリティフレームワークは真空中で動作するわけではありません。参加するすべてのサーバーマシンおよびクライアントマシンについて、
+物理セキュリティがすでに確保されていることを前提としています。TLS は信頼された環境内での認証メカニズムを提供します。
 
 
-Admin Capabilities Through FLARE Console
+FLARE コンソールによる管理者機能
 ----------------------------------------
-The NVFLARE system is operated by users using the command line interface provided by the :ref:`FLARE Console <operating_nvflare>`. The following
-types of commands are available:
+NVFLARE システムは、 :ref:`FLARE コンソール <operating_nvflare>` が提供するコマンドラインインターフェースを使用して
+ユーザーが操作します。以下の種類のコマンドが利用できます。
 
-    - Check system operating status
-    - View system logs
-    - Shutdown, restart server or clients
-    - Job management (submit, clone, stop, delete, etc.)
-    - Start, stop jobs
-    - Clean up job workspaces
- 
-All commands are subject to authorization policies of the participating sites.
+    - システムの稼働状況の確認
+    - システムログの表示
+    - サーバーまたはクライアントのシャットダウン、再起動
+    - ジョブ管理 (submit、clone、stop、delete など)
+    - ジョブの開始、停止
+    - ジョブワークスペースのクリーンアップ
 
-Dynamic Additions and Users and Sites
+すべてのコマンドは、参加サイトの認可ポリシーの対象となります。
+
+ユーザーとサイトの動的追加
 --------------------------------------
-Federated Authorization makes it possible to dynamically add new users and sites without requiring the server to
-always keep an up-to-date list of users and sites. This is because the user identity information (name, org, and role)
-is included in the certificate of the user; and each site now performs authorization based on its local policies
-(instead of the FL Server performing authorization for all sites).
+Federated Authorization (フェデレーテッド認可) により、サーバーが常に最新のユーザーおよびサイトのリストを保持しなくても、
+新しいユーザーやサイトを動的に追加することが可能になります。これは、ユーザーのアイデンティティ情報 (名前、組織、ロール) が
+ユーザーの証明書に含まれており、各サイトが (FL サーバーがすべてのサイトの認可を行うのではなく) 自身のローカルポリシーに
+基づいて認可を実行するようになったためです。

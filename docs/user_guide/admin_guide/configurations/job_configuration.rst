@@ -1,143 +1,143 @@
 .. _job_configuration:
 
-Predefined Job Configuration Variables
+事前定義されたジョブ設定変数
 ======================================
 
-The following are predefined variables that can be configured in job config files.
-The default values of these variables are usually good enough. However, you may change them to different values in some specific cases.
+以下は、ジョブ設定ファイルで設定できる事前定義済みの変数です。
+これらの変数のデフォルト値は通常そのままで十分ですが、特定のケースでは別の値に変更することもできます。
 
-Runner Sync
------------
+Runner の同期
+-------------
 
-When a job is deployed, dedicated job-specific processes are created throughout the system for the execution of the job.
-Specifically, a dedicated server process is created to perform server-side logic; and dedicated client processes (one process for each site) are created to perform client-side logic.
-This design allows multiple jobs to be running in their isolated space at the same time. The success or failure of a job won't interfere with the execution of other jobs.
+ジョブがデプロイされると、そのジョブの実行のために、システム全体にわたってジョブ専用のプロセスが作成されます。
+具体的には、サーバー側のロジックを実行するための専用のサーバープロセスが作成され、クライアント側のロジックを実行するための専用のクライアントプロセス (サイトごとに 1 プロセス) が作成されます。
+この設計により、複数のジョブを同時にそれぞれ独立した空間で実行できます。あるジョブの成功や失敗が、他のジョブの実行に干渉することはありません。
 
-The task-based interactions between an FL client and the FL server are done with the ClientRunner on the client side and the ServerRunner on the server side.
-When the job is deployed, the order of the job process creation is not guaranteed - the server-side job process may be started before or after any client-side job process.
+FL クライアントと FL サーバー間のタスクベースのやり取りは、クライアント側の ClientRunner とサーバー側の ServerRunner によって行われます。
+ジョブがデプロイされる際、ジョブプロセスの作成順序は保証されません。サーバー側のジョブプロセスは、クライアント側のジョブプロセスより先に開始されることも、後に開始されることもあります。
 
-To ensure that the ClientRunner does not start to fetch tasks from the ServerRunner, the two runners need to be synchronized first.
-Specifically, the ClientRunner keeps sending a "runner sync" request to the ServerRunner until a response is received.
+ClientRunner が ServerRunner からタスクの取得を開始しないようにするため、まず 2 つの Runner を同期させる必要があります。
+具体的には、ClientRunner は応答を受け取るまで "runner sync" リクエストを送り続けます。
 
-The behavior of the "runner sync" process can be configured with two variables:
+"runner sync" プロセスの挙動は、2 つの変数で設定できます。
 
 runner_sync_timeout
 ^^^^^^^^^^^^^^^^^^^
 
-This variable is for the client-side configuration (config_fed_client.json).
+この変数はクライアント側の設定 (config_fed_client.json) 用です。
 
-This runner_sync_timeout specifies the timeout value for the "runner sync" request.
-If a response is not received from the server within this specified value, then another "runner sync" request will be sent.
+この runner_sync_timeout は、"runner sync" リクエストのタイムアウト値を指定します。
+指定した値の時間内にサーバーから応答が受信されない場合、別の "runner sync" リクエストが送信されます。
 
-The default value is 2.0 seconds.
+デフォルト値は 2.0 秒です。
 
 max_runner_sync_tries
 ^^^^^^^^^^^^^^^^^^^^^
 
-This variable is for the client-side configuration (config_fed_client.json).
+この変数はクライアント側の設定 (config_fed_client.json) 用です。
 
-This variable specifies the max number of "runner sync" messages to be sent before receiving a response from the server.
-If a response is still not received after this many tries, the client's job process will terminate.
+この変数は、サーバーから応答を受け取るまでに送信する "runner sync" メッセージの最大数を指定します。
+この回数だけ試行しても応答が受信されない場合、クライアントのジョブプロセスは終了します。
 
-The default value is 30.
+デフォルト値は 30 です。
 
-The default settings of these two variables mean that if the ClientRunner and the ServerRunner are not synchronized within one minute, the client will terminate.
-If one minute is not enough, you can extend these two variables to meet your requirement.
+これら 2 つの変数のデフォルト設定は、ClientRunner と ServerRunner が 1 分以内に同期されない場合にクライアントが終了することを意味します。
+1 分では不十分な場合は、要件に合わせてこれら 2 つの変数を延長できます。
 
-Task Check
-----------
+タスクチェック
+--------------
 
-After the client is finished with the assigned task, it will send the result to the server, and before sending the result, the client asks the server whether the task is still valid.
-This is particularly useful when the result is large and the communication network is slow. If the task is no longer valid, then the client won't need to send the result any more.
-The client keeps sending the "task check" request to the server until a response is received.
+クライアントは、割り当てられたタスクを完了した後、結果をサーバーに送信します。結果を送信する前に、クライアントはそのタスクがまだ有効かどうかをサーバーに問い合わせます。
+これは、結果が大きく、通信ネットワークが低速な場合に特に有用です。タスクがすでに有効でない場合、クライアントは結果を送信する必要がなくなります。
+クライアントは、応答を受け取るまで "task check" リクエストをサーバーに送り続けます。
 
-The behavior of "task check" process can be configured with two variables:
+"task check" プロセスの挙動は、2 つの変数で設定できます。
 
 task_check_timeout
 ^^^^^^^^^^^^^^^^^^
 
-This variable is for the client-side configuration (config_fed_client.json).
+この変数はクライアント側の設定 (config_fed_client.json) 用です。
 
-This variable specifies the timeout value for the "task check" request.
-If a response is not received from the Server within this specified value, then another "task check" request will be sent.
+この変数は、"task check" リクエストのタイムアウト値を指定します。
+指定した値の時間内にサーバーから応答が受信されない場合、別の "task check" リクエストが送信されます。
 
-The default value is 5.0 seconds.
+デフォルト値は 5.0 秒です。
 
 task_check_interval
 ^^^^^^^^^^^^^^^^^^^
 
-This variable is for the client-side configuration (config_fed_client.json).
+この変数はクライアント側の設定 (config_fed_client.json) 用です。
 
-This variable specifies how long to wait before sending another "task check" request if a response is not received from the server for the previous request.
+この変数は、直前のリクエストに対する応答がサーバーから受信されなかった場合に、次の "task check" リクエストを送信するまでどれだけ待つかを指定します。
 
-The default value is 5.0 seconds.
+デフォルト値は 5.0 秒です。
 
-Get Task
---------
+タスクの取得
+------------
 
-The client sends the "get task" request to the server to get the next assigned task.
-You can set the get_task_timeout variable to specify how long to wait for the response from the server.
-If a response is not received from the server within the specified time, the client will try again.
+クライアントは、次に割り当てられるタスクを取得するために、"get task" リクエストをサーバーに送信します。
+get_task_timeout 変数を設定することで、サーバーからの応答をどれだけ待つかを指定できます。
+指定した時間内にサーバーから応答が受信されない場合、クライアントは再試行します。
 
-It is crucial to set this variable to a proper value.
-If this value is too short for the server to deliver the response to the client in time, then the server may get repeated requests for the same task.
-This can cause the server to run out of memory (since there could be many messages inflight to the same client).
+この変数を適切な値に設定することは非常に重要です。
+この値が短すぎてサーバーが時間内にクライアントへ応答を届けられない場合、サーバーは同じタスクに対するリクエストを繰り返し受け取る可能性があります。
+これにより、サーバーがメモリ不足に陥ることがあります (同一クライアント宛てのメッセージが多数飛び交う状態になり得るためです)。
 
-The default value of this variable is 30 seconds. You change its value by setting it in the config_fed_client.json:
+この変数のデフォルト値は 30 秒です。値を変更するには、config_fed_client.json で次のように設定します。
 
 ``get_task_timeout: 60.0``
 
-Submit Task Result
-------------------
+タスク結果の送信
+----------------
 
-The client submits the task result to the server after the task is completed. You can set the submit_task_result_timeout variable to specify how long to wait for the response from the server. If a response is not received from the server within the specified time, the client will try to send the result again until it succeeds.
+クライアントは、タスクの完了後にタスク結果をサーバーへ送信します。submit_task_result_timeout 変数を設定することで、サーバーからの応答をどれだけ待つかを指定できます。指定した時間内にサーバーから応答が受信されない場合、クライアントは成功するまで結果の送信を再試行します。
 
-It is crucial to set this variable to a proper value. If this value is too short for the server to accept the result and deliver a response to the client in time, then the server may get repeated task results for the same task. This can cause the server to run out of memory (since there could be many messages coming to the server).
+この変数を適切な値に設定することは非常に重要です。この値が短すぎてサーバーが時間内に結果を受け取って応答をクライアントへ届けられない場合、サーバーは同じタスクに対するタスク結果を繰り返し受け取る可能性があります。これにより、サーバーがメモリ不足に陥ることがあります (サーバーに多数のメッセージが届く状態になり得るためです)。
 
-The default value of this variable is 30 seconds. You change its value by setting it in the config_fed_client.json:
+この変数のデフォルト値は 30 秒です。値を変更するには、config_fed_client.json で次のように設定します。
 
 ``submit_task_result_timeout: 120.0``
 
-Job Heartbeat
--------------
+ジョブハートビート
+------------------
 
-A task could take the client a long time to finish.
-During this time, there is no interaction between the client-side job process and the server-side job process.
-In some network environments, this long-time silence could cause the underlying network to drop connections, which could cause some system functions to fail (e.g. any server-initiated messages may not be delivered to the client in a timely fashion).
-To prevent this problem, the client's job process sends periodical heartbeats to the server.
-The behavior of the heartbeat is controlled by:
+タスクによっては、クライアントが完了するまでに長い時間がかかることがあります。
+この間、クライアント側のジョブプロセスとサーバー側のジョブプロセスの間にやり取りはありません。
+一部のネットワーク環境では、この長時間の無通信状態によって下位のネットワークが接続を切断することがあり、その結果として一部のシステム機能が失敗することがあります (たとえば、サーバー起点のメッセージがクライアントへ適時に配送されなくなるなど)。
+この問題を防ぐため、クライアントのジョブプロセスは定期的にサーバーへハートビートを送信します。
+ハートビートの挙動は、次の変数によって制御されます。
 
 job_heartbeat_interval
 ^^^^^^^^^^^^^^^^^^^^^^
 
-This variable is for the client-side configuration (config_fed_client.json).
-This variable specifies how often to send a heartbeat message to the server.
+この変数はクライアント側の設定 (config_fed_client.json) 用です。
+この変数は、サーバーへハートビートメッセージを送信する頻度を指定します。
 
-The default value is 30.0 seconds. You can tune this value up or down depending on your communication network's behavior.
+デフォルト値は 30.0 秒です。通信ネットワークの挙動に応じて、この値を上下に調整できます。
 
-Graceful Job Completion
------------------------
+ジョブの正常な完了
+------------------
 
-Many components could be involved in the execution of a job. At the end of the job, all components should end gracefully.
-For example, a stats report component may still have pending stats records to be processed when the job is done.
-If the job process (server-side or client-side) is abruptly terminated when the job's workflow is done, then the pending records would be lost.
+ジョブの実行には多くのコンポーネントが関与することがあります。ジョブの終了時には、すべてのコンポーネントが正常に終了すべきです。
+たとえば、統計レポートのコンポーネントは、ジョブが完了した時点でまだ未処理の統計レコードを保持している可能性があります。
+ジョブのワークフローが完了した時点でジョブプロセス (サーバー側またはクライアント側) が突然終了すると、これら未処理のレコードは失われてしまいます。
 
-To enable graceful completion of components, FLARE will fire the ``EventType.CHECK_END_RUN_READINESS event``.
-A component that may have pending tasks can listen to this event and indicate whether it is ready to end.
-FLARE will repeat the event until all components are ready to end; or until a configured max time is reached.
+コンポーネントの正常な完了を可能にするため、FLARE は ``EventType.CHECK_END_RUN_READINESS event`` を発火します。
+未処理のタスクを持つ可能性のあるコンポーネントは、このイベントをリッスンし、終了する準備ができているかどうかを示すことができます。
+FLARE は、すべてのコンポーネントが終了可能になるまで、または設定された最大時間に達するまで、このイベントを繰り返し発火します。
 
 end_run_readiness_timeout
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This variable is for both the server-side (config_fed_server.json) and client-side configuration (config_fed_client.json).
-This variable specifies the max time to wait for all components to become ready to end.
+この変数は、サーバー側の設定 (config_fed_server.json) とクライアント側の設定 (config_fed_client.json) の両方で使用されます。
+この変数は、すべてのコンポーネントが終了可能になるまで待機する最大時間を指定します。
 
-The default value is 5.0 seconds
+デフォルト値は 5.0 秒です
 
 end_run_readiness_check_interval
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This variable is for both the server-side (config_fed_server.json) and client-side configuration (config_fed_client.json).
-This variable specifies how long to wait before checking component readiness again.
+この変数は、サーバー側の設定 (config_fed_server.json) とクライアント側の設定 (config_fed_client.json) の両方で使用されます。
+この変数は、コンポーネントの準備状況を再度チェックするまでにどれだけ待つかを指定します。
 
-The default value is 0.5 seconds.
+デフォルト値は 0.5 秒です。

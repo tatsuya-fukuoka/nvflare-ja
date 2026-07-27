@@ -1,31 +1,31 @@
 .. _openshift_k8s_deployment:
 
-##############################
-Deploying FLARE on OpenShift
-##############################
+##################################
+OpenShift への FLARE のデプロイ
+##################################
 
-The OpenShift deployment guide and helper scripts now live in the DevOps
-examples directory:
+OpenShift のデプロイガイドとヘルパースクリプトは、現在 DevOps の
+サンプルディレクトリに置かれています。
 
 ``examples/devops/openshift``
 
-Where to Start
-==============
+はじめに参照する場所
+=====================
 
-Open ``examples/devops/openshift/README.md`` first for a concise folder
-overview. It lists the Dockerfiles, helper scripts, and typical quickstart
-commands.
+まず ``examples/devops/openshift/README.md`` を開いて、フォルダの概要を簡潔に
+確認してください。Dockerfile、ヘルパースクリプト、および代表的なクイックスタート
+コマンドが記載されています。
 
-Open ``examples/devops/openshift/index.md`` for the full OpenShift deployment
-guide. That source document covers prerequisites, image requirements, the
-scripted workflow, manual deployment steps, OpenShift SCC notes,
-troubleshooting, and cleanup.
+OpenShift デプロイガイドの全文については ``examples/devops/openshift/index.md``
+を開いてください。この文書では、前提条件、イメージの要件、スクリプト化された
+ワークフロー、手動でのデプロイ手順、OpenShift SCC に関する注意事項、
+トラブルシューティング、およびクリーンアップについて説明しています。
 
-Run the scripts from the NVFlare repository root. For example:
+スクリプトは NVFlare リポジトリのルートから実行してください。例:
 
 .. code-block:: bash
 
    bash examples/devops/openshift/scripts/k8s_e2e.sh
 
-The OpenShift example builds on the generic Kubernetes deployment runtime. See
-:ref:`helm_chart` for the Kubernetes Helm chart workflow and runtime details.
+OpenShift のサンプルは、汎用的な Kubernetes デプロイのランタイムを基盤としています。
+Kubernetes Helm チャートのワークフローとランタイムの詳細については :ref:`helm_chart` を参照してください。

@@ -1,14 +1,14 @@
 .. _variable_resolution:
 
-Variable Resolution in Job Configuration
-========================================
+ジョブ設定における変数解決
+================================
 
-FLARE jobs are defined with configuration files: ``config_fed_client.json`` and ``config_fed_server.json``.
-These two files configure the components (Python objects) used for the server process and the FL client processes.
-The component configuration includes information about the class path of the Python object (via ``path`` or ``class_path``), and arguments for the object's constructor.
-The configuration files are processed at the beginning of the server/client job processes to create those components.
+FLARE のジョブは、``config_fed_client.json`` と ``config_fed_server.json`` という設定ファイルで定義されます。
+これら 2 つのファイルは、サーバープロセスおよび FL クライアントプロセスで使用されるコンポーネント (Python オブジェクト) を設定します。
+コンポーネントの設定には、Python オブジェクトのクラスパス (``path`` または ``class_path`` による指定) と、そのオブジェクトのコンストラクタへの引数が含まれます。
+設定ファイルは、サーバー / クライアントのジョブプロセスの開始時に処理され、それらのコンポーネントが作成されます。
 
-Here is a typical example of a job configuration:
+以下は典型的なジョブ設定の例です。
 
 .. code-block:: json
 
@@ -34,18 +34,18 @@ Here is a typical example of a job configuration:
       ]
    }
 
-As shown in the example above, the ``executor`` component has two args (sleep_time and model_dir) and both are specified explicitly.
+上の例に示すように、``executor`` コンポーネントには 2 つの引数 (sleep_time と model_dir) があり、どちらも明示的に指定されています。
 
-Variable Resolution
--------------------
+変数解決
+--------------
 
-Sometimes, users want to experiment with different arg values of the component, and want to manage those experimental args in a common place (e.g. beginning of the config file) instead of searching for the args from the file to modify them.
-This is particularly true if the user has multiple components to experiment with.
+ユーザーがコンポーネントの引数値をいろいろ変えて試したい場合、それらの実験用引数をファイル内から探して修正するのではなく、共通の場所 (例: 設定ファイルの先頭) でまとめて管理したいことがあります。
+これは、実験対象のコンポーネントが複数ある場合に特に当てはまります。
 
-FLARE makes this possible with a mechanism called Variable Resolution.
-Instead of hard-coding values for each config arg, users can simply use a Variable Reference as the value of the arg, and then define the value of the variable in a separate place (e.g. beginning of the config file).
+FLARE では、変数解決 (Variable Resolution) と呼ばれる仕組みでこれを可能にしています。
+各設定引数に値をハードコードする代わりに、引数の値として変数参照 (Variable Reference) を使用し、その変数の値を別の場所 (例: 設定ファイルの先頭) で定義できます。
 
-The following shows the configuration of the above example using variable resolution:
+以下は、上記の例を変数解決を用いて設定したものです。
 
 .. code-block:: json
 
@@ -74,51 +74,51 @@ The following shows the configuration of the above example using variable resolu
    }
 
 
-As you can see from the example, the Variable Definition (Var Def) is a simple JSON element that defines a value for a Variable Name (Var Name).
-The Variable Reference (Var Ref) is a string that embeds the referenced Variable Name within curly brackets:  ``{VarName}``.
+この例からわかるように、変数定義 (Variable Definition、Var Def) は、変数名 (Variable Name、Var Name) に対する値を定義する単純な JSON 要素です。
+変数参照 (Variable Reference、Var Ref) は、参照する変数名を波括弧で囲んで埋め込んだ文字列です: ``{VarName}``。
 
-A var ref can be used within a string with other information.
-For example, you could define the ``model_dir`` arg to include a prefix:
+var ref は、他の情報と組み合わせて文字列の中で使用できます。
+例えば、``model_dir`` 引数にプレフィックスを含めるように定義できます:
 ``/tmp/fl_work/{result_dir}``
 
-You could reference multiple variables in one arg value:
+1 つの引数値の中で複数の変数を参照することもできます:
 ``{root_dir}/{result_dir}``
 
-If the arg value contains nothing but a single var ref, it is called a Simple Var Ref (SVR).
-Other uses, such as var ref with other info, or multiple var refs, are called Complex Var Ref (CVR).
-There is an important difference between a SVR and a CVR when the ref is resolved to compute the arg value: 
-a SVR will be resolved to its true type of the corresponding variable definition; whereas a CVR is always resolved into a string with the values of the referenced variables.
-The SVR can reference both primitive variables (number, boolean, string) and non-primitives (list and dict), whereas you can only use primitive variables with a CVR!
+引数値が単一の var ref のみで構成されている場合、それは単純変数参照 (Simple Var Ref、SVR) と呼ばれます。
+他の情報を伴う var ref や、複数の var ref といったその他の用法は、複合変数参照 (Complex Var Ref、CVR) と呼ばれます。
+参照を解決して引数値を計算する際、SVR と CVR には重要な違いがあります。
+SVR は対応する変数定義の本来の型に解決されるのに対し、CVR は常に、参照された変数の値を用いた文字列に解決されます。
+SVR はプリミティブな変数 (数値、真偽値、文字列) と非プリミティブな変数 (リストや dict) の両方を参照できますが、CVR ではプリミティブな変数しか使用できません。
 
-Predefined System Variables
----------------------------
+定義済みのシステム変数
+============================
 
-Referenced variables must be defined. For user-defined variables, usually users define them somewhere in the config file (e.g. at the beginning of the file) as first-level elements, as shown in the above example.
+参照される変数は必ず定義されている必要があります。ユーザー定義の変数の場合、通常は上記の例のように、設定ファイルのどこか (例: ファイルの先頭) に第 1 レベルの要素として定義します。
 
-FLARE predefined the following System Variables that are also available for you to use in the job config:
+FLARE では以下のシステム変数があらかじめ定義されており、ジョブ設定内で使用できます。
 
-- SITE_NAME - the name of the site (server ot FL client)
-- WORKSPACE - the directory of the site's workspace
-- JOB_ID - Job ID
-- ROOT_URL - the url for connecting to the FL server
-- SECURE_MODE - whether the communication is in secure mode
+- SITE_NAME - サイトの名前 (サーバーまたは FL クライアント)
+- WORKSPACE - サイトのワークスペースのディレクトリ
+- JOB_ID - ジョブ ID
+- ROOT_URL - FL サーバーに接続するための url
+- SECURE_MODE - 通信がセキュアモードかどうか
 
-Note that system variables are named in UPPERCASE letters. To avoid potential name conflict between user-defined variables and system variables, please name all user-defined variables with lowercase letters.
+システム変数は大文字で命名されている点に注意してください。ユーザー定義の変数とシステム変数との名前の衝突を避けるため、ユーザー定義の変数はすべて小文字で命名してください。
 
-The next example will show the use of system variables in CellPipe configuration.
+次の例では、CellPipe の設定におけるシステム変数の使用方法を示します。
 
-OS Environment Variables
-------------------------
+OS 環境変数
+==================
 
-OS environment variables can be referenced in job configuration via the dollar sign:
+OS の環境変数は、ドル記号を用いてジョブ設定内で参照できます。
 
 ``{$EnvVarName}``
 
-With this, you can make your job config controlled by OS environment variables.
-For example, you can use an environment variable (e.g. NVFLARE_MODEL_DIR) to specify where the trained model will be stored such that system operators can change the model location without needing to change job configurations.
-Note that if a variable with the name ``$VarName`` is already defined in the job config, then this definition takes precedence over the corresponding OS environment variable, if any.
+これにより、ジョブ設定を OS の環境変数で制御できるようになります。
+例えば、環境変数 (例: NVFLARE_MODEL_DIR) を使って学習済みモデルの保存先を指定しておけば、システム運用者はジョブ設定を変更することなくモデルの保存場所を変更できます。
+なお、``$VarName`` という名前の変数がすでにジョブ設定内で定義されている場合は、その定義が対応する OS 環境変数よりも優先されます。
 
-The following example shows how to use an OS environment variable to control the location of model_dir:
+以下の例は、OS 環境変数を使って model_dir の場所を制御する方法を示しています。
 
 .. code-block:: json
 
@@ -143,12 +143,12 @@ The following example shows how to use an OS environment variable to control the
       ]
    }
 
-Just like any other var definitions, OS environment variables can be referenced in both SVR and CVR.
+他の変数定義と同様に、OS 環境変数は SVR と CVR の両方で参照できます。
 
-Parameterized Variable Definitions
-----------------------------------
+パラメータ化された変数定義
+================================
 
-Before discussing this advanced topic, let's first show an example of job configuration that does not use this technique for comparison:
+この応用的なトピックを説明する前に、比較のために、まずこの手法を使っていないジョブ設定の例を示します。
 
 .. code-block:: json
 
@@ -206,10 +206,10 @@ Before discussing this advanced topic, let's first show an example of job config
    }
 
 
-This job requires two pipes, one for task exchange (task_pipe), another for metrics collection (metric_pipe).
-If you look at their configuration closely, you will see that: there are many args to configure, and the configs of the two pipes are identical except for their ``id`` values. It is tedious and error-prone to configure many args in multiple places.
+このジョブでは 2 つのパイプが必要です。1 つはタスク交換用 (task_pipe)、もう 1 つはメトリクス収集用 (metric_pipe) です。
+これらの設定をよく見ると、設定すべき引数が多く、2 つのパイプの設定は ``id`` の値を除いてまったく同一であることがわかります。多数の引数を複数の場所で設定するのは、手間がかかり、間違いも起こりやすくなります。
 
-One way to improve is to make use of SVR for the args of the two pipes:
+改善策の 1 つは、2 つのパイプの引数に SVR を利用することです。
 
 .. code-block:: json
 
@@ -260,10 +260,10 @@ One way to improve is to make use of SVR for the args of the two pipes:
       ]
    }
 
-In this version of the example, the args for the two pipes are moved into the var def ``pipe_args``, and the components' ``args`` simply reference the var def.
-This is better than the original version, but the path of the two pipes still must be repeated for both components.
+この例のこのバージョンでは、2 つのパイプの引数を var def の ``pipe_args`` に移し、コンポーネントの ``args`` はその var def を参照するだけになっています。
+これは元のバージョンより優れていますが、2 つのパイプの path は依然として両方のコンポーネントで繰り返し記述する必要があります。
 
-Using Parameterized Variable Definition, we can further improve it:
+パラメータ化された変数定義を使うと、さらに改善できます。
 
 .. code-block:: json
 
@@ -310,26 +310,26 @@ Using Parameterized Variable Definition, we can further improve it:
       ]
    }
 
-As you can see here, ``@pipe_def`` is a parameterized variable definition (PVD).
-The name of a PVD must start with the ``@`` sign. The PVD is usually defined with references to other variables, and the values can be provided at the time the PVD is referenced.
-In this example, the ``@pipe_def`` PVD defines a pipe configuration template that can be resolved to a concrete pipe config.
-In the ``components`` section, this PVD is used for the config of the two pipes: task_pipe and metric_pipe.
+ここで見られるように、``@pipe_def`` はパラメータ化された変数定義 (parameterized variable definition、PVD) です。
+PVD の名前は ``@`` 記号で始まる必要があります。PVD は通常、他の変数への参照を含めて定義され、その値は PVD が参照される時点で与えられます。
+この例では、``@pipe_def`` PVD が、具体的なパイプ設定に解決可能なパイプ設定テンプレートを定義しています。
+``components`` セクションでは、この PVD が task_pipe と metric_pipe という 2 つのパイプの設定に使用されています。
 
-A PVD can only be referenced with SVR (simple variable reference).
-To reference a PVD, you provide values for any variables in the PVD.
-In this example, the ``pipe_id`` is the variable that takes two different values for the two different pipes.
+PVD は SVR (単純変数参照) でのみ参照できます。
+PVD を参照する際には、その PVD 内の変数に値を与えます。
+この例では、``pipe_id`` が変数であり、2 つの異なるパイプに対して 2 つの異なる値を取ります。
 
-The reference to a PVD is in this general format:
+PVD への参照は、次の一般的な形式になります。
 
 ``{PvdName:N1=V1:N2=V2:...}``
 
-The PvdName is the name of the PVD.
-You supply the value of each variable in the PVD using N=V, where N is the name of the variable, and V is the value.
-Note that the V can even reference other variables!
+PvdName は PVD の名前です。
+PVD 内の各変数の値は N=V の形式で与えます。ここで N は変数名、V はその値です。
+なお、V はさらに他の変数を参照することもできます。
 
-Note that if there is a value defined for N outside of the reference, the supplied value in the reference takes precedence.
-For example, if your reference supplied a value for ``pipe_token``, then the value you supplied will take precedence over the one defined at the beginning of the file:
+参照の外側で N に対する値が定義されている場合、参照内で与えられた値が優先されることに注意してください。
+例えば、参照で ``pipe_token`` の値を与えた場合、その値がファイル先頭で定義された値よりも優先されます。
 
 ``"{@pipe_def:pipe_id=task_pipe:pipe_token=pipe_789}"``
 
-In this case, the value of the ``pipe_token`` when creating the pipe ``task_pipe`` will be ``pipe_789``, instead of ``pipe_123`` as defined at the beginning of the file.
+この場合、パイプ ``task_pipe`` を作成する際の ``pipe_token`` の値は、ファイル先頭で定義された ``pipe_123`` ではなく ``pipe_789`` になります。
