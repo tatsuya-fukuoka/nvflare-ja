@@ -1,14 +1,13 @@
 .. _system_command:
 
 #########################
-System Command
+System コマンド
 #########################
 
-The ``nvflare system`` command group manages a running FL system through the
-admin API.
+``nvflare system`` コマンドグループは、admin API を介して稼働中の FL システムを管理します。
 
 ***********************
-Command Usage
+コマンドの使い方
 ***********************
 
 .. code-block:: none
@@ -27,72 +26,72 @@ Command Usage
      version        show NVFlare version on each remote site
      log-config     change logging level on server or client sites
 
-*****************
-Common Examples
-*****************
+*********************
+よく使う例
+*********************
 
-Show overall system status:
+システム全体のステータスを表示します。
 
 .. code-block:: shell
 
    nvflare system status
 
-Show server-only status:
+サーバーのみのステータスを表示します。
 
 .. code-block:: shell
 
    nvflare system status server
 
-Show all reported resources:
+報告されているすべてのリソースを表示します。
 
 .. code-block:: shell
 
    nvflare system resources
 
-Show resources for clients only:
+クライアントのリソースのみを表示します。
 
 .. code-block:: shell
 
    nvflare system resources client
 
-Restart the server:
+サーバーを再起動します。
 
 .. code-block:: shell
 
    nvflare system restart server --force
 
-Shut down the server:
+サーバーをシャットダウンします。
 
 .. code-block:: shell
 
    nvflare system shutdown server --force
 
-Shut down specific clients:
+特定のクライアントをシャットダウンします。
 
 .. code-block:: shell
 
    nvflare system shutdown client site-1 site-2 --force
 
-Disable a client from reconnecting:
+クライアントの再接続を無効化します。
 
 .. code-block:: shell
 
    nvflare system disable-client site-1 --force
 
-Enable a disabled client:
+無効化されたクライアントを有効化します。
 
 .. code-block:: shell
 
    nvflare system enable-client site-1 --force
 
-Show deployed NVFlare versions:
+デプロイされている NVFlare のバージョンを表示します。
 
 .. code-block:: shell
 
    nvflare system version
    nvflare system version --site server
 
-Change runtime logging:
+実行時のロギングを変更します。
 
 .. code-block:: shell
 
@@ -102,32 +101,30 @@ Change runtime logging:
 
 .. note::
 
-   All server-connected ``nvflare system`` commands resolve the startup kit in
-   this order: ``--kit-id <id>``, ``--startup-kit <path>``,
-   ``NVFLARE_STARTUP_KIT_DIR``, then ``startup_kits.active`` from
-   ``~/.nvflare/config.conf``. ``--kit-id`` and ``--startup-kit`` are optional
-   per-command overrides. When provided, they take precedence over the active
-   startup kit for the current invocation only and do not change
-   ``startup_kits.active``. Use ``nvflare config add`` and
-   ``nvflare config use`` to manage the active startup kit. See
-   :ref:`config_command`.
+   サーバーに接続するすべての ``nvflare system`` コマンドは、次の順序でスタートアップキットを
+   解決します。``--kit-id <id>`` 、``--startup-kit <path>`` 、``NVFLARE_STARTUP_KIT_DIR`` 、
+   そして ``~/.nvflare/config.conf`` の ``startup_kits.active`` です。``--kit-id`` と
+   ``--startup-kit`` は、コマンドごとの任意の上書き指定です。指定した場合は、その実行に限り
+   アクティブなスタートアップキットよりも優先され、``startup_kits.active`` は変更されません。
+   アクティブなスタートアップキットの管理には ``nvflare config add`` と ``nvflare config use``
+   を使用します。:ref:`config_command` を参照してください。
 
-****************
-Status and Resources
-****************
+**************************
+ステータスとリソース
+**************************
 
-``nvflare system status`` reports server and client connectivity.
+``nvflare system status`` は、サーバーとクライアントの接続状況を報告します。
 
-The positional ``target`` argument means ``server`` or ``client``. It tells
-NVFlare what to query.
+位置引数 ``target`` は ``server`` または ``client`` を意味します。これによって NVFlare に
+何を照会するかを指示します。
 
-Status arguments:
+status の引数:
 
-- positional ``target``: optional. ``server`` or ``client``.
-- positional ``client_names``: optional list of client names when targeting clients.
-- ``--schema``: print the command schema as JSON and exit.
+- 位置引数 ``target``: 任意。``server`` または ``client`` 。
+- 位置引数 ``client_names``: クライアントを対象とする場合の、任意のクライアント名のリスト。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -135,21 +132,21 @@ Examples:
    nvflare system status server
    nvflare system status client site-1 site-2
 
-In ``nvflare system status client site-1``, ``client site-1`` means query
-client ``site-1``.
+``nvflare system status client site-1`` における ``client site-1`` は、クライアント ``site-1`` を
+照会することを意味します。
 
-``nvflare system resources`` reports server and client resource usage.
+``nvflare system resources`` は、サーバーとクライアントのリソース使用状況を報告します。
 
-The positional ``target`` argument means ``server`` or ``client``. It tells
-NVFlare what to query.
+位置引数 ``target`` は ``server`` または ``client`` を意味します。これによって NVFlare に
+何を照会するかを指示します。
 
-Resource arguments:
+resources の引数:
 
-- positional ``target``: optional. ``server`` or ``client``.
-- positional ``client_names``: optional list of client names when targeting clients.
-- ``--schema``: print the command schema as JSON and exit.
+- 位置引数 ``target``: 任意。``server`` または ``client`` 。
+- 位置引数 ``client_names``: クライアントを対象とする場合の、任意のクライアント名のリスト。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -157,35 +154,33 @@ Examples:
    nvflare system resources client
    nvflare system resources client site-1
 
-In ``nvflare system resources client site-1``, ``client site-1`` means query
-client ``site-1``.
+``nvflare system resources client site-1`` における ``client site-1`` は、クライアント ``site-1`` を
+照会することを意味します。
 
-**********************
-Shutdown and Restart
-**********************
+******************************
+シャットダウンと再起動
+******************************
 
-Use ``shutdown`` and ``restart`` to control server or client processes through
-the admin channel.
+admin チャネルを介してサーバーやクライアントのプロセスを制御するには、``shutdown`` と ``restart``
+を使用します。
 
-Supported targets:
+サポートされている対象:
 
-- ``server`` — shut down or restart the FL server (closes the admin session).
-- ``client`` — shut down or restart one or more clients.
-- ``all`` — shut down or restart the server and all clients (closes the admin session).
+- ``server`` — FL サーバーをシャットダウンまたは再起動します (admin セッションは閉じられます)。
+- ``client`` — 1 つ以上のクライアントをシャットダウンまたは再起動します。
+- ``all`` — サーバーとすべてのクライアントをシャットダウンまたは再起動します (admin セッションは閉じられます)。
 
-Control arguments:
+制御用の引数:
 
-- positional ``target``: required. One of ``server``, ``client``, or ``all``.
-- positional ``client_names``: optional. One or more client names. Only meaningful when ``target`` is ``client``.
-- ``--force``: skip the confirmation prompt.
-- ``--no-wait``: return after requesting shutdown or restart without waiting
-  for completion.
-- ``--timeout SECONDS``: maximum positive seconds to wait for shutdown or
-  restart completion. Default: ``30``. Use ``--no-wait`` instead of
-  ``--timeout 0`` for fire-and-forget operation.
-- ``--schema``: print the command schema as JSON and exit.
+- 位置引数 ``target``: 必須。``server`` 、``client`` 、``all`` のいずれか。
+- 位置引数 ``client_names``: 任意。1 つ以上のクライアント名。``target`` が ``client`` の場合にのみ意味を持ちます。
+- ``--force``: 確認プロンプトをスキップします。
+- ``--no-wait``: シャットダウンまたは再起動を要求した後、完了を待たずに戻ります。
+- ``--timeout SECONDS``: シャットダウンまたは再起動の完了を待つ最大秒数 (正の値)。デフォルト: ``30`` 。
+  投げっぱなしの動作にしたい場合は ``--timeout 0`` ではなく ``--no-wait`` を使用してください。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -201,47 +196,43 @@ Examples:
    nvflare system restart server --force --no-wait
    nvflare system restart all --force --timeout 120
 
-In non-interactive contexts, ``--force`` is required.
+非対話的なコンテキストでは ``--force`` が必須です。
 
-By default, shutdown waits for the target to stop before returning, and restart
-waits for the target to become reachable again before returning. For
-``restart all``, this includes waiting for the server to restart and for
-previously connected clients to reconnect. With ``--no-wait``, the command
-returns immediately with an initiated status. When ``target`` is ``server`` or
-``all``, the admin session closes automatically after the shutdown or restart
-request is sent.
-If the wait exceeds ``--timeout``, the command returns ``TIMEOUT`` with exit
-code ``3`` instead of reporting a connection failure.
+デフォルトでは、shutdown は対象が停止するまで待ってから戻り、restart は対象が再び到達可能になるまで
+待ってから戻ります。``restart all`` の場合、これにはサーバーの再起動と、それまで接続していた
+クライアントの再接続を待つことが含まれます。``--no-wait`` を指定すると、コマンドは開始済みの
+ステータスを返して直ちに戻ります。``target`` が ``server`` または ``all`` の場合、シャットダウンまたは
+再起動の要求を送信した後、admin セッションは自動的に閉じられます。
+待機時間が ``--timeout`` を超えた場合、コマンドは接続失敗を報告するのではなく、``TIMEOUT`` と
+終了コード ``3`` を返します。
 
-****************
-Client Access Control
-****************
+************************
+クライアントのアクセス制御
+************************
 
-Use ``disable-client`` to persistently block a client identity from joining the
-running federation. The server removes any active registry entry for the client
-and rejects later registration or heartbeat attempts until the client is enabled.
-This does not revoke the client's certificate or delete its startup kit. JSON
-output includes ``already_disabled`` so callers can distinguish a state change
-from an idempotent no-op.
+稼働中のフェデレーションへの参加を、あるクライアントアイデンティティに対して恒久的にブロックするには
+``disable-client`` を使用します。サーバーはそのクライアントのアクティブなレジストリエントリを削除し、
+クライアントが有効化されるまで、以降の登録やハートビートの試行を拒否します。これはクライアントの証明書を
+失効させたり、そのスタートアップキットを削除したりするものではありません。JSON 出力には
+``already_disabled`` が含まれるため、呼び出し側は状態変更と冪等な no-op を区別できます。
 
-Use ``enable-client`` to remove the disabled flag. The client can rejoin on its
-next registration or heartbeat.
+無効化フラグを解除するには ``enable-client`` を使用します。クライアントは次回の登録またはハートビートで
+再参加できます。
 
-The disabled-client policy is stored on the server in
-``<server_workspace>/disabled_clients.json`` and is loaded at server startup.
-Updates and persistence writes are serialized by the server client-manager lock
-and written with a temporary file followed by atomic replacement, so the policy
-survives server restart without partially written files. If the file exists but
-cannot be loaded, the server fails closed during startup instead of admitting
-previously disabled clients.
+無効化クライアントのポリシーは、サーバー上の ``<server_workspace>/disabled_clients.json`` に保存され、
+サーバー起動時に読み込まれます。更新と永続化の書き込みはサーバーのクライアントマネージャーのロックに
+よって直列化され、一時ファイルへの書き込みとアトミックな置換によって行われるため、ポリシーは
+部分的に書き込まれたファイルを残すことなくサーバーの再起動を越えて維持されます。ファイルが存在するのに
+読み込めない場合、サーバーは以前に無効化されたクライアントを受け入れるのではなく、起動時に
+フェイルクローズします。
 
-Client access arguments:
+クライアントアクセス用の引数:
 
-- positional ``client_name``: required. The name of the client to disable or enable.
-- ``--force``: skip the confirmation prompt.
-- ``--schema``: print the command schema as JSON and exit.
+- 位置引数 ``client_name``: 必須。無効化または有効化するクライアントの名前。
+- ``--force``: 確認プロンプトをスキップします。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -249,18 +240,17 @@ Examples:
    nvflare system enable-client site-1 --force
 
 ****************
-Version
+バージョン
 ****************
 
-Use ``nvflare system version`` to query the NVFlare version reported by remote
-sites.
+リモートサイトが報告する NVFlare のバージョンを照会するには ``nvflare system version`` を使用します。
 
-Version arguments:
+version の引数:
 
-- ``--site``: ``server``, a client name, or ``all``. Default: ``all``.
-- ``--schema``: print the command schema as JSON and exit.
+- ``--site``: ``server`` 、クライアント名、または ``all`` 。デフォルト: ``all`` 。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -268,14 +258,14 @@ Examples:
    nvflare system version --site server
    nvflare system version --site site-1
 
-The command reports site versions, whether they are compatible with the server
-version, and which sites are mismatched.
+このコマンドは、各サイトのバージョン、それらがサーバーのバージョンと互換性があるかどうか、および
+どのサイトが不一致であるかを報告します。
 
-****************
-Runtime Logging
-****************
+************************
+実行時のロギング
+************************
 
-Use ``nvflare system log-config`` to change logging on the server or client sites.
+サーバーまたはクライアントサイトのロギングを変更するには ``nvflare system log-config`` を使用します。
 
 .. code-block:: shell
 
@@ -283,13 +273,13 @@ Use ``nvflare system log-config`` to change logging on the server or client site
    nvflare system log-config --site server verbose
    nvflare system log-config --site site-1 msg_only
 
-Logging arguments:
+ロギングの引数:
 
-- positional ``level``: runtime-required log level or built-in log mode; omitting it returns a CLI error
-- ``--site``: ``server``, a client name, or ``all``. Default: ``all``.
-- ``--schema``: print the command schema as JSON and exit.
+- 位置引数 ``level``: 実行時に必須のログレベル、または組み込みのログモード。省略すると CLI エラーが返されます。
+- ``--site``: ``server`` 、クライアント名、または ``all`` 。デフォルト: ``all`` 。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Supported built-in values for positional ``level``:
+位置引数 ``level`` でサポートされている組み込みの値:
 
 - ``DEBUG``
 - ``INFO``
@@ -302,29 +292,29 @@ Supported built-in values for positional ``level``:
 - ``verbose``
 - ``reload``
 
-``level`` is required at runtime. Omitting it does not fail argparse parsing, but the command will return an error.
+``level`` は実行時に必須です。省略しても argparse のパースは失敗しませんが、コマンドはエラーを返します。
 
-*********************
-JSON Output and Help
-*********************
+*************************
+JSON 出力とヘルプ
+*************************
 
-Add ``--format json`` after the subcommand for machine-readable output:
+機械可読な出力を得るには、サブコマンドの後に ``--format json`` を追加します。
 
 .. code-block:: shell
 
    nvflare system status --format json
    nvflare system version --site server --format json
 
-stdout contains a single JSON envelope; human-readable progress and
-diagnostics go to stderr.
+標準出力には単一の JSON エンベロープが含まれ、人間向けの進行状況や診断情報は標準エラー出力に
+送られます。
 
-Use ``--schema`` for machine-readable command discovery. ``--schema`` always
-returns JSON so ``--format json`` is not needed with it:
+機械可読なコマンド探索には ``--schema`` を使用します。``--schema`` は常に JSON を返すため、
+``--format json`` を併用する必要はありません。
 
 .. code-block:: shell
 
    nvflare system status --schema
    nvflare system shutdown server --schema
 
-Human-readable argument errors print command help first, followed by the
-specific error and hint. JSON mode prints only the JSON error envelope.
+人間向けの引数エラーでは、まずコマンドのヘルプが出力され、続いて具体的なエラーとヒントが
+表示されます。JSON モードでは JSON のエラーエンベロープのみが出力されます。

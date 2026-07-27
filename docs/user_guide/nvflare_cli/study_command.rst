@@ -4,12 +4,12 @@
 NVIDIA FLARE Study CLI
 ############################
 
-The ``nvflare study`` command family manages multi-study lifecycle operations on a running
-NVFlare server: registering and removing studies, enrolling and removing sites, and managing
-study user membership.
+``nvflare study`` コマンド群は、稼働中の NVFlare サーバー上でマルチスタディのライフサイクル操作
+(スタディの登録と削除、サイトの登録と削除、スタディのユーザーメンバーシップの管理) を行います。
 
-These commands are only meaningful when the server is provisioned with ``api_version: 4``
-and has multi-study support enabled. For provisioning setup, see :ref:`multi_study_guide`.
+これらのコマンドは、サーバーが ``api_version: 4`` でプロビジョニングされ、マルチスタディのサポートが
+有効になっている場合にのみ意味を持ちます。プロビジョニングの設定については :ref:`multi_study_guide`
+を参照してください。
 
 .. code-block:: none
 
@@ -27,26 +27,28 @@ and has multi-study support enabled. For provisioning setup, see :ref:`multi_stu
      add-user       add a user to a study's admin list
      remove-user    remove a user from a study's admin list
 
-*****************************
-Startup Kit Resolution
-*****************************
+**********************************
+スタートアップキットの解決
+**********************************
 
-All ``nvflare study`` commands connect to the server through an admin startup kit. Resolution
-is identical to all other server-connected ``nvflare`` commands (``job``, ``system``, etc.):
+すべての ``nvflare study`` コマンドは、admin スタートアップキットを介してサーバーに接続します。
+解決の方法は、サーバーに接続する他のすべての ``nvflare`` コマンド ( ``job`` 、``system`` など) と
+同一です。
 
-1. Optional ``--kit-id <id>``: override the active startup kit for this command
-   only by using a registered startup-kit ID.
-2. Optional ``--startup-kit <path>``: override the active startup kit for this
-   command only by using an explicit admin startup-kit directory.
-3. ``NVFLARE_STARTUP_KIT_DIR`` environment variable.
-4. ``startup_kits.active`` from ``~/.nvflare/config.conf``.
-5. If no source resolves to a valid admin startup kit, the command fails before connecting.
+1. 任意の ``--kit-id <id>`` : 登録済みのスタートアップキット ID を使用して、このコマンドに限り
+   アクティブなスタートアップキットを上書きします。
+2. 任意の ``--startup-kit <path>`` : admin スタートアップキットのディレクトリを明示的に指定して、
+   このコマンドに限りアクティブなスタートアップキットを上書きします。
+3. ``NVFLARE_STARTUP_KIT_DIR`` 環境変数。
+4. ``~/.nvflare/config.conf`` の ``startup_kits.active`` 。
+5. いずれのソースからも有効な admin スタートアップキットが解決できない場合、コマンドは接続前に
+   失敗します。
 
-The command-line selectors are not required. When provided, they take precedence
-over the active startup kit for the current command only and do not change
-``startup_kits.active`` in ``~/.nvflare/config.conf``.
+コマンドラインのセレクタは必須ではありません。指定した場合は、現在のコマンドに限りアクティブな
+スタートアップキットよりも優先され、``~/.nvflare/config.conf`` の ``startup_kits.active`` は
+変更されません。
 
-A user can register and activate a startup kit once with :ref:`config_command`:
+ユーザーは :ref:`config_command` を使って、スタートアップキットを一度登録してアクティブ化できます。
 
 .. code-block:: shell
 
@@ -54,27 +56,28 @@ A user can register and activate a startup kit once with :ref:`config_command`:
    nvflare config use project_admin
    nvflare study list --kit-id project_admin
 
-If no source resolves, the command exits with error code 4 and ``"error_code": "STARTUP_KIT_MISSING"``.
+いずれのソースからも解決できない場合、コマンドはエラーコード 4 と ``"error_code": "STARTUP_KIT_MISSING"``
+を返して終了します。
 
-*****************************
-Role-Based Input Requirements
-*****************************
+**********************************
+ロールに基づく入力要件
+**********************************
 
-Study site enrollment follows a two-layer role check: first at the CLI (from the caller's
-certificate in the startup kit), then authoritatively at the server (from the authenticated
-connection properties).
+スタディへのサイト登録は、2 層のロールチェックに従います。まず CLI 側で (スタートアップキット内の
+呼び出し元の証明書に基づいて) チェックされ、次にサーバー側で (認証された接続プロパティに基づいて)
+最終的にチェックされます。
 
-- **project_admin** — manages site enrollment by specifying ``--site-org <org>:<site>`` pairs.
-  Using ``--sites`` is rejected.
-- **org_admin** — manages only sites in their own organisation by specifying ``--sites``.
-  Using ``--site-org`` is rejected.
-- Specifying both ``--sites`` and ``--site-org`` in the same command is always rejected.
+- **project_admin** — ``--site-org <org>:<site>`` のペアを指定してサイト登録を管理します。
+  ``--sites`` の使用は拒否されます。
+- **org_admin** — ``--sites`` を指定して、自分の組織のサイトのみを管理します。
+  ``--site-org`` の使用は拒否されます。
+- 同じコマンドで ``--sites`` と ``--site-org`` の両方を指定することは常に拒否されます。
 
-*********************
-Register a Study
-*********************
+*************************
+スタディの登録
+*************************
 
-Register a new study and enroll its initial set of sites.
+新しいスタディを登録し、その初期のサイト群を登録します。
 
 .. code-block:: shell
 
@@ -87,44 +90,43 @@ Register a new study and enroll its initial set of sites.
    # org_admin: register and enroll own org's sites
    nvflare study register cancer-research --sites hospital-1 hospital-2
 
-Options:
+オプション:
 
-- ``<name>`` (required positional): name of the study to create.
-- ``--site-org <org>:<site>`` (project_admin): one or more ``org:site`` pairs; repeat the flag
-  for multiple entries.
-- ``--sites <site> [<site> ...]`` (org_admin): one or more sites in the caller's
-  organisation. Comma-separated input such as ``--sites hospital-1,hospital-2`` is also
-  accepted.
+- ``<name>`` (必須の位置引数): 作成するスタディの名前。
+- ``--site-org <org>:<site>`` (project_admin): 1 つ以上の ``org:site`` ペア。複数指定する場合は
+  フラグを繰り返します。
+- ``--sites <site> [<site> ...]`` (org_admin): 呼び出し元の組織に属する 1 つ以上のサイト。
+  ``--sites hospital-1,hospital-2`` のようなカンマ区切りの入力も受け付けられます。
 
-*********************
-Show a Study
-*********************
+*************************
+スタディの表示
+*************************
 
-Display the current definition of a study, including enrolled sites and admin users.
+登録済みのサイトや管理ユーザーを含む、スタディの現在の定義を表示します。
 
 .. code-block:: shell
 
    nvflare study show cancer-research
 
-Returns the site-org mapping and the list of admins for the study.
+サイトと組織のマッピング、およびそのスタディの管理者一覧を返します。
 
-*********************
-List Studies
-*********************
+*************************
+スタディの一覧表示
+*************************
 
-List all studies the caller has access to.
+呼び出し元がアクセスできるすべてのスタディを一覧表示します。
 
 .. code-block:: shell
 
    nvflare study list
    nvflare study list --format json
 
-- ``project_admin`` sees all studies.
-- ``org_admin`` sees studies in which their organisation has enrolled sites.
-- ``lead`` and ``member`` users see studies where they are explicitly mapped.
+- ``project_admin`` はすべてのスタディを参照できます。
+- ``org_admin`` は、自分の組織がサイトを登録しているスタディを参照できます。
+- ``lead`` および ``member`` のユーザーは、自分が明示的にマッピングされているスタディを参照できます。
 
-In JSON mode, the command includes the startup kit selected by the CLI, the
-identity authenticated by the server, and per-study submit preflight fields:
+JSON モードでは、CLI が選択したスタートアップキット、サーバーが認証したアイデンティティ、および
+スタディごとのサブミット事前チェックのフィールドが含まれます。
 
 .. code-block:: json
 
@@ -150,28 +152,28 @@ identity authenticated by the server, and per-study submit preflight fields:
      ]
    }
 
-``can_submit_job`` is evaluated against the active server authorization policy
-for the ``submit_job`` right. An identity may see a study but still be denied
-job submission; those rows include a denial ``reason`` from authorization. This
-is a submit preflight only; a later submit may still fail for other server-side
-validation or policy reasons.
+``can_submit_job`` は、``submit_job`` 権限に対するアクティブなサーバー認可ポリシーに基づいて評価されます。
+あるアイデンティティがスタディを参照できても、ジョブのサブミットは拒否される場合があります。
+その場合、該当する行には認可からの拒否理由 ``reason`` が含まれます。これはサブミットの事前チェックに
+すぎず、後で実際にサブミットした際に、サーバー側の他の検証やポリシー上の理由で失敗する可能性は
+依然として残ります。
 
-*********************
-Remove a Study
-*********************
+*************************
+スタディの削除
+*************************
 
-Remove a study and all its configuration. This operation is rejected if any job is currently
-running under the study.
+スタディとそのすべての構成を削除します。そのスタディの配下で実行中のジョブがある場合、この操作は
+拒否されます。
 
 .. code-block:: shell
 
    nvflare study remove cancer-research
 
-***********************
-Add Sites to a Study
-***********************
+*******************************
+スタディへのサイトの追加
+*******************************
 
-Enroll additional sites in an existing study.
+既存のスタディに追加のサイトを登録します。
 
 .. code-block:: shell
 
@@ -182,13 +184,13 @@ Enroll additional sites in an existing study.
    # org_admin
    nvflare study add-site cancer-research --sites clinic-2
 
-Options match ``register`` for ``--site-org`` / ``--sites``.
+``--site-org`` / ``--sites`` のオプションは ``register`` と同じです。
 
-**************************
-Remove Sites from a Study
-**************************
+*********************************
+スタディからのサイトの削除
+*********************************
 
-Remove sites from a study. The study itself is not deleted.
+スタディからサイトを削除します。スタディ自体は削除されません。
 
 .. code-block:: shell
 
@@ -199,86 +201,87 @@ Remove sites from a study. The study itself is not deleted.
    # org_admin
    nvflare study remove-site cancer-research --sites clinic-2
 
-****************************
-Add a User to a Study
-****************************
+***********************************
+スタディへのユーザーの追加
+***********************************
 
-Add an existing admin user to a study's admin list.
+既存の管理ユーザーをスタディの管理者一覧に追加します。
 
 .. code-block:: shell
 
    nvflare study add-user cancer-research trainer@org_a.com
 
-- ``<study>`` (required positional): the study to update.
-- ``<user>`` (required positional): the admin user to add.
+- ``<study>`` (必須の位置引数): 更新対象のスタディ。
+- ``<user>`` (必須の位置引数): 追加する管理ユーザー。
 
-*******************************
-Remove a User from a Study
-*******************************
+***********************************
+スタディからのユーザーの削除
+***********************************
 
-Remove a user from a study's admin list. The user is not deleted from the deployment.
+スタディの管理者一覧からユーザーを削除します。そのユーザーがデプロイメントから削除されるわけでは
+ありません。
 
 .. code-block:: shell
 
    nvflare study remove-user cancer-research trainer@org_a.com
 
-*****************************
-Output Format
-*****************************
+*************************
+出力フォーマット
+*************************
 
-All ``nvflare study`` commands honour the global ``--format {txt,json}`` flag.
-With ``--format json`` (default for automation), every response is a JSON envelope:
+すべての ``nvflare study`` コマンドは、グローバルな ``--format {txt,json}`` フラグに従います。
+``--format json`` (自動化向けのデフォルト) では、すべてのレスポンスが JSON エンベロープになります。
 
 .. code-block:: json
 
    {"status": "ok", "data": { ... }}
 
-Errors are returned as:
+エラーは次の形式で返されます。
 
 .. code-block:: json
 
    {"status": "error", "error_code": "STUDY_NOT_FOUND", "message": "...", "hint": "...", "exit_code": 1}
 
-Common error codes:
+主なエラーコード:
 
 .. list-table::
    :header-rows: 1
    :widths: 35 65
 
-   * - Error code
-     - Meaning
+   * - エラーコード
+     - 意味
    * - ``STARTUP_KIT_MISSING``
-     - No startup kit could be resolved from ``--kit-id``, ``--startup-kit``, ``NVFLARE_STARTUP_KIT_DIR``, or the active config entry (exit 4).
+     - ``--kit-id`` 、``--startup-kit`` 、``NVFLARE_STARTUP_KIT_DIR`` 、アクティブな設定エントリのいずれからもスタートアップキットを解決できませんでした (終了コード 4)。
    * - ``STARTUP_KIT_NOT_CONFIGURED``
-     - No active startup kit is configured and no per-command selector or environment override was provided (exit 4).
+     - アクティブなスタートアップキットが構成されておらず、コマンドごとのセレクタや環境変数による上書きも指定されていません (終了コード 4)。
    * - ``CONNECTION_FAILED``
-     - Cannot connect to or authenticate with the server (exit 2).
+     - サーバーに接続できない、または認証できません (終了コード 2)。
    * - ``INVALID_ARGS``
-     - Argument shape violates role contract (exit 4).
+     - 引数の形式がロールの契約に違反しています (終了コード 4)。
    * - ``STUDY_NOT_FOUND``
-     - Named study does not exist or is not visible to the caller (exit 1).
+     - 指定されたスタディが存在しない、または呼び出し元から参照できません (終了コード 1)。
    * - ``STUDY_ALREADY_EXISTS``
-     - Study name is already registered (exit 1).
+     - そのスタディ名はすでに登録されています (終了コード 1)。
    * - ``INVALID_SITE``
-     - Site is not enrolled or does not belong to the caller org (exit 4).
+     - サイトが登録されていない、または呼び出し元の組織に属していません (終了コード 4)。
    * - ``INVALID_STUDY_NAME``
-     - Study name fails naming rules (exit 4).
+     - スタディ名が命名規則に適合しません (終了コード 4)。
    * - ``STUDY_HAS_JOBS``
-     - Cannot remove a study with associated jobs (exit 1).
+     - 関連するジョブがあるスタディは削除できません (終了コード 1)。
    * - ``USER_ALREADY_IN_STUDY``
-     - ``add-user`` rejected because the user is already in this study's membership list (exit 1).
+     - ユーザーがすでにこのスタディのメンバーシップ一覧に含まれているため、``add-user`` が拒否されました (終了コード 1)。
    * - ``USER_NOT_IN_STUDY``
-     - ``remove-user`` rejected because the user is not in this study's membership list (exit 1).
+     - ユーザーがこのスタディのメンバーシップ一覧に含まれていないため、``remove-user`` が拒否されました (終了コード 1)。
    * - ``NOT_AUTHORIZED``
-     - Caller's cert role is insufficient for this operation (exit 1).
+     - 呼び出し元の証明書のロールでは、この操作を行う権限が不足しています (終了コード 1)。
    * - ``LOCK_TIMEOUT``
-     - Registry is busy; another mutation is in progress (exit 3).
+     - レジストリがビジー状態です。別の変更処理が進行中です (終了コード 3)。
 
-*****************************
-Schema Output
-*****************************
+*************************
+スキーマ出力
+*************************
 
-Any subcommand supports ``--schema`` to print its argument schema as JSON:
+どのサブコマンドでも ``--schema`` を指定すると、その引数スキーマを JSON として出力できます。
 
 .. code-block:: shell
 

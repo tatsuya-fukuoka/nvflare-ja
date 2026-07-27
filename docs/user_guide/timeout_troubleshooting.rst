@@ -1,31 +1,31 @@
 .. _timeout_troubleshooting:
 
-#############################
-Timeout Troubleshooting Guide
-#############################
+##################################################
+タイムアウトのトラブルシューティングガイド
+##################################################
 
-This guide covers the most common timeout-related job failures and how to resolve them.
-For a comprehensive reference of all timeouts, see :ref:`timeouts_programming_guide`.
+本ガイドでは、最もよく発生するタイムアウト関連のジョブ失敗と、その解決方法について説明します。
+すべてのタイムアウトの包括的なリファレンスについては、 :ref:`timeouts_programming_guide` を参照してください。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Common Job Failure Scenarios
+よくあるジョブ失敗のシナリオ
 ============================
 
-Task Fetch Timeout
-------------------
+タスク取得タイムアウト
+----------------------
 
-**Symptom**: Client fails to receive tasks from server; logs show "timeout" during task fetch.
+**症状** : クライアントがサーバーからタスクを受信できず、タスク取得中に "timeout" がログに出力されます。
 
-**Common Causes**:
+**よくある原因** :
 
-- Large model weights take too long to transfer
-- Network latency exceeds default timeout
-- Tensor streaming timeout exceeds task fetch timeout
+- 大きなモデルの重みの転送に時間がかかりすぎている
+- ネットワークのレイテンシがデフォルトのタイムアウトを超えている
+- テンソルストリーミングのタイムアウトがタスク取得タイムアウトを超えている
 
-**Solution**: Set ``get_task_timeout`` in client config:
+**解決策** : クライアント設定で ``get_task_timeout`` を設定します。
 
 .. code-block:: python
 
@@ -34,23 +34,23 @@ Task Fetch Timeout
    })
 
 
-External Process Pre-Init Timeout (Client API Only)
-----------------------------------------------------
+外部プロセスの初期化前タイムアウト (Client API のみ)
+------------------------------------------------------
 
-**Applies to**: Client API with subprocess launcher (``ScriptRunner``, ``ClientAPILauncherExecutor``)
+**対象** : サブプロセスランチャーを使う Client API ( ``ScriptRunner`` 、 ``ClientAPILauncherExecutor`` )
 
-**Symptom**: Job fails before training starts with "external_pre_init_timeout" error.
+**症状** : 学習が始まる前に "external_pre_init_timeout" エラーでジョブが失敗します。
 
-This timeout controls how long NVFlare waits for your external training script to call ``flare.init()``.
-When using Client API, NVFlare launches your script as a subprocess and waits for it to connect back.
+このタイムアウトは、外部の学習スクリプトが ``flare.init()`` を呼び出すのを NVFlare がどれだけ待つかを制御します。
+Client API を使用する場合、NVFlare はスクリプトをサブプロセスとして起動し、接続が戻ってくるのを待ちます。
 
-**Common Causes**:
+**よくある原因** :
 
-- Large models (LLMs) take time to load before ``flare.init()`` is called
-- Heavy library imports (PyTorch, TensorFlow, transformers)
-- Slow disk I/O reading model weights
+- 大規模モデル (LLM) では ``flare.init()`` が呼ばれる前のロードに時間がかかる
+- 重いライブラリのインポート (PyTorch、TensorFlow、transformers)
+- モデルの重みを読み込むディスク I/O が遅い
 
-**Solution**: Increase ``external_pre_init_timeout`` in the executor configuration:
+**解決策** : エグゼキューターの設定で ``external_pre_init_timeout`` を増やします。
 
 .. code-block:: python
 
@@ -62,18 +62,18 @@ When using Client API, NVFlare launches your script as a subprocess and waits fo
    )
 
 
-Heartbeat Timeout
------------------
+ハートビートタイムアウト
+------------------------
 
-**Symptom**: Client marked as dead; logs show "heartbeat timeout" or "client not responding".
+**症状** : クライアントが停止したとみなされ、ログに "heartbeat timeout" または "client not responding" が出力されます。
 
-**Common Causes**:
+**よくある原因** :
 
-- Long-running training blocks heartbeat thread
-- Network issues causing missed heartbeats
-- Client overwhelmed with compute
+- 長時間実行される学習がハートビートスレッドをブロックしている
+- ネットワークの問題によりハートビートが欠落している
+- クライアントが計算処理で過負荷になっている
 
-**Solution**: Adjust heartbeat settings:
+**解決策** : ハートビートの設定を調整します。
 
 .. code-block:: python
 
@@ -81,21 +81,21 @@ Heartbeat Timeout
    heartbeat_timeout = 300.0   # 5 minutes
    heartbeat_interval = 10.0   # Send every 10 seconds
 
-**Rule**: ``heartbeat_interval`` must be less than ``heartbeat_timeout``.
+**ルール** : ``heartbeat_interval`` は ``heartbeat_timeout`` より小さくする必要があります。
 
 
-Training Task Timeout
----------------------
+学習タスクのタイムアウト
+------------------------
 
-**Symptom**: Training interrupted before completion; logs show task timeout.
+**症状** : 学習が完了する前に中断され、ログにタスクのタイムアウトが出力されます。
 
-**Common Causes**:
+**よくある原因** :
 
-- Training round takes longer than expected
-- Data loading is slow
-- Hardware is slower than anticipated
+- 学習ラウンドが想定より長くかかっている
+- データのロードが遅い
+- ハードウェアが想定より遅い
 
-**Solution**: Set appropriate task timeout in controller:
+**解決策** : コントローラーで適切なタスクタイムアウトを設定します。
 
 .. code-block:: python
 
@@ -112,17 +112,17 @@ Training Task Timeout
    )
 
 
-Result Submission Timeout
--------------------------
+結果送信タイムアウト
+--------------------
 
-**Symptom**: Training completes but result submission fails.
+**症状** : 学習は完了するものの、結果の送信に失敗します。
 
-**Common Causes**:
+**よくある原因** :
 
-- Large model results take time to transfer
-- Network congestion
+- 大きなモデルの結果の転送に時間がかかる
+- ネットワークの輻輳
 
-**Solution**: Set ``submit_task_result_timeout``:
+**解決策** : ``submit_task_result_timeout`` を設定します。
 
 .. code-block:: python
 
@@ -131,25 +131,24 @@ Result Submission Timeout
    })
 
 
-Subprocess Large-Model Result Submission Timeout
--------------------------------------------------
+サブプロセスでの大規模モデル結果送信タイムアウト
+------------------------------------------------
 
-**Applies to**: Subprocess-mode clients (``launch_external_process=True``) with large models
+**対象** : 大規模モデルを扱うサブプロセスモードのクライアント ( ``launch_external_process=True`` )
 
-**Symptom**: Training completes in the subprocess but the job hangs or fails immediately
-after, with no result acknowledgment received. With very large payloads and many
-clients, logs may also show repeated ``no ref found`` messages from
-``DownloadService`` after delayed retries.
+**症状** : サブプロセス内では学習が完了するものの、その直後にジョブがハングするか失敗し、
+結果の受領確認が受信されません。ペイロードが非常に大きく、クライアント数が多い場合には、
+遅延したリトライの後に ``DownloadService`` から ``no ref found`` メッセージが繰り返し
+ログに出力されることもあります。
 
-**Cause**: ``submit_result_timeout`` is the time the training subprocess waits for
-the client job process to acknowledge its result. ``PEER_READ_TIMEOUT`` is the
-client config key for the parent client job's corresponding wait for the
-subprocess to read a task. For large models (5 GB+) and many clients, either side
-can exceed short defaults if streaming request timeouts are configured higher
-than the pipe timeout. The subprocess also must remain alive long enough for the
-server to finish pulling tensors from its ``DownloadService`` after result ACK.
+**原因** : ``submit_result_timeout`` は、学習サブプロセスがクライアントジョブプロセスによる
+結果の受領確認を待つ時間です。 ``PEER_READ_TIMEOUT`` は、親クライアントジョブがサブプロセスによる
+タスクの読み取りを待つ、対応する待機時間のためのクライアント設定キーです。大規模モデル (5 GB 以上)
+かつクライアント数が多い場合、ストリーミングのリクエストタイムアウトがパイプのタイムアウトより
+大きく設定されていると、どちらの側も短いデフォルト値を超える可能性があります。また、結果の ACK 後に
+サーバーが ``DownloadService`` からテンソルを取得し終えるまで、サブプロセスは生存し続ける必要があります。
 
-**Solution**:
+**解決策** :
 
 .. code-block:: python
 
@@ -163,33 +162,32 @@ server to finish pulling tensors from its ``DownloadService`` after result ACK.
    })
 
 .. note::
-   ``submit_result_timeout`` is the subprocess-side wait for acknowledgment.
-   It is distinct from ``submit_task_result_timeout``, which is the server-side wait
-   for the client to deliver a result.  For large models, set ``submit_task_result_timeout``
-   (server-side) to be at least as large as ``submit_result_timeout`` (subprocess-side)
-   so the server is still listening when the subprocess finishes sending.
+   ``submit_result_timeout`` は、サブプロセス側での受領確認の待機時間です。
+   これは、クライアントが結果を配信するのをサーバー側で待つ ``submit_task_result_timeout`` とは
+   区別されます。大規模モデルの場合、サブプロセスが送信を終えた時点でもサーバーがまだ待ち受けているように、
+   ``submit_task_result_timeout`` (サーバー側) を ``submit_result_timeout`` (サブプロセス側) と
+   同等以上に設定してください。
 
 .. note::
-   In FLARE 2.8.0, ``ClientAPILauncherExecutor`` rejects
-   ``download_complete_timeout=None`` and ``max_resends=None`` at job
-   initialization. Use a positive ``download_complete_timeout`` and a finite
-   non-negative ``max_resends`` value. Recipe-based external-process jobs
-   serialize the default ``max_resends=3`` in executor args; use
-   ``recipe.add_client_config({"max_resends": N})`` only to override that
-   default.
+   FLARE 2.8.0 では、 ``ClientAPILauncherExecutor`` はジョブの初期化時に
+   ``download_complete_timeout=None`` および ``max_resends=None`` を拒否します。
+   正の ``download_complete_timeout`` と、有限で非負の ``max_resends`` の値を使用してください。
+   Recipe ベースの外部プロセスジョブは、エグゼキューターの引数にデフォルトの ``max_resends=3`` を
+   シリアライズします。 ``recipe.add_client_config({"max_resends": N})`` は、そのデフォルト値を
+   上書きする場合にのみ使用してください。
 
-Swarm Learning P2P Transfer Timeout
-------------------------------------
+Swarm Learning の P2P 転送タイムアウト
+----------------------------------------
 
-**Applies to**: ``SwarmLearningRecipe`` with large models
+**対象** : 大規模モデルを扱う ``SwarmLearningRecipe``
 
-**Symptom**: Swarm Learning job fails with P2P ACK timeout during model scatter between peers.
+**症状** : ピア間のモデルスキャッター中に P2P ACK タイムアウトが発生し、Swarm Learning ジョブが失敗します。
 
-**Cause**: ``round_timeout`` (which sets the P2P model-transfer ACK budget between peers)
-defaults to 3600 s.  For very large models (7B+) on congested networks, peer-to-peer
-tensor streaming can approach this limit.
+**原因** : ``round_timeout`` (ピア間の P2P モデル転送における ACK の許容時間を設定します) の
+デフォルトは 3600 秒です。輻輳したネットワーク上で非常に大きなモデル (7B 以上) を扱う場合、
+ピアツーピアのテンソルストリーミングがこの上限に近づくことがあります。
 
-**Solution**: Set ``round_timeout`` directly on the recipe:
+**解決策** : recipe に直接 ``round_timeout`` を設定します。
 
 .. code-block:: python
 
@@ -202,12 +200,12 @@ tensor streaming can approach this limit.
        round_timeout=7200,  # 2 hours for 70B+ models
    )
 
-Cross-Site Evaluation Timeout
------------------------------
+サイト横断評価のタイムアウト
+----------------------------
 
-**Symptom**: Model evaluation fails or times out during cross-site validation.
+**症状** : サイト横断検証中にモデルの評価が失敗するか、タイムアウトします。
 
-**Solution**: Adjust evaluation timeouts:
+**解決策** : 評価のタイムアウトを調整します。
 
 .. code-block:: python
 
@@ -219,65 +217,65 @@ Cross-Site Evaluation Timeout
    )
 
 
-Quick Reference Table
-=====================
+クイックリファレンス表
+======================
 
-Most Commonly Adjusted Timeouts
--------------------------------
+最も頻繁に調整されるタイムアウト
+--------------------------------
 
 .. list-table::
    :header-rows: 1
    :widths: 30 15 55
 
-   * - Timeout
-     - Default
-     - When to Increase
+   * - タイムアウト
+     - デフォルト
+     - 増やすべき状況
    * - get_task_timeout
      - None
-     - Large models, slow networks, tensor streaming
+     - 大規模モデル、低速なネットワーク、テンソルストリーミング
    * - submit_task_result_timeout
      - None
-     - Large result payloads
-   * - submit_result_timeout (subprocess mode only)
-     - 300 s through Client API job config; 60 s in raw ``FlareAgent``
-     - Large model result transfers from subprocess; set 1800 s for LLMs
-   * - tensor_min_download_timeout / np_min_download_timeout (subprocess mode only)
-     - 300 s
-     - 70B+ models on congested networks; increase to 600 s (tensor = PyTorch, np = NumPy/sklearn)
-   * - PEER_READ_TIMEOUT (Client API subprocess only)
-     - 300 s
-     - Large task payloads when streaming per-request timeout is explicitly increased
-   * - download_complete_timeout (subprocess mode only)
-     - 1800 s
-     - Keep subprocess alive while the server downloads large tensor results
-   * - max_resends (subprocess mode only)
+     - 大きな結果ペイロード
+   * - submit_result_timeout (サブプロセスモードのみ)
+     - Client API のジョブ設定経由では 300 秒、素の ``FlareAgent`` では 60 秒
+     - サブプロセスからの大規模モデル結果の転送。LLM の場合は 1800 秒に設定する
+   * - tensor_min_download_timeout / np_min_download_timeout (サブプロセスモードのみ)
+     - 300 秒
+     - 輻輳したネットワーク上の 70B 以上のモデル。600 秒まで増やす (tensor = PyTorch、np = NumPy/sklearn)
+   * - PEER_READ_TIMEOUT (Client API のサブプロセスのみ)
+     - 300 秒
+     - ストリーミングのリクエストごとのタイムアウトを明示的に増やしている場合の、大きなタスクペイロード
+   * - download_complete_timeout (サブプロセスモードのみ)
+     - 1800 秒
+     - サーバーが大きなテンソル結果をダウンロードする間、サブプロセスを生存させ続ける
+   * - max_resends (サブプロセスモードのみ)
      - 3
-     - Persistent network failures; keep finite; use 0 to disable retries
-   * - round_timeout (Swarm Learning only)
-     - 3600 s
-     - 7B+ model P2P transfers between Swarm peers
-   * - external_pre_init_timeout (Client API subprocess only)
-     - 60-300s
-     - LLMs, heavy imports before ``flare.init()``
+     - 継続的なネットワーク障害。有限値を保つこと。0 でリトライを無効化
+   * - round_timeout (Swarm Learning のみ)
+     - 3600 秒
+     - Swarm のピア間での 7B 以上のモデルの P2P 転送
+   * - external_pre_init_timeout (Client API のサブプロセスのみ)
+     - 60-300 秒
+     - LLM、 ``flare.init()`` 前の重いインポート
    * - heartbeat_timeout
-     - 60-300s
-     - Long training iterations, slow networks
+     - 60-300 秒
+     - 長い学習イテレーション、低速なネットワーク
    * - train_timeout
      - 0
-     - Long training rounds
+     - 長い学習ラウンド
    * - validation_timeout
-     - 6000s
-     - Large validation datasets
+     - 6000 秒
+     - 大規模な検証データセット
    * - progress_timeout
-     - 3600s
-     - Complex multi-round workflows
+     - 3600 秒
+     - 複雑なマルチラウンドのワークフロー
 
 
-Configuration Methods
-=====================
+設定方法
+========
 
-Via Recipe API
---------------
+Recipe API を使う方法
+----------------------
 
 .. code-block:: python
 
@@ -293,10 +291,10 @@ Via Recipe API
    }, clients=["site-1", "site-2"])
 
 
-Via Configuration Files
------------------------
+設定ファイルを使う方法
+----------------------
 
-**application.conf** (job-level):
+**application.conf** (ジョブレベル):
 
 .. code-block::
 
@@ -307,15 +305,15 @@ Via Configuration Files
    strict_start_job_reply_check = false
    sync_client_jobs_require_previous_report = true
 
-Server-side safety flags guidance (see :ref:`server_startup_dead_job_safety_flags` for full details):
+サーバー側の安全フラグに関するガイダンス (詳細は :ref:`server_startup_dead_job_safety_flags` を参照してください):
 
-- ``strict_start_job_reply_check`` (default ``false``): in non-strict mode, start-job timeouts are silently
-  excluded from the active set with no ``min_sites``/``required_sites`` enforcement; set to ``true`` to make
-  timeouts visible and have ``min_sites``/``required_sites`` constraints enforced at startup.
-- ``sync_client_jobs_require_previous_report`` (default ``true``): keep enabled to avoid false dead-job reports
-  caused by transient startup or sync races.
+- ``strict_start_job_reply_check`` (デフォルト ``false`` ): 非厳格モードでは、ジョブ開始時のタイムアウトは
+  ``min_sites`` / ``required_sites`` の強制なしにアクティブセットから暗黙的に除外されます。タイムアウトを可視化し、
+  起動時に ``min_sites`` / ``required_sites`` の制約を強制するには ``true`` に設定してください。
+- ``sync_client_jobs_require_previous_report`` (デフォルト ``true`` ): 起動時や同期時の一時的な競合状態による
+  誤ったデッドジョブ報告を避けるため、有効のままにしてください。
 
-**comm_config.json** (system-level, in startup kit):
+**comm_config.json** (システムレベル、スタートアップキット内):
 
 .. code-block:: json
 
@@ -325,11 +323,11 @@ Server-side safety flags guidance (see :ref:`server_startup_dead_job_safety_flag
    }
 
 
-Recommended Settings by Scenario
-================================
+シナリオ別の推奨設定
+====================
 
-Standard Training
------------------
+標準的な学習
+------------
 
 .. code-block:: python
 
@@ -338,8 +336,8 @@ Standard Training
    })
 
 
-Large Model Training (100M+ parameters)
----------------------------------------
+大規模モデルの学習 (100M+ パラメータ)
+--------------------------------------
 
 .. code-block:: python
 
@@ -354,8 +352,8 @@ Large Model Training (100M+ parameters)
    })
 
 
-LLM/Foundation Model Training
------------------------------
+LLM/基盤モデルの学習
+---------------------
 
 .. code-block:: python
 
@@ -370,8 +368,8 @@ LLM/Foundation Model Training
    })
 
 
-High-Latency Networks
----------------------
+高レイテンシネットワーク
+------------------------
 
 .. code-block:: python
 
@@ -381,7 +379,7 @@ High-Latency Networks
        "submit_task_result_timeout": 600,
    })
 
-System-level (``comm_config.json`` in startup kit):
+システムレベル (スタートアップキット内の ``comm_config.json`` ):
 
 .. code-block:: json
 
@@ -391,28 +389,28 @@ System-level (``comm_config.json`` in startup kit):
    }
 
 
-Streaming Stall Guardrail (``comm_config.json``)
-------------------------------------------------
+ストリーミング停止のガードレール (``comm_config.json``)
+--------------------------------------------------------
 
-For large payload/model transfers, configure F3 stream stall detection in
-``comm_config.json`` (server and client startup kits).
+大きなペイロードやモデルの転送では、 ``comm_config.json`` (サーバーおよびクライアントのスタートアップキット) で
+F3 のストリーム停止検出を設定してください。
 
-**Runtime defaults** (if not set explicitly):
+**ランタイムのデフォルト値** (明示的に設定されていない場合):
 
-- ``streaming_send_timeout``: ``30.0`` seconds
-- ``streaming_ack_progress_timeout``: ``60.0`` seconds
-- ``streaming_ack_progress_check_interval``: ``5.0`` seconds
-- ``sfm_send_stall_timeout``: ``45.0`` seconds
-- ``sfm_close_stalled_connection``: ``false`` (warn-only)
-- ``sfm_send_stall_consecutive_checks``: ``3``
+- ``streaming_send_timeout`` : ``30.0`` 秒
+- ``streaming_ack_progress_timeout`` : ``60.0`` 秒
+- ``streaming_ack_progress_check_interval`` : ``5.0`` 秒
+- ``sfm_send_stall_timeout`` : ``45.0`` 秒
+- ``sfm_close_stalled_connection`` : ``false`` (警告のみ)
+- ``sfm_send_stall_consecutive_checks`` : ``3``
 
-**Recommended deployment guideline**:
+**推奨されるデプロイのガイドライン** :
 
-1. Start with **warn-only** to observe behavior safely.
-2. If repeated stall warnings are observed during large-model streaming, enable auto-close.
-3. Keep the guard enabled with consecutive checks to reduce false alarms.
+1. まずは **警告のみ** から始めて、安全に挙動を観察します。
+2. 大規模モデルのストリーミング中に停止の警告が繰り返し観測される場合は、自動クローズを有効にします。
+3. 誤検知を減らすため、連続チェック付きでガードを有効なままにします。
 
-Warn-only baseline:
+警告のみのベースライン:
 
 .. code-block:: json
 
@@ -422,7 +420,7 @@ Warn-only baseline:
      "sfm_send_stall_consecutive_checks": 3
    }
 
-Auto-recovery mode (when needed):
+自動復旧モード (必要な場合):
 
 .. code-block:: json
 
@@ -432,47 +430,47 @@ Auto-recovery mode (when needed):
      "sfm_send_stall_consecutive_checks": 3
    }
 
-**Timing relationship (important)**:
+**タイミングの関係 (重要)** :
 
-- ``sfm_send_stall_timeout`` is compared against the total continuous blocked-send duration.
-- ``sfm_send_stall_consecutive_checks`` counts consecutive heartbeat monitor ticks (every 5 seconds),
-  not multiples of ``sfm_send_stall_timeout``.
+- ``sfm_send_stall_timeout`` は、送信がブロックされ続けた合計の連続時間と比較されます。
+- ``sfm_send_stall_consecutive_checks`` は、ハートビート監視の連続したティック (5 秒ごと) の回数を数えるものであり、
+  ``sfm_send_stall_timeout`` の倍数ではありません。
 
-Approximate auto-close window (when ``sfm_close_stalled_connection=true``):
+おおよその自動クローズの時間枠 ( ``sfm_close_stalled_connection=true`` の場合):
 
 .. code-block:: text
 
    close_lower_bound ~= sfm_send_stall_timeout + (HEARTBEAT_TICK * (sfm_send_stall_consecutive_checks - 1))
    close_upper_bound ~= sfm_send_stall_timeout + (HEARTBEAT_TICK * sfm_send_stall_consecutive_checks)
 
-With ``sfm_send_stall_timeout=75`` and ``sfm_send_stall_consecutive_checks=3``, close typically occurs
-around ``85``-``90`` seconds of continuous stall (not 225 seconds).
+``sfm_send_stall_timeout=75`` かつ ``sfm_send_stall_consecutive_checks=3`` の場合、クローズは通常、
+連続した停止が ``85`` - ``90`` 秒程度に達した時点で発生します (225 秒ではありません)。
 
-**Outer-timeout guideline**:
+**外側のタイムアウトに関するガイドライン** :
 
-Set higher-layer timeouts (for example ``communication_timeout`` or task/request timeouts that include
-message transfer time) greater than ``close_upper_bound`` plus a safety margin.
+上位レイヤーのタイムアウト (たとえば ``communication_timeout`` や、メッセージ転送時間を含むタスク/リクエストの
+タイムアウト) は、 ``close_upper_bound`` に安全マージンを加えた値より大きく設定してください。
 
-Example: ``communication_timeout=300`` is safely larger than the ~``90`` second stall auto-close window.
+例: ``communication_timeout=300`` は、約 ``90`` 秒の停止自動クローズの時間枠より十分に大きい値です。
 
-**How to interpret logs**:
+**ログの解釈方法** :
 
-- Expected warning on real stalls:
+- 実際に停止が発生した場合に想定される警告:
   ``Detected stalled send on ... (N/3)``
-- In healthy/normal streaming, no stall warning should be emitted.
-- Intermittent stalls should not close the connection unless the threshold is reached in consecutive checks.
+- 正常なストリーミングでは、停止の警告は出力されないはずです。
+- 断続的な停止では、連続したチェックでしきい値に達しない限り、接続はクローズされないはずです。
 
 
-Large-Scale Hierarchical / HPC Deployments (Slurm, Lustre)
-------------------------------------------------------------
+大規模な階層型 / HPC デプロイメント (Slurm、Lustre)
+----------------------------------------------------
 
-When running 100+ FL clients in a hierarchical topology on HPC systems with shared
-filesystems (Lustre, GPFS), two settings significantly improve startup reliability:
+共有ファイルシステム (Lustre、GPFS) を備えた HPC システム上で、100 個以上の FL クライアントを
+階層型トポロジーで実行する場合、2 つの設定が起動時の信頼性を大きく向上させます。
 
-**1. Set a minimum-client tolerance in** ``config_fed_server.json``
+**1.** ``config_fed_server.json`` **で最小クライアント数の許容度を設定する**
 
-Allow a small number of clients to be late or unavailable at startup without aborting
-the job. For a 144-client job, tolerating up to ~4% stragglers is safe:
+ジョブを中断させることなく、起動時に少数のクライアントが遅れたり利用できなかったりすることを許容します。
+144 クライアントのジョブでは、最大 4% 程度の遅延クライアントを許容するのが安全です。
 
 .. code-block:: json
 
@@ -487,12 +485,12 @@ the job. For a 144-client job, tolerating up to ~4% stragglers is safe:
      }]
    }
 
-**2. Extend the runner sync timeout in** ``config_fed_client.json``
+**2.** ``config_fed_client.json`` **でランナー同期のタイムアウトを延長する**
 
-With the default runner sync settings (a 2.0-second per-request timeout with overall
-sync bounded by ``max_runner_sync_timeout``), many clients contending for Lustre I/O
-at job launch can time out before finishing initialization. Increase these values to
-give each client more time to start up:
+ランナー同期のデフォルト設定 (リクエストごとのタイムアウトが 2.0 秒で、全体の同期は
+``max_runner_sync_timeout`` によって制限される) では、ジョブ起動時に多数のクライアントが Lustre の I/O を
+奪い合うことで、初期化が完了する前にタイムアウトする可能性があります。各クライアントの起動により多くの時間を
+与えるため、これらの値を増やしてください。
 
 .. code-block:: json
 
@@ -501,17 +499,17 @@ give each client more time to start up:
      "max_runner_sync_timeout": 7200
    }
 
-These two changes address the most common startup race conditions in large hierarchical
-deployments and are compatible with the startup stability fixes in FLARE 2.7.2.
+これら 2 つの変更は、大規模な階層型デプロイメントで最もよく発生する起動時の競合状態に対処するものであり、
+FLARE 2.7.2 の起動安定性の修正と互換性があります。
 
 
-Debugging Timeout Issues
-========================
+タイムアウト問題のデバッグ
+==========================
 
-1. **Check logs** for "timeout" messages to identify which timeout triggered
-2. **Enable debug logging** to see detailed timing information
-3. **Monitor heartbeat status** in admin console
-4. **Start with longer timeouts** during development, then optimize
+1. **ログを確認する** — "timeout" メッセージを探し、どのタイムアウトが発生したかを特定します
+2. **デバッグログを有効にする** — 詳細なタイミング情報を確認します
+3. **ハートビートの状態を監視する** — 管理コンソールで確認します
+4. **開発中は長めのタイムアウトから始める** — その後に最適化します
 
-For timeout hierarchies, relationships, and all available timeout parameters, 
-see the comprehensive :ref:`timeouts_programming_guide`.
+タイムアウトの階層関係や、利用可能なすべてのタイムアウトパラメータについては、
+包括的な :ref:`timeouts_programming_guide` を参照してください。
