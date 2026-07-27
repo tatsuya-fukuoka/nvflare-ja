@@ -1,149 +1,149 @@
 .. _cc_deployment_guide:
 
 ################################################
-FLARE Confidential Federated AI Deployment Guide
+FLARE 機密連合 AI デプロイメントガイド
 ################################################
 
-Overview
+概要
+====
+
+本ガイドでは、AMD SEV-SNP CPU と NVIDIA GPU を使用して、機密コンピューティング (CC) 機能を備えた NVIDIA FLARE をオンプレミスに展開するための手順を段階的に説明します。
+
+この展開では、FLARE アプリケーションを含む Confidential VM (CVM) イメージを構築し、参加者向けにシステムをプロビジョニングし、各サイトで CVM を起動します。
+
+デプロイメント環境
+==================
+
+本ガイドは以下の展開構成を対象としています。
+
+- **プラットフォーム** : NVIDIA GPU を搭載したオンプレミスの AMD CVM
+- **CPU** : AMD SEV-SNP (Secure Encrypted Virtualization - Secure Nested Paging)
+- **GPU** : 機密コンピューティングをサポートする NVIDIA GPU (任意)
+- **ホスト OS** : Ubuntu 25.04
+
+前提条件
 ========
+ハードウェア IT、ホスト OS の管理、VM の管理を網羅した完全かつ詳細なセットアップガイドについては、 `NVIDIA's Deployment Guide for SecureAI <https://docs.nvidia.com/cc-deployment-guide-snp.pdf>`_ を参照してください。
 
-This guide provides step-by-step instructions for deploying NVIDIA FLARE with Confidential Computing (CC) capabilities on-premises using AMD SEV-SNP CPUs and NVIDIA GPUs.
+ハードウェア要件
+----------------
 
-The deployment involves building a Confidential VM (CVM) image that contains the FLARE application, provisioning the system for participants, and launching the CVMs on each site.
+**CPU 要件**
 
-Deployment Environment
-======================
+- SEV-SNP が有効化された AMD CPU
+- SEV-SNP をサポートする AMD ファームウェア
 
-This guide covers the following deployment configuration:
+**GPU 要件 (任意)**
 
-- **Platform**: On-Premise AMD CVM with NVIDIA GPU
-- **CPU**: AMD SEV-SNP (Secure Encrypted Virtualization - Secure Nested Paging)
-- **GPU**: NVIDIA GPU with Confidential Computing support (optional)
-- **Host OS**: Ubuntu 25.04
+- 機密コンピューティングをサポートする NVIDIA GPU (H100、Blackwell)
 
-Prerequisites
-=============
-For a complete and thorough setup guide covering Hardware IT, Host OS Administration, and VM Administration, please refer to `NVIDIA's Deployment Guide for SecureAI <https://docs.nvidia.com/cc-deployment-guide-snp.pdf>`_.
+**ホストシステム**
 
-Hardware Requirements
----------------------
+- ホスト OS: Ubuntu 25.04
 
-**CPU Requirements**
+ソフトウェア要件
+----------------
 
-- AMD CPU with SEV-SNP enabled
-- AMD firmware supporting SEV-SNP
-
-**GPU Requirements (Optional)**
-
-- NVIDIA GPU with Confidential Computing support (H100, Blackwell)
-
-**Host System**
-
-- Host OS: Ubuntu 25.04
-
-Software Requirements
----------------------
-
-**Required Software**
+**必要なソフトウェア**
 
 - Ubuntu 25.04
-- QEMU (for virtualization)
+- QEMU (仮想化用)
 - Docker
 
-**NVFlare Components**
+**NVFlare のコンポーネント**
 
-1. **NVFlare Source Code**
+1. **NVFlare ソースコード**
 
-   Clone from GitHub:
+   GitHub からクローンします。
 
    .. code-block:: bash
 
       git clone https://github.com/NVIDIA/NVFlare.git
 
-2. **Image Builder**
+2. **イメージビルダー**
 
-   The image builder is the tool that constructs CVM images. It is shipped as part of the NVFlare source
-   tree under ``nvflare/lighter/cc/image_builder/`` and contains the ``cvm_build.sh`` script along with
-   Ansible playbooks and helper scripts.
+   イメージビルダーは CVM イメージを構築するツールです。NVFlare のソースツリー内の
+   ``nvflare/lighter/cc/image_builder/`` 配下に同梱されており、``cvm_build.sh`` スクリプトのほか、
+   Ansible playbook やヘルパースクリプトが含まれます。
 
-   - Obtain the image builder code from the NVFlare team
-   - Contact: federatedlearning@nvidia.com
-   - Install location: ``~/cc/image_builder``
+   - イメージビルダーのコードは NVFlare チームから入手してください
+   - 連絡先: federatedlearning@nvidia.com
+   - インストール先: ``~/cc/image_builder``
 
-   The path to ``cvm_build.sh`` inside this directory is referenced in ``project.yml`` as
-   ``build_image_cmd`` (see Step 2.1 of the Deployment Workflow).
+   このディレクトリ内の ``cvm_build.sh`` へのパスは、``project.yml`` の
+   ``build_image_cmd`` から参照されます (デプロイメントワークフローのステップ 2.1 を参照)。
 
-3. **Base Images**
+3. **ベースイメージ**
 
-   - Build the Ubuntu base image and firmware following :ref:`base_image_build`
-   - Copy to: ``~/cc/image_builder/base_images``
+   - :ref:`base_image_build` に従って Ubuntu ベースイメージとファームウェアをビルドします
+   - コピー先: ``~/cc/image_builder/base_images``
 
-4. **KBS Client**
+4. **KBS クライアント**
 
-   - Build the kbs-client binary following :ref:`base_image_build`
-   - Recommended commit: ``a2570329cc33daf9ca16370a1948b5379bb17fbe``
-   - Copy the kbs-client and credentials to: ``~/cc/image_builder/binaries``
+   - :ref:`base_image_build` に従って kbs-client バイナリをビルドします
+   - 推奨コミット: ``a2570329cc33daf9ca16370a1948b5379bb17fbe``
+   - kbs-client と認証情報のコピー先: ``~/cc/image_builder/binaries``
 
-5. **SNPGuest Tool**
+5. **SNPGuest ツール**
 
-   - Build the snpguest binary following :ref:`base_image_build`
-   - Copy snpguest and credentials to: ``~/cc/image_builder/binaries``
+   - :ref:`base_image_build` に従って snpguest バイナリをビルドします
+   - snpguest と認証情報のコピー先: ``~/cc/image_builder/binaries``
 
-**AMD Firmware Installation**
+**AMD ファームウェアのインストール**
 
-See :ref:`base_image_build` for full instructions on fetching and installing the ``OVMF.amdsev.fd`` firmware.
+``OVMF.amdsev.fd`` ファームウェアの取得およびインストールに関する完全な手順は :ref:`base_image_build` を参照してください。
 
-The firmware will be installed at ``/usr/share/ovmf/OVMF.amdsev.fd``.
+ファームウェアは ``/usr/share/ovmf/OVMF.amdsev.fd`` にインストールされます。
 
-**Policy Files Setup**
+**ポリシーファイルのセットアップ**
 
 .. note::
 
-   The current KBS doesn't support updating individual rules. You must update the entire rule file when adding a new CVM.
+   現在の KBS は個々のルールの更新をサポートしていません。新しい CVM を追加する際は、ルールファイル全体を更新する必要があります。
 
-Create the policy directory and obtain the required files:
+ポリシーディレクトリを作成し、必要なファイルを取得します。
 
 .. code-block:: bash
 
    mkdir -p /shared/policy
 
-Place the following files in ``/shared/policy`` (obtain from the NVFlare team):
+以下のファイルを ``/shared/policy`` に配置します (NVFlare チームから入手してください)。
 
-- ``policy.rego`` - Master policy file
-- ``set-policy.sh`` - Policy update script
-- ``private.key`` - Authentication key
+- ``policy.rego`` - マスターポリシーファイル
+- ``set-policy.sh`` - ポリシー更新スクリプト
+- ``private.key`` - 認証キー
 
-Project Admin Requirements
----------------------------
+プロジェクト管理者に必要な作業
+------------------------------
 
-As the project admin, you need to:
+プロジェクト管理者として、以下を行う必要があります。
 
-1. **Understand Trustee Service**
+1. **Trustee サービスの理解**
 
-   - Learn about `Trustee Service <https://www.redhat.com/en/blog/introducing-confidential-containers-trustee-attestation-services-solution-overview-and-use-cases>`_
-   - Review the `Trustee documentation <https://github.com/confidential-containers/trustee?tab=readme-ov-file>`_
+   - `Trustee Service <https://www.redhat.com/en/blog/introducing-confidential-containers-trustee-attestation-services-solution-overview-and-use-cases>`_ について学習します
+   - `Trustee documentation <https://github.com/confidential-containers/trustee?tab=readme-ov-file>`_ を確認します
 
-2. **Deploy Trustee KBS Server**
+2. **Trustee KBS サーバーの展開**
 
-   Follow the :ref:`hashicorp_vault_trustee_deployment` guide to deploy the Trustee Key Broker Service with HashiCorp Vault.
+   :ref:`hashicorp_vault_trustee_deployment` ガイドに従って、HashiCorp Vault を用いた Trustee Key Broker Service を展開します。
 
-Deployment Workflow
-===================
+デプロイメントワークフロー
+==========================
 
-The deployment consists of five main steps:
+展開は 5 つの主要なステップで構成されます。
 
-1. **Build Docker Image** - Create the application container
-2. **Provision** - Generate CVM images and startup kits
-3. **Distribute** - Send startup kits to each site
-4. **User Data** - Prepare user data, optional
-5. **Launch** - Start CVMs at each site
+1. **Docker イメージのビルド** - アプリケーションコンテナを作成します
+2. **プロビジョニング** - CVM イメージとスタートアップキットを生成します
+3. **配布** - スタートアップキットを各サイトに送付します
+4. **ユーザーデータ** - ユーザーデータを準備します (任意)
+5. **起動** - 各サイトで CVM を起動します
 
-Step 1: Build Docker Image
----------------------------
+ステップ 1: Docker イメージのビルド
+-----------------------------------
 
-The CC image builder supports any generic workload. For NVFlare, create a Docker image with the application pre-installed.
+CC イメージビルダーは、あらゆる汎用ワークロードをサポートします。NVFlare の場合は、アプリケーションを事前インストールした Docker イメージを作成します。
 
-**Example Dockerfile:**
+**Dockerfile の例:**
 
 .. code-block:: dockerfile
 
@@ -165,17 +165,17 @@ The CC image builder supports any generic workload. For NVFlare, create a Docker
 
 .. note::
 
-   For CC jobs, custom code at runtime is not allowed. All application code must be included in the Docker image.
-   NVFlare checks the component allow-list before loading any components. If your job uses classes that are
-   included in the CVM image but are not yet allowed, add those class paths to ``class_allow_list`` in the site's
-   ``cc_config``. The provisioner extends the generated ``local/resources.json.default`` for that participant before
-   the startup kit is signed and packaged.
+   CC ジョブでは、ランタイムでのカスタムコードは許可されません。すべてのアプリケーションコードは Docker イメージに含める必要があります。
+   NVFlare はコンポーネントをロードする前に、コンポーネントの許可リストを確認します。CVM イメージには含まれているものの
+   まだ許可されていないクラスをジョブで使用する場合は、それらのクラスパスをサイトの ``cc_config`` にある
+   ``class_allow_list`` に追加してください。プロビジョナーは、スタートアップキットが署名・パッケージ化される前に、
+   その参加者向けに生成された ``local/resources.json.default`` を拡張します。
 
-   The ``cc_config.class_allow_list`` value is additive: list only the extra classes or package prefixes needed by
-   your CC image. The provisioner keeps the built-in NVFlare allow-list entries from ``resources.json.default`` and
-   appends the CC config entries that are not already present.
+   ``cc_config.class_allow_list`` の値は追加的に扱われます。CC イメージが必要とする追加のクラスまたは
+   パッケージプレフィックスのみを列挙してください。プロビジョナーは ``resources.json.default`` に組み込まれた
+   NVFlare の許可リストのエントリを維持したうえで、まだ含まれていない CC 設定のエントリを追記します。
 
-   You can put the list directly in the referenced CC config file:
+   このリストは、参照する CC 設定ファイルに直接記述できます。
 
    .. code-block:: yaml
 
@@ -187,29 +187,29 @@ The CC image builder supports any generic workload. For NVFlare, create a Docker
         - hello_cyclic.app.custom.trainer.SimpleTrainer
         - hello_cyclic.
 
-   Use exact class paths or package prefixes ending with ``.``. For example,
-   ``hello_cyclic.app.custom.trainer.SimpleTrainer`` allows one class, and ``hello_cyclic.`` allows classes under
-   that package prefix.
+   正確なクラスパス、または ``.`` で終わるパッケージプレフィックスを使用してください。たとえば
+   ``hello_cyclic.app.custom.trainer.SimpleTrainer`` は 1 つのクラスを許可し、``hello_cyclic.`` はそのパッケージ
+   プレフィックス配下のクラスを許可します。
 
-**Build and save the image:**
+**イメージのビルドと保存:**
 
 .. code-block:: bash
 
    docker build -t nvflare-site:latest .
    docker save nvflare-site:latest | gzip > nvflare-site.tar.gz
 
-Step 2: Provision
------------------
+ステップ 2: プロビジョニング
+----------------------------
 
-Navigate to the example directory:
+サンプルディレクトリに移動します。
 
 .. code-block:: bash
 
    cd NVFlare/examples/advanced/cc_provision
 
-**2.1 Configure Project**
+**2.1 プロジェクトの設定**
 
-Edit ``project.yml`` and update the ``build_image_cmd`` path:
+``project.yml`` を編集し、``build_image_cmd`` のパスを更新します。
 
 .. code-block:: yaml
 
@@ -219,25 +219,25 @@ Edit ``project.yml`` and update the ``build_image_cmd`` path:
        # Update this path to your image builder location
        build_image_cmd: ~/nvflare-github/nvflare/lighter/cc/image_builder/cvm_build.sh
 
-**2.2 Configure Server**
+**2.2 サーバーの設定**
 
-Edit ``cc_server1.yml`` and set the ``docker_archive`` path:
+``cc_server1.yml`` を編集し、``docker_archive`` のパスを設定します。
 
 .. code-block:: yaml
 
    docker_archive: ~/NVFlare/examples/advanced/cc_provision/docker/nvflare-site.tar.gz
 
-**2.3 Configure Client**
+**2.3 クライアントの設定**
 
-Edit ``cc_site-1.yml``:
+``cc_site-1.yml`` を編集します。
 
-1. Set the ``docker_archive`` path:
+1. ``docker_archive`` のパスを設定します。
 
    .. code-block:: yaml
 
       docker_archive: ~/NVFlare/examples/advanced/cc_provision/docker/nvflare-site.tar.gz
 
-2. If the server name is not a public domain, add host entries:
+2. サーバー名が公開ドメインでない場合は、ホストエントリを追加します。
 
    .. code-block:: yaml
 
@@ -245,10 +245,10 @@ Edit ``cc_site-1.yml``:
         server1: 10.176.4.244
 
 
-**2.4 Run Provision**
+**2.4 プロビジョニングの実行**
 
-Before running provisioning, ensure NBD (Network Block Device) devices are available, as the builder uses
-them to access disk images:
+プロビジョニングを実行する前に、ビルダーがディスクイメージにアクセスするために使用する
+NBD (Network Block Device) デバイスが利用可能であることを確認してください。
 
 .. code-block:: bash
 
@@ -260,11 +260,11 @@ them to access disk images:
 
 .. note::
 
-   Provisioning takes approximately 1000 seconds to build each CVM image.
+   プロビジョニングでは、CVM イメージ 1 つあたりのビルドに約 1000 秒かかります。
 
-**2.5 Output**
+**2.5 出力**
 
-Startup packages are generated in:
+スタートアップパッケージは以下に生成されます。
 
 .. code-block:: text
 
@@ -273,19 +273,19 @@ Startup packages are generated in:
       site-1/site-1.tgz
       admin@nvidia.com/
 
-Step 3: Distribute
--------------------
+ステップ 3: 配布
+----------------
 
-Distribute the generated startup kits to each participant:
+生成されたスタートアップキットを各参加者に配布します。
 
-- Send ``server1.tgz`` to the server site
-- Send ``site-1.tgz`` to client site-1
-- Admin keeps the admin package locally
+- ``server1.tgz`` をサーバーサイトに送付します
+- ``site-1.tgz`` をクライアント site-1 に送付します
+- 管理者は admin パッケージをローカルに保持します
 
-CVM Startup Kit Contents
-^^^^^^^^^^^^^^^^^^^^^^^^^
+CVM スタートアップキットの内容
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each startup kit (e.g., ``server1.tgz``) contains:
+各スタートアップキット (``server1.tgz`` など) には以下が含まれます。
 
 .. code-block:: bash
 
@@ -296,46 +296,46 @@ Each startup kit (e.g., ``server1.tgz``) contains:
    :header-rows: 1
    :widths: 30 70
 
-   * - File
-     - Description
+   * - ファイル
+     - 説明
    * - ``applog.qcow2``
-     - Application log storage (unencrypted, can be mounted and inspected)
+     - アプリケーションログの保存領域 (暗号化されておらず、マウントして内容を確認できます)
    * - ``crypt_root.qcow2``
-     - Encrypted root filesystem (requires decryption key)
+     - 暗号化されたルートファイルシステム (復号鍵が必要です)
    * - ``initrd.img``
-     - Initramfs with InitApp for attestation
+     - アテステーション用の InitApp を含む initramfs
    * - ``launch_vm.sh``
-     - CVM launch script
+     - CVM 起動スクリプト
    * - ``OVMF.amdsev.fd``
-     - AMD SEV-SNP firmware with kernel-hashes support
+     - kernel-hashes をサポートする AMD SEV-SNP ファームウェア
    * - ``README.txt``
-     - Documentation
+     - ドキュメント
    * - ``user_config.qcow2``
-     - User configuration storage containing NVFlare startup kits
+     - NVFlare のスタートアップキットを含むユーザー設定の保存領域
    * - ``user_data.qcow2``
-     - User data storage (placeholder, can be extended)
+     - ユーザーデータの保存領域 (プレースホルダー。拡張可能です)
    * - ``vmlinuz``
-     - Linux kernel
+     - Linux カーネル
 
 .. note::
 
-   The ``user_config.qcow2`` and ``user_data.qcow2`` drives are not encrypted. When a provisioned NVFlare startup
-   script is launched from ``/user_config``, runtime artifacts such as model checkpoints are written to a namespaced
-   encrypted workspace under ``/vault/workspace``. Set ``NVFL_WORKSPACE`` before launching the script to choose a
-   different encrypted workspace path.
+   ``user_config.qcow2`` と ``user_data.qcow2`` のドライブは暗号化されていません。プロビジョニングされた NVFlare の
+   起動スクリプトが ``/user_config`` から起動されると、モデルチェックポイントなどのランタイム成果物は
+   ``/vault/workspace`` 配下の名前空間分離された暗号化ワークスペースに書き込まれます。別の暗号化ワークスペースのパスを
+   選択するには、スクリプトを起動する前に ``NVFL_WORKSPACE`` を設定してください。
 
-Step 4: User Data
------------------
+ステップ 4: ユーザーデータ
+--------------------------
 
-This step is optional. It describes how to prepare user data and make it available inside both the CVM and the workload container.
-If your workload does not require user data, you may skip this step.
+このステップは任意です。ここでは、ユーザーデータを準備し、CVM とワークロードコンテナの両方から利用できるようにする方法を説明します。
+ワークロードがユーザーデータを必要としない場合は、このステップを省略してかまいません。
 
-**4.1 User Data Drive**
+**4.1 ユーザーデータドライブ**
 
-The CVM distribution package includes a user-data drive image named user_data.qcow2.
-This image contains a single ext4 filesystem that occupies the entire drive (no partitions).
+CVM の配布パッケージには、user_data.qcow2 という名前のユーザーデータドライブイメージが含まれています。
+このイメージには、ドライブ全体を占める単一の ext4 ファイルシステムが含まれます (パーティションはありません)。
 
-The drive is not encrypted. You can access it by attaching it to a VM or by using the qemu-nbd command. For example:
+このドライブは暗号化されていません。VM に接続するか、qemu-nbd コマンドを使用することでアクセスできます。例:
 
 .. code-block:: bash
 
@@ -343,27 +343,27 @@ The drive is not encrypted. You can access it by attaching it to a VM or by usin
     sudo mount /dev/nbd0 /mnt
 
   .. note::
-    
-    Please unmount the drive after usage by running:
-    
+
+    使用後は以下を実行してドライブをアンマウントしてください。
+
     .. code-block:: bash
-    
+
         sudo umount /mnt
         sudo qemu-nbd --disconnect /dev/nbd0
 
-**4.2 Local Data**
+**4.2 ローカルデータ**
 
-If your data resides on the local host, it can be copied directly into the user_data drive. The data is
-available in CVM and container as ``/user_data``.
+データがローカルホスト上にある場合は、user_data ドライブに直接コピーできます。データは CVM とコンテナの中で
+``/user_data`` として利用できます。
 
-For example:
+例:
 
 .. code-block:: bash
 
     cp -r /training_data /mnt
 
-The user_data.qcow2 image included with the package is a placeholder and has a very small capacity (1 GB).
-You can resize the drive and expand the filesystem using the following commands:
+パッケージに同梱されている user_data.qcow2 イメージはプレースホルダーであり、容量が非常に小さくなっています (1 GB)。
+以下のコマンドでドライブのサイズを変更し、ファイルシステムを拡張できます。
 
 .. code-block:: bash
 
@@ -376,43 +376,43 @@ You can resize the drive and expand the filesystem using the following commands:
     sudo resize2fs /dev/nbd0
     sudo qemu-nbd --disconnect /dev/nbd0
 
-**4.3 Remote Data using NFS**
+**4.3 NFS を用いたリモートデータ**
 
-If your data is hosted on an NFS server, the CVM can automatically mount it when a file named ``ext_mount.conf``
-is present at the root of the user_data.qcow2 drive.
+データが NFS サーバー上にホストされている場合、user_data.qcow2 ドライブのルートに ``ext_mount.conf`` という名前の
+ファイルが存在すれば、CVM がそれを自動的にマウントします。
 
-The mounted data is available in CVM and container as ``/user_data/mnt``.
+マウントされたデータは、CVM とコンテナの中で ``/user_data/mnt`` として利用できます。
 
-The file must contain a single line specifying the exported server path, for example:
+このファイルには、エクスポートされたサーバーパスを指定する 1 行のみを記述します。例:
 
 .. code-block:: bash
 
     nfs-server.example.com:/training_data
 
-By default, the CVM blocks all outbound network traffic. To allow NFS and port-mapper communication, the following
-outgoing ports must be enabled in the CVM site configuration:
+既定では、CVM はすべてのアウトバウンドネットワークトラフィックをブロックします。NFS および portmapper の通信を許可するには、
+CVM のサイト設定で以下のアウトバウンドポートを有効にする必要があります。
 
 .. code-block:: yaml
 
     allowed_out_ports: [111, 2049]
 
-This must be done in Step 2.3 of the provisioning process.
+この設定は、プロビジョニングプロセスのステップ 2.3 で行う必要があります。
 
-Because the CVM cannot control the source port used for NFS connections, secure NFS exports are not supported.
-The server export must therefore be configured as insecure:
+CVM は NFS 接続に使用される送信元ポートを制御できないため、secure な NFS エクスポートはサポートされません。
+したがって、サーバーのエクスポートは insecure として設定する必要があります。
 
 .. code-block:: bash
 
     /training_data *(rw,sync,no_subtree_check,insecure)
 
-For details, please refer to `exports man page <https://manpages.ubuntu.com/manpages/jammy/man5/exports.5.html>`_
+詳細については `exports man page <https://manpages.ubuntu.com/manpages/jammy/man5/exports.5.html>`_ を参照してください。
 
-Step 5: Launch CVMs
---------------------
+ステップ 5: CVM の起動
+----------------------
 
-**5.1 Launch Server**
+**5.1 サーバーの起動**
 
-On the server machine:
+サーバーマシン上で実行します。
 
 .. code-block:: bash
 
@@ -420,9 +420,9 @@ On the server machine:
    cd server1/cvm_*
    ./launch_vm.sh
 
-**5.2 Launch Client**
+**5.2 クライアントの起動**
 
-On each client machine:
+各クライアントマシン上で実行します。
 
 .. code-block:: bash
 
@@ -430,11 +430,11 @@ On each client machine:
    cd site-1/cvm_*
    ./launch_vm.sh
 
-The server and clients will automatically start the NVFlare system inside their respective CVMs.
+サーバーとクライアントは、それぞれの CVM 内で NVFlare システムを自動的に開始します。
 
-**5.3 Start Admin Console**
+**5.3 管理コンソールの起動**
 
-On the admin machine:
+管理用マシン上で実行します。
 
 .. code-block:: bash
 
@@ -445,85 +445,85 @@ On the admin machine:
 
 .. note::
 
-   If the server name is not a public domain, add an entry in ``/etc/hosts`` on the admin machine.
+   サーバー名が公開ドメインでない場合は、管理用マシンの ``/etc/hosts`` にエントリを追加してください。
 
-Start the admin console:
+管理コンソールを起動します。
 
 .. code-block:: bash
 
    ./workspace/example_project/prod_00/admin@nvidia.com/startup/fl_admin.sh
 
-**5.4 Submit Job**
+**5.4 ジョブの投入**
 
-In the admin console:
+管理コンソールで実行します。
 
 .. code-block:: bash
 
    submit_job hello-pt_cifar10_fedavg
 
-Configuration Reference
-=======================
+設定リファレンス
+================
 
-CC Configuration Parameters
----------------------------
+CC 設定パラメータ
+-----------------
 
 .. list-table::
    :header-rows: 1
    :widths: 25 25 50
 
-   * - Parameter
-     - Example Value
-     - Description
+   * - パラメータ
+     - 設定値の例
+     - 説明
    * - ``compute_env``
      - ``onprem_cvm``
-     - Computation environment type
+     - 計算環境の種別
    * - ``cc_cpu_mechanism``
      - ``amd_sev_snp``
-     - CPU confidential computing mechanism
+     - CPU の機密コンピューティング機構
    * - ``role``
      - ``server`` / ``client``
-     - Role in the NVFlare system
+     - NVFlare システムにおける役割
    * - ``root_drive_size``
      - ``45`` (GB)
-     - Size of the root filesystem drive
+     - ルートファイルシステムドライブのサイズ
    * - ``applog_drive_size``
      - ``1`` (GB)
-     - Size of the application log drive
+     - アプリケーションログドライブのサイズ
    * - ``user_config_drive_size``
      - ``1`` (GB)
-     - Size of the user configuration drive
+     - ユーザー設定ドライブのサイズ
    * - ``user_data_drive_size``
      - ``1`` (GB)
-     - Size of the user data drive
+     - ユーザーデータドライブのサイズ
    * - ``docker_archive``
      - ``~/path/to/app.tar.gz``
-     - Path to Docker image archive (created with ``docker save``)
+     - Docker イメージアーカイブへのパス (``docker save`` で作成)
    * - ``user_config``
-     - Key-value pairs
-     - Paths mounted in container at ``/user_config/[key]``
+     - キーと値のペア
+     - コンテナ内の ``/user_config/[key]`` にマウントされるパス
    * - ``allowed_ports``
-     - List of ports
-     - Inbound ports to whitelist
+     - ポートのリスト
+     - ホワイトリストに登録するインバウンドポート
    * - ``allowed_out_ports``
-     - List of ports
-     - Outbound ports to whitelist
+     - ポートのリスト
+     - ホワイトリストに登録するアウトバウンドポート
    * - ``cc_issuers``
-     - List of authorizers
-     - CC attestation token issuers
+     - authorizer のリスト
+     - CC アテステーショントークンの発行者
    * - ``class_allow_list``
-     - List of class paths
-     - Additive list of extra component classes or package prefixes allowed for non-BYOC CC jobs
+     - クラスパスのリスト
+     - 非 BYOC の CC ジョブで許可される追加のコンポーネントクラスまたはパッケージプレフィックスの追加リスト
    * - ``token_expiration``
-     - ``100`` (seconds)
-     - Token validity duration (must be < ``check_frequency``)
+     - ``100`` (秒)
+     - トークンの有効期間 (``check_frequency`` より小さい必要があります)
    * - ``check_frequency``
-     - ``120`` (seconds)
-     - Attestation check interval
+     - ``120`` (秒)
+     - アテステーションのチェック間隔
 
-Complete Configuration Examples
---------------------------------
+完全な設定例
+------------
 
-**Project Configuration (project.yml)**
+**プロジェクト設定 (project.yml)**
 
 .. code-block:: yaml
 
@@ -560,7 +560,7 @@ Complete Configuration Examples
      args:
        build_image_cmd: ~/nvflare-github/nvflare/lighter/cc/image_builder/cvm_build.sh
 
-**Server Configuration (cc_server1.yml)**
+**サーバー設定 (cc_server1.yml)**
 
 .. code-block:: yaml
 
@@ -600,7 +600,7 @@ Complete Configuration Examples
    cc_attestation:
      check_frequency: 120  # seconds
 
-**Client Configuration (cc_site-1.yml)**
+**クライアント設定 (cc_site-1.yml)**
 
 .. code-block:: yaml
 
@@ -637,34 +637,34 @@ Complete Configuration Examples
    cc_attestation:
      check_frequency: 120  # seconds
 
-Troubleshooting
-===============
+トラブルシューティング
+======================
 
-Common Issues
--------------
+よくある問題
+------------
 
-**Issue: CVM fails to boot**
+**問題: CVM がブートしない**
 
-- Check the ``applog.qcow2`` for boot logs
-- Verify firmware is correctly installed
-- Ensure kernel-hashes is enabled in the firmware
+- ``applog.qcow2`` でブートログを確認します
+- ファームウェアが正しくインストールされているか検証します
+- ファームウェアで kernel-hashes が有効になっていることを確認します
 
-**Issue: Attestation failure**
+**問題: アテステーションの失敗**
 
-- Verify Trustee KBS server is accessible
-- Check network connectivity to attestation service
-- Ensure correct ports are whitelisted in ``allowed_out_ports``
+- Trustee KBS サーバーにアクセスできるか検証します
+- アテステーションサービスへのネットワーク接続を確認します
+- ``allowed_out_ports`` で正しいポートがホワイトリストに登録されていることを確認します
 
-**Issue: Server/Client connection fails**
+**問題: サーバーとクライアントの接続に失敗する**
 
-- Verify ``/etc/hosts`` entries if not using public domain
-- Check firewall rules
-- Ensure correct ports are configured in both server and client
+- 公開ドメインを使用していない場合は ``/etc/hosts`` のエントリを検証します
+- ファイアウォールのルールを確認します
+- サーバーとクライアントの両方で正しいポートが設定されていることを確認します
 
-Notes on using NVIDIA GPU CC
-============================
+NVIDIA GPU CC を使用する際の注意点
+==================================
 
-1. For any site that supports GPU CC, you can add NVFLARE's `GPUAuthorizer` to the `cc_site.yml` configuration file:
+1. GPU CC をサポートするサイトでは、NVFLARE の `GPUAuthorizer` を `cc_site.yml` 設定ファイルに追加できます。
 
 .. code-block:: yaml
 
@@ -674,8 +674,8 @@ Notes on using NVIDIA GPU CC
         path: nvflare.app_opt.confidential_computing.gpu_authorizer.GPUAuthorizer
         token_expiration: 100 # seconds, needs to be less than check_frequency
 
-2. The NVFlare `GPUAuthorizer` uses NVIDIA's `nv_attestation_sdk`.
-   When building the NVFlare app docker image, make sure to include it in the requirements, for example:
+2. NVFlare の `GPUAuthorizer` は NVIDIA の `nv_attestation_sdk` を使用します。
+   NVFlare アプリケーションの Docker イメージをビルドする際は、以下のように requirements に含めるようにしてください。
 
 .. code-block:: bash
 
@@ -686,9 +686,9 @@ Notes on using NVIDIA GPU CC
     safetensors
     nv_attestation_sdk
 
-3. To get GPU working in CVM, you need to ensure:
-       - No GPU driver installed on host, otherwise the passthrough will fail.
-       - You need to create VFIO by running the following command:
+3. CVM 内で GPU を動作させるには、以下を確認する必要があります。
+       - ホストに GPU ドライバがインストールされていないこと。インストールされているとパススルーが失敗します。
+       - 以下のコマンドを実行して VFIO を作成する必要があります。
 
 .. code-block:: bash
 
@@ -696,13 +696,13 @@ Notes on using NVIDIA GPU CC
     NVIDIA_PASSTHROUGH=$(lspci -n -s $NVIDIA_GPU | awk -F: '{print $4}' | awk '{print $1}')
     echo 10de $NVIDIA_PASSTHROUGH > /sys/bus/pci/drivers/vfio-pci/new_id
 
-4. For more details, please refer to `NVIDIA's Deployment Guide for SecureAI <https://docs.nvidia.com/cc-deployment-guide-snp.pdf>`_
+4. 詳細については `NVIDIA's Deployment Guide for SecureAI <https://docs.nvidia.com/cc-deployment-guide-snp.pdf>`_ を参照してください。
 
-Next Steps
-==========
+次のステップ
+============
 
-After successfully deploying the system:
+システムの展開に成功したら、以下を行ってください。
 
-- Review the :ref:`NVFlare CC Architecture <cc_architecture>` for understanding the security model
-- Consult :ref:`confidential_computing_attestation` for attestation details
-- Explore advanced configuration options for your specific use case
+- セキュリティモデルを理解するために :ref:`NVFlare CC アーキテクチャ <cc_architecture>` を確認します
+- アテステーションの詳細については :ref:`confidential_computing_attestation` を参照します
+- 個別のユースケースに応じた高度な設定オプションを検討します

@@ -1,65 +1,64 @@
-#################################
-Reliable Federated XGBoost Design
-#################################
+########################################
+信頼性の高い連合 XGBoost の設計
+########################################
 
 
-*************************
-Flare as XGBoost Launcher
-*************************
+********************************************
+XGBoost ランチャーとしての FLARE
+********************************************
 
-NVFLARE serves as a launchpad to start the XGBoost system.
-Once started, the XGBoost system runs independently of FLARE,
-as illustrated in the following figure.
+NVFLARE は、XGBoost システムを起動するための発射台として機能します。
+いったん起動すると、次の図に示すように、XGBoost システムは FLARE とは独立して動作します。
 
 .. figure:: ../../../resources/loose_xgb.png
     :height: 500px
 
-There are a few potential problems with this approach:
+このアプローチにはいくつかの潜在的な問題があります。
 
- - As we know, MPI requires a perfect communication network,
-   whereas the simple gRPC over the internet could be unstable.
+ - ご存じのとおり、MPI は完璧な通信ネットワークを必要としますが、
+   インターネット越しの単純な gRPC は不安定になり得ます。
 
- - For each job, the XGBoost Server must open a port for clients to connect to.
-   This adds burden to request IT for the additional port in the real-world situation.
-   Even if a fixed port is allowed to open, and we reuse that port,
-   multiple XGBoost jobs cannot be run simultaneously;
-   since each XGBoost job requires a different port number.
+ - ジョブごとに、XGBoost サーバーはクライアントが接続するためのポートを開放しなければなりません。
+   これは実際の運用環境において、追加のポート開放を IT 部門に依頼する負担を生みます。
+   仮に固定ポートの開放が許可され、そのポートを再利用したとしても、
+   複数の XGBoost ジョブを同時に実行することはできません。
+   各 XGBoost ジョブは異なるポート番号を必要とするためです。
 
 
-*****************************
-Flare as XGBoost Communicator
-*****************************
+******************************************************
+XGBoost コミュニケーターとしての FLARE
+******************************************************
 
-FLARE provides a highly flexible, scalable, and reliable communication mechanism.
-We enhance the reliability of federated XGBoost by using FLARE as the communicator of XGBoost,
-as shown here:
+FLARE は、非常に柔軟でスケーラブル、かつ信頼性の高い通信メカニズムを提供します。
+ここに示すように、FLARE を XGBoost のコミュニケーターとして使用することで、
+連合 XGBoost の信頼性を高めます。
 
 .. figure:: ../../../resources/tight_xgb.png
     :height: 500px
 
-Detailed Design
-===============
+詳細設計
+============
 
-The open-source Federated XGBoost (c++) uses gRPC as the communication protocol.
-To use FLARE  as the communicator, we simply route XGBoost's gRPC messages through FLARE.
-To do so, we change the server endpoint of each XGBoost client to a local gRPC server
-(LGS) within the FLARE client.
+オープンソースの連合 XGBoost (c++) は、通信プロトコルとして gRPC を使用しています。
+FLARE をコミュニケーターとして使用するには、XGBoost の gRPC メッセージを FLARE 経由で
+ルーティングするだけです。そのために、各 XGBoost クライアントのサーバーエンドポイントを、
+FLARE クライアント内のローカル gRPC サーバー (LGS) に変更します。
 
 .. figure:: ../../../resources/fed_xgb_detail.png
     :height: 500px
 
-As shown in this diagram, there is a local GRPC server (LGS) for each site
-that serves as the server endpoint for the XGBoost client on the site.
-Similarly, there is a local GRPC Client (LGC) on the FL Server that
-interacts with the XGBoost Server. The message path between the XGBoost Client and
-the XGBoost Server is as follows:
+この図に示すように、各サイトにはローカル gRPC サーバー (LGS) があり、
+そのサイト上の XGBoost クライアントに対するサーバーエンドポイントとして機能します。
+同様に、FL サーバー上にはローカル gRPC クライアント (LGC) があり、
+XGBoost サーバーとやり取りします。XGBoost クライアントと XGBoost サーバーの間の
+メッセージ経路は次のとおりです。
 
-  1. The XGBoost client generates a gRPC message and sends it to the LGS in the FLARE client.
-  2. The FLARE client forwards the message to the FLARE server. This is a reliable FLARE message.
-  3. The FLARE server uses the LGC to send the message to the XGBoost server.
-  4. The XGBoost server sends the response back to the LGC in the FLARE server.
-  5. The FLARE server sends the response back to the FLARE client.
-  6. The FLARE client sends the response back to the XGBoost client via the LGS.
+  1. XGBoost クライアントが gRPC メッセージを生成し、FLARE クライアント内の LGS に送信します。
+  2. FLARE クライアントがそのメッセージを FLARE サーバーに転送します。これは信頼性のある FLARE メッセージです。
+  3. FLARE サーバーが LGC を使ってメッセージを XGBoost サーバーに送信します。
+  4. XGBoost サーバーが応答を FLARE サーバー内の LGC に返します。
+  5. FLARE サーバーが応答を FLARE クライアントに返します。
+  6. FLARE クライアントが LGS 経由で応答を XGBoost クライアントに返します。
 
-Please note that the XGBoost Client (c++) component could be running as a separate process
-or within the same process of FLARE Client.
+なお、XGBoost クライアント (c++) コンポーネントは、別プロセスとして実行することも、
+FLARE クライアントと同じプロセス内で実行することもできます。

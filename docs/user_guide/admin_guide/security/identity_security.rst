@@ -1,209 +1,210 @@
 .. _identity_security_page:
 
-#################
-Identity Security
-#################
-This area is concerned with these two trust issues:
+##############################
+アイデンティティセキュリティ
+##############################
+この領域は、次の 2 つの信頼に関する課題を扱います。
 
-    - Authentication: ensures communicating parties have enough confidence about each other's identities: everyone is who they claim to be.
-    - Authorization: ensures that the user can only do what he/she is authorized to do.
+    - Authentication (認証): 通信を行う当事者が互いのアイデンティティについて十分な確信を持てるようにします。つまり、全員が名乗ったとおりの本人であることを保証します。
+    - Authorization (認可): ユーザーが認可された操作のみを実行できるようにします。
 
-Authentication
+認証
 ==============
-NVFLARE's authentication model is based on Public Key Infrastructure (PKI) technology:
+NVFLARE の認証モデルは、公開鍵基盤 (PKI) 技術に基づいています。
 
-    - For the FL project, the Project Admin uses the Provisioning Tool to create a Root CA with a self-signed root certificate. This Root CA will be used to issue all other certs needed by communicating parties.
-    - Identities involved in the study (Server(s), Clients, Users) are provisioned with the Provisioning Tool. Each identity is defined with a unique common name. For each identity, the Provisioning Tool generates a separate password-protected Startup Kit, which includes security credentials for mutual TLS authentication:
-        - The certificate of the Root CA
-        - The cert of the identity
-        - The private key of the identity
-    - Startup Kits are distributed to the intended identities:
-        - The FL Server's kit is sent to the Project Admin
-        - The kit for each FL Client is sent to the Org Admin responsible for the site
-        - FLARE Console (previously called Admin Client) kits are sent to the user(s)
-    - To ensure the integrity of the Startup Kit, each file in the kit is signed by the Root CA.
-    - Each Startup Kit also contains a "start.sh" file, which can be used to properly start the NVFLARE application.
-    - Once started, the Client tries to establish a mutually-authenticated TLS connection with the Server, using the PKI credentials in its Startup Kits. This is possible only if the client and the server both have the correct Startup Kits.
-    - Similarly, when a user tries to operate the NVFLARE system with the Admin Client app, the admin client tries to establish a mutually-authenticated TLS connection with the Server, using the PKI credentials in its Startup Kits. This is possible only if the admin client and the server both have the correct Startup Kits. The admin user also must enter his/her assigned user name correctly.
- 
-The security of the system comes from the PKI credentials in the Startup Kits. As you can see, this mechanism involves manual processing and human interactions for Startup Kit distribution, and hence the identity security of the system depends on the trust of the involved people. To minimize security risk, we recommend that people involved follow these best practice guidelines:
+    - FL プロジェクトにおいて、プロジェクト管理者はプロビジョニングツールを使用して、自己署名ルート証明書を持つルート CA を作成します。このルート CA は、通信を行う当事者が必要とする他のすべての証明書を発行するために使用されます。
+    - スタディに関与するアイデンティティ (サーバー、クライアント、ユーザー) は、プロビジョニングツールでプロビジョニングされます。各アイデンティティは一意のコモンネームで定義されます。プロビジョニングツールは、アイデンティティごとに、相互 TLS 認証のためのセキュリティクレデンシャルを含むパスワード保護されたスタートアップキットを個別に生成します。
+        - ルート CA の証明書
+        - そのアイデンティティの証明書
+        - そのアイデンティティの秘密鍵
+    - スタートアップキットは、対象となるアイデンティティに配布されます。
+        - FL サーバーのキットはプロジェクト管理者に送られます
+        - 各 FL クライアントのキットは、そのサイトを担当する組織管理者に送られます
+        - FLARE コンソール (旧称 Admin Client) のキットはユーザーに送られます
+    - スタートアップキットの完全性を保証するため、キット内の各ファイルはルート CA によって署名されています。
+    - 各スタートアップキットには "start.sh" ファイルも含まれており、これを使用して NVFLARE アプリケーションを適切に起動できます。
+    - 起動されると、クライアントはスタートアップキット内の PKI クレデンシャルを使用して、サーバーとの相互認証済み TLS 接続の確立を試みます。これは、クライアントとサーバーの双方が正しいスタートアップキットを持っている場合にのみ可能です。
+    - 同様に、ユーザーが Admin Client アプリで NVFLARE システムを操作しようとすると、管理クライアントはスタートアップキット内の PKI クレデンシャルを使用して、サーバーとの相互認証済み TLS 接続の確立を試みます。これは、管理クライアントとサーバーの双方が正しいスタートアップキットを持っている場合にのみ可能です。また、管理ユーザーは割り当てられたユーザー名を正しく入力する必要があります。
 
-    - The Project Admin, who is responsible for the provisioning process of the study, should protect the study's configuration files and store created Startup Kits securely.
-    - When distributing Startup Kits, the Project Admin should use trusted communication methods, and never send passwords of the Startup Kits in the same communication. It is preferred to send the Kits and passwords with different communication methods.
-    - Org Admin and users must protect their Startup Kits and only use them for intended purposes.
- 
+システムのセキュリティは、スタートアップキット内の PKI クレデンシャルによってもたらされます。ご覧のとおり、このメカニズムはスタートアップキットの配布において手作業と人的なやり取りを伴うため、システムのアイデンティティセキュリティは関係者の信頼に依存します。セキュリティリスクを最小化するため、関係者は以下のベストプラクティスのガイドラインに従うことを推奨します。
+
+    - スタディのプロビジョニングプロセスを担当するプロジェクト管理者は、スタディの設定ファイルを保護し、作成したスタートアップキットを安全に保管してください。
+    - スタートアップキットを配布する際、プロジェクト管理者は信頼できる通信手段を用い、スタートアップキットのパスワードを同じ通信手段で送らないでください。キットとパスワードは別々の通信手段で送ることが望ましいです。
+    - 組織管理者およびユーザーは、自身のスタートアップキットを保護し、意図された目的にのみ使用してください。
+
 .. note::
 
-    The provisioning tool tries to use the strongest cryptography suites possible when generating the PKI credentials. All of the certificates are compliant with the X.509 standard. All private keys are generated with a size of 2048-bits. The backend is openssl 1.1.1f, released on March 31, 2020, with no known CVE.  All certificates expire within 360 days.
- 
+    プロビジョニングツールは、PKI クレデンシャルを生成する際に可能な限り強力な暗号スイートを使用しようとします。すべての証明書は X.509 標準に準拠しています。すべての秘密鍵は 2048 ビットのサイズで生成されます。バックエンドは 2020 年 3 月 31 日にリリースされた openssl 1.1.1f で、既知の CVE はありません。すべての証明書は 360 日以内に有効期限を迎えます。
+
 .. note::
 
-    :ref:`NVFlare Dashboard <nvflare_dashboard_ui>` is a website that supports user and site registration. Users will be able to download their Startup Kits (and other artifacts) from the website.
+    :ref:`NVFlare Dashboard <nvflare_dashboard_ui>` は、ユーザーおよびサイトの登録をサポートする Web サイトです。ユーザーは、この Web サイトからスタートアップキット (およびその他の成果物) をダウンロードできます。
 
 
 .. _federated_authorization:
 
-Authorization: Federated Authorization
+認可: フェデレーテッド認可
 ======================================
-Federated learning is conducted over computing resources owned by different organizations. Naturally these organizations have concerns
-about their computing resources being misused or abused. Even if an NVFLARE docker is trusted by participating orgs, researchers can
-still bring their own custom code to be part of a study (BYOC), which could be a big concern to many organizations. In addition,
-organizations may also have IP (intellectual property) requirements on the studies performed by their own researchers.
+連合学習は、異なる組織が所有する計算リソース上で実施されます。当然ながら、これらの組織は自身の計算リソースが誤用または悪用されることを
+懸念します。NVFLARE の docker が参加組織から信頼されていたとしても、研究者は依然として独自のカスタムコードをスタディの一部として
+持ち込むことができ (BYOC)、これは多くの組織にとって大きな懸念となり得ます。さらに、組織は自組織の研究者が実施するスタディに対して
+IP (知的財産) 要件を持つこともあります。
 
-NVFLARE comes with an authorization system that can help address these security concerns and IP requirements. With this system, an organization can define strict policy to control access to their computing resources and/or FL jobs.
+NVFLARE には、これらのセキュリティ上の懸念と IP 要件に対処するのに役立つ認可システムが備わっています。このシステムにより、組織は自身の計算リソースや FL ジョブへのアクセスを制御する厳格なポリシーを定義できます。
 
-Here are some examples that an org can do:
+組織が実行できることの例をいくつか示します。
 
-    - Restrict BYOC to only the org's own researchers;
-    - Allow jobs only from its own researchers, or from specified other orgs, or even from specified trusted other researchers;
-    - Totally disable remote shell commands on its sites
-    - Allow the "ls" shell command but disable all other remote shell commands
+    - BYOC をその組織自身の研究者のみに制限する
+    - 自組織の研究者から、指定した他の組織から、あるいは指定した信頼できる他の研究者からのジョブのみを許可する
+    - 自サイト上でのリモートシェルコマンドを完全に無効にする
+    - "ls" シェルコマンドは許可し、それ以外のすべてのリモートシェルコマンドを無効にする
 
-Centralized vs. Federated Authorization
+集中型認可とフェデレーテッド認可
 ---------------------------------------
-In NVFLARE before version 2.2.1, the authorization policy was centrally enforced by the FL Server.  In a true federated environment, each organization should be able to define and enforce their own authorization policy instead of relying others (such as FL Server that is owned by a separate org) to do so.
+バージョン 2.2.1 より前の NVFLARE では、認可ポリシーは FL サーバーによって集中的に適用されていました。真のフェデレーテッド環境では、各組織が他者 (別の組織が所有する FL サーバーなど) に依存するのではなく、自身の認可ポリシーを定義し適用できるべきです。
 
-NVFLARE now uses federated authorization where each organization defines and enforces its own authorization policy:
+NVFLARE は現在、各組織が自身の認可ポリシーを定義し適用するフェデレーテッド認可を採用しています。
 
-    - Each organization defines its policy in its own authorization.json (in the local folder of the workspace)
-    - This locally defined policy is loaded by FL Clients owned by the organization
-    - The policy is also enforced by these FL Clients
+    - 各組織は、自身の authorization.json (ワークスペースの local フォルダー内) にポリシーを定義します
+    - このローカルに定義されたポリシーは、その組織が所有する FL クライアントによって読み込まれます
+    - ポリシーはこれらの FL クライアントによって適用されます
 
-This decentralized authorization has an added benefit: since each organization takes care of its own authorization, there will be no need to update the policy of any other participants (FL Server or Clients) when a new orgs or clients are added.
+この分散型の認可には、追加の利点があります。各組織が自身の認可を管理するため、新しい組織やクライアントが追加されても、他の参加者 (FL サーバーやクライアント) のポリシーを更新する必要がありません。
 
-See :github_nvflare_link:`Federated Policies (Github) <examples/advanced/federated-policies/README.rst>` for a working example with federated site policies for authorization.
+認可のためのフェデレーテッドサイトポリシーの動作する例については、 :github_nvflare_link:`Federated Policies (Github) <examples/advanced/federated-policies/README.rst>` を参照してください。
 
-Simplified Authorization Policy Configuration
+簡素化された認可ポリシー設定
 ---------------------------------------------
-Since each organization defines its own policy, there will be no need to centrally define all orgs and users. The policy configuration for an org is simply a matrix of role/right permissions. Each role/right combination in the permission matrix answers this question: what kind of users of this role can have this right?
+各組織が自身のポリシーを定義するため、すべての組織とユーザーを集中的に定義する必要はありません。ある組織のポリシー設定は、単なるロール/権限のパーミッションのマトリクスです。パーミッションマトリクスにおける各ロール/権限の組み合わせは、「このロールのどのようなユーザーがこの権限を持てるか」という問いに答えます。
 
-To answer this question, the role/right combination defines one or more conditions, and the user must meet one of these conditions to have the right. The set of conditions is called a control.
+この問いに答えるため、ロール/権限の組み合わせは 1 つ以上の条件を定義し、ユーザーはその権限を得るためにこれらの条件のいずれかを満たす必要があります。この条件の集合はコントロールと呼ばれます。
 
-Roles
-^^^^^
-Users are classified into roles. NVFLARE defines four roles:
+ロール
+^^^^^^^^
+ユーザーはロールに分類されます。NVFLARE は 4 つのロールを定義しています。
 
-    - Project Admin - this role is responsible for the whole FL project;
-    - Org Admin - this role is responsible for the administration of all sites in its org. Each org must have one Org Admin;
-    - Lead (researcher) - this role conducts FL studies
-    - Member (researcher) - this role observes the FL study but cannot submit jobs
+    - Project Admin - このロールは FL プロジェクト全体に責任を持ちます
+    - Org Admin - このロールは、その組織内のすべてのサイトの管理に責任を持ちます。各組織には 1 人の Org Admin が必要です
+    - Lead (研究者) - このロールは FL スタディを実施します
+    - Member (研究者) - このロールは FL スタディを観察できますが、ジョブを送信することはできません
 
-Rights
+権限
 ^^^^^^
-NVFLARE supports more accurate right definitions to be more flexible:
+NVFLARE は、より柔軟にするために、より詳細な権限定義をサポートしています。
 
-    - Each server-side admin command is a right! This makes it possible for an org to control each command explicitly;
-    - Admin commands are grouped into categories. For example, commands like abort_job, delete_job, start_app are in manage_job category; all shell commands are put into the shell_commands category. Each category is also a right.
-    - BYOC is now defined as a right so that some users are allowed to submit jobs with BYOC whereas some are not.
+    - サーバー側の各管理コマンドが 1 つの権限です。これにより、組織は各コマンドを明示的に制御できます
+    - 管理コマンドはカテゴリにグループ化されています。たとえば、abort_job、delete_job、start_app などのコマンドは manage_job カテゴリに属し、すべてのシェルコマンドは shell_commands カテゴリに入れられます。各カテゴリも 1 つの権限です。
+    - BYOC は権限として定義されるようになったため、一部のユーザーには BYOC を伴うジョブの送信を許可し、他のユーザーには許可しないといったことが可能です。
 
-This right system makes it easy to write simple policies that only use command categories. It also makes it possible to write policies to control individual commands. When both categories and commands are used, command-based control takes precedence over category-based control.
+この権限システムにより、コマンドカテゴリのみを使用したシンプルなポリシーを簡単に記述できます。また、個々のコマンドを制御するポリシーを記述することも可能です。カテゴリとコマンドの両方が使用されている場合は、コマンドベースの制御がカテゴリベースの制御よりも優先されます。
 
-See :ref:`command_categories` for command categories.
+コマンドカテゴリについては :ref:`command_categories` を参照してください。
 
-Controls and Conditions
+コントロールと条件
 ^^^^^^^^^^^^^^^^^^^^^^^
-A *control* is a set of one or more conditions that is specified in the permission matrix. Conditions specify relationships among the subject user, the site, and the job submitter. The following are supported relationships:
+*コントロール* とは、パーミッションマトリクスで指定される 1 つ以上の条件の集合です。条件は、対象となるユーザー、サイト、ジョブの送信者の間の関係を指定します。サポートされている関係は次のとおりです。
 
-    - The user belongs to the site's organization (user org = site org)
-    - The user is the job submitter (user name = submitter name)
-    - The user and the job submitter are in the same org (user org = submitter org)
-    - The user is a specified person (user name = specified name)
-    - The user is in a specified org (user org = specified org)
+    - ユーザーがサイトの組織に属している (user org = site org)
+    - ユーザーがジョブの送信者である (user name = submitter name)
+    - ユーザーとジョブの送信者が同じ組織に属している (user org = submitter org)
+    - ユーザーが指定された人物である (user name = specified name)
+    - ユーザーが指定された組織に属している (user org = specified org)
 
-Keep in mind that the relationship is always relative to the subject user - we check to see whether the user's name or org has the right relationship with the site or job submitter.
+この関係は常に対象となるユーザーを基準とした相対的なものであることに注意してください。つまり、ユーザーの名前または組織が、サイトまたはジョブの送信者と適切な関係にあるかどうかを確認します。
 
-Since conditions need to be expressed in the policy definition file (authorization.json), some concise and consistent notations are needed. The following are the notations for these conditions:
+条件はポリシー定義ファイル (authorization.json) の中で表現する必要があるため、簡潔で一貫した記法が必要です。これらの条件の記法は次のとおりです。
 
 .. csv-table::
-    :header: Notation,Condition,Examples
+    :header: 記法,条件,例
     :widths: 15, 20, 15
 
-    o:site,The user belongs to the site's organization
-    n:submitter,The user is the job submitter
-    o:submitter,The user and the job submitter belong to the same org
-    n:<person_name>,The user is a specified person,n:john@nvidia.com
-    o:<org_name>,The user is in a specified org,o:nvidia
+    o:site,ユーザーがサイトの組織に属している
+    n:submitter,ユーザーがジョブの送信者である
+    o:submitter,ユーザーとジョブの送信者が同じ組織に属している
+    n:<person_name>,ユーザーが指定された人物である,n:john@nvidia.com
+    o:<org_name>,ユーザーが指定された組織に属している,o:nvidia
 
-The words "site" and "submitter" are reserved.
+"site" と "submitter" という語は予約語です。
 
-In addition, two words are used for extreme conditions:
+さらに、極端な条件のために 2 つの語が使用されます。
 
-    - Any user is allowed: any
-    - No user is allowed: none
+    - すべてのユーザーを許可する: any
+    - どのユーザーも許可しない: none
 
-See :ref:`sample_auth_policy` for an example policy.
+ポリシーの例については :ref:`sample_auth_policy` を参照してください。
 
-Policy Evaluation
+ポリシー評価
 ^^^^^^^^^^^^^^^^^
-Policy evaluation is to answer the question: is the user allowed to do this command? 
+ポリシー評価とは、「このユーザーはこのコマンドを実行することを許可されているか」という問いに答えることです。
 
-The following is the evaluation algorithm:
+評価アルゴリズムは次のとおりです。
 
-    - If a control is defined for this command and user role, then this control will be evaluated;
-    - Otherwise, if the command belongs to a category and a control is defined for the category and user role, then this control will be evaluated;
-    - Otherwise, return False
+    - このコマンドとユーザーロールに対してコントロールが定義されている場合は、そのコントロールが評価されます
+    - そうでない場合、コマンドがあるカテゴリに属し、そのカテゴリとユーザーロールに対してコントロールが定義されていれば、そのコントロールが評価されます
+    - いずれでもない場合は、False を返します
 
-As a shorthand, if the control is the same for all rights for a role, you can specify a control for a role without explicitly specifying rights one by one. For example, this is used for the "project_admin" role since this role can do everything.
+省略記法として、あるロールのすべての権限に対してコントロールが同じ場合は、権限を 1 つずつ明示的に指定せずに、ロールに対してコントロールを指定できます。たとえば、"project_admin" ロールはすべてを実行できるため、この記法が使用されます。
 
-Command Authorization Process
+コマンドの認可プロセス
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We know that users operate NVFLARE systems with admin commands via the FLARE Console. But when a user issues a command, how does authorization happen
-throughout the system?
+ユーザーは FLARE コンソールを介した管理コマンドで NVFLARE システムを操作します。しかし、ユーザーがコマンドを発行したとき、
+システム全体ではどのように認可が行われるのでしょうか。
 
-If the command only involves the Server, then the server's authorization policy is evaluated and
-enforced. If the command involves FL clients, then the command will be sent to those clients without any authorization evaluation on the server.
-When a client receives the command, it will evaluate its own authorization policy. The client will execute the command only if it passes authorization.
-It is therefore possible that some clients accept the command whereas some other clients do not.
+コマンドがサーバーのみに関わる場合は、サーバーの認可ポリシーが評価され適用されます。コマンドが FL クライアントに関わる場合、
+そのコマンドはサーバー側で認可の評価を行わずにそれらのクライアントへ送信されます。
+クライアントはコマンドを受信すると、自身の認可ポリシーを評価します。クライアントは認可を通過した場合にのみコマンドを実行します。
+そのため、一部のクライアントはコマンドを受け入れ、他のクライアントは受け入れない、ということも起こり得ます。
 
-If a client rejects the command, it will return "authorization denied" error back to the server.
+クライアントがコマンドを拒否した場合は、"authorization denied" エラーをサーバーに返します。
 
-Job Submission
+ジョブの送信
 """"""""""""""
-Job submission is a special and important function in NVFLARE. The researcher uses the "submit_job" command to submit a job. But the job
-is not executed until it is scheduled and deployed later. Note that when the job is scheduled, the user may or may not be even online.
+ジョブの送信は、NVFLARE における特別かつ重要な機能です。研究者は "submit_job" コマンドを使ってジョブを送信します。しかしジョブは、
+後でスケジュールされデプロイされるまで実行されません。ジョブがスケジュールされる時点で、ユーザーがオンラインであるとは限らないことに
+注意してください。
 
-Job authorization will be done in two places. When the job is submitted, only the Server will evaluate the "submit_job" right. If allowed,
-the job will be accepted into the Job Store. When the job is later scheduled for execution, all sites (FL Server and Clients) involved in
-the job will evaluate "submit_job" again based on its own authorization policy. If the job comes with custom code, the "byoc" right will
-also be evaluated. The job will be rejected if either right fails.
+ジョブの認可は 2 か所で行われます。ジョブが送信されるとき、サーバーのみが "submit_job" 権限を評価します。許可された場合、
+ジョブは Job Store に受け入れられます。後にジョブが実行のためにスケジュールされると、そのジョブに関わるすべてのサイト
+(FL サーバーおよびクライアント) が、それぞれの認可ポリシーに基づいて再度 "submit_job" を評価します。ジョブがカスタムコードを
+伴う場合は、"byoc" 権限も評価されます。いずれかの権限が失敗した場合、ジョブは拒否されます。
 
-Hence it is quite possible that the job is accepted at submission time, but cannot run due to authorization errors from FL clients.
+したがって、送信時にはジョブが受け入れられたにもかかわらず、FL クライアントからの認可エラーによって実行できない、ということも
+十分に起こり得ます。
 
-Study-Scoped Authorization
+スタディスコープの認可
 """"""""""""""""""""""""""
-When multi-study is enabled, the user's role for study-scoped authorization is determined by the active
-study session rather than the certificate role. At login time, the server verifies that the user is mapped
-in the study's ``admins`` configuration and uses the mapped role for subsequent study-scoped authorization
-checks. This means the same user can have different privileges in different studies. See
-:ref:`multi_study_guide` for configuration details.
+マルチスタディが有効になっている場合、スタディスコープの認可におけるユーザーのロールは、証明書のロールではなく、アクティブな
+スタディセッションによって決定されます。ログイン時に、サーバーはユーザーがそのスタディの ``admins`` 設定にマッピングされていることを
+検証し、以降のスタディスコープの認可チェックにはマッピングされたロールを使用します。つまり、同じユーザーがスタディごとに異なる権限を
+持つことができます。設定の詳細については :ref:`multi_study_guide` を参照してください。
 
-You may ask why we don't check authorization with each involved FL client at the time of job submission. There are three considerations:
+ジョブの送信時に、関わる各 FL クライアントに対して認可を確認しないのはなぜかと疑問に思うかもしれません。これには 3 つの理由があります。
 
-1) This will make the system more complicated since the server would need to interact with the clients
-2) At the time of submission, some or all of the FL clients may not even be online
-3) A job's clients could be open-ended in that it will be deployed to all available clients. The list of available clients could be different by the time the job is scheduled for execution.
+1) サーバーがクライアントとやり取りする必要が生じ、システムがより複雑になります
+2) 送信の時点では、一部またはすべての FL クライアントがオンラインでない可能性があります
+3) ジョブのクライアントは、利用可能なすべてのクライアントにデプロイされるという意味で、対象が確定していない場合があります。利用可能なクライアントのリストは、ジョブが実行のためにスケジュールされる時点では異なっている可能性があります。
 
-Job Management Commands
+ジョブ管理コマンド
 """""""""""""""""""""""
-There are multiple commands (clone_job, delete_job, download_job, etc.) in the "manage_jobs" category. Such commands are executed on the Server only and do not involve any FL clients. Hence even if an organization defines controls for these commands, these controls will have no effect.
+"manage_jobs" カテゴリには複数のコマンド (clone_job、delete_job、download_job など) があります。これらのコマンドはサーバー上でのみ実行され、FL クライアントは一切関与しません。したがって、組織がこれらのコマンドに対してコントロールを定義したとしても、そのコントロールは効果を持ちません。
 
-Job management command authorization often evaluates the relationship between the subject user and the job submitter, as shown in the examples. 
+ジョブ管理コマンドの認可では、例に示すように、対象となるユーザーとジョブの送信者との関係を評価することがよくあります。
 
 .. _command_categories:
 
-Command Categories
+コマンドカテゴリ
 ------------------
 
 .. code-block:: python
 
     class CommandCategory(object):
-    
+
     MANAGE_JOB = "manage_job"
     OPERATE = "operate"
     VIEW = "view"
     SHELL_COMMANDS = "shell_commands"
-    
-    
+
+
     COMMAND_CATEGORIES = {
         AC.ABORT: CommandCategory.MANAGE_JOB,
         AC.ABORT_JOB: CommandCategory.MANAGE_JOB,
@@ -211,13 +212,13 @@ Command Categories
         AC.DELETE_JOB: CommandCategory.MANAGE_JOB,
         AC.DELETE_WORKSPACE: CommandCategory.MANAGE_JOB,
         AC.CONFIGURE_JOB_LOG: CommandCategory.MANAGE_JOB,
-    
+
         AC.CHECK_STATUS: CommandCategory.VIEW,
         AC.SHOW_STATS: CommandCategory.VIEW,
         AC.RESET_ERRORS: CommandCategory.VIEW,
         AC.SHOW_ERRORS: CommandCategory.VIEW,
         AC.LIST_JOBS: CommandCategory.VIEW,
-    
+
         AC.SYS_INFO: CommandCategory.OPERATE,
         AC.RESTART: CommandCategory.OPERATE,
         AC.SHUTDOWN: CommandCategory.OPERATE,
@@ -227,7 +228,7 @@ Command Categories
         AC.SET_TIMEOUT: CommandCategory.OPERATE,
         AC.CALL: CommandCategory.OPERATE,
         AC.CONFIGURE_SITE_LOG: CommandCategory.OPERATE,
-    
+
         AC.SHELL_CAT: CommandCategory.SHELL_COMMANDS,
         AC.SHELL_GREP: CommandCategory.SHELL_COMMANDS,
         AC.SHELL_HEAD: CommandCategory.SHELL_COMMANDS,
@@ -239,10 +240,10 @@ Command Categories
 
 .. _sample_auth_policy:
 
-Sample Policy with Explanations
+解説付きのサンプルポリシー
 -------------------------------
 
-This is an example authorization.json (in the local folder of the workspace for a site).
+これは authorization.json (サイトのワークスペースの local フォルダー内) の例です。
 
 .. code-block:: shell
 
@@ -255,8 +256,8 @@ This is an example authorization.json (in the local folder of the workspace for 
                 "manage_job": "o:submitter",  # can only manage jobs submitted by people in the user's own org
                 "download_job": "o:submitter", # can only download jobs submitted by people in the user's own org
                 "view": "any", # can do commands in the "view" category
-                "operate": "o:site",  # can do commands in the "operate" category only if the user is in my org 
-                "shell_commands": "o:site"  # can do shell commands only if the user is in my org 
+                "operate": "o:site",  # can do commands in the "operate" category only if the user is in my org
+                "shell_commands": "o:site"  # can do shell commands only if the user is in my org
             },
             "lead": {
                 "submit_job": "any",  # can submit jobs to my sites
@@ -285,36 +286,35 @@ This is an example authorization.json (in the local folder of the workspace for 
 
 .. _site_specific_auth:
 
-Site-specific Authentication and Federated Job-level Authorization
+サイト固有の認証とフェデレーテッドなジョブレベル認可
 ==================================================================
-Site-specific authentication and authorization allows users to inject their own authentication and
-authorization methods into the NVFlare system. This includes the FL server / clients registration, authentication,
-and the job deployment and run authorization.
+サイト固有の認証と認可により、ユーザーは独自の認証および認可の方式を NVFlare システムに組み込むことができます。これには、
+FL サーバー/クライアントの登録、認証、およびジョブのデプロイと実行の認可が含まれます。
 
-NVFlare provides a general purpose event based pluggable authentication and authorization framework to allow for expanding functionality such as:
+NVFlare は、次のような機能拡張を可能にするために、汎用的なイベントベースのプラグイン可能な認証・認可フレームワークを提供します。
 
-    - exposing the app through a WAF (Web Application Firewall) or any other network element enforcing Mutual Transport Layer Security(mTLS)
-    - using a confidential certification authority to ensure the identity of each participating site and to ensure that they meet the computing requirements for confidential computing
-    - defining additional roles to manage who can submit which kind of jobs to execute within NVFlare, identify who submits jobs and which dataset can be accessed
+    - WAF (Web Application Firewall) や、相互トランスポート層セキュリティ (mTLS) を強制するその他のネットワーク要素を通じてアプリを公開する
+    - コンフィデンシャル認証局を使用して、参加する各サイトのアイデンティティを保証し、それらがコンフィデンシャルコンピューティングの計算要件を満たしていることを保証する
+    - NVFlare 内でどの種類のジョブを誰が送信して実行できるかを管理する追加のロールを定義し、誰がジョブを送信するか、どのデータセットにアクセスできるかを識別する
 
-Users can write their own :ref:`FLComponents <fl_component>`, listening to the NVFlare system events at different points of their workflow,
-then easily plug in their authentication and authorization logic as needed.
+ユーザーは独自の :ref:`FLComponents <fl_component>` を記述し、ワークフローのさまざまな時点で NVFlare システムのイベントを購読することで、
+必要に応じて認証・認可のロジックを簡単に組み込むことができます。
 
-Assumptions and Risks
+前提とリスク
 ---------------------
-By enabling the customized site-specific authentication and authorization, NVFlare will make several security
-related data available to the external FL components, e.g. IDENTITY_NAME, PUBLIC_KEY, CERTIFICATE, etc. In order
-to protect them from being compromised, that data needs to be made read-only.
+カスタマイズされたサイト固有の認証と認可を有効にすると、NVFlare は IDENTITY_NAME、PUBLIC_KEY、CERTIFICATE など、
+セキュリティに関連するいくつかのデータを外部の FL コンポーネントから利用できるようにします。これらが侵害されるのを防ぐため、
+そのデータは読み取り専用にする必要があります。
 
-Because of the external pluginable authentication and authorization processes, the results of the processes could
-potentially cause the jobs to not be able to be deployed or run. When configuring and using these functions, the users
-need to be aware of the impact and know where to plug in the authentication and authorization check.
+外部のプラグイン可能な認証・認可プロセスを使用するため、それらのプロセスの結果によってジョブがデプロイまたは実行できなくなる
+可能性があります。これらの機能を設定して使用する際、ユーザーはその影響を認識し、どこに認証・認可のチェックを組み込むべきかを
+把握しておく必要があります。
 
-Event based pluginable authentication and authorization
+イベントベースのプラグイン可能な認証と認可
 -------------------------------------------------------
-The NVFlare event based solution supports site-specific authentication and federated job-level authorization.
-Users can provide and implement any sort of additional security checks by building and plugging in FLcomponents which
-listen to the appropriate events and provide custom authentication and authorization functions.
+NVFlare のイベントベースのソリューションは、サイト固有の認証とフェデレーテッドなジョブレベルの認可をサポートします。
+ユーザーは、適切なイベントを購読してカスタムの認証・認可機能を提供する FLComponent を作成して組み込むことで、
+あらゆる種類の追加のセキュリティチェックを提供・実装できます。
 
 .. code-block:: python
 
@@ -369,7 +369,7 @@ listen to the appropriate events and provide custom authentication and authoriza
         # event types for job scheduling - client side
         BEFORE_CHECK_RESOURCE_MANAGER = "_before_check_resource_manager"
 
-Additional system events
+追加のシステムイベント
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: python
 
@@ -378,7 +378,7 @@ Additional system events
     DEPLOY_JOB_TO_CLIENT = "_deploy_job_to_client"
 
     BEFORE_SEND_ADMIN_COMMAND = "_before_send_admin_command"
-    
+
     BEFORE_CLIENT_REGISTER = "_before_client_register"
     AFTER_CLIENT_REGISTER = "_after_client_register"
     CLIENT_REGISTERED = "_client_registered"
@@ -387,11 +387,11 @@ Additional system events
     AUTHORIZE_COMMAND_CHECK = "_authorize_command_check"
 
 
-Security check Inputs
----------------------
-Make a ``SECURITY_ITEMS`` dict available in the FLContext, which holds any security check related data.
+セキュリティチェックの入力
+------------------------------
+セキュリティチェックに関連するあらゆるデータを保持する ``SECURITY_ITEMS`` の dict を FLContext から利用できるようにします。
 
-NVFlare standard data:
+NVFlare の標準データ:
 
 .. code-block:: python
 
@@ -404,28 +404,28 @@ NVFlare standard data:
     JOB_META
 
 
-Security check Outputs
-----------------------
+セキュリティチェックの出力
+------------------------------
 
 .. code-block:: python
 
     AUTHORIZATION_RESULT
     AUTHORIZATION_REASON
 
-NVFlare will check the ``AUTHORIZATION_RESULT`` to determine if the operations have been authorized to be performed. Before each
-operation, the NVFLare platform removes any ``AUTHORIZATION_RESULT`` in the FLContext. After the authorization check process, it
-looks for if these results are present in the FLContext or not. If present, it uses its TRUE/FALSE value to determine the action.
-If not present, it will be treated as TRUE by default.
+NVFlare は ``AUTHORIZATION_RESULT`` を確認して、操作の実行が認可されているかどうかを判断します。各操作の前に、
+NVFLare プラットフォームは FLContext 内のすべての ``AUTHORIZATION_RESULT`` を削除します。認可チェックのプロセスの後、
+これらの結果が FLContext に存在するかどうかを調べます。存在する場合は、その TRUE/FALSE の値を使ってアクションを決定します。
+存在しない場合は、デフォルトで TRUE として扱われます。
 
-Each FLComponent listening and handling the event can use the security data to generate the necessary authorization check
-results as needed. The workflow will only continue when all the FLComponents pass the security check. Any one FLComponent
-that has the FALSE value will cause the workflow to stop execution.
+イベントを購読して処理する各 FLComponent は、セキュリティデータを使用して、必要に応じた認可チェックの結果を生成できます。
+ワークフローは、すべての FLComponent がセキュリティチェックを通過した場合にのみ継続します。いずれか 1 つの FLComponent が
+FALSE の値を持つと、ワークフローは実行を停止します。
 
-FLARE Console event support
----------------------------
-In order to support additional security data for site-specific customized authentication, we need to add the support for
-event based solutions for the FLARE console. Using these events, the FLARE console will be able to add in the custom
-SSL certificates, etc, security related data, sent along with the admin commands to the server for site-specific authentication check.
+FLARE コンソールのイベントサポート
+------------------------------------
+サイト固有のカスタマイズされた認証のために追加のセキュリティデータをサポートするには、FLARE コンソールにイベントベースの
+ソリューションのサポートを追加する必要があります。これらのイベントを使用することで、FLARE コンソールはカスタムの SSL 証明書などの
+セキュリティ関連データを追加し、サイト固有の認証チェックのために管理コマンドとともにサーバーへ送信できるようになります。
 
 .. code-block:: python
 
@@ -438,19 +438,19 @@ SSL certificates, etc, security related data, sent along with the admin commands
 
 .. note::
 
-    The site-specific authentication and authorization applies to both FLARE console and :ref:`flare_api`.
+    サイト固有の認証と認可は、FLARE コンソールと :ref:`flare_api` の両方に適用されます。
 
-Allow more data to be sent to the server for client registration
+クライアント登録時にサーバーへ追加データを送信できるようにする
 ----------------------------------------------------------------
-If the application needs to send additional data from the client to the server to perform the authentication check, the client
-can set the data into the FL_Context as public data. Then the server side can get access to the data through the PEER_FL_CONTEXT.
-The application can build the FLComponent to listen to the EventType.CLIENT_REGISTERED to perform the authentication check needed.
+認証チェックを行うためにクライアントからサーバーへ追加データを送信する必要がある場合、クライアントはそのデータを
+パブリックデータとして FL_Context に設定できます。その後、サーバー側は PEER_FL_CONTEXT を通じてそのデータにアクセスできます。
+アプリケーションは、EventType.CLIENT_REGISTERED を購読する FLComponent を作成して、必要な認証チェックを実行できます。
 
 
-Site-specific Security Example
+サイト固有のセキュリティの例
 ------------------------------
-To use the site-specific security functions, write a custom Security implementation in the ``local/custom/security_handler.py``,
-then configure it as a component in the site ``resources.json``.
+サイト固有のセキュリティ機能を使用するには、 ``local/custom/security_handler.py`` にカスタムの Security 実装を記述し、
+それをサイトの ``resources.json`` でコンポーネントとして設定します。
 
 .. code-block:: python
 
@@ -484,7 +484,7 @@ then configure it as a component in the site ``resources.json``.
             else:
                 return True, ""
 
-In the ``local/resources.json``:
+``local/resources.json`` では次のようになります。
 
 .. code-block::
 
@@ -509,6 +509,5 @@ In the ``local/resources.json``:
     }
 
 
-With the above example, when there is a job named "FL Demo Job1" scheduled to run on this client from the server,
-the client will throw the authorization error and prevent the job from running. Any other jobs will be able to execute
-on this client.
+上記の例では、"FL Demo Job1" という名前のジョブがサーバーからこのクライアント上で実行されるようスケジュールされると、
+クライアントは認可エラーを発生させてジョブの実行を防ぎます。それ以外のジョブは、このクライアント上で実行できます。

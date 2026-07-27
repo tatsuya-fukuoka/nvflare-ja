@@ -1,17 +1,17 @@
-######################
-NVIDIA FLARE Workspace
-######################
+##################################
+NVIDIA FLARE ワークスペース
+##################################
 
-NVIDIA FLARE maintains a workspace for keeping the FL apps and execution results for different jobs
-under folders with the name of the ``job_id``.
+NVIDIA FLARE は、FL アプリとさまざまなジョブの実行結果を ``job_id`` という名前のフォルダ配下に
+保持するためのワークスペースを管理します。
 
-The following is the workspace folder structure when running NVIDIA FLARE for the server and clients.
+以下は、サーバーとクライアントで NVIDIA FLARE を実行したときのワークスペースのフォルダ構造です。
 
 .. _server_workspace:
 
-******
-Server
-******
+************
+サーバー
+************
 
 .. code-block:: shell
 
@@ -46,39 +46,40 @@ Server
             fl_app.txt
             log.txt
 
-In each ``job_id`` folder, there is the ``app_server`` folder that contains the :ref:`application` that is running
-on the server for this ``job_id``.
+各 ``job_id`` フォルダの中には ``app_server`` フォルダがあり、その ``job_id`` に対してサーバー上で
+実行されている :ref:`application` が格納されています。
 
-The ``log.txt`` file inside each ``job_id`` folder contains the log entries for that job.
+各 ``job_id`` フォルダ内の ``log.txt`` ファイルには、そのジョブのログエントリが含まれます。
 
-In contrast, the ``log.txt`` file under the server folder logs the server control process.
+一方、サーバーフォルダ直下の ``log.txt`` ファイルは、サーバーの制御プロセスのログを記録します。
 
-The ``startup`` folder contains the config and the scripts to start the FL server program.
+``startup`` フォルダには、FL サーバープログラムを起動するための設定とスクリプトが含まれます。
 
 .. _access_server_workspace:
 
-Accessing server-side workspace
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+サーバー側ワークスペースへのアクセス
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When the job is running, each job will have a corresponding workspace under the ``server`` folder.
+ジョブの実行中は、各ジョブが ``server`` フォルダ配下に対応するワークスペースを持ちます。
 
-When the job is finished, the server side workspace will be removed.
-The workspace will be saved into the JobStorage.
+ジョブが終了すると、サーバー側のワークスペースは削除されます。
+ワークスペースは JobStorage に保存されます。
 
-You can issue the ``download_job [JOB_ID]`` in the admin client to download the server side workspace.
+管理クライアントで ``download_job [JOB_ID]`` を実行することで、サーバー側のワークスペースを
+ダウンロードできます。
 
-The downloaded workspace will be in ``[DOWNLOAD_DIR]/[JOB_ID]/workspace/``.
+ダウンロードされたワークスペースは ``[DOWNLOAD_DIR]/[JOB_ID]/workspace/`` に配置されます。
 
 .. note::
-    
-    Issuing ``download_job`` before the job finishes will result in an empty workspace folder.
+
+    ジョブが終了する前に ``download_job`` を実行すると、ワークスペースフォルダは空になります。
 
 
 .. _client_workspace:
 
-******
-Client
-******
+****************
+クライアント
+****************
 
 .. code-block:: shell
 
@@ -111,17 +112,17 @@ Client
             fl_app.txt
             log.txt
 
-In each ``job_id`` folder, there is the ``app_clientname`` folder that contains the :ref:`application` that is running
-on the client for this ``job_id``.
+各 ``job_id`` フォルダの中には ``app_clientname`` フォルダがあり、その ``job_id`` に対して
+クライアント上で実行されている :ref:`application` が格納されています。
 
-The ``log.txt`` file inside each ``job_id`` folder contains the log entries for that job.
+各 ``job_id`` フォルダ内の ``log.txt`` ファイルには、そのジョブのログエントリが含まれます。
 
-While the ``log.txt`` under client folder is the log for the client control process.
+一方、クライアントフォルダ直下の ``log.txt`` は、クライアントの制御プロセスのログです。
 
-The ``startup`` folder contains the config and the scripts to start the FL client program.
+``startup`` フォルダには、FL クライアントプログラムを起動するための設定とスクリプトが含まれます。
 
-The :class:`Workspace<nvflare.apis.workspace.Workspace>` object is available through the FLContext.
-From the Workspace, you can access each folder location accordingly
+:class:`Workspace<nvflare.apis.workspace.Workspace>` オブジェクトは FLContext を通じて利用できます。
+Workspace からは、各フォルダの場所に応じてアクセスできます。
 
 .. code-block:: python
 
