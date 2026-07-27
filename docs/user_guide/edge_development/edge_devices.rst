@@ -492,3 +492,10 @@ EdgeFedBuffRecipe
 この設定では、N 台すべてのデバイスの選択を維持し、新しいデバイスのサンプリングとモデル配布を行う前に N 台すべてのデバイスが報告する (「穴」になる) のを待ちます。また、常にこれら N 台のデバイスを使用するため ``device_reuse`` を有効にしています。
 
 同様に、これらのパラメータを別の値に設定することで非同期パイプラインをシミュレートできます。詳細は例を参照してください。
+
+参考文献
+==========
+
+.. [1] Nguyen, J., Malik, K., Zhan, H., Yousefpour, A., Rabbat, M., Malek, M., & Huba, D. (2023).
+   Asynchronous Federated Learning with Bidirectional Quantized Communications and Buffered Aggregation.
+   arXiv preprint arXiv:2308.00263. https://arxiv.org/pdf/2308.00263

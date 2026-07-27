@@ -47,11 +47,11 @@ FLARE 2.3.0 では、クライアント側でモデルを初期化する別の�
 従来型の機械学習の例
 -----------------------------
 フェデレーテッドラーニングで従来型の機械学習アルゴリズムを利用できるよう、いくつかの新しい例が追加されました。
-   - scikit-learn ライブラリを用いた :github_nvflare_link:`線形モデル <examples/advanced/sklearn-linear>`（
+   - scikit-learn ライブラリを用いた :github_nvflare_link:`線形モデル <examples/advanced/sklearn-linear>`\ （
      `反復的な SGD 学習 <https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html>`_ を使用）。
      この反復的な例に従い、異なる損失関数を採用することで、線形回帰やロジスティック回帰を実装できます。
    - scikit-learn ライブラリを用いた :github_nvflare_link:`SVM <examples/advanced/sklearn-svm>`。この 2 段階のプロセスでは、サーバーがクライアントから収集したサポートベクターに対して、さらに 1 ラウンドの SVM を実行します。
-   - scikit-learn ライブラリを用いた :github_nvflare_link:`K-Means <examples/advanced/sklearn-kmeans>`（
+   - scikit-learn ライブラリを用いた :github_nvflare_link:`K-Means <examples/advanced/sklearn-kmeans>`\ （
      `ミニバッチ K-Means 手法 <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.MiniBatchKMeans.html>`_ を使用）。
      この反復的なプロセスでは、各クライアントがミニバッチ K-Means を実行し、サーバーがグローバルモデルに向けて更新を同期します。
    - XGBoost ライブラリの `ランダムフォレスト機能 <https://xgboost.readthedocs.io/en/stable/tutorials/rf.html>`_ を用いた

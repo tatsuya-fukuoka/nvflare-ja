@@ -43,6 +43,7 @@ FLARE のアーキテクチャ（上図）は、3 つの主要なレイヤで構
      - ServerEngine, ClientEngine, JobRunner
      - フェデレーテッドラーニングの中核的なオーケストレーションと実行
    * - Job Management
+     - JobDefManagerSpec, SimpleJobDefManager, DefaultJobScheduler
      - ジョブの定義、ストレージ、スケジューリング
    * - Communication
      - Cell, CoreCell, StreamCell, Pipe
@@ -51,7 +52,8 @@ FLARE のアーキテクチャ（上図）は、3 つの主要なレイヤで構
      - ClientAPI (flare.receive(), flare.send()), LauncherExecutor
      - ML フレームワークとの統合と外部プロセスの管理
    * - Administration
-     - ダッシュボードおよびプログラマティック／GUI ベースのシステム管理
+     - ダッシュボード
+     - プログラマティック／GUI ベースのシステム管理
    * - Deployment
      - ProvisionerSpec, WorkspaceBuilder
      - 証明書の生成、設定、およびセキュアなデプロイ
