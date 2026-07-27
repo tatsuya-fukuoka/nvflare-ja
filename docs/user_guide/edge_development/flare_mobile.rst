@@ -1,99 +1,99 @@
 .. _flare_mobile:
 
 ########################
-FLARE Mobile Development
+FLARE モバイル開発
 ########################
 
-FLARE 2.7 introduces comprehensive mobile development support for both Android and iOS platforms, enabling federated learning directly on edge devices. This guide covers mobile SDK integration, API usage, and best practices for developing FL applications on mobile platforms.
+FLARE 2.7 では、Android と iOS の両プラットフォームに対する包括的なモバイル開発サポートが導入され、エッジデバイス上で直接連合学習を実行できるようになりました。本ガイドでは、モバイル SDK の統合、API の使い方、およびモバイルプラットフォーム上で FL アプリケーションを開発する際のベストプラクティスについて説明します。
 
 .. note::
-   This guide assumes familiarity with the :ref:`edge development concepts <flare_edge>` and :ref:`hierarchical architecture <flare_hierarchical_architecture>`. For a complete understanding of the edge system, review the main :ref:`edge development guide <flare_edge>` first.
+   本ガイドは、:ref:`エッジ開発の概念 <flare_edge>` と :ref:`階層型アーキテクチャ <flare_hierarchical_architecture>` を理解していることを前提としています。エッジシステム全体を把握するために、まずは :ref:`エッジ開発ガイド <flare_edge>` に目を通してください。
 
-Overview
+概要
 ========
 
-The FLARE Mobile SDK provides native libraries for Android (Kotlin/Java) and iOS (Swift/Objective-C) that enable:
+FLARE モバイル SDK は、Android (Kotlin/Java) および iOS (Swift/Objective-C) 向けのネイティブライブラリを提供し、次のことを可能にします。
 
-* **On-device training**: Using ExecuTorch for mobile-optimized model execution
-* **Federated learning integration**: With NVIDIA FLARE's hierarchical edge system
-* **Real-time communication**: With FLARE servers via HTTP/HTTPS
-* **Model management**: Including loading, training, and updating models
-* **Data handling**: With flexible dataset interfaces
-* **Error handling and recovery**: For mobile-specific scenarios
+* **オンデバイストレーニング**: モバイル向けに最適化されたモデル実行のために ExecuTorch を使用します
+* **連合学習との統合**: NVIDIA FLARE の階層型エッジシステムと連携します
+* **リアルタイム通信**: HTTP/HTTPS 経由で FLARE サーバーと通信します
+* **モデル管理**: モデルの読み込み、トレーニング、更新を行います
+* **データ処理**: 柔軟なデータセットインターフェースを利用できます
+* **エラー処理とリカバリ**: モバイル特有のシナリオに対応します
 
 .. tip::
-   For a quick start with mobile development, see the complete examples in `edge examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_.
+   モバイル開発をすぐに始めるには、`エッジのサンプル <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ にある完全なサンプルを参照してください。
 
-Platform Support
-================
+プラットフォームのサポート
+============================
 
 Android
 -------
-* **Minimum SDK**: API level 29 (Android 10)
-* **Target SDK**: Latest stable
-* **Language**: Kotlin/Java
-* **Build System**: Gradle
-* **Dependencies**: ExecuTorch, OkHttp, Gson, Coroutines
+* **最小 SDK**: API レベル 29 (Android 10)
+* **ターゲット SDK**: 最新の安定版
+* **言語**: Kotlin/Java
+* **ビルドシステム**: Gradle
+* **依存関係**: ExecuTorch、OkHttp、Gson、Coroutines
 
 iOS
 ---
-* **Minimum Version**: iOS 13.0
-* **Target Version**: Latest stable
-* **Language**: Swift/Objective-C
-* **Build System**: Xcode
-* **Dependencies**: ExecuTorch, Foundation, UIKit
+* **最小バージョン**: iOS 13.0
+* **ターゲットバージョン**: 最新の安定版
+* **言語**: Swift/Objective-C
+* **ビルドシステム**: Xcode
+* **依存関係**: ExecuTorch、Foundation、UIKit
 
-Architecture
-============
+アーキテクチャ
+================
 
-The Mobile SDK architecture consists of modular components including ``FlareRunner``, ``Connection``, ``DataSource``, ``ETTrainer``, and ``Dataset``. Each component is responsible for a specific aspect of federated learning on mobile devices, such as orchestration, communication, data handling, and model training. Refer to the component descriptions below for details.
+モバイル SDK のアーキテクチャは、``FlareRunner`` 、 ``Connection`` 、 ``DataSource`` 、 ``ETTrainer`` 、 ``Dataset`` といったモジュール化されたコンポーネントで構成されています。各コンポーネントは、オーケストレーション、通信、データ処理、モデルトレーニングなど、モバイルデバイス上の連合学習における特定の側面を担当します。詳細は以下のコンポーネント説明を参照してください。
 
-Core Components
----------------
+コアコンポーネント
+--------------------
 
-**FlareRunner** (Android: ``AndroidFlareRunner``, iOS: ``NVFlareRunner``)
-    Main orchestrator that handles job fetching, task execution, and result reporting.
+**FlareRunner** (Android: ``AndroidFlareRunner`` 、 iOS: ``NVFlareRunner`` )
+    ジョブの取得、タスクの実行、結果の報告を担う中心的なオーケストレーターです。
 
-**Connection** (Android: ``Connection``, iOS: ``NVFlareConnection``)
-    Manages HTTP/HTTPS communication with FLARE servers.
+**Connection** (Android: ``Connection`` 、 iOS: ``NVFlareConnection`` )
+    FLARE サーバーとの HTTP/HTTPS 通信を管理します。
 
-**DataSource** (Android: ``DataSource``, iOS: ``NVFlareDataSource``)
-    Interface for providing training data to the FL system.
+**DataSource** (Android: ``DataSource`` 、 iOS: ``NVFlareDataSource`` )
+    FL システムにトレーニングデータを提供するためのインターフェースです。
 
-**ETTrainer** (Android: ``ETTrainer``, iOS: ``ETTrainer``)
-    ExecuTorch-based trainer for on-device model training.
+**ETTrainer** (Android: ``ETTrainer`` 、 iOS: ``ETTrainer`` )
+    オンデバイスでのモデルトレーニングを行う ExecuTorch ベースのトレーナーです。
 
-**Dataset** (Android: ``Dataset``, iOS: ``NVFlareDataset``)
-    Data interface for feeding training examples to the trainer.
+**Dataset** (Android: ``Dataset`` 、 iOS: ``NVFlareDataset`` )
+    トレーナーにトレーニング用のサンプルを供給するデータインターフェースです。
 
-Getting Started
+はじめに
 ===============
 
-Prerequisites
+前提条件
 -------------
 
-Before starting mobile development, ensure you have:
+モバイル開発を始める前に、以下が用意されていることを確認してください。
 
-1. **NVIDIA FLARE Server**: A running FLARE server with hierarchical edge configuration (see :ref:`hierarchical architecture <flare_hierarchical_architecture>`)
-2. **ExecuTorch**: Mobile-optimized PyTorch runtime (`ExecuTorch documentation <https://pytorch.org/executorch/>`_)
-3. **Development Environment**: 
-   * Android Studio (Android) - `Download <https://developer.android.com/studio>`_
-   * Xcode (iOS) - Available from the Mac App Store
-4. **Model**: A PyTorch model converted to ExecuTorch format
-5. **Edge Examples**: Working examples in ``examples/advanced/edge/``
+1. **NVIDIA FLARE サーバー**: 階層型エッジ構成で稼働している FLARE サーバー ( :ref:`階層型アーキテクチャ <flare_hierarchical_architecture>` を参照)
+2. **ExecuTorch**: モバイル向けに最適化された PyTorch ランタイム ( `ExecuTorch のドキュメント <https://pytorch.org/executorch/>`_ )
+3. **開発環境**:
+   * Android Studio (Android) - `ダウンロード <https://developer.android.com/studio>`_
+   * Xcode (iOS) - Mac App Store から入手できます
+4. **モデル**: ExecuTorch 形式に変換された PyTorch モデル
+5. **エッジのサンプル**: ``examples/advanced/edge/`` にある動作するサンプル
 
 .. warning::
-   ExecuTorch requires specific build configurations for mobile platforms. Ensure you follow the official ExecuTorch setup guide for your target platform.
+   ExecuTorch は、モバイルプラットフォーム向けに固有のビルド構成を必要とします。対象プラットフォームについて、公式の ExecuTorch セットアップガイドに必ず従ってください。
 
-Android Setup
-=============
+Android のセットアップ
+========================
 
-Installation
-------------
+インストール
+--------------
 
-The Android example source under ``examples/advanced/edge/mobile/android`` does not include Gradle build files. Create a new Android Studio Kotlin project, or use an existing Android app, and add the NVFlare Android SDK/source files to that project.
+``examples/advanced/edge/mobile/android`` 配下の Android サンプルのソースには、Gradle のビルドファイルが含まれていません。Android Studio で新しい Kotlin プロジェクトを作成するか、既存の Android アプリを使用し、そのプロジェクトに NVFlare Android SDK およびソースファイルを追加してください。
 
-1. **Add Dependencies** to your app module's ``build.gradle.kts``:
+1. アプリモジュールの ``build.gradle.kts`` に **依存関係を追加** します。
 
 .. code-block:: kotlin
 
@@ -102,29 +102,29 @@ The Android example source under ``examples/advanced/edge/mobile/android`` does 
        implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
        implementation("com.facebook.soloader:nativeloader:0.10.5")
        implementation("com.facebook.fbjni:fbjni:0.5.1")
-       
+
        // Network dependencies
        implementation("com.squareup.okhttp3:okhttp:4.12.0")
        implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-       
+
        // JSON parsing
        implementation("com.google.code.gson:gson:2.10.1")
-       
+
        // Coroutines for async operations
        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
    }
 
-2. **Copy SDK** to your project:
+2. プロジェクトに **SDK をコピー** します。
 
 .. code-block:: bash
 
    cp -r examples/advanced/edge/mobile/android/sdk \
          app/src/main/java/com/nvidia/nvflare/
 
-3. **Add ExecuTorch Libraries** to the ``app/libs/`` directory.
+3. ``app/libs/`` ディレクトリに **ExecuTorch のライブラリを追加** します。
 
-Basic Usage
------------
+基本的な使い方
+----------------
 
 .. code-block:: kotlin
 
@@ -134,19 +134,19 @@ Basic Usage
 
    class MainActivity : AppCompatActivity() {
        private lateinit var flareRunner: AndroidFlareRunner
-       
+
        override fun onCreate(savedInstanceState: Bundle?) {
            super.onCreate(savedInstanceState)
-           
+
            // Create connection
            val connection = Connection(
                serverURL = "",  // Replace with your actual server URL
                allowSelfSignedCerts = true
            )
-           
+
            // Create data source
            val dataSource = MyDataSource()
-           
+
            // Create FlareRunner
            flareRunner = AndroidFlareRunner(
                context = this,
@@ -161,7 +161,7 @@ Basic Usage
                userInfo = mapOf("user_id" to getUserId()),
                jobTimeout = 30.0f
            )
-           
+
            // Start federated learning
            lifecycleScope.launch {
                flareRunner.run()
@@ -169,23 +169,23 @@ Basic Usage
        }
    }
 
-iOS Setup
-=========
+iOS のセットアップ
+====================
 
-Installation
-------------
+インストール
+--------------
 
-1. **Add ExecuTorch Framework** to your Xcode project.
-2. **Copy NVFlareSDK** to your project:
+1. Xcode プロジェクトに **ExecuTorch フレームワークを追加** します。
+2. プロジェクトに **NVFlareSDK をコピー** します。
 
 .. code-block:: bash
 
    cp -r examples/advanced/edge/mobile/ios/NVFlareSDK YourProject/
 
-3. **Add Framework** to your Xcode project target.
+3. Xcode プロジェクトのターゲットに **フレームワークを追加** します。
 
-Basic Usage
------------
+基本的な使い方
+----------------
 
 .. code-block:: swift
 
@@ -194,13 +194,13 @@ Basic Usage
 
    class ViewController: UIViewController {
        private var flareRunner: NVFlareRunner?
-       
+
        override func viewDidLoad() {
            super.viewDidLoad()
-           
+
            // Create data source
            let dataSource = MyDataSource()
-           
+
            // Create FlareRunner
            flareRunner = try? NVFlareRunner(
                jobName: "my_fl_job",
@@ -215,7 +215,7 @@ Basic Usage
                serverURL: "",  // Replace with your actual server URL
                allowSelfSignedCerts: true
            )
-           
+
            // Start federated learning
            Task {
                await flareRunner?.run()
@@ -223,15 +223,15 @@ Basic Usage
        }
    }
 
-API Reference
-=============
+API リファレンス
+==================
 
 AndroidFlareRunner
 ------------------
 
-The main orchestrator for Android federated learning.
+Android における連合学習の中心的なオーケストレーターです。
 
-**Constructor**
+**コンストラクター**
 
 .. code-block:: kotlin
 
@@ -248,41 +248,41 @@ The main orchestrator for Android federated learning.
        resolverRegistry: Map<String, Class<*>>? = null
    )
 
-**Parameters**
+**パラメータ**
 
-- ``context``: Android application context.
-- ``connection``: Connection instance for server communication.
-- ``jobName``: Name of the FL job to participate in.
-- ``dataSource``: Data source providing training data.
-- ``deviceInfo``: Device metadata (``device_id``, ``platform``, etc.).
-- ``userInfo``: User metadata (``user_id``, etc.).
-- ``jobTimeout``: Timeout in seconds for job operations.
-- ``inFilters``: Optional input filters for data processing.
-- ``outFilters``: Optional output filters for result processing.
-- ``resolverRegistry``: Optional component resolver registry.
+- ``context``: Android のアプリケーションコンテキストです。
+- ``connection``: サーバー通信のための Connection インスタンスです。
+- ``jobName``: 参加する FL ジョブの名前です。
+- ``dataSource``: トレーニングデータを提供するデータソースです。
+- ``deviceInfo``: デバイスのメタデータです ( ``device_id`` 、 ``platform`` など)。
+- ``userInfo``: ユーザーのメタデータです ( ``user_id`` など)。
+- ``jobTimeout``: ジョブ操作のタイムアウト (秒) です。
+- ``inFilters``: データ処理用の入力フィルターです (省略可)。
+- ``outFilters``: 結果処理用の出力フィルターです (省略可)。
+- ``resolverRegistry``: コンポーネントリゾルバーのレジストリです (省略可)。
 
-**Methods**
+**メソッド**
 
 .. code-block:: kotlin
 
    // Start federated learning
    suspend fun run()
-   
+
    // Stop federated learning
    fun stop()
-   
+
    // Get current status
    fun getStatus(): String
 
-For more on android sdk API: check :ref:`mobile_android_api`.
+Android SDK の API の詳細については、:ref:`mobile_android_api` を参照してください。
 
 
 NVFlareRunner (iOS)
 -------------------
 
-The main orchestrator for iOS federated learning.
+iOS における連合学習の中心的なオーケストレーターです。
 
-**Initializer**
+**イニシャライザー**
 
 .. code-block:: swift
 
@@ -299,41 +299,41 @@ The main orchestrator for iOS federated learning.
        resolverRegistry: [String: ComponentCreator.Type]? = nil
    ) throws
 
-**Parameters**
+**パラメータ**
 
-- ``jobName``: Name of the FL job to participate in.
-- ``dataSource``: Data source providing training data.
-- ``deviceInfo``: Device metadata (``device_id``, ``platform``, etc.).
-- ``userInfo``: User metadata (``user_id``, etc.).
-- ``jobTimeout``: Timeout in seconds for job operations.
-- ``serverURL``: FLARE server URL.
-- ``allowSelfSignedCerts``: Allow self-signed certificates.
-- ``inFilters``: Optional input filters for data processing.
-- ``outFilters``: Optional output filters for result processing.
-- ``resolverRegistry``: Optional component resolver registry.
+- ``jobName``: 参加する FL ジョブの名前です。
+- ``dataSource``: トレーニングデータを提供するデータソースです。
+- ``deviceInfo``: デバイスのメタデータです ( ``device_id`` 、 ``platform`` など)。
+- ``userInfo``: ユーザーのメタデータです ( ``user_id`` など)。
+- ``jobTimeout``: ジョブ操作のタイムアウト (秒) です。
+- ``serverURL``: FLARE サーバーの URL です。
+- ``allowSelfSignedCerts``: 自己署名証明書を許可するかどうかを指定します。
+- ``inFilters``: データ処理用の入力フィルターです (省略可)。
+- ``outFilters``: 結果処理用の出力フィルターです (省略可)。
+- ``resolverRegistry``: コンポーネントリゾルバーのレジストリです (省略可)。
 
-**Methods**
+**メソッド**
 
 .. code-block:: swift
 
    // Start federated learning
    func run() async
-   
+
    // Stop federated learning
    func stop()
-   
+
    // Get current status
    var status: NVFlareStatus { get }
 
-Data Sources
-============
+データソース
+==============
 
-Implementing Data Sources
+データソースの実装
 -------------------------
 
-Both platforms require implementing a data source interface to provide training data.
+いずれのプラットフォームでも、トレーニングデータを提供するためにデータソースのインターフェースを実装する必要があります。
 
-**Android DataSource Interface**
+**Android の DataSource インターフェース**
 
 .. code-block:: kotlin
 
@@ -341,7 +341,7 @@ Both platforms require implementing a data source interface to provide training 
        fun getDataset(jobName: String, context: Context): Dataset
    }
 
-**iOS NVFlareDataSource Protocol**
+**iOS の NVFlareDataSource プロトコル**
 
 .. code-block:: swift
 
@@ -349,7 +349,7 @@ Both platforms require implementing a data source interface to provide training 
        func getDataset(for jobName: String, context: NVFlareContext) throws -> NVFlareDataset
    }
 
-**Example Implementation**
+**実装例**
 
 .. code-block:: kotlin
 
@@ -367,106 +367,106 @@ Both platforms require implementing a data source interface to provide training 
        }
    }
 
-Model Development
+モデル開発
 =================
 
-ExecuTorch Integration
+ExecuTorch の統合
 ----------------------
 
-Mobile FL training uses ExecuTorch for optimized model execution. Models must be converted from PyTorch to ExecuTorch format.
+モバイルでの FL トレーニングでは、最適化されたモデル実行のために ExecuTorch を使用します。モデルは PyTorch から ExecuTorch 形式へ変換する必要があります。
 
-**Model Conversion**
+**モデルの変換**
 
 .. code-block:: python
 
    import torch
    from executorch.exir import to_edge_transform_and_lower
-   
+
    # Load your PyTorch model
    model = YourPyTorchModel()
    model.eval()
-   
+
    # Prepare example input
    example_input = torch.randn(1, 3, 224, 224)
-   
+
    # Export the model using torch.export
    exported_program = torch.export.export(model, (example_input,))
-   
+
    # Convert to ExecuTorch format using public API
    edge_program = to_edge_transform_and_lower(exported_program)
 
-**Model Requirements**
+**モデルの要件**
 
-- Models must be compatible with ExecuTorch's supported operations.
-- Input/output shapes must be fixed at conversion time.
-- Custom operations may require ExecuTorch extensions.
-- Use the official ExecuTorch export APIs for model conversion.
+- モデルは ExecuTorch がサポートする演算に対応している必要があります。
+- 入出力の形状は変換時に固定されている必要があります。
+- カスタム演算には ExecuTorch の拡張が必要になる場合があります。
+- モデルの変換には公式の ExecuTorch エクスポート API を使用してください。
 
-Best Practices
-==============
+ベストプラクティス
+====================
 
-Performance Optimization
+パフォーマンスの最適化
 ------------------------
 
-1. **Model Size**: Keep models lightweight for mobile constraints.
-2. **Batch Size**: Use appropriate batch sizes for device memory.
-3. **Training Frequency**: Balance training frequency with battery life.
-4. **Data Caching**: Cache frequently used data locally.
+1. **モデルサイズ**: モバイルの制約に合わせてモデルを軽量に保ちます。
+2. **バッチサイズ**: デバイスのメモリに適したバッチサイズを使用します。
+3. **トレーニング頻度**: トレーニングの頻度とバッテリー寿命のバランスを取ります。
+4. **データのキャッシュ**: 頻繁に使用するデータはローカルにキャッシュします。
 
-Error Handling
+エラー処理
 --------------
 
-1. **Network Errors**: Implement retry logic for network failures.
-2. **Model Errors**: Handle model loading and training errors gracefully.
-3. **Data Errors**: Validate data before training.
-4. **Timeout Handling**: Implement appropriate timeouts.
+1. **ネットワークエラー**: ネットワーク障害に備えてリトライロジックを実装します。
+2. **モデルエラー**: モデルの読み込みやトレーニングのエラーを適切に処理します。
+3. **データエラー**: トレーニングの前にデータを検証します。
+4. **タイムアウトの扱い**: 適切なタイムアウトを実装します。
 
-Security Considerations
------------------------
+セキュリティ上の考慮事項
+--------------------------
 
-1. **Certificate Validation**: Use proper certificate validation in production.
-2. **Data Privacy**: Ensure sensitive data is handled securely.
-3. **Model Protection**: Consider model encryption for sensitive applications.
-4. **Network Security**: Use HTTPS for all server communication.
+1. **証明書の検証**: 本番環境では適切な証明書検証を行います。
+2. **データプライバシー**: 機微なデータが安全に扱われるようにします。
+3. **モデルの保護**: 機微なアプリケーションではモデルの暗号化を検討します。
+4. **ネットワークセキュリティ**: サーバーとの通信にはすべて HTTPS を使用します。
 
-Troubleshooting
-===============
+トラブルシューティング
+========================
 
-Common Issues
--------------
+よくある問題
+--------------
 
-**Build Errors**
-* Ensure all dependencies are properly linked.
-* Check ExecuTorch library compatibility.
-* Verify SDK files are correctly copied.
+**ビルドエラー**
+* すべての依存関係が正しくリンクされていることを確認してください。
+* ExecuTorch ライブラリの互換性を確認してください。
+* SDK のファイルが正しくコピーされていることを確認してください。
 
-**Runtime Errors**
-* Check network connectivity.
-* Verify server configuration.
-* Review device logs for specific error messages.
+**実行時エラー**
+* ネットワーク接続を確認してください。
+* サーバーの構成を確認してください。
+* 具体的なエラーメッセージについてデバイスのログを確認してください。
 
-**Performance Issues**
-* Monitor memory usage during training.
-* Optimize model architecture.
-* Adjust batch sizes and training parameters.
+**パフォーマンスの問題**
+* トレーニング中のメモリ使用量を監視してください。
+* モデルアーキテクチャを最適化してください。
+* バッチサイズやトレーニングパラメータを調整してください。
 
-Examples and Tutorials
-======================
+サンプルとチュートリアル
+==========================
 
-Complete working examples are available in the NVIDIA FLARE repository:
+完全に動作するサンプルは、NVIDIA FLARE のリポジトリで入手できます。
 
-* **iOS Example App**: `iOS Example Project <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge/mobile/ios/ExampleProject>`_
-* **Android Example App**: `Android Example Project <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge/mobile/android>`_
-* **How to Run NVIDIA FLARE with Edge**: `Edge Examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ - includes both simulation and real devices
+* **iOS のサンプルアプリ**: `iOS Example Project <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge/mobile/ios/ExampleProject>`_
+* **Android のサンプルアプリ**: `Android Example Project <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge/mobile/android>`_
+* **NVIDIA FLARE をエッジで実行する方法**: `Edge Examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ - シミュレーションと実機の両方を扱っています
 
 .. tip::
-   Start with the examples to understand the complete integration flow before building your own application.
+   独自のアプリケーションを構築する前に、まずサンプルから始めて統合フロー全体を理解してください。
 
-Getting Help
-============
+ヘルプの入手
+==============
 
-* **Documentation**: Refer to the main :ref:`FLARE documentation <user_guide>`.
-* **Examples**: Check the examples in ``examples/advanced/edge/``.
-* **Issues**: Report issues on the `NVIDIA FLARE GitHub repository <https://github.com/NVIDIA/NVFlare>`_.
-* **Community**: Join the NVIDIA FLARE community discussions.
-* **ExecuTorch Support**: `ExecuTorch documentation <https://pytorch.org/executorch/>`_ for mobile-specific issues.
+* **ドキュメント**: :ref:`FLARE のドキュメント <user_guide>` を参照してください。
+* **サンプル**: ``examples/advanced/edge/`` にあるサンプルを確認してください。
+* **問題の報告**: `NVIDIA FLARE の GitHub リポジトリ <https://github.com/NVIDIA/NVFlare>`_ で問題を報告してください。
+* **コミュニティ**: NVIDIA FLARE のコミュニティディスカッションに参加してください。
+* **ExecuTorch のサポート**: モバイル固有の問題については `ExecuTorch のドキュメント <https://pytorch.org/executorch/>`_ を参照してください。

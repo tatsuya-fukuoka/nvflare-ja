@@ -1,15 +1,15 @@
 .. _preflight_check:
 
 ****************************************
-NVIDIA FLARE Preflight Check
+NVIDIA FLARE プリフライトチェック
 ****************************************
 
-The NVIDIA FLARE preflight check is to help perform preliminary checks before users start an
-NVFlare subsystem on their machine to catch errors early and mitigate the pain of setting up and running jobs in
-NVIDIA FLARE.
+NVIDIA FLARE のプリフライトチェックは、ユーザーが自分のマシンで NVFlare のサブシステムを起動する前に
+予備的なチェックを実施し、エラーを早期に検出して NVIDIA FLARE のセットアップやジョブ実行にかかる
+手間を軽減するためのものです。
 
-General Usage
-=============
+一般的な使い方
+==============
 
 .. code-block::
 
@@ -17,80 +17,81 @@ General Usage
     nvflare preflight-check --package_path PACKAGE_PATH
 
 
-This preflight check script should be run on each site's machine. The ``PACKAGE_PATH`` is the path to the folder that contains
-the package to be checked.
+このプリフライトチェックスクリプトは、各サイトのマシン上で実行してください。 ``PACKAGE_PATH`` は、
+チェック対象のパッケージが格納されているフォルダへのパスです。
 
-After running the script, for the checks that pass, users will see "PASSED". The problem and how
-to fix it is reported for checks that fail.
+スクリプトを実行すると、合格したチェックについては "PASSED" と表示されます。失敗したチェックについては、
+問題の内容とその修正方法が報告されます。
 
-Exit code ``0`` means all applicable checks passed. Exit code ``1`` means at least one applicable check failed.
-Exit code ``4`` means the package path or package format is invalid.
+終了コード ``0`` は、該当するすべてのチェックに合格したことを意味します。終了コード ``1`` は、
+該当するチェックのうち少なくとも 1 つが失敗したことを意味します。
+終了コード ``4`` は、パッケージパスまたはパッケージ形式が不正であることを意味します。
 
-Below are the scripts to run the preflight check on each type of site and the possible problems that may be reported.
+以下に、サイトの種類ごとにプリフライトチェックを実行するスクリプトと、報告される可能性のある問題を示します。
 
 
-Preflight check on server site
-------------------------------
+サーバーサイトでのプリフライトチェック
+--------------------------------------
 
-If the server package is in "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00" and it is called "server1",
-on the server site, a user should run: 
+サーバーパッケージが "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00" にあり、その名前が "server1" である場合、
+サーバーサイトでは次のように実行します。
 
 .. code-block::
 
   nvflare preflight-check -p /path_to_NVFlare/NVFlare/workspace/example_project/prod_00/server1
 
-The problems that may be reported:
+報告される可能性のある問題は次のとおりです。
 
 .. csv-table::
-    :header: Checks,Problems,How to fix
+    :header: チェック項目,報告される問題,対処方法
     :widths: 15, 20, 25
 
-    Check FL port binding,Can't bind to address ({host}:{port}): {e},Please check the DNS and port.
-    Check admin port binding,Can't bind to address ({host}:{port}): {e},Please check the DNS and port.
-    Check snapshot storage writable,Can't write to {snapshot_storage_root}: {e}.,Please check the user permission.
-    Check job storage writable,Can't write to {job_storage_root}: {e}.,Please check the user permission.
-    Check dry run,Can't start successfully: {error},Please check the error message of dry run.
+    FL ポートのバインド確認,Can't bind to address ({host}:{port}): {e},DNS とポートを確認してください。
+    管理ポートのバインド確認,Can't bind to address ({host}:{port}): {e},DNS とポートを確認してください。
+    スナップショットストレージの書き込み可否確認,Can't write to {snapshot_storage_root}: {e}.,ユーザー権限を確認してください。
+    ジョブストレージの書き込み可否確認,Can't write to {job_storage_root}: {e}.,ユーザー権限を確認してください。
+    dry run の確認,Can't start successfully: {error},dry run のエラーメッセージを確認してください。
 
 
-Preflight check on client sites
--------------------------------
+クライアントサイトでのプリフライトチェック
+------------------------------------------
 
-Before you check the clients, make sure the server is running.
+クライアントをチェックする前に、サーバーが稼働していることを確認してください。
 
-If the client package is in "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00" and it is called "site-1"
-So on the client site, a user will run: 
+クライアントパッケージが "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00" にあり、その名前が "site-1" である場合、
+クライアントサイトでは次のように実行します。
 
 .. code-block::
 
   nvflare preflight-check -p /path_to_NVFlare/NVFlare/workspace/example_project/prod_00/site-1
 
-The problems that may be reported:
+報告される可能性のある問題は次のとおりです。
 
 .. csv-table::
-    :header: Checks,Problems,How to fix
+    :header: チェック項目,報告される問題,対処方法
     :widths: 15, 20, 25
 
-    Check server available,Can't connect to {scheme} server ({host}:{port}),Please check if server is up.
-    Check dry run,Can't start successfully: {error},Please check the error message of dry run.
+    サーバーの利用可否確認,Can't connect to {scheme} server ({host}:{port}),サーバーが起動しているか確認してください。
+    dry run の確認,Can't start successfully: {error},dry run のエラーメッセージを確認してください。
 
 
-Preflight check for admin consoles 
-----------------------------------
+管理コンソールでのプリフライトチェック
+--------------------------------------
 
-Before you check the FLARE Admin Console, make sure the server is running.
+FLARE 管理コンソールをチェックする前に、サーバーが稼働していることを確認してください。
 
-If the FLARE Console package is in "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00/" and it is called "admin@nvidia.com",
-a user should run:
+FLARE コンソールのパッケージが "/path_to_NVFlare/NVFlare/workspace/example_project/prod_00/" にあり、その名前が "admin@nvidia.com" である場合、
+次のように実行します。
 
 .. code-block::
 
   nvflare preflight-check -p /path_to_NVFlare/NVFlare/workspace/example_project/prod_00/admin@nvidia.com
 
-The problems that may be reported:
+報告される可能性のある問題は次のとおりです。
 
 .. csv-table::
-    :header: Checks,Problems,How to fix
+    :header: チェック項目,報告される問題,対処方法
     :widths: 15, 20, 25
 
-    Check server available,Can't connect to {scheme} server ({host}:{port}),Please check if server is up.
-    Check dry run,Can't start successfully: {error},Please check the error message of dry run.
+    サーバーの利用可否確認,Can't connect to {scheme} server ({host}:{port}),サーバーが起動しているか確認してください。
+    dry run の確認,Can't start successfully: {error},dry run のエラーメッセージを確認してください。

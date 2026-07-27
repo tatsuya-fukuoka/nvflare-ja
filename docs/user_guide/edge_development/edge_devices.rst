@@ -3,232 +3,232 @@
 .. _flare_edge:
 
 ########################################
-Edge Device Training (Jetson / GPU)
+エッジデバイス学習 (Jetson / GPU)
 ########################################
 
-FLARE extends federated learning capabilities to edge devices. Edge device applications present several unique challenges:
+FLARE は連合学習の機能をエッジデバイスにも拡張します。エッジデバイスのアプリケーションには、いくつかの固有の課題があります。
 
-- **Scalability**: Unlike cross-silo applications where the number of FL clients is relatively small, the number of devices can reach millions. It is infeasible to treat devices as simple FL clients and connect them directly to the FL server.
+- **スケーラビリティ** : FL クライアント数が比較的少ないクロスサイロのアプリケーションとは異なり、デバイス数は数百万に達する可能性があります。デバイスを単純な FL クライアントとして扱い、FL サーバーに直接接続させることは現実的ではありません。
 
-- **Stability**: Unlike cross-silo applications where FL clients are stable, edge devices can connect and disconnect at any time. This requires the training strategy to accommodate dynamic participation.
+- **安定性** : FL クライアントが安定しているクロスサイロのアプリケーションとは異なり、エッジデバイスはいつでも接続・切断される可能性があります。そのため、学習戦略は動的な参加に対応する必要があります。
 
-- **Compute capability**: Compared to cross-silo applications, edge devices have limited computing power.
+- **計算能力** : クロスサイロのアプリケーションと比べて、エッジデバイスの計算能力は限られています。
 
-- **Platform dependency**: Multiple edge device platforms exist (e.g., iOS, Android), each with a different application development environment.
+- **プラットフォーム依存性** : 複数のエッジデバイスプラットフォーム (例: iOS、Android) が存在し、それぞれ異なるアプリケーション開発環境を持ちます。
 
-Deployment Architecture
-=======================
+デプロイメントアーキテクチャ
+==============================
 
-Edge devices can number in the millions and be distributed across many locations. These devices must be able to connect to the FLARE host system from anywhere using standard web technologies.
+エッジデバイスは数百万台に達し、多数の場所に分散している可能性があります。これらのデバイスは、標準的な Web 技術を使って、どこからでも FLARE のホストシステムに接続できる必要があります。
 
 .. image:: ../../resources/deployment_architecture.png
     :height: 400px
 
-In the diagram, devices (D1 to Dn) connect to FLARE via web nodes (W1 to Wk) using HTTP protocol. The web nodes connect to FLARE via gRPC.
+この図では、デバイス (D1 から Dn) が HTTP プロトコルを使って Web ノード (W1 から Wk) 経由で FLARE に接続します。Web ノードは gRPC 経由で FLARE に接続します。
 
-Hierarchical FLARE
-==================
+階層型 FLARE
+====================
 
-For more details on the hierarchical deployment architecture, see :ref:`flare_hierarchical_architecture`.
+階層型デプロイメントアーキテクチャの詳細については、 :ref:`flare_hierarchical_architecture` を参照してください。
 
-Edge Training Algorithm
-=======================
+エッジ学習アルゴリズム
+========================
 
-Flexible Orchestration Patterns from Synchronous to Asynchronous Aggregation
+同期集約から非同期集約までの柔軟なオーケストレーションパターン
 ----------------------------------------------------------------------------
 
-In cross-silo applications, the number of clients is small and clients are stable. In a typical FedAvg algorithm, all clients participate in each round of training, and the server waits for training results from all clients. After aggregating results from clients, the server generates a new version of the model and starts the next round of training. This is called synchronous aggregation.
+クロスサイロのアプリケーションでは、クライアント数が少なく、クライアントは安定しています。典型的な FedAvg アルゴリズムでは、すべてのクライアントが各ラウンドの学習に参加し、サーバーはすべてのクライアントから学習結果が届くのを待ちます。クライアントからの結果を集約した後、サーバーは新しいバージョンのモデルを生成し、次のラウンドの学習を開始します。これを同期集約と呼びます。
 
-The synchronous aggregation algorithm may not be feasible for edge device-based training because the number of devices is usually very large, and connections to device clients are less stable (devices can connect and disconnect at any moment). It is also challenging to coordinate a large number of clients in a round-by-round fashion when devices frequently join and leave.
+同期集約アルゴリズムは、エッジデバイスベースの学習には適さない場合があります。デバイス数は通常きわめて多く、デバイスクライアントへの接続は安定性に欠ける (デバイスはいつでも接続・切断されうる) ためです。また、デバイスが頻繁に参加・離脱する状況で、大量のクライアントをラウンドごとに協調させるのは困難です。
 
-FLARE uses a flexible orchestration mechanism to support a wide range of advanced algorithms, from synchronous to asynchronous, for device-based training. The general approach is as follows:
+FLARE は柔軟なオーケストレーションの仕組みを用いて、デバイスベースの学習向けに同期から非同期まで幅広い高度なアルゴリズムをサポートします。一般的なアプローチは次のとおりです。
 
-1. **Device Availability**: The server (SJ) waits for enough devices to become available before starting training. Once device clients are started, they are reported to the server through the FL client hierarchy.
+1. **デバイスの可用性** : サーバー (SJ) は、学習を開始する前に十分な数のデバイスが利用可能になるのを待ちます。デバイスクライアントが起動すると、FL クライアント階層を通じてサーバーに報告されます。
 
-2. **Model Preparation and Device Selection**: The SJ prepares the initial version of the model and selects a set of devices (based on configured selection pool size) for training. The model and selection list are sent to the leaf CJs through the FL client hierarchy. Note that even though the number of available devices could be in the millions, the selection pool is usually small, typically in the thousands.
+2. **モデルの準備とデバイスの選択** : SJ はモデルの初期バージョンを準備し、(設定された選択プールのサイズに基づいて) 学習対象のデバイス群を選択します。モデルと選択リストは、FL クライアント階層を通じてリーフの CJ に送られます。利用可能なデバイス数が数百万に達する場合でも、選択プールは通常小さく、一般的には数千程度である点に注意してください。
 
-3. **Training and Aggregation**: Selected devices start training and report their training results to the leaf CJs. Each tier of the CJs periodically (e.g., every 2 seconds) aggregates results received in the period and sends the aggregated results to their parent CJs in the client hierarchy, all the way to the server.
+3. **学習と集約** : 選択されたデバイスは学習を開始し、その学習結果をリーフの CJ に報告します。CJ の各階層は定期的に (例: 2 秒ごと) その期間に受け取った結果を集約し、集約結果をクライアント階層内の親 CJ に送信し、最終的にサーバーまで届けます。
 
-4. **Model Update and Device Replacement**: Each time a set of aggregated results is received from a CJ, the SJ updates the current version of the model. Devices that sent training results are moved out of the selection pool, and some other devices are selected to replace them in the pool. As soon as enough updates (a configuration parameter) are received, the SJ creates a new version of the model and sends the new model and selection list to the leaf CJs through the client hierarchy. Any model requests from selected devices will get this new model version.
+4. **モデルの更新とデバイスの入れ替え** : SJ は CJ から集約結果を受け取るたびに、現在のバージョンのモデルを更新します。学習結果を送信したデバイスは選択プールから外され、代わりに他のデバイスがプールに選択されます。十分な数の更新 (設定パラメータ) を受け取ると、SJ は新しいバージョンのモデルを作成し、クライアント階層を通じて新しいモデルと選択リストをリーフの CJ に送信します。選択されたデバイスからのモデル要求には、この新しいモデルバージョンが返されます。
 
-5. **Handling Device Variability**: Since devices have varying capabilities, some devices train more quickly than others. Consequently, some slow devices may still be training an old model version while others are training a new model version. Multiple versions of the model can be trained by different devices simultaneously. The number of concurrent models allowed is a configuration parameter. When a device's result is received, it is only aggregated into the version it was trained on. If the received version is too old (outside the allowed concurrent versions), it is discarded. When generating the next version of the model, the SJ considers all concurrent model versions. The SJ periodically evaluates model performance against an evaluation dataset.
+5. **デバイスのばらつきへの対応** : デバイスの性能はさまざまであるため、他より速く学習するデバイスもあります。その結果、遅いデバイスが古いモデルバージョンをまだ学習している一方で、他のデバイスは新しいモデルバージョンを学習していることがあります。複数のバージョンのモデルが異なるデバイスによって同時に学習されうるのです。許容される同時実行モデル数は設定パラメータです。デバイスの結果を受け取ると、それは学習元のバージョンにのみ集約されます。受け取ったバージョンが古すぎる (許容される同時実行バージョンの範囲外である) 場合は破棄されます。次のバージョンのモデルを生成する際、SJ はすべての同時実行モデルバージョンを考慮します。SJ は評価用データセットに対してモデル性能を定期的に評価します。
 
-There is no explicit concept of rounds. The process continues until the SJ determines it is time to stop, either because it has produced a satisfactory model or because the performance indicates that continuing is not worthwhile.
+明示的なラウンドという概念はありません。処理は、満足のいくモデルが得られたか、性能から見て継続する価値がないと判断されるかのいずれかにより、SJ が停止すべきと判断するまで続きます。
 
-This configurable orchestration provides sufficient flexibility for determining the overall federated learning process. Given N devices participating in learning, we can configure two extreme cases:
+この設定可能なオーケストレーションにより、連合学習の全体プロセスを決定するうえで十分な柔軟性が得られます。学習に参加するデバイスが N 台あるとき、次の 2 つの極端なケースを設定できます。
 
-- **Synchronous FL**: Configure: 1) replacement (selection of new devices and dispatching the global model to them) of the selection pool only when it becomes empty; 2) a new version of the global model only when all devices' updates have been received.
+- **同期 FL** : 1) 選択プールが空になったときにのみ選択プールを入れ替える (新しいデバイスを選択してグローバルモデルを配布する)、2) すべてのデバイスの更新を受け取ったときにのみグローバルモデルの新しいバージョンを生成する、と設定します。
 
-- **Asynchronous FL**: Configure: 1) replacement of the selection pool whenever at least one device reports back and is removed from the pool; 2) a new version of the global model to be updated with at least one device's updates.
+- **非同期 FL** : 1) 少なくとも 1 台のデバイスが結果を報告してプールから外れるたびに選択プールを入れ替える、2) 少なくとも 1 台のデバイスの更新でグローバルモデルの新しいバージョンを更新する、と設定します。
 
-- **Custom Orchestration**: Configure parameters anywhere between these two extremes to enable other orchestration patterns, such as buffered asynchronous aggregation. Users can also define their own aggregation methods.
+- **カスタムオーケストレーション** : これら 2 つの極端なケースの間の任意の値にパラメータを設定することで、バッファ付き非同期集約などの他のオーケストレーションパターンを実現できます。ユーザーは独自の集約手法を定義することもできます。
 
-Edge Device Interaction Protocol (EDIP)
-=======================================
+エッジデバイス連携プロトコル (EDIP)
+==========================================
 
-EDIP defines the rules that edge devices must follow to interact with the host, as outlined in the following steps.
+EDIP は、エッジデバイスがホストとやり取りする際に従わなければならない規則を定義します。以下の手順で概要を示します。
 
-Step 1 - Get a Job
-------------------
+ステップ 1 - ジョブの取得
+------------------------------
 
-1. **Initiate Job Request**: The first step after starting is to obtain a job from the host. The device client continues sending ``getJob`` requests until either a job is received or the configured maximum time is exceeded. If a job is not received, the client should exit.
+1. **ジョブ要求の開始** : 起動後の最初のステップは、ホストからジョブを取得することです。デバイスクライアントは、ジョブを受け取るか、設定された最大時間を超えるまで ``getJob`` 要求を送信し続けます。ジョブを受け取れなかった場合、クライアントは終了すべきです。
 
-2. **Include Job Name**: The request to the host must include a predefined job name. The LCP uses the job name to find the matching job. If multiple jobs have the same job name, one is randomly chosen.
+2. **ジョブ名の指定** : ホストへの要求には、あらかじめ定義されたジョブ名を含めなければなりません。LCP はジョブ名を使って一致するジョブを探します。同じジョブ名のジョブが複数ある場合は、ランダムに 1 つが選ばれます。
 
-3. **Provide Headers**: The request to the host must also include common headers such as device info and user info, both represented as maps (key/value pairs). Device info includes information about the device platform, capabilities, and most importantly, a unique device ID. User info includes information about the device user and is currently not being used.
+3. **ヘッダーの提供** : ホストへの要求には、デバイス情報やユーザー情報といった共通ヘッダーも含めなければなりません。いずれもマップ (キー/値のペア) として表現されます。デバイス情報には、デバイスのプラットフォーム、機能、そして最も重要な一意のデバイス ID が含まれます。ユーザー情報にはデバイスのユーザーに関する情報が含まれますが、現在は使用されていません。
 
-4. **Receive Job Response**: The job response includes the job ID, which is used for the training session.
+4. **ジョブ応答の受信** : ジョブ応答にはジョブ ID が含まれ、学習セッションで使用されます。
 
-5. **Process Job Config Data**: The response also includes job configuration data, which contains configuration information about the job, such as the training components (trainer, loss function, optimizer, etc.) and their parameters (e.g., learning rate, number of epochs). The device client must process the job configuration data and create training components accordingly.
+5. **ジョブ設定データの処理** : 応答にはジョブ設定データも含まれます。これには、学習コンポーネント (トレーナー、損失関数、オプティマイザなど) やそのパラメータ (学習率、エポック数など) といったジョブの設定情報が含まれます。デバイスクライアントはジョブ設定データを処理し、それに従って学習コンポーネントを作成しなければなりません。
 
-6. **Handle Cookies**: The response may include a cookie, which is information to be sent back to the host in subsequent requests.
+6. **クッキーの取り扱い** : 応答にはクッキーが含まれる場合があります。これは以降の要求でホストに送り返すべき情報です。
 
-Step 2 - Get a Task
--------------------
+ステップ 2 - タスクの取得
+------------------------------
 
-Once the job is received and job configuration is processed, the device attempts to obtain a task to execute from the host by sending a ``getTask`` request.
+ジョブを受け取り、ジョブ設定の処理が完了すると、デバイスは ``getTask`` 要求を送信して、実行するタスクをホストから取得しようとします。
 
-In the ``getTask`` request, the client must include the job ID and the cookie (if available). Common headers such as device info and user info are also included.
+``getTask`` 要求では、クライアントはジョブ ID とクッキー (利用可能な場合) を含めなければなりません。デバイス情報やユーザー情報などの共通ヘッダーも含まれます。
 
-The device must then proceed based on the return code from the host:
+その後、デバイスはホストからのリターンコードに応じて処理を進めなければなりません。
 
-- **OK**: A task is assigned and the response includes task information. The device must proceed to execute the task.
-- **RETRY** or **NO_TASK**: The device must resend the ``getTask`` request at a later time.
-- **NO_JOB**: The requested job is no longer available. The device should return to Step 1 to get the next job.
-- **DONE** or any error condition: The device should exit.
+- **OK** : タスクが割り当てられ、応答にタスク情報が含まれます。デバイスはタスクの実行に進まなければなりません。
+- **RETRY** または **NO_TASK** : デバイスは後で ``getTask`` 要求を再送しなければなりません。
+- **NO_JOB** : 要求したジョブはもう利用できません。デバイスはステップ 1 に戻って次のジョブを取得すべきです。
+- **DONE** またはエラー条件全般: デバイスは終了すべきです。
 
-If a task is assigned, the response from the host includes the task name and task data (e.g., model weights). The response may also include a cookie.
+タスクが割り当てられた場合、ホストからの応答にはタスク名とタスクデータ (モデルの重みなど) が含まれます。応答にはクッキーが含まれる場合もあります。
 
 .. note::
-   This protocol is generic. The device client must choose the right component to execute the task based on the task name and the configured components in the job config data.
+   このプロトコルは汎用的なものです。デバイスクライアントは、タスク名とジョブ設定データに定義されたコンポーネントに基づいて、タスクを実行する適切なコンポーネントを選択しなければなりません。
 
-Step 3 - Execute Task and Report Result
----------------------------------------
+ステップ 3 - タスクの実行と結果の報告
+------------------------------------------
 
-If a task is received, the device should execute the task with the properly selected component. Once completed, the device sends the result back to the host by sending a ``reportResult`` request. The request includes the job ID, result, task name and ID, and the cookie. Common headers such as device info and user info are also included.
+タスクを受け取った場合、デバイスは適切に選択したコンポーネントでタスクを実行すべきです。完了すると、デバイスは ``reportResult`` 要求を送信して結果をホストに送り返します。この要求には、ジョブ ID、結果、タスク名と ID、クッキーが含まれます。デバイス情報やユーザー情報などの共通ヘッダーも含まれます。
 
-The device client must then proceed according to the return code from the host:
+その後、デバイスクライアントはホストからのリターンコードに応じて処理を進めなければなりません。
 
-- **OK**: The report has been successfully processed. The device client should return to Step 2 to get the next task.
-- **NO_TASK**: The task is no longer available. The device client should return to Step 2 to get the next task.
-- **NO_JOB**: The job is no longer available. The device client should return to Step 1 to get the next job.
-- **END** or other error conditions: The device client should exit.
+- **OK** : 報告が正常に処理されました。デバイスクライアントはステップ 2 に戻って次のタスクを取得すべきです。
+- **NO_TASK** : そのタスクはもう利用できません。デバイスクライアントはステップ 2 に戻って次のタスクを取得すべきです。
+- **NO_JOB** : そのジョブはもう利用できません。デバイスクライアントはステップ 1 に戻って次のジョブを取得すべきです。
+- **END** またはその他のエラー条件: デバイスクライアントは終了すべきです。
 
-These steps can be best illustrated as a finite state machine as follows:
+これらの手順は、次のような有限状態機械として表すのが最も分かりやすいでしょう。
 
 .. image:: ../../resources/edge_device_finite_state_machine.png
     :height: 500px
 
 .. _device_simulation:
 
-Device Simulation
-=================
+デバイスシミュレーション
+==========================
 
-Device-based model development requires a large number of devices. However, during algorithm development, it is impractical to expect a large number of real devices to be always available. FLARE provides a device simulator that can efficiently simulate a very large number of devices.
+デバイスベースのモデル開発には多数のデバイスが必要です。しかし、アルゴリズム開発の段階で大量の実デバイスが常に利用可能であることを期待するのは現実的ではありません。FLARE は、きわめて多数のデバイスを効率的にシミュレートできるデバイスシミュレータを提供しています。
 
-The device simulator follows the EDIP discussed above, with an additional ``getSelection`` request. This request retrieves the currently selected device IDs from the host.
+デバイスシミュレータは上記の EDIP に従いますが、加えて ``getSelection`` 要求を使用します。この要求は、現在選択されているデバイス ID をホストから取得します。
 
-A real device continuously sends ``getTask`` requests to obtain a task to execute. As discussed above, when there are millions of devices, only a very small number actually receive tasks. If we simulated this behavior, it would require many wasteful messages and a long time to obtain a task to execute. Instead of iterating through all simulated devices to get a task, the simulator sends one ``getSelection`` request to get selected devices immediately, and then only sends the ``getTask`` request for the selected devices.
+実デバイスは、実行するタスクを取得するために ``getTask`` 要求を継続的に送信します。上述のとおり、数百万台のデバイスがある場合、実際にタスクを受け取るのはごく少数です。この挙動をそのままシミュレートすると、無駄なメッセージが大量に発生し、実行するタスクを得るまでに長い時間がかかってしまいます。シミュレータは、すべてのシミュレートデバイスを順番に処理してタスクを取得する代わりに、1 回の ``getSelection`` 要求で選択されたデバイスを即座に取得し、選択されたデバイスについてのみ ``getTask`` 要求を送信します。
 
-Simulation Logic
-----------------
+シミュレーションのロジック
+------------------------------
 
-The following outlines the simulator's logic.
+以下にシミュレータのロジックの概要を示します。
 
-Step 1 - Get a Job
-------------------
+ステップ 1 - ジョブの取得
+------------------------------
 
-1. **Send Job Request**: The simulator sends the ``getJob`` request with a dummy device ID. It continues doing so until a job is received or the request times out.
+1. **ジョブ要求の送信** : シミュレータはダミーのデバイス ID を用いて ``getJob`` 要求を送信します。ジョブを受け取るか、要求がタイムアウトするまでこれを続けます。
 
-Step 2 - Get Selections
------------------------
+ステップ 2 - 選択リストの取得
+----------------------------------
 
-1. **Send Selection Request**: The simulator sends the ``getSelection`` request to the host until a selection list is received. This request also serves to inform the host of the number of devices it simulates.
+1. **選択要求の送信** : シミュレータは選択リストを受け取るまで ``getSelection`` 要求をホストに送信します。この要求は、シミュレートするデバイス数をホストに知らせる役割も果たします。
 
-2. **Device ID Pattern**: All simulated devices on this simulator share the following pattern:
+2. **デバイス ID のパターン** : このシミュレータ上のすべてのシミュレートデバイスは、次のパターンを共有します。
 
    ``<uuid_prefix>#<index_number>``
 
-   Where ``uuid_prefix`` is a unique UUID and ``index_number`` is the index number of the simulated device, ranging from 1 to the number of simulated devices on this simulator (a configuration parameter).
+   ここで ``uuid_prefix`` は一意の UUID であり、 ``index_number`` はシミュレートデバイスのインデックス番号で、1 からこのシミュレータ上のシミュレートデバイス数 (設定パラメータ) までの範囲を取ります。
 
-3. **Process Selection List**: When the leaf CJ processes the ``getSelection`` request, it reports the simulated device IDs to the SJ through the client hierarchy. When the selection list is available, the leaf CJ includes it in the response to the simulator.
+3. **選択リストの処理** : リーフの CJ が ``getSelection`` 要求を処理する際、クライアント階層を通じてシミュレートデバイスの ID を SJ に報告します。選択リストが利用可能になると、リーフの CJ はそれをシミュレータへの応答に含めます。
 
-4. **Identify Devices**: Note that the selection list contains all selected devices: some are real devices, some are simulated devices on other simulators (multiple simulators can run simultaneously), and some are devices for this simulator. The simulator then identifies the devices that belong to it.
+4. **デバイスの識別** : 選択リストには選択されたすべてのデバイスが含まれる点に注意してください。実デバイス、他のシミュレータ上のシミュレートデバイス (複数のシミュレータを同時に実行できます)、そしてこのシミュレータのデバイスが混在しています。シミュレータは、そのうち自分に属するデバイスを識別します。
 
-5. **Continue if Necessary**: If the selection list does not contain any devices from this simulator, the simulator continues to send ``getSelection`` requests.
+5. **必要に応じた継続** : 選択リストにこのシミュレータのデバイスが 1 つも含まれていない場合、シミュレータは ``getSelection`` 要求の送信を続けます。
 
-Step 3 - Get and Execute Task
------------------------------
+ステップ 3 - タスクの取得と実行
+------------------------------------
 
-1. **Send Task Request**: The simulator sends the ``getTask`` request to the host sequentially for each selected device that belongs to it.
+1. **タスク要求の送信** : シミュレータは、自身に属する選択済みデバイスそれぞれについて、順次 ``getTask`` 要求をホストに送信します。
 
-2. **Execute Task**: If a task is received (it is possible that the task is already complete by the time the ``getTask`` request is sent to the host, even for the selected device), the simulator submits the task to a thread pool for execution.
+2. **タスクの実行** : タスクを受け取った場合 (選択済みデバイスであっても、ホストに ``getTask`` 要求を送信した時点でタスクがすでに完了している可能性があります)、シミュレータはそのタスクをスレッドプールに投入して実行します。
 
-3. **Report Result**: Once the task is executed, the simulator reports it to the host via a ``reportResult`` request.
+3. **結果の報告** : タスクが実行されると、シミュレータは ``reportResult`` 要求を通じてホストに結果を報告します。
 
-4. **Repeat Process**: Once all devices are processed, the simulator returns to Step 2 for the next set of selections.
+4. **処理の繰り返し** : すべてのデバイスの処理が終わると、シミュレータは次の選択リストを取得するためにステップ 2 に戻ります。
 
-Simulation Completion
----------------------
+シミュレーションの完了
+--------------------------
 
-The simulator continues until one of the following conditions occurs:
+シミュレータは、次のいずれかの条件が発生するまで実行を続けます。
 
-- **NO_JOB** return code is received, indicating the job is finished.
-- Any error code is received.
+- **NO_JOB** のリターンコードを受け取り、ジョブが終了したことが示された場合。
+- 何らかのエラーコードを受け取った場合。
 
-Simulator Configuration
-=======================
+シミュレータの設定
+====================
 
-The behavior of the simulator can be configured with the following parameters:
+シミュレータの挙動は、次のパラメータで設定できます。
 
-- **Job Name (job_name)**: The name of the job.
-- **Number of devices (num_devices)**: The number of devices to be simulated. The default is 10,000.
-- **Number of workers (num_workers)**: The maximum number of worker threads to be used for executing training tasks. The default value is 10.
-- **GetJob timeout (get_job_timeout)**: The maximum amount of time to obtain a matching job from the host.
+- **ジョブ名 (job_name)** : ジョブの名前です。
+- **デバイス数 (num_devices)** : シミュレートするデバイスの数です。既定値は 10,000 です。
+- **ワーカー数 (num_workers)** : 学習タスクの実行に使用するワーカースレッドの最大数です。既定値は 10 です。
+- **GetJob タイムアウト (get_job_timeout)** : ホストから一致するジョブを取得するまでの最大時間です。
 
-The simulated device must be able to execute the assigned task. When a task is received for a device, the simulator calls the device's ``do_task()`` method. As part of the simulator configuration, a ``DeviceFactory`` object must be provided, which is called to create new devices by the simulator. The created devices must implement the ``do_task()`` method.
+シミュレートされたデバイスは、割り当てられたタスクを実行できなければなりません。デバイスに対してタスクを受け取ると、シミュレータはそのデバイスの ``do_task()`` メソッドを呼び出します。シミュレータの設定の一部として ``DeviceFactory`` オブジェクトを提供する必要があり、シミュレータはこれを呼び出して新しいデバイスを作成します。作成されるデバイスは ``do_task()`` メソッドを実装していなければなりません。
 
-In most cases, you do not need to write a ``DeviceFactory``. Instead, you only need to create a ``TaskProcessor``. A special ``TaskProcessingDevice`` has been implemented that takes a ``DeviceTaskProcessor`` and handles the rest for you.
+ほとんどの場合、 ``DeviceFactory`` を自分で書く必要はありません。代わりに ``TaskProcessor`` を作成するだけで済みます。 ``DeviceTaskProcessor`` を受け取って残りの処理を代行してくれる特別な ``TaskProcessingDevice`` が実装されています。
 
-How to run simulation
-=====================
+シミュレーションの実行方法
+============================
 
-The end-to-end communication path between devices and the host is illustrated in the following diagram:
+デバイスとホストの間のエンドツーエンドの通信経路を次の図に示します。
 
 .. image:: ../../resources/edge_simulation_communication_path.png
     :height: 400px
 
-The device sends a request to the web node (routing proxy) via HTTP.
+デバイスは HTTP 経由で Web ノード (ルーティングプロキシ) に要求を送信します。
 
-The web node selects the LCP based on the device ID in the request and forwards the request to the LCP via gRPC.
+Web ノードは要求に含まれるデバイス ID に基づいて LCP を選択し、gRPC 経由でその LCP に要求を転送します。
 
-Within the LCP, there are two components: the API Service and the Edge Task Dispatcher. The API Service receives the request from the web node and fires the ``EDGE_REQUEST_RECEIVED`` event with the request data. The Edge Task Dispatcher listens to the event, finds the LCJ corresponding to the job ID, and forwards the request to the LCJ.
+LCP 内には 2 つのコンポーネントがあります。API Service と Edge Task Dispatcher です。API Service は Web ノードから要求を受け取り、その要求データとともに ``EDGE_REQUEST_RECEIVED`` イベントを発火します。Edge Task Dispatcher はこのイベントをリッスンし、ジョブ ID に対応する LCJ を見つけて、その LCJ に要求を転送します。
 
-The LCJ contains two components: the Edge Task Receiver and the Edge Task Executor. The Edge Task Receiver receives the request from the LCP and fires the ``EDGE_REQUEST_RECEIVED`` event. The Edge Task Executor listens to this event and processes the request to produce a result, which is sent back to the device along the request path.
+LCJ には 2 つのコンポーネントが含まれます。Edge Task Receiver と Edge Task Executor です。Edge Task Receiver は LCP から要求を受け取り、 ``EDGE_REQUEST_RECEIVED`` イベントを発火します。Edge Task Executor はこのイベントをリッスンして要求を処理し、結果を生成します。その結果は要求と同じ経路をたどってデバイスに返されます。
 
-With this end-to-end communication path, the simulator can be installed in different locations:
+このエンドツーエンドの通信経路により、シミュレータはさまざまな場所に設置できます。
 
-- Embedded in the leaf CJs (LCJs)
-- Connected to LCPs directly
-- Connected to web nodes
+- リーフの CJ (LCJ) に埋め込む
+- LCP に直接接続する
+- Web ノードに接続する
 
-These options are shown in the following diagram:
+これらの選択肢を次の図に示します。
 
 .. image:: ../../resources/edge_simulator_installation_options.png
     :height: 450px
 
-The most efficient way to run the simulator is to install it in LCJs, as it avoids message hops to the web node and LCP. It is also the easiest to use—you do not even need to run the web node if you do not have any real devices. This method is ideal for algorithm development.
+シミュレータを実行する最も効率的な方法は、LCJ に設置することです。Web ノードや LCP へのメッセージホップを回避できるためです。また、最も使いやすい方法でもあります。実デバイスがない場合は、Web ノードを実行する必要すらありません。この方法はアルゴリズム開発に最適です。
 
-Connecting the simulator to the routing proxy or to LCPs is useful for stress testing the system's communication capabilities.
+シミュレータをルーティングプロキシや LCP に接続する方法は、システムの通信能力のストレステストに役立ちます。
 
-If you provision the project with the ``tree_prov`` tool described above, it generates convenience scripts in the ``scripts`` folder of the provision result:
+上述の ``tree_prov`` ツールでプロジェクトをプロビジョニングすると、プロビジョニング結果の ``scripts`` フォルダに便利なスクリプトが生成されます。
 
-- ``simulate_rp.sh``: Starts the simulator and connects to the routing proxy
-- ``simulate_lcp.sh``: Starts the simulator and connects to LCPs
+- ``simulate_rp.sh`` : シミュレータを起動し、ルーティングプロキシに接続します
+- ``simulate_lcp.sh`` : シミュレータを起動し、LCP に接続します
 
-The ``scripts`` folder also contains the ``simulation_config.json`` file. This file contains the simulation configuration parameters discussed above. You may want to edit these parameters to meet your requirements.
+``scripts`` フォルダには ``simulation_config.json`` ファイルも含まれます。このファイルには、上述のシミュレーション設定パラメータが含まれます。要件に合わせてこれらのパラメータを編集するとよいでしょう。
 
-The following is a sample ``simulation_config.json``:
+以下は ``simulation_config.json`` のサンプルです。
 
 .. code-block:: json
 
@@ -245,16 +245,15 @@ The following is a sample ``simulation_config.json``:
        }
    }
 
-Both ``simulate_rp.sh`` and ``simulate_lcp.sh`` require the ``simulation_config.json`` file.
+``simulate_rp.sh`` と ``simulate_lcp.sh`` はいずれも ``simulation_config.json`` ファイルを必要とします。
 
-If you want to install the simulator in LCPs manually, you need to configure them in ``config_fed_client.json``,
-as shown in the following example.
-This advanced configuration path uses ``nvflare.edge.*`` components directly.
-Those edge component classes are not included in the provisioned non-BYOC ``class_allow_list``, so jobs that use
-this direct config must go through BYOC authorization and be submitted by users with BYOC permission in
-``authorization.json``.
-For normal job creation, prefer exporting the job with ``EdgeFedBuffRecipe`` or ``ETFedBuffRecipe`` so the job is
-validated through the BYOC workflow before edge components are built.
+シミュレータを LCP に手動で設置したい場合は、次の例に示すように ``config_fed_client.json`` で設定する必要があります。
+この高度な設定方法では ``nvflare.edge.*`` のコンポーネントを直接使用します。
+これらのエッジコンポーネントのクラスは、プロビジョニングされる非 BYOC の ``class_allow_list`` には含まれていません。そのため、
+この直接的な設定を使用するジョブは BYOC の認可を通す必要があり、 ``authorization.json`` で BYOC 権限を持つユーザーが
+送信しなければなりません。
+通常のジョブ作成では、エッジコンポーネントがビルドされる前に BYOC ワークフローでジョブが検証されるよう、
+``EdgeFedBuffRecipe`` または ``ETFedBuffRecipe`` でジョブをエクスポートすることを推奨します。
 
 .. code-block:: json
 
@@ -326,29 +325,29 @@ validated through the BYOC workflow before edge components are built.
    }
 
 .. note::
-   You do not need to manually create this file. Instead, use the EdgeJob API, ``EdgeFedBuffRecipe``, or
-   ``ETFedBuffRecipe`` to create the job configuration, and make sure the submitting role is allowed to submit BYOC jobs.
+   このファイルを手動で作成する必要はありません。代わりに EdgeJob API、 ``EdgeFedBuffRecipe`` 、または
+   ``ETFedBuffRecipe`` を使ってジョブ設定を作成し、送信するロールが BYOC ジョブの送信を許可されていることを確認してください。
 
-Model Development
-=================
+モデル開発
+============
 
-Ultimately, you want to develop a performant model with federated device training. FLARE provides methods for developing PyTorch models without requiring device-specific programming.
+最終的な目標は、連合デバイス学習によって高性能なモデルを開発することです。FLARE は、デバイス固有のプログラミングを必要とせずに PyTorch モデルを開発するための手段を提供します。
 
-Step 1 - Design Model Architecture
-----------------------------------
+ステップ 1 - モデルアーキテクチャの設計
+--------------------------------------------
 
-1. **Model Design**: In this step, you can design your model using PyTorch, just as you would for single-machine training. However, keep in mind that edge devices typically have limited computational resources, so the model architecture should be kept simple and lightweight to accommodate these constraints.
+1. **モデル設計** : このステップでは、単一マシンでの学習と同じように PyTorch を使ってモデルを設計できます。ただし、エッジデバイスは一般に計算リソースが限られているため、こうした制約に合わせてモデルアーキテクチャはシンプルかつ軽量に保つべきである点に留意してください。
 
-2. **Mobile Device Training**: For mobile devices, training is currently implemented using ExecuTorch. Refer to the `ExecuTorch GitHub repository <https://github.com/pytorch/executorch>`_ for a list of supported layers, as they may differ from those in PyTorch.
+2. **モバイルデバイスでの学習** : モバイルデバイスでは、学習は現在 ExecuTorch を用いて実装されています。サポートされるレイヤーの一覧は `ExecuTorch の GitHub リポジトリ <https://github.com/pytorch/executorch>`_ を参照してください。PyTorch のものとは異なる場合があります。
 
-Step 2 - Create DeviceModel
----------------------------
+ステップ 2 - DeviceModel の作成
+------------------------------------
 
-1. **Applicability**: This step applies only when developing models for mobile devices.
+1. **適用範囲** : このステップは、モバイルデバイス向けのモデルを開発する場合にのみ該当します。
 
-2. **ExecuTorch Requirements**: ExecuTorch requires the model to return both the loss and the predictions during training. To meet this requirement, you need to wrap the model defined in Step 1 into a custom ``DeviceModel`` class that includes both the loss function and the prediction logic.
+2. **ExecuTorch の要件** : ExecuTorch は、学習中にモデルが損失と予測の両方を返すことを要求します。この要件を満たすには、ステップ 1 で定義したモデルを、損失関数と予測ロジックの両方を含むカスタムの ``DeviceModel`` クラスでラップする必要があります。
 
-3. **Example**: Below is an example of how to create a ``DeviceModel`` for a classification task using ``CrossEntropyLoss``:
+3. **例** : 以下は、 ``CrossEntropyLoss`` を用いた分類タスク向けに ``DeviceModel`` を作成する例です。
 
 .. code-block:: python
 
@@ -364,11 +363,11 @@ Step 2 - Create DeviceModel
            pred = self.net(input)
            return self.loss(pred, label), pred.detach().argmax(dim=1)
 
-As shown above, by default, it uses the ``CrossEntropyLoss`` loss function, which is used by ExecuTorch in device training.
+上記のとおり、既定では ExecuTorch がデバイス学習で使用する ``CrossEntropyLoss`` 損失関数を使用します。
 
-Your device model must extend from ``DeviceModel``. You can choose to use a different loss function.
+デバイスモデルは ``DeviceModel`` を継承しなければなりません。別の損失関数を選択することもできます。
 
-Here is an example of how to create these models:
+以下はこれらのモデルを作成する例です。
 
 .. code-block:: python
 
@@ -401,23 +400,23 @@ Here is an example of how to create these models:
        def __init__(self):
            DeviceModel.__init__(self, Cifar10ConvNet())
 
-The ``Cifar10ConvNet`` is a standard PyTorch model that you would create in Step 1.
-The ``TrainingNet`` is the device model you would create in Step 2.
+``Cifar10ConvNet`` は、ステップ 1 で作成する標準的な PyTorch モデルです。
+``TrainingNet`` は、ステップ 2 で作成するデバイスモデルです。
 
-Step 3 - Create FLARE Job
---------------------------
+ステップ 3 - FLARE ジョブの作成
+------------------------------------
 
-In this step, you use a recipe to create and/or run a FLARE job.
+このステップでは、レシピを使って FLARE ジョブを作成、または実行します。
 
-If you are developing models for mobile devices, you need to use the ``ETFedBuffRecipe``; otherwise, you need to use the ``EdgeFedBuffRecipe``.
+モバイルデバイス向けのモデルを開発している場合は ``ETFedBuffRecipe`` を使用する必要があります。それ以外の場合は ``EdgeFedBuffRecipe`` を使用します。
 
-FedBuff [1]_ is the algorithm that manages device selection and model updates.
+FedBuff [1]_ は、デバイスの選択とモデルの更新を管理するアルゴリズムです。
 
 EdgeFedBuffRecipe
 ------------------
 
-This recipe helps you create jobs for training with standard PyTorch on other edge devices (e.g., NVIDIA Jetson devices).
-An example can be found in the `edge examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_.
+このレシピは、他のエッジデバイス (例: NVIDIA Jetson デバイス) 上で標準的な PyTorch を用いて学習するジョブを作成するのに役立ちます。
+例は `edge examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ にあります。
 
 .. code-block:: python
 
@@ -440,12 +439,12 @@ An example can be found in the `edge examples <https://github.com/NVIDIA/NVFlare
            custom_source_root=None,
        )
 
-Specifically, there are four main components to define. Among them, ``evaluator_config`` and ``simulation_config`` are straightforward:
+具体的には、定義すべき主要なコンポーネントが 4 つあります。そのうち ``evaluator_config`` と ``simulation_config`` は分かりやすいものです。
 
-- **Evaluator**: A standalone widget that evaluates the global model with a dataset whenever the server generates a number of ``eval_frequency`` global model versions.
-- **Simulation**: Used for simulating devices on LCJs as described earlier. ``num_devices`` is per leaf client—the total number of devices involved in FL will be ``num_leaf * num_devices`` (``12 * num_devices`` if using the example tree we generated earlier).
+- **Evaluator** : サーバーが ``eval_frequency`` 個のグローバルモデルバージョンを生成するたびに、データセットを使ってグローバルモデルを評価する独立したウィジェットです。
+- **Simulation** : 前述のとおり、LCJ 上でデバイスをシミュレートするために使用します。 ``num_devices`` はリーフクライアントごとの値であり、FL に参加するデバイスの総数は ``num_leaf * num_devices`` になります (前に生成したサンプルのツリーを使う場合は ``12 * num_devices`` )。
 
-``model_manager_config`` and ``device_manager_config`` contain more parameters that provide control over server behavior—essentially: 1) when to generate a new global model, and 2) when and to whom the global model should be sent:
+``model_manager_config`` と ``device_manager_config`` には、サーバーの挙動を制御するためのより多くのパラメータが含まれます。要するに、1) いつ新しいグローバルモデルを生成するか、2) いつ誰にグローバルモデルを送信するか、を制御します。
 
 .. code-block:: python
 
@@ -456,10 +455,10 @@ Specifically, there are four main components to define. Among them, ``evaluator_
                max_model_history= ,
           )
 
-- **global_lr**: Defines how device model updates contribute to the global model.
-- **num_updates_for_model**: Defines how many device updates the server needs to receive before generating a new global model.
-- **max_model_version**: Defines how many global models the server needs to generate before stopping the FL job.
-- **max_model_history**: Defines how many models to keep on record. Models older than this are considered too old, and their updates are discarded without being aggregated to the global model.
+- **global_lr** : デバイスからのモデル更新がグローバルモデルにどのように寄与するかを定義します。
+- **num_updates_for_model** : 新しいグローバルモデルを生成する前に、サーバーが受け取る必要のあるデバイス更新の数を定義します。
+- **max_model_version** : FL ジョブを停止するまでに、サーバーが生成する必要のあるグローバルモデルの数を定義します。
+- **max_model_history** : 記録として保持するモデルの数を定義します。これより古いモデルは古すぎるとみなされ、その更新はグローバルモデルに集約されずに破棄されます。
 
 .. code-block:: python
 
@@ -469,27 +468,27 @@ Specifically, there are four main components to define. Among them, ``evaluator_
    device_reuse= ,
    )
 
-- **device_selection_size**: Defines the total number of devices that will be constantly maintained for concurrent active model training.
-- **min_hole_to_fill**: Defines when the current global model should be dispatched to devices. Whenever a device reports back, it is removed from the device selection list, creating a "hole" in the list. This hole is then filled by sampling from the available devices, and whoever is selected to fill the holes receives the current global model for training. This parameter defines the minimum number of holes before sampling and dispatching the current global model.
-- **device_reuse**: A boolean defining whether devices that have already participated in training can be selected again.
+- **device_selection_size** : 同時進行のアクティブなモデル学習のために常時維持されるデバイスの総数を定義します。
+- **min_hole_to_fill** : 現在のグローバルモデルをいつデバイスに配布するかを定義します。デバイスが結果を報告するたびに、そのデバイスはデバイス選択リストから外され、リストに「穴」が生じます。この穴は利用可能なデバイスからサンプリングして埋められ、穴を埋めるために選ばれたデバイスは学習用に現在のグローバルモデルを受け取ります。このパラメータは、サンプリングと現在のグローバルモデルの配布を行うまでに必要な穴の最小数を定義します。
+- **device_reuse** : すでに学習に参加したデバイスを再び選択できるかどうかを定義するブール値です。
 
-To give a realistic example, if we want to configure a standard synchronous FL pipeline running M rounds with a total of N devices (``12 * num_devices`` as mentioned above), we can set the parameters as follows:
+現実的な例を挙げると、合計 N 台のデバイス (前述のとおり ``12 * num_devices`` ) で M ラウンド実行する標準的な同期 FL パイプラインを構成したい場合、パラメータを次のように設定できます。
 
-For ``model_manager_config``:
+``model_manager_config`` の場合:
 
 - **global_lr=1.0**
 - **num_updates_for_model=N**
 - **max_model_version=M**
 - **max_model_history=1**
 
-This configuration ensures that local updates are aggregated with a scale factor of 1.0, all devices' updates are required to generate a global model, there will be M global model versions (M rounds), and since all devices must report back before generating a new model version, we only need to track one global model version.
+この設定により、ローカルの更新はスケール係数 1.0 で集約され、グローバルモデルの生成にはすべてのデバイスの更新が必要となり、グローバルモデルのバージョンは M 個 (M ラウンド) になります。また、新しいモデルバージョンを生成する前にすべてのデバイスが報告する必要があるため、追跡すべきグローバルモデルバージョンは 1 つだけで済みます。
 
-For ``device_manager_config``:
+``device_manager_config`` の場合:
 
 - **device_selection_size=N**
 - **min_hole_to_fill=N**
 - **device_reuse=True**
 
-This configuration maintains the selection of all N devices, waits for all N devices to report back (become "holes") before new device sampling and model dispatching, and enables ``device_reuse`` because we always use these N devices.
+この設定では、N 台すべてのデバイスの選択を維持し、新しいデバイスのサンプリングとモデル配布を行う前に N 台すべてのデバイスが報告する (「穴」になる) のを待ちます。また、常にこれら N 台のデバイスを使用するため ``device_reuse`` を有効にしています。
 
-Similarly, we can simulate an asynchronous pipeline by setting these parameters differently. See more details in the example.
+同様に、これらのパラメータを別の値に設定することで非同期パイプラインをシミュレートできます。詳細は例を参照してください。

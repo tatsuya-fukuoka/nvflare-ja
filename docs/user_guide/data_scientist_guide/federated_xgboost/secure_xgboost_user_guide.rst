@@ -1,213 +1,213 @@
-######################################
-Federated Learning for XGBoost
-######################################
+########################################
+XGBoost のための連合学習
+########################################
 
-Overview
-========
-This guide demonstrates how to use NVIDIA FLARE (NVFlare) to train XGBoost models in a federated learning environment. It showcases multiple collaboration strategies with varying levels of security.
+概要
+================
+このガイドでは、NVIDIA FLARE (NVFlare) を使用して連合学習環境で XGBoost モデルを学習する方法を説明します。セキュリティレベルの異なる複数のコラボレーション戦略を紹介します。
 
-NVFlare provides the following advantages:
+NVFlare は次の利点を提供します。
 
-- Secure training with Homomorphic Encryption (HE), protecting local histograms and gradients from the federated server and passive parties.
-- Lifecycle management of XGBoost processes
-- Reliable messaging that can overcome network glitches
-- Training over complex networks with relays
+- 準同型暗号 (HE) によるセキュアな学習。ローカルヒストグラムと勾配を連合サーバーやパッシブパーティから保護します。
+- XGBoost プロセスのライフサイクル管理
+- ネットワークの一時的な不調を克服できる信頼性のあるメッセージング
+- リレーを用いた複雑なネットワーク上での学習
 
-This guide covers several federated XGBoost configurations:
+このガイドでは、次のような複数の連合 XGBoost 構成を扱います。
 
-- **Horizontal Collaboration**: Histogram-based and tree-based approaches (non-secure and secure)
-- **Vertical Collaboration**: Histogram-based approach (non-secure and secure with Homomorphic Encryption)
+- **水平コラボレーション** : ヒストグラムベースおよびツリーベースのアプローチ（非セキュアおよびセキュア）
+- **垂直コラボレーション** : ヒストグラムベースのアプローチ（非セキュアおよび準同型暗号によるセキュア）
 
-What is XGBoost?
-----------------
-XGBoost (eXtreme Gradient Boosting) is a powerful machine learning algorithm that uses decision/regression trees for classification and regression tasks. It excels particularly with tabular data and remains widely used due to its:
+XGBoost とは？
+--------------------
+XGBoost (eXtreme Gradient Boosting) は、分類および回帰タスクに決定木／回帰木を用いる強力な機械学習アルゴリズムです。特にテーブルデータで優れた性能を発揮し、次の理由から現在も広く使われています。
 
-- **High performance** on structured data
-- **Explainability** of predictions
-- **Computational efficiency**
+- 構造化データに対する **高い性能**
+- 予測の **説明可能性**
+- **計算効率の高さ**
 
-These examples use `DMLC XGBoost <https://github.com/dmlc/xgboost>`_, which provides:
+これらの例では `DMLC XGBoost <https://github.com/dmlc/xgboost>`_ を使用します。これは次の機能を提供します。
 
-- GPU acceleration capabilities
-- Distributed and federated learning support
-- Optimized gradient boosting implementations
+- GPU アクセラレーション機能
+- 分散学習および連合学習のサポート
+- 最適化された勾配ブースティングの実装
 
-Federated Learning Modes
-=========================
+連合学習のモード
+====================
 
-Horizontal Federated Learning
-------------------------------
-In horizontal collaboration, each participant has:
+水平連合学習
+--------------------
+水平コラボレーションでは、各参加者は次の状態にあります。
 
-- **Same features** (columns) across all sites
-- **Different data samples** (rows) at each site
-- **Equal status** as label owners
+- すべてのサイトで **同じ特徴量** （列）を持つ
+- サイトごとに **異なるデータサンプル** （行）を持つ
+- ラベル所有者として **対等な立場** にある
 
-**Example**: Multiple hospitals each have complete patient records (all features), but different patients.
+**例** : 複数の病院がそれぞれ完全な患者記録（すべての特徴量）を持っているが、患者は異なる。
 
-Vertical Federated Learning
+垂直連合学習
+--------------------
+垂直コラボレーションでは、各参加者は次の状態にあります。
+
+- サイトごとに **異なる特徴量** （列）を持つ
+- すべてのサイトで **同じデータサンプル** （行）を持つ
+- **1 つの「アクティブパーティ」** （ラベル所有者）と複数の「パッシブパーティ」が存在する
+
+**例** : 銀行と小売業者が同じ顧客に関するデータを持っているが、属性が異なる（財務情報と購買行動）。
+
+サポートされる学習モード
 ----------------------------
-In vertical collaboration, each participant has:
+NVFlare 上で実行する場合、XGBoost の通信はすべてローカルで行われ、メッセージは NVFlare の通信インフラを通じて転送されます。暗号化は XGBoost 内で暗号化プラグインによって処理されます。これは実行時にインストールできる外部コンポーネントです。
 
-- **Different features** (columns) at each site
-- **Same data samples** (rows) across all sites
-- **One "active party"** (label owner) and multiple "passive parties"
+NVFlare は次の 4 つのモードで連合学習をサポートします。
 
-**Example**: A bank and a retailer have data about the same customers, but different attributes (financial vs. shopping behavior).
+1. **HE ベースのセキュリティ保護なしの水平** - ヒストグラムベースまたはツリーベース（ツリーベースは送信前に "sum_hessian" 値を削除することでセキュア化されます）
+2. **HE ベースのセキュリティ保護なしの垂直** - ヒストグラムベース
+3. **HE ありの水平** - ヒストグラムベース（ヒストグラムを連合サーバーから保護）
+4. **HE ありの垂直** - ヒストグラムベース（勾配をパッシブパーティから保護）
 
-Supported Training Modes
--------------------------
-When running with NVFlare, all XGBoost communications are local and messages are forwarded through NVFlare's communication infrastructure. The encryption is handled in XGBoost by encryption plugins, which are external components that can be installed at runtime.
-
-NVFlare supports federated training in the following 4 modes:
-
-1. **Horizontal without HE-based security protection** - Histogram-based or tree-based (tree-based is secured by removing "sum_hessian" values before transmission)
-2. **Vertical without HE-based security protection** - Histogram-based
-3. **Horizontal with HE** - Histogram-based (histograms secured against federated server)
-4. **Vertical with HE** - Histogram-based (gradients secured against passive parties)
-
-Security Risks and Mitigations
+セキュリティリスクと緩和策
 ==============================
 
-Risks
---------------
+リスク
+------------
 
-Federated XGBoost faces three main security risks:
+連合 XGBoost には、主に 3 つのセキュリティリスクがあります。
 
-1. **Model Statistics Leakage**: The default XGBoost JSON model contains "sum_hessian" statistics that enable model inversion attacks to recover data distributions. (Reference: `TimberStrike <https://arxiv.org/abs/2506.07605>`_)
+1. **モデル統計の漏洩** : デフォルトの XGBoost JSON モデルには "sum_hessian" 統計量が含まれており、モデル反転攻撃によってデータ分布を復元できてしまいます。（参考: `TimberStrike <https://arxiv.org/abs/2506.07605>`_ ）
 
-2. **Histogram Leakage**: Gradient histograms can be exploited to reconstruct data distributions. The same model statistics of "sum_hessian" can be derived from histograms. (Reference: `TimberStrike <https://arxiv.org/abs/2506.07605>`_)
+2. **ヒストグラムの漏洩** : 勾配ヒストグラムを悪用してデータ分布を再構成できます。ヒストグラムからも同じ "sum_hessian" のモデル統計量を導出できます。（参考: `TimberStrike <https://arxiv.org/abs/2506.07605>`_ ）
 
-3. **Gradient Leakage**: Sample-wise gradients may reveal label information. (Reference: `SecureBoost <https://arxiv.org/abs/1901.08755>`_)
+3. **勾配の漏洩** : サンプル単位の勾配はラベル情報を明らかにする可能性があります。（参考: `SecureBoost <https://arxiv.org/abs/1901.08755>`_ ）
 
-Attack Surface
---------------
+攻撃対象領域
+----------------
 
-The attack surface varies by collaboration mode and party role:
+攻撃対象領域は、コラボレーションモードとパーティの役割によって異なります。
 
-**Server**: Depending on the collaboration mode, the server may have access to
+**サーバー** : コラボレーションモードに応じて、サーバーは次の情報にアクセスできる可能性があります。
 
-1. The local model:
+1. ローカルモデル:
 
-   - Horizontal tree-based:
+   - 水平ツリーベース:
 
-      - **Model Statistics Leakage** over each client's data distribution
+      - 各クライアントのデータ分布に対する **モデル統計の漏洩**
 
-2. Local histograms:
+2. ローカルヒストグラム:
 
-   - Horizontal histogram-based / vertical histogram-based:
+   - 水平ヒストグラムベース／垂直ヒストグラムベース:
 
-      - **Histogram Leakage** over each client / passive party's data distribution
+      - 各クライアント／パッシブパーティのデータ分布に対する **ヒストグラムの漏洩**
 
-3. Sample-wise gradients:
+3. サンプル単位の勾配:
 
-   - Vertical histogram-based:
+   - 垂直ヒストグラムベース:
 
-      - **Gradient Leakage** over active party's label information
+      - アクティブパーティのラベル情報に対する **勾配の漏洩**
 
-**Clients**: Depending on the collaboration mode, the clients may have access to
+**クライアント** : コラボレーションモードに応じて、クライアントは次の情報にアクセスできる可能性があります。
 
-1. The aggregated global model:
+1. 集約されたグローバルモデル:
 
-   - Horizontal tree-based:
+   - 水平ツリーベース:
 
-      - **Model Statistics Leakage** over global data distribution
+      - グローバルなデータ分布に対する **モデル統計の漏洩**
 
-2. Global histograms:
+2. グローバルヒストグラム:
 
-   - Horizontal histogram-based:
+   - 水平ヒストグラムベース:
 
-      - **Histogram Leakage** over global data distribution
+      - グローバルなデータ分布に対する **ヒストグラムの漏洩**
 
-3. Local histograms:
+3. ローカルヒストグラム:
 
-   - Vertical histogram-based:
+   - 垂直ヒストグラムベース:
 
-      - **Histogram Leakage** over each passive party's data distribution on active party
+      - アクティブパーティ上での各パッシブパーティのデータ分布に対する **ヒストグラムの漏洩**
 
-4. Sample-wise gradients:
+4. サンプル単位の勾配:
 
-   - **Gradient Leakage** over active party's label information on passive parties
+   - パッシブパーティ上でのアクティブパーティのラベル情報に対する **勾配の漏洩**
 
-Mitigations
-------------------
+緩和策
+------------
 
-The following table summarizes the available mitigations for different collaboration scenarios:
+次の表は、さまざまなコラボレーションシナリオで利用可能な緩和策をまとめたものです。
 
-.. list-table:: Mitigations by Collaboration Mode
+.. list-table:: コラボレーションモード別の緩和策
    :widths: 15 12 28 18 20 20
    :header-rows: 1
 
-   * - Collaboration Mode
-     - Algorithm
-     - Data Exchange
-     - Risk Mitigated
-     - Security Measure
-     - Implementation
-   * - **Horizontal**
-     - Tree-based
-     - Clients send locally boosted trees to server; server combines and distributes trees back to clients
-     - **Model statistics leakage** on both server and clients
-     - Remove "sum_hessian" values from JSON model
-     - Removed before clients send local trees to server
-   * - **Horizontal**
-     - Histogram-based
-     - Clients send local histograms to server; server aggregates to global histogram and distributes it back to clients
-     - **Histogram leakage** on server (client-side remain)
-     - Encrypt histograms
-     - Local histograms encrypted before transmission
-   * - **Vertical**
-     - Histogram-based
-     - Active party computes gradients; routed by server, passive parties receive gradients, compute histograms, and send them back to active party through server
-     - **Histogram leakage** on server (active party-side remain), **Gradient leakage** on both server and passive parties
-     - **Primary**: Encrypt gradients; **Secondary**: Mask feature ownership in split values
-     - Gradients encrypted before sending out to passive parties
+   * - コラボレーションモード
+     - アルゴリズム
+     - データ交換
+     - 緩和されるリスク
+     - セキュリティ対策
+     - 実装
+   * - **水平**
+     - ツリーベース
+     - クライアントがローカルでブーストしたツリーをサーバーに送信し、サーバーがそれらを統合してクライアントに配布します
+     - サーバーとクライアントの両方における **モデル統計の漏洩**
+     - JSON モデルから "sum_hessian" 値を削除
+     - クライアントがローカルツリーをサーバーに送信する前に削除されます
+   * - **水平**
+     - ヒストグラムベース
+     - クライアントがローカルヒストグラムをサーバーに送信し、サーバーがグローバルヒストグラムに集約してクライアントに配布します
+     - サーバーにおける **ヒストグラムの漏洩** （クライアント側は残存）
+     - ヒストグラムを暗号化
+     - 送信前にローカルヒストグラムを暗号化します
+   * - **垂直**
+     - ヒストグラムベース
+     - アクティブパーティが勾配を計算し、サーバーによってルーティングされ、パッシブパーティが勾配を受け取ってヒストグラムを計算し、サーバー経由でアクティブパーティに返します
+     - サーバーにおける **ヒストグラムの漏洩** （アクティブパーティ側は残存）、サーバーとパッシブパーティの両方における **勾配の漏洩**
+     - **主目的** : 勾配を暗号化、 **副次目的** : 分割値における特徴量の所有者をマスク
+     - パッシブパーティへ送信する前に勾配を暗号化します
 
-**Notes:**
+**注記:**
 
-- **Vertical histogram-based**:
+- **垂直ヒストグラムベース** :
 
-  - **Primary goal**: Protect sample gradients from passive parties (critical)
-  - **Secondary goal**: Hide split values from non-feature owners (desirable but lower risk)
+  - **主目的** : パッシブパーティからサンプル勾配を保護する（重要）
+  - **副次目的** : 特徴量の非所有者から分割値を隠す（望ましいがリスクは低い）
 
-- **The remaining two risks** will be discussed in the `Advanced Topics: Future Security Scenarios`_ section.
+- **残る 2 つのリスク** については `高度なトピック: 将来のセキュリティシナリオ`_ の節で説明します。
 
-TimberStrike Attack Analysis
------------------------------
+TimberStrike 攻撃の分析
+----------------------------
 
-TimberStrike is a model inversion attack that exploits ``sum_hessian`` values and tree structure to estimate training data distributions. Empirical results vary significantly with dataset scale:
+TimberStrike は、 ``sum_hessian`` 値とツリー構造を悪用して学習データの分布を推定するモデル反転攻撃です。実験結果はデータセットの規模によって大きく異なります。
 
-.. list-table:: Reconstruction Accuracy Results
+.. list-table:: 再構成精度の結果
    :widths: 20 15 15 25
    :header-rows: 1
 
-   * - Dataset
-     - Samples
-     - Features
-     - Reconstruction Accuracy
-   * - Diabetes (toy)
+   * - データセット
+     - サンプル数
+     - 特徴量数
+     - 再構成精度
+   * - Diabetes（トイデータ）
      - 768
      - 8
      - 65.80%
-   * - CreditCard (realistic)
+   * - CreditCard（現実的なデータ）
      - 284,807
      - 30
      - 8.72%
 
 .. note::
 
-   The above results were obtained **before** NVFlare's ``sum_hessian`` removal—i.e., with full model statistics available to the attacker. With NVFlare's built-in protection enabled (see below), TimberStrike's primary information source is eliminated, which is expected to substantially degrade attack performance. "Reconstruction accuracy" is a distance-tolerance metric (not exact recovery); see the `TimberStrike paper <https://arxiv.org/abs/2506.07605>`_ for the precise definition.
+   上記の結果は、NVFlare による ``sum_hessian`` の削除 **以前** に得られたものです。つまり、攻撃者が完全なモデル統計量を利用できる状態でのものです。NVFlare の組み込み保護を有効にすると（下記参照）、TimberStrike の主要な情報源が排除されるため、攻撃性能は大幅に低下すると期待されます。「再構成精度」は距離の許容度に基づく指標であり（厳密な復元ではありません）、正確な定義については `TimberStrike の論文 <https://arxiv.org/abs/2506.07605>`_ を参照してください。
 
-Risk Assessment
-~~~~~~~~~~~~~~~
+リスク評価
+~~~~~~~~~~~~~~
 
-On practical datasets (`CreditCard <https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud>`_), TimberStrike achieves <10% accuracy even with ``sum_hessian`` available. To put this in perspective, we use `NeMo SafeSynthesizer <https://docs.nvidia.com/nemo/microservices/latest/studio/safe-synthesizer.html>`_ as a reference. SafeSynthesizer is a privacy-focused synthetic data generation tool purpose-built for compliance (GDPR, HIPAA), with built-in membership inference protection and optional differential privacy guarantees. Even with these privacy safeguards, its synthetic data still achieves 51.98% proximity to real samples, because preserving data utility requires some statistical similarity. TimberStrike's 8.72% falls well below this reference point. Acceptable privacy levels are inherently data-dependent; users are encouraged to run similar comparisons on their own datasets.
+実用的なデータセット（ `CreditCard <https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud>`_ ）では、 ``sum_hessian`` が利用可能であっても TimberStrike の精度は 10% 未満です。これを相対的に理解するため、参考として `NeMo SafeSynthesizer <https://docs.nvidia.com/nemo/microservices/latest/studio/safe-synthesizer.html>`_ を用います。SafeSynthesizer は、コンプライアンス (GDPR、HIPAA) を目的として設計されたプライバシー重視の合成データ生成ツールであり、メンバーシップ推論攻撃への保護を組み込み、オプションで差分プライバシー保証も提供します。こうしたプライバシー保護策を備えていてもなお、その合成データは実サンプルに対して 51.98% の近接度を達成します。これは、データの有用性を保つにはある程度の統計的類似性が必要だからです。TimberStrike の 8.72% は、この参照点を大きく下回ります。許容できるプライバシー水準は本質的にデータ依存です。ユーザーの皆さんには、ご自身のデータセットで同様の比較を実施することをお勧めします。
 
-Protection
-~~~~~~~~~~
+保護
+~~~~~~~~
 
-- **Built-in**: NVFlare removes ``sum_hessian`` from model transmissions in horizontal tree-based mode, eliminating the attack's primary information source.
-- **Additional**: Increase ``min_child_weight`` to raise the minimum sum of instance weight (hessian) required per leaf, resulting in coarser tree structure with fewer splits. The `TimberStrike paper <https://arxiv.org/abs/2506.07605>`_ shows that tree depth (and by extension, number of splits) directly impacts reconstruction accuracy, so reducing tree granularity is expected to limit information exposure. Optimal values are task-dependent; refer to the paper for analysis of the privacy-utility trade-off. This parameter can be added to ``xgb_params`` in the recipe:
+- **組み込み** : NVFlare は、水平ツリーベースモードにおいてモデル送信から ``sum_hessian`` を削除し、この攻撃の主要な情報源を排除します。
+- **追加対策** : ``min_child_weight`` を大きくして、リーフごとに必要となるインスタンス重み（ヘシアン）の最小合計を引き上げます。これにより、分割の少ない粗いツリー構造になります。 `TimberStrike の論文 <https://arxiv.org/abs/2506.07605>`_ では、ツリーの深さ（ひいては分割数）が再構成精度に直接影響することが示されており、ツリーの粒度を粗くすることで情報の露出を抑えられると期待されます。最適な値はタスク依存です。プライバシーと有用性のトレードオフの分析については論文を参照してください。このパラメータはレシピの ``xgb_params`` に追加できます。
 
   .. code-block:: python
 
@@ -227,130 +227,130 @@ Protection
      )
      set_per_site_config(recipe, per_site_config)
 
-Closest Reconstructed Samples (CreditCard)
+最も近い再構成サンプル (CreditCard)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each example below shows the closest match (minimum distance) from its respective method. Note that these are different source records, shown to illustrate the reconstruction quality of each method independently.
+以下の各例は、それぞれの手法における最も近い一致（最小距離）を示しています。これらは異なる元レコードであり、各手法の再構成品質を独立に示すために掲載している点に注意してください。
 
-*TimberStrike (8.72% accuracy)*:
+*TimberStrike（精度 8.72%）*:
 
 .. code-block::
 
    Original:      [-27.0, -25.3, -12.1, -1.53, -3.67, -1.82, -3.34, -26.6, 1.08, -0.42, 3.61, -5.42, ...]
    Reconstructed: [-30.0, -29.2, -10.5, 7.60, 2.20, -0.11, 4.55, -5.84, 5.50, 4.38, 3.07, 1.26, ...]
 
-*SafeSynthesizer (51.98% accuracy)*:
+*SafeSynthesizer（精度 51.98%）*:
 
 .. code-block::
 
    Original:      [2.06, -0.03, -1.06, 0.42, -0.13, -1.21, 0.20, -0.35, 0.51, 0.07, -0.70, 0.54, ...]
    Reconstructed: [2.06, -0.05, -1.07, 0.41, -0.12, -1.20, 0.20, -0.34, 0.50, 0.06, -0.68, 0.53, ...]
 
-TimberStrike shows substantial deviations even on its closest match (e.g., feature 4: -1.53 → 7.60), while SafeSynthesizer's closest match differs by only 0.01–0.02 per feature yet remains privacy-compliant by design. This suggests TimberStrike's reconstructions may not constitute a meaningful privacy risk for a given dataset like CreditCard.
+TimberStrike は、最も近い一致においてさえ大きな乖離を示します（例: 特徴量 4: -1.53 → 7.60）。一方、SafeSynthesizer の最も近い一致は特徴量ごとに 0.01〜0.02 しか差がないにもかかわらず、設計上プライバシー要件を満たしています。このことは、CreditCard のようなデータセットにおいて、TimberStrike の再構成が意味のあるプライバシーリスクを構成しない可能性を示唆しています。
 
-GPU Acceleration
-================
+GPU アクセラレーション
+============================
 
-Federated XGBoost supports two levels of GPU acceleration:
+連合 XGBoost は 2 段階の GPU アクセラレーションをサポートします。
 
-1. XGBoost GPU Training
------------------------
-Enable GPU-accelerated training by setting ``tree_method='gpu_hist'`` when initializing the XGBoost model.
+1. XGBoost の GPU 学習
+----------------------------
+XGBoost モデルの初期化時に ``tree_method='gpu_hist'`` を設定することで、GPU による学習の高速化を有効にできます。
 
-- **Performance**: Up to **4.15x speedup** vs. CPU training (`GPU XGBoost Blog <https://developer.nvidia.com/blog/gradient-boosting-decision-trees-xgboost-cuda/>`_)
+- **性能** : CPU 学習に対して最大 **4.15 倍の高速化** （ `GPU XGBoost Blog <https://developer.nvidia.com/blog/gradient-boosting-decision-trees-xgboost-cuda/>`_ ）
 
-2. GPU-Accelerated Homomorphic Encryption (HE)
------------------------------------------------
-NVFlare provides GPU acceleration for HE operations using specialized encryption plugins.
+2. GPU アクセラレーションによる準同型暗号 (HE)
+--------------------------------------------------
+NVFlare は、専用の暗号化プラグインを用いて HE 演算の GPU アクセラレーションを提供します。
 
-- **Performance**: Up to **36.5x speedup** vs. CPU encryption (`NVFlare Secure XGBoost Blog <https://developer.nvidia.com/blog/security-for-data-privacy-in-federated-learning-with-cuda-accelerated-homomorphic-encryption-in-xgboost/>`_)
+- **性能** : CPU 暗号化に対して最大 **36.5 倍の高速化** （ `NVFlare Secure XGBoost Blog <https://developer.nvidia.com/blog/security-for-data-privacy-in-federated-learning-with-cuda-accelerated-homomorphic-encryption-in-xgboost/>`_ ）
 
-We will refer to these as "CPU/GPU XGBoost" and "CPU/GPU Encryption".
+これらをそれぞれ「CPU/GPU XGBoost」および「CPU/GPU 暗号化」と呼ぶことにします。
 
-Security Implementation Matrix
+セキュリティ実装マトリクス
 ==============================
 
-The following table shows which security measures are supported across different hardware configurations:
+次の表は、異なるハードウェア構成でどのセキュリティ対策がサポートされるかを示しています。
 
-.. list-table:: Security Implementation Matrix
+.. list-table:: セキュリティ実装マトリクス
    :widths: 18 30 13 13 13 13
    :header-rows: 1
 
-   * - Collaboration Mode
-     - Security Goal
-     - CPU XGBoost + CPU Encryption
-     - CPU XGBoost + GPU Encryption
-     - GPU XGBoost + CPU Encryption
-     - GPU XGBoost + GPU Encryption
-   * - **Horizontal**
-     - Histogram protection against server
+   * - コラボレーションモード
+     - セキュリティ目標
+     - CPU XGBoost + CPU 暗号化
+     - CPU XGBoost + GPU 暗号化
+     - GPU XGBoost + CPU 暗号化
+     - GPU XGBoost + GPU 暗号化
+   * - **水平**
+     - サーバーに対するヒストグラムの保護
      - ✅
      - N/A\*
      - ✅
      - N/A\*
-   * - **Vertical**
-     - **Primary**: Gradient protection
+   * - **垂直**
+     - **主目的** : 勾配の保護
      - ✅
      - ✅
      - ✅
      - ✅
-   * - **Vertical**
-     - **Secondary**: Split value masking
+   * - **垂直**
+     - **副次目的** : 分割値のマスク
      - ✅
      - ✅
      - ❌
      - ❌
 
-**\*Note**: Horizontal histogram encryption is not computationally intensive (encrypting histogram vectors), so GPU encryption is not needed.
+**\*注記** : 水平ヒストグラムの暗号化は計算負荷が高くない（ヒストグラムベクトルを暗号化するだけ）ため、GPU 暗号化は必要ありません。
 
-**Implementation Notes**:
+**実装上の注記** :
 
-- **Vertical mode primary goal** (gradient protection): Fully supported across all configurations
-- **Vertical mode secondary goal** (split value masking): Only supported with CPU XGBoost
+- **垂直モードの主目的** （勾配の保護）: すべての構成で完全にサポートされます
+- **垂直モードの副次目的** （分割値のマスク）: CPU XGBoost でのみサポートされます
 
-Advanced Topics: Future Security Scenarios
-===========================================
+高度なトピック: 将来のセキュリティシナリオ
+==============================================
 
-The following security scenarios are not currently implemented in our solution. Users should be aware that **plaintext histogram communication** can reveal data distribution information, which may enable data reconstruction attacks as stated above. On the other hand, similar statistics can also be derived from common practices such as `federated statistics <https://nvflare.readthedocs.io/en/main/examples/federated_statistics_overview.html>`_. As the attack potency depends on multiple factors including data complexity, model hyperparameters, and the data distribution information that can be utilized, the corresponding indications of a certain type of attack can vary significantly. This is still an open and active research area.
+以下のセキュリティシナリオは、現在の本ソリューションでは実装されていません。ユーザーは、 **平文でのヒストグラム通信** がデータ分布の情報を明らかにし、前述のようなデータ再構成攻撃を可能にし得ることを認識しておく必要があります。一方で、同様の統計量は `federated statistics <https://nvflare.readthedocs.io/en/main/examples/federated_statistics_overview.html>`_ のような一般的な手法からも導出できます。攻撃の有効性は、データの複雑さ、モデルのハイパーパラメータ、利用可能なデータ分布情報など複数の要因に依存するため、ある種の攻撃に対する示唆は大きく変動し得ます。これは依然として未解決かつ活発な研究領域です。
 
-Potential Future Enhancements to Protect Against All Parties
--------------------------------------------------------------
+すべてのパーティに対する保護のための将来的な機能強化候補
+------------------------------------------------------------
 
-.. list-table:: Future Security Scenarios
+.. list-table:: 将来のセキュリティシナリオ
    :widths: 15 12 20 25 28
    :header-rows: 1
 
-   * - Collaboration Mode
-     - Algorithm
-     - Remaining Security Risk
-     - Possible Approach
-     - Challenges
-   * - **Horizontal**
-     - Histogram-based
-     - Histogram leakage over global data distribution on clients (in addition to server as addressed above)
-     - Confidential computing, advanced HE
-     - HE compatibility issue [*]_ with server performing calculations and distributing only final splits
-   * - **Vertical**
-     - Histogram-based
-     - Histogram leakage over each passive party's data distribution on active party (in addition to Histogram leakage on server, and Gradient leakage on server and passive parties as addressed above)
-     - Local data preprocessing and anonymization, confidential computing, advanced HE
-     - HE compatibility issue [*]_ with passive parties performing calculations and sending only final splits
+   * - コラボレーションモード
+     - アルゴリズム
+     - 残存するセキュリティリスク
+     - 想定されるアプローチ
+     - 課題
+   * - **水平**
+     - ヒストグラムベース
+     - クライアントにおけるグローバルなデータ分布のヒストグラム漏洩（上記で対処済みのサーバーに加えて）
+     - コンフィデンシャルコンピューティング、先進的な HE
+     - サーバーが計算を行い最終的な分割のみを配布する方式における HE の互換性の課題 [*]_
+   * - **垂直**
+     - ヒストグラムベース
+     - アクティブパーティにおける各パッシブパーティのデータ分布のヒストグラム漏洩（上記で対処済みのサーバーにおけるヒストグラム漏洩、およびサーバーとパッシブパーティにおける勾配漏洩に加えて）
+     - ローカルでのデータ前処理と匿名化、コンフィデンシャルコンピューティング、先進的な HE
+     - パッシブパーティが計算を行い最終的な分割のみを送信する方式における HE の互換性の課題 [*]_
 
-.. [*] **HE Compatibility Challenge**: Current Homomorphic Encryption schemes do not efficiently support operations like ciphertext division and argmax, which are required for performing split calculations on encrypted data. Advanced HE features are needed to support approaches that "perform calculations until splits on the server/passive parties."
+.. [*] **HE の互換性に関する課題** : 現在の準同型暗号方式は、暗号文の除算や argmax といった演算を効率的にサポートしていません。これらは暗号化されたデータ上で分割計算を行うために必要です。「サーバー／パッシブパーティ上で分割まで計算を行う」アプローチをサポートするには、先進的な HE の機能が必要です。
 
-Prerequisites
-=============
+前提条件
+==============
 
-Required Python Packages
-------------------------
+必要な Python パッケージ
+----------------------------
 
-NVFlare 2.7.2 or above,
+NVFlare 2.7.2 以上、
 
 .. code-block:: bash
 
     pip install nvflare~=2.7.2
 
-Federated Secure XGBoost, which can be installed from the binary build using this command,
+連合セキュア XGBoost。次のコマンドでバイナリビルドからインストールできます。
 
 .. code-block:: bash
 
@@ -358,61 +358,61 @@ Federated Secure XGBoost, which can be installed from the binary build using thi
 
 .. note::
 
-   The xgboost build environment may depend on specific numpy versions that require Python < 3.12.
+   xgboost のビルド環境は、Python < 3.12 を必要とする特定の numpy バージョンに依存する場合があります。
 
-or in case you need to get the most current build of XGBoost,
+または、最新の XGBoost ビルドを取得する必要がある場合は、
 
 .. code-block:: bash
 
     pip install https://s3-us-west-2.amazonaws.com/xgboost-nightly-builds/federated-secure/`curl -s https://s3-us-west-2.amazonaws.com/xgboost-nightly-builds/federated-secure/meta.json | grep -o 'xgboost-2\.2.*whl'|sed -e 's/+/%2B/'`
 
-``TenSEAL`` package is needed for horizontal secure training,
+水平セキュア学習には ``TenSEAL`` パッケージが必要です。
 
 .. code-block:: bash
 
     pip install tenseal
 
-``ipcl_python`` package is required for vertical secure training if **nvflare** plugin is used. This package is not needed if **cuda_paillier** plugin is used.
+**nvflare** プラグインを使用する場合、垂直セキュア学習には ``ipcl_python`` パッケージが必要です。 **cuda_paillier** プラグインを使用する場合、このパッケージは不要です。
 
 .. code-block:: bash
 
     pip install ipcl-python
 
-This package is only available for Python 3.8 on PyPI. For other versions of python, it needs to be installed from github,
+このパッケージは PyPI では Python 3.8 用のみ提供されています。他のバージョンの Python では、GitHub からインストールする必要があります。
 
 .. code-block:: bash
 
     pip install git+https://github.com/intel/pailliercryptolib_python.git@development
 
-System Environments
--------------------
-To support secure training, several homomorphic encryption libraries are used. Those libraries require Intel CPU or Nvidia GPU.
+システム環境
+----------------
+セキュア学習をサポートするため、いくつかの準同型暗号ライブラリが使用されます。これらのライブラリは Intel CPU または NVIDIA GPU を必要とします。
 
-Linux is the preferred OS. It's tested extensively under Ubuntu 22.4.
+Linux が推奨 OS です。Ubuntu 22.4 で広範にテストされています。
 
-The following docker image is recommended for GPU training:
+GPU 学習には次の Docker イメージが推奨されます。
 
 ::
 
     nvcr.io/nvidia/pytorch:24.03-py3
 
-Building Encryption Plugins
----------------------------
+暗号化プラグインのビルド
+----------------------------
 
-The secure training requires encryption plugins, which need to be built from the source code
-for your specific environment.
+セキュア学習には暗号化プラグインが必要であり、これはご自身の環境に合わせてソースコードから
+ビルドする必要があります。
 
-To build the plugins, check out the NVFlare source code from https://github.com/NVIDIA/NVFlare and follow the
-instructions in :github_nvflare_link:`this document <integration/xgboost/encryption_plugins/README.md>`.
+プラグインをビルドするには、https://github.com/NVIDIA/NVFlare から NVFlare のソースコードをチェックアウトし、
+:github_nvflare_link:`this document <integration/xgboost/encryption_plugins/README.md>` の手順に従ってください。
 
 .. _xgb_provisioning:
 
-NVFlare Provisioning
---------------------
-For horizontal secure training, the NVFlare system must be provisioned with a homomorphic encryption context. The HEBuilder in ``project.yml`` is used to achieve this.
-An example configuration can be found at :github_nvflare_link:`secure_project.yml <examples/advanced/cifar10/cifar10-real-world/workspaces/secure_project.yml>`.
+NVFlare のプロビジョニング
+------------------------------
+水平セキュア学習では、NVFlare システムを準同型暗号コンテキスト付きでプロビジョニングする必要があります。これには ``project.yml`` の HEBuilder を使用します。
+設定例は :github_nvflare_link:`secure_project.yml <examples/advanced/cifar10/cifar10-real-world/workspaces/secure_project.yml>` にあります。
 
-This is a snippet of the ``secure_project.yml`` file with the HEBuilder:
+以下は HEBuilder を含む ``secure_project.yml`` ファイルの抜粋です。
 
 .. code-block:: yaml
 
@@ -442,60 +442,60 @@ This is a snippet of the ``secure_project.yml`` file with the HEBuilder:
     - path: nvflare.lighter.impl.signature.SignatureBuilder
 
 
-Data Preparation
+データの準備
 ================
-Data must be properly formatted for federated XGBoost training based on the collaboration mode.
+データは、コラボレーションモードに応じて連合 XGBoost 学習用に適切な形式にしておく必要があります。
 
-Horizontal Training
--------------------
-For horizontal training, the datasets on all clients must share the same columns (features). Each client has different data samples (rows).
+水平学習
+--------------
+水平学習では、すべてのクライアント上のデータセットが同じ列（特徴量）を共有している必要があります。各クライアントは異なるデータサンプル（行）を持ちます。
 
-Vertical Training
------------------
-For vertical training, the datasets on all clients contain different columns (features), but must share overlapping rows (data samples). The label column is typically assigned to site-1 (the "active party") by default.
+垂直学習
+--------------
+垂直学習では、すべてのクライアント上のデータセットは異なる列（特徴量）を含みますが、重複する行（データサンプル）を共有している必要があります。ラベル列は通常、デフォルトで site-1（「アクティブパーティ」）に割り当てられます。
 
-For more details on vertical split preprocessing, refer to the :github_nvflare_link:`Vertical XGBoost Example <examples/advanced/vertical_xgboost>`.
+垂直分割の前処理の詳細については、 :github_nvflare_link:`Vertical XGBoost Example <examples/advanced/vertical_xgboost>` を参照してください。
 
-XGBoost Plugin Configuration
+XGBoost プラグインの設定
 ============================
-XGBoost requires an encryption plugin to handle secure training. Two plugins are available:
+XGBoost はセキュア学習を扱うために暗号化プラグインを必要とします。利用可能なプラグインは 2 つあります。
 
-- **cuda_paillier**: The default plugin. This plugin uses GPU for cryptographic operations.
-- **nvflare**: This plugin forwards data locally to NVFlare process for encryption.
-
-.. note::
-
-   All clients must use the same plugin. When different plugins are used in different clients,
-   the behavior of federated XGBoost is undetermined, which can cause the job to crash.
-
-The **cuda_paillier** plugin requires NVIDIA GPUs that support compute capability 7.0 or higher. Also, CUDA
-12.2 or 12.4 must be installed. Please refer to https://developer.nvidia.com/cuda-gpus for more information.
-
-The two included plugins are only different in vertical secure training. For horizontal secure training, both
-plugins work exactly the same by forwarding the data to NVFlare for encryption.
-
-Plugin Configuration by Training Mode
---------------------------------------
-
-Vertical (Non-secure)
-~~~~~~~~~~~~~~~~~~~~~
-No plugin is needed.
-
-Horizontal (Non-secure)
-~~~~~~~~~~~~~~~~~~~~~~~
-No plugin is needed.
-
-Vertical Secure
-~~~~~~~~~~~~~~~
-Both plugins can be used for vertical secure training.
-
-The default cuda_paillier plugin is preferred because it uses GPU for faster cryptographic operations.
+- **cuda_paillier** : デフォルトのプラグインです。このプラグインは暗号演算に GPU を使用します。
+- **nvflare** : このプラグインはデータをローカルの NVFlare プロセスに転送して暗号化を行います。
 
 .. note::
 
-    **cuda_paillier** plugin requires NVIDIA GPUs that support compute capability 7.0 or higher. Please refer to https://developer.nvidia.com/cuda-gpus for more information.
+   すべてのクライアントが同じプラグインを使用しなければなりません。クライアントごとに異なるプラグインを使用した場合、
+   連合 XGBoost の挙動は不定となり、ジョブがクラッシュする可能性があります。
 
-If you see the following errors in the log, it means either no GPU is detected or the GPU does not meet the requirements:
+**cuda_paillier** プラグインは、compute capability 7.0 以上をサポートする NVIDIA GPU を必要とします。また、CUDA
+12.2 または 12.4 がインストールされている必要があります。詳細は https://developer.nvidia.com/cuda-gpus を参照してください。
+
+同梱される 2 つのプラグインは、垂直セキュア学習においてのみ異なります。水平セキュア学習では、どちらのプラグインも
+データを NVFlare に転送して暗号化するという点でまったく同じ動作をします。
+
+学習モード別のプラグイン設定
+--------------------------------
+
+垂直（非セキュア）
+~~~~~~~~~~~~~~~~~~~~~~
+プラグインは不要です。
+
+水平（非セキュア）
+~~~~~~~~~~~~~~~~~~~~~~
+プラグインは不要です。
+
+垂直セキュア
+~~~~~~~~~~~~~~~~
+垂直セキュア学習には、どちらのプラグインも使用できます。
+
+暗号演算をより高速に行うために GPU を使用するため、デフォルトの cuda_paillier プラグインが推奨されます。
+
+.. note::
+
+    **cuda_paillier** プラグインは、compute capability 7.0 以上をサポートする NVIDIA GPU を必要とします。詳細は https://developer.nvidia.com/cuda-gpus を参照してください。
+
+ログに次のエラーが表示される場合、GPU が検出されていないか、GPU が要件を満たしていないことを意味します。
 
 ::
 
@@ -503,8 +503,8 @@ If you see the following errors in the log, it means either no GPU is detected o
     2024-07-01 12:19:15,683 - SimulatorClientRunner - ERROR - run_client_thread error: EOFError:
 
 
-In this case, the nvflare plugin can be used to perform encryption on CPUs, which requires the ipcl-python package.
-The plugin can be configured in the ``local/resources.json`` file on clients:
+この場合、CPU 上で暗号化を実行するために nvflare プラグインを使用できます。これには ipcl-python パッケージが必要です。
+プラグインはクライアント上の ``local/resources.json`` ファイルで設定できます。
 
 .. code-block:: json
 
@@ -515,10 +515,10 @@ The plugin can be configured in the ``local/resources.json`` file on clients:
         }
     }
 
-Where **name** is the plugin name and **path** is the full path of the plugin including the library file name.
-The **path** is optional, the default value is the library distributed with NVFlare for the plugin.
+ここで **name** はプラグイン名、 **path** はライブラリファイル名を含むプラグインのフルパスです。
+**path** は省略可能で、デフォルト値はそのプラグイン用に NVFlare に同梱されているライブラリです。
 
-The following environment variables can be used to override the values in the JSON,
+次の環境変数を使用して、JSON 内の値を上書きできます。
 
 .. code-block:: bash
 
@@ -527,22 +527,22 @@ The following environment variables can be used to override the values in the JS
 
 .. note::
 
-   When running with the NVFlare simulator, the plugin must be configured using environment variables,
-   as it does not support resources.json.
+   NVFlare シミュレーターで実行する場合、resources.json がサポートされないため、
+   プラグインは環境変数を使用して設定する必要があります。
 
-Horizontal Secure
-~~~~~~~~~~~~~~~~~
-The plugin setup is the same as vertical secure.
+水平セキュア
+~~~~~~~~~~~~~~~~
+プラグインのセットアップは垂直セキュアと同じです。
 
-This mode requires the tenseal package for all plugins.
-The provisioning of NVFlare systems must include tenseal context.
-See :ref:`xgb_provisioning` for details.
+このモードでは、すべてのプラグインで tenseal パッケージが必要です。
+NVFlare システムのプロビジョニングには tenseal コンテキストを含める必要があります。
+詳細は :ref:`xgb_provisioning` を参照してください。
 
-For simulator, the tenseal context generated by provisioning needs to be copied to the startup folder,
+シミュレーターの場合、プロビジョニングで生成された tenseal コンテキストを startup フォルダにコピーする必要があります。
 
 ``simulator_workspace/startup/client_context.tenseal``
 
-For example,
+たとえば、
 
 .. code-block:: bash
 
@@ -550,44 +550,44 @@ For example,
     mkdir -p /tmp/simulator_workspace/startup
     cp /tmp/poc_workspace/example_project/prod_00/site-1/startup/client_context.tenseal /tmp/simulator_workspace/startup
 
-The server_context.tenseal file is not needed.
+server_context.tenseal ファイルは不要です。
 
-Job Configuration
-=================
+ジョブの設定
+================
 .. _secure_xgboost_controller:
 
-Controller
-----------
+コントローラー
+------------------
 
-On the server side, the following controller must be configured in workflows,
+サーバー側では、workflows に次のコントローラーを設定する必要があります。
 
 ``nvflare.app_opt.xgboost.histogram_based_v2.fed_controller.XGBFedController``
 
-Even though the XGBoost training is performed on clients, the parameters are configured on the server so all clients share the same configuration. 
-XGBoost parameters are defined here, https://xgboost.readthedocs.io/en/stable/python/python_intro.html#setting-parameters
+XGBoost の学習はクライアント上で実行されますが、すべてのクライアントが同じ設定を共有するように、パラメータはサーバー側で設定します。
+XGBoost のパラメータは https://xgboost.readthedocs.io/en/stable/python/python_intro.html#setting-parameters で定義されています。
 
-- **num_rounds**: Number of training rounds.
-- **data_split_mode**: Same as XGBoost data_split_mode parameter, 0 for horizontal, 1 for vertical.
-- **secure_training**: If true, XGBoost will train in secure mode using the plugin.
-- **xgb_params**: The training parameters defined in this dict are passed to XGBoost as **params**, the boost parameter.
-- **xgb_options**: This dict contains other optional parameters passed to XGBoost. Currently, only **early_stopping_rounds** is supported.
-- **client_ranks**: A dict that maps client name to rank.
+- **num_rounds** : 学習ラウンド数。
+- **data_split_mode** : XGBoost の data_split_mode パラメータと同じで、水平の場合は 0、垂直の場合は 1 です。
+- **secure_training** : true の場合、XGBoost はプラグインを使用してセキュアモードで学習します。
+- **xgb_params** : この dict で定義された学習パラメータは、ブーストパラメータである **params** として XGBoost に渡されます。
+- **xgb_options** : この dict には XGBoost に渡すその他のオプションパラメータが含まれます。現在は **early_stopping_rounds** のみがサポートされています。
+- **client_ranks** : クライアント名をランクにマッピングする dict です。
 
-Executor
---------
+エグゼキューター
+--------------------
 
-On the client side, the following executor must be configured in executors,
+クライアント側では、executors に次のエグゼキューターを設定する必要があります。
 
 ``nvflare.app_opt.xgboost.histogram_based_v2.fed_executor.FedXGBHistogramExecutor``
 
-Only one parameter is required for executor,
+エグゼキューターに必要なパラメータは 1 つだけです。
 
-- **data_loader_id**: The component ID of Data Loader
+- **data_loader_id** : データローダーのコンポーネント ID
 
-Data Loader
------------
+データローダー
+------------------
 
-On the client side, a data loader must be configured in the components. The CSVDataLoader can be used if the data is pre-processed. For example,
+クライアント側では、components にデータローダーを設定する必要があります。データが前処理済みであれば CSVDataLoader を使用できます。たとえば、
 
 .. code-block:: json
 
@@ -600,16 +600,16 @@ On the client side, a data loader must be configured in the components. The CSVD
     }
 
 
-If the data requires any special processing, a custom loader can be implemented. The loader must implement the XGBDataLoader interface.
+データに特別な処理が必要な場合は、カスタムローダーを実装できます。ローダーは XGBDataLoader インターフェースを実装する必要があります。
 
 
-Job Examples
-============
+ジョブの例
+==============
 
-Vertical Training
------------------
+垂直学習
+--------------
 
-Here are the configuration files for a vertical secure training job. If encryption is not needed, just change the ``secure_training`` arg to false.
+以下は垂直セキュア学習ジョブの設定ファイルです。暗号化が不要な場合は、 ``secure_training`` 引数を false に変更するだけです。
 
 .. code-block::
 
@@ -681,10 +681,10 @@ Here are the configuration files for a vertical secure training job. If encrypti
     }
 
 
-Horizontal Training
--------------------
+水平学習
+--------------
 
-The configuration for horizontal training is the same as vertical except ``data_split_mode`` is 0 and the data loader must point to horizontal split data.
+水平学習の設定は、 ``data_split_mode`` が 0 であることと、データローダーが水平分割データを指す必要があることを除き、垂直学習と同じです。
 
 .. code-block:: json
    :caption: config_fed_server.json
@@ -756,33 +756,33 @@ The configuration for horizontal training is the same as vertical except ``data_
         ]
     }
 
-Pre-Trained Models
+学習済みモデル
 ==================
-To continue training using a pre-trained model, the model can be placed in the job folder with the path and name
-of ``custom/model.json``.
+学習済みモデルを使って学習を継続するには、そのモデルを ``custom/model.json`` というパスと名前で
+ジョブフォルダに配置します。
 
-Every site should share the same ``model.json``. The result of previous training with the same dataset can be used as the input model.
+すべてのサイトが同じ ``model.json`` を共有する必要があります。同じデータセットでの以前の学習結果を入力モデルとして使用できます。
 
-When a pre-trained model is detected, NVFlare prints following line in the log:
+学習済みモデルが検出されると、NVFlare はログに次の行を出力します。
 
 ::
 
     INFO - Pre-trained model is used: /tmp/nvflare/poc/example_project/prod_00/site-1/startup/../996ac44f-e784-4117-b365-24548f1c490d/app_site-1/custom/model.json
 
 
-Performance Tuning
-==================
-Timeouts
---------
-For secure training, the HE operations are very slow. If a large dataset is used, several timeout values need
-to be adjusted.
+パフォーマンスチューニング
+==============================
+タイムアウト
+----------------
+セキュア学習では、HE 演算が非常に低速です。大きなデータセットを使用する場合、いくつかのタイムアウト値を
+調整する必要があります。
 
-The XGBoost messages are transferred between client and server using
-Reliable Messages (:class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`). The following parameters
-in executor arguments control the timeout behavior:
+XGBoost のメッセージは、Reliable Messages
+(:class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`) を使用してクライアントとサーバーの間で転送されます。エグゼキューターの引数にある次のパラメータが
+タイムアウトの挙動を制御します。
 
-    - **per_msg_timeout**: Timeout in seconds for each message.
-    - **tx_timeout**: Timeout for the whole transaction in seconds. This is the total time to wait for a response, accounting for all retry attempts.
+    - **per_msg_timeout** : 各メッセージのタイムアウト（秒）。
+    - **tx_timeout** : トランザクション全体のタイムアウト（秒）。これは、すべての再試行を含めた応答待ちの合計時間です。
 
 .. code-block::
    :caption: config_fed_client.json
@@ -810,9 +810,9 @@ in executor arguments control the timeout behavior:
         ...
     }
 
-Number of Clients
------------------
-The default configuration can only handle 20 clients. This parameter needs to be adjusted if more clients are involved in the training:
+クライアント数
+------------------
+デフォルトの設定では 20 クライアントまでしか扱えません。学習により多くのクライアントが参加する場合は、このパラメータを調整する必要があります。
 
 .. code-block::
    :caption: config_fed_client.json
@@ -825,8 +825,8 @@ The default configuration can only handle 20 clients. This parameter needs to be
     }
 
 
-Additional Resources
-====================
+追加のリソース
+==================
 
 - `NVIDIA FLARE Documentation <https://nvflare.readthedocs.io/>`_
 - `XGBoost Documentation <https://xgboost.readthedocs.io/>`_
