@@ -1146,13 +1146,13 @@ PersistentVolume にバインドする場合にのみ使用してください。
    /var/tmp/nvflare/workspace/startup
    /var/tmp/nvflare/workspace/local
 
-Use the helper pod from `Workspace PVC`_ to inspect ``/mnt/nvflws`` and restage
-``startup/`` and ``local/`` from the prepared folder.
+`ワークスペース PVC`_ で紹介したヘルパー Pod を使って ``/mnt/nvflws`` を確認し、準備済み
+フォルダから ``startup/`` と ``local/`` を再ステージングしてください。
 
-Parent starts but cannot launch job pods
+親は起動するがジョブ Pod を起動できない
 ----------------------------------------
 
-Check the parent logs for Kubernetes import or authorization failures:
+親のログに Kubernetes のインポートエラーや認可の失敗が出ていないか確認します。
 
 .. code-block:: bash
 
@@ -1162,27 +1162,27 @@ Check the parent logs for Kubernetes import or authorization failures:
    kubectl -n "$NAMESPACE" auth can-i create secrets \
        --as=system:serviceaccount:"$NAMESPACE":server
 
-If the logs show that the ``kubernetes`` Python package is missing, rebuild the
-parent image with the NVFlare ``K8S`` extra or
-``pip install "kubernetes!=36.0.0"``.
+ログに ``kubernetes`` Python パッケージが見つからない旨が出力されている場合は、NVFlare の
+``K8S`` エクストラを含めて親イメージを再ビルドするか、
+``pip install "kubernetes!=36.0.0"`` を実行してください。
 
-If the logs show ``SSLCertVerificationError`` with
-``CA cert does not include key usage extension``, the parent Kubernetes client
-is rejecting the cluster API-server CA. This is known to affect some MicroK8s
-CA certificates that omit the X.509 ``keyUsage`` extension; see
-`canonical/microk8s#4864 <https://github.com/canonical/microk8s/issues/4864>`__.
-Regenerate or replace the cluster CA with an RFC 5280-compliant CA. As a
-temporary compatibility workaround for development clusters, use a custom
-parent image based on Python 3.12 or earlier. Do not disable Kubernetes API TLS
-verification in production.
+ログに ``CA cert does not include key usage extension`` を伴う
+``SSLCertVerificationError`` が出力されている場合は、親の Kubernetes クライアントが
+クラスタ API サーバーの CA を拒否しています。これは、X.509 の ``keyUsage`` 拡張を省略して
+いる一部の MicroK8s CA 証明書で発生することが知られています。
+`canonical/microk8s#4864 <https://github.com/canonical/microk8s/issues/4864>`__ を
+参照してください。クラスタの CA を RFC 5280 準拠の CA で再生成または置き換えてください。
+開発用クラスタにおける一時的な互換性回避策としては、Python 3.12 以前をベースとしたカスタム
+親イメージを使用してください。本番環境で Kubernetes API の TLS 検証を無効にしないで
+ください。
 
-Job pod stays ``Pending`` or ``Unknown``
-----------------------------------------
+ジョブ Pod が ``Pending`` または ``Unknown`` のままになる
+----------------------------------------------------------
 
-When a submitted job cannot start because an SJ or CJ job pod remains
-``Pending`` or ``Unknown`` longer than ``job_launcher.pending_timeout`` seconds,
-NVFLARE deletes the stuck pod and marks the job as
-``FINISHED:EXECUTION_EXCEPTION``. Check cluster scheduling events:
+SJ または CJ のジョブ Pod が ``job_launcher.pending_timeout`` 秒を超えて ``Pending``
+または ``Unknown`` のままとなり、送信されたジョブを開始できない場合、NVFLARE は停滞して
+いる Pod を削除し、そのジョブを ``FINISHED:EXECUTION_EXCEPTION`` としてマークします。
+クラスタのスケジューリングイベントを確認してください。
 
 .. code-block:: bash
 
