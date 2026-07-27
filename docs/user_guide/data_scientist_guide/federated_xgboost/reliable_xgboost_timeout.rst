@@ -1,96 +1,88 @@
 .. _reliable_xgboost_timeout:
 
-############################################
-Reliable Federated XGBoost Timeout Mechanism
-############################################
+##################################################
+信頼性の高い連合 XGBoost のタイムアウトメカニズム
+##################################################
 
-NVFlare introduces a tightly-coupled integration between XGBoost and NVFlare.
-NVFlare implements the :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`
-mechanism to make XGBoost's server/client interactions more robust over
-unstable internet connections.
+NVFlare は、XGBoost と NVFlare の密結合な統合を導入しています。
+NVFlare は :class:`ReliableMessage<nvflare.apis.utils.reliable_message.ReliableMessage>`
+メカニズムを実装しており、不安定なインターネット接続下でも XGBoost のサーバー／クライアント間の
+やり取りをより堅牢にします。
 
-Unstable internet connection is the situation where the connections between
-the communication endpoints have random disconnects/reconnects and unstable speed.
-It is not meant to be an extended internet outage.
+不安定なインターネット接続とは、通信エンドポイント間の接続がランダムに切断・再接続を繰り返し、
+速度も安定しない状況を指します。長時間のインターネット障害を意図したものではありません。
 
-ReliableMessage does not mean guaranteed delivery.
-It only means that it will try its best to deliver the message to the peer.
-If one attempt fails, it will keep trying until either the message is
-successfully delivered or a specified "transaction timeout" is reached.
+ReliableMessage は配送を保証するものではありません。
+ピアへのメッセージ配送を最大限努力するという意味に過ぎません。
+1 回の試行が失敗した場合、メッセージが正常に配送されるか、指定された「トランザクションタイムアウト」に
+達するまで、再試行を続けます。
 
-*****************
-Timeout Mechanism
-*****************
+****************************
+タイムアウトメカニズム
+****************************
 
-In runtime, the FLARE System is configured with a few important timeout parameters.
+実行時、FLARE システムにはいくつかの重要なタイムアウトパラメータが設定されます。
 
-ReliableMessage Timeout
-=======================
-
-There are two timeout values to control the behavior of ReliableMessage (RM).
-
-Per-Message Timeout
--------------------
-
-Essentially RM tries to resend the message until delivered successfully.
-Each resend of the message requires a timeout value.
-This value should be defined based on the message size, overall network speed,
-and the amount of time needed to process the message in a normal situation.
-For example, if an XGBoost message takes no more than 5 seconds to be
-sent, processed, and replied.
-The per-message timeout should be set to 5 seconds.
-
-.. note::
-
-    Note that the initial XGBoost message may take more than 100 seconds,
-    depending on the dataset size.
-
-Transaction Timeout
--------------------
-
-This value defines how long you want RM to keep retrying until done, in case
-of unstable connection.
-This value should be defined based on the overall stability of the connection,
-nature of the connection, and how quickly the connection is restored.
-For occasional connection glitches, this value shouldn't have to be too big
-(e.g. 20 seconds).
-However if the outage is long (say 60 seconds or longer), then this value
-should be big enough.
-
-.. note::
-
-    Note that even if you think the connection is restored (e.g. replugged
-    the internet cable or reactivated WIFI), the underlying connection
-    layer may take much longer to actually restore connections (e.g. up to
-    a few minutes)!
-
-.. note::
-
-    Note: if the transaction timeout is <= per-message timeout, then the
-    message will be sent through simple messaging - no retry will be done
-    in case of failure.
-
-XGBoost Client Operation Timeout
+ReliableMessage のタイムアウト
 ================================
 
-To prevent a XGBoost client from running forever, the XGBoost/FLARE
-integration lets you define a parameter (max_client_op_interval) on the
-server side to control the max amount of time permitted for a client to be
-silent (i.e. no messages sent to the server).
-The default value of this parameter is 900 seconds, meaning that if no XGB
-message is received from the client for over 900 seconds, then that client
-is considered dead, and the whole job is aborted.
+ReliableMessage (RM) の挙動を制御するタイムアウト値は 2 つあります。
 
-***************************
-Configure Timeouts Properly
-***************************
+メッセージ単位のタイムアウト
+------------------------------
 
-These timeout values are related. For example, if the transaction timeout
-is greater than the server timeout, then it won't be that effective since
-the server will treat the client to be dead once the server timeout is reached
-anyway. Similarly, it does not make sense to have transaction timeout > XGBoost
-client op timeout.
+本質的に、RM はメッセージが正常に配送されるまで再送を試みます。
+メッセージの再送ごとにタイムアウト値が必要になります。
+この値は、メッセージのサイズ、全体的なネットワーク速度、および通常の状況で
+メッセージの処理に要する時間に基づいて定義すべきです。
+たとえば、XGBoost のメッセージの送信・処理・応答に 5 秒以上かからない場合、
+メッセージ単位のタイムアウトは 5 秒に設定すべきです。
 
-In general, follow this rule:
+.. note::
 
-Per-Message Timeout < Transaction Timeout < XGBoost Client Operation Timeout
+    なお、最初の XGBoost メッセージは、データセットのサイズによっては
+    100 秒を超えることがあります。
+
+トランザクションタイムアウト
+------------------------------
+
+この値は、接続が不安定な場合に、RM が完了するまでどれだけ再試行を続けるかを定義します。
+この値は、接続全体の安定性、接続の性質、および接続がどれだけ早く復旧するかに基づいて
+定義すべきです。
+時折発生する接続の乱れに対しては、この値はそれほど大きくする必要はありません
+（例: 20 秒）。
+しかし、障害が長い場合（たとえば 60 秒以上）は、この値も十分に大きくすべきです。
+
+.. note::
+
+    なお、接続が復旧したと思っても（たとえばインターネットケーブルを挿し直した、
+    WIFI を再度有効にしたなど）、下位の接続層が実際に接続を復旧するまでには
+    はるかに長い時間（たとえば数分程度）がかかることがあります。
+
+.. note::
+
+    注意: トランザクションタイムアウトがメッセージ単位のタイムアウト以下の場合、
+    メッセージは単純なメッセージングで送信され、失敗時に再試行は行われません。
+
+XGBoost クライアントの操作タイムアウト
+========================================
+
+XGBoost クライアントが永久に実行され続けるのを防ぐため、XGBoost と FLARE の統合では、
+クライアントが無応答（すなわちサーバーへメッセージを送信しない状態）でいられる最大時間を
+制御するためのパラメータ (max_client_op_interval) をサーバー側で定義できます。
+このパラメータのデフォルト値は 900 秒であり、クライアントから 900 秒を超えて XGB メッセージが
+受信されない場合、そのクライアントは停止したとみなされ、ジョブ全体が中止されます。
+
+******************************
+タイムアウトの適切な設定
+******************************
+
+これらのタイムアウト値は互いに関連しています。たとえば、トランザクションタイムアウトが
+サーバータイムアウトより大きい場合、いずれにせよサーバータイムアウトに達した時点で
+サーバーはクライアントを停止したとみなすため、あまり効果的ではありません。
+同様に、トランザクションタイムアウト > XGBoost クライアント操作タイムアウトとするのも
+意味がありません。
+
+一般に、次の規則に従ってください。
+
+メッセージ単位のタイムアウト < トランザクションタイムアウト < XGBoost クライアント操作タイムアウト

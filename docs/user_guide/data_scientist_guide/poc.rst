@@ -1,42 +1,42 @@
 .. _poc:
 
-POC: Prove of Concept: Simulate Production deployment locally
-=============================================================
+POC: 概念実証: 本番デプロイメントをローカルでシミュレートする
+==============================================================
 
 
 .. _setting_up_poc:
 
-Setting Up the Application Environment in POC Mode
+POC モードでのアプリケーション環境のセットアップ
 --------------------------------------------------
 
-To get started with a proof of concept (POC) setup after :ref:`installation`, run this command to generate a poc folder
-with an server, two clients, and one admin client:
+:ref:`installation` の後に概念実証 (POC) のセットアップを始めるには、次のコマンドを実行して、
+1 台のサーバー、2 つのクライアント、1 つの管理クライアントを含む poc フォルダを生成します。
 
 .. code-block:: shell
 
     $ nvflare poc prepare -n 2
 
-For more details, see :ref:`poc_command`.
+詳細は :ref:`poc_command` を参照してください。
 
 .. _starting_poc:
 
-Starting the Application Environment in POC Mode
+POC モードでのアプリケーション環境の起動
 --------------------------------------------------
 
-Once you are ready to start the FL system, you can run the following command
-to start the server and client systems and an admin console:
+FL システムを起動する準備ができたら、次のコマンドを実行して、サーバーとクライアントのシステム、
+および管理コンソールを起動できます。
 
 .. code-block::
 
   nvflare poc start
 
-To start the server and client systems without an admin console:
+管理コンソールなしでサーバーとクライアントのシステムを起動するには、次のようにします。
 
 .. code-block::
 
   nvflare poc start -ex admin@nvidia.com
 
-We can use the :ref:`job_cli` to easily submit a job to the POC system. (Note: We can run the same jobs we ran with the simulator in POC mode. If using the :ref:`fed_job_api`, simply export the job configuration with ``job.export_job()``.)
+:ref:`job_cli` を使うと、POC システムにジョブを簡単に送信できます。(注: シミュレータで実行したのと同じジョブを POC モードで実行できます。 :ref:`fed_job_api` を使用している場合は、 ``job.export_job()`` でジョブ設定をエクスポートするだけです。)
 
 .. code-block::
 
@@ -50,6 +50,6 @@ We can use the :ref:`job_cli` to easily submit a job to the POC system. (Note: W
 
   nvflare poc clean
 
-For more details, see :ref:`poc_command`.
+詳細は :ref:`poc_command` を参照してください。
 
-For `POC Tutorials: <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/setup_poc.ipynb>`_
+`POC チュートリアル: <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/setup_poc.ipynb>`_ もご覧ください。

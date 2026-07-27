@@ -1,30 +1,30 @@
 .. _multi_job:
 
-###########################################
-Jobs: Defining Jobs and Multi-Job Execution
-###########################################
-Newly introduced in NVIDIA FLARE 2.1.0, Jobs now organize and streamline the running of apps to allow for multi-job
-execution and the running of multiple experiments in parallel.
+##################################################
+ジョブ: ジョブの定義とマルチジョブ実行
+##################################################
+NVIDIA FLARE 2.1.0で新たに導入されたジョブは、アプリケーションの実行を体系化・効率化し、マルチジョブ実行と
+複数の実験の並列実行を可能にします。
 
-********
-Concepts
-********
+************
+コンセプト
+************
 
 .. _job:
 
-Job
-===
-In NVIDIA FLARE 2.1.0, to be able to run multiple experiments in parallel, the concept of jobs was introduced for better
-management of experiments. With jobs, the admin can submit a job and let the
-system manage the rest instead of previously, where the admin uploaded apps, set the run number, deployed, then started the app
-at the server and client sites.
+ジョブ
+======
+NVIDIA FLARE 2.1.0では、複数の実験を並列に実行できるようにするため、実験をより適切に管理するための
+ジョブという概念が導入されました。ジョブにより、管理者はジョブを送信するだけで残りの処理はシステムに任せられます。
+これは、以前のように管理者がアプリケーションをアップロードし、実行番号を設定し、デプロイし、その後サーバーサイトと
+クライアントサイトでアプリケーションを起動する必要があった方式に代わるものです。
 
-To be able to do this, the system now has to know everything about the experiment: which app(s)
-go to which clients or server, what are the resource requirements for this experiment, etc.
-The total definition of such needed information is called a job.
+これを実現するために、システムは実験に関するすべての情報、すなわちどのアプリケーションをどのクライアントまたは
+サーバーに配置するのか、この実験のリソース要件は何か、といった情報を把握している必要があります。
+このように必要とされる情報の総体をジョブと呼びます。
 
-Jobs now contain all of the :ref:`apps <application>` and the information of which apps to deploy to which sites as the
-:ref:`deploy_map <deploy_map>` inside a meta.json that should be included with a job to be submitted::
+ジョブは、すべての :ref:`アプリケーション <application>` と、どのアプリケーションをどのサイトにデプロイするかという
+情報を :ref:`deploy_map <deploy_map>` として meta.json 内に含みます。この meta.json は、送信するジョブに含める必要があります::
 
     JOB_FOLDER:
         - meta.json
@@ -35,11 +35,11 @@ Jobs now contain all of the :ref:`apps <application>` and the information of whi
 
 .. note::
 
-   For backward compatibility with previous apps, a single app may be submitted as a job, and a meta.json will
-   automatically be created for it with the app being deployed to all participants. As such, apps can have both
-   config_fed_server.json and config_fed_client.json and can be deployed to multiple participants.
+   以前のアプリケーションとの後方互換性のため、単一のアプリケーションをジョブとして送信することもできます。その場合、
+   すべての参加者にそのアプリケーションをデプロイする meta.json が自動的に作成されます。そのため、アプリケーションは
+   config_fed_server.json と config_fed_client.json の両方を持つことができ、複数の参加者にデプロイできます。
 
-Here is an example for meta.json:
+meta.json の例を以下に示します。
 
 .. code-block:: json
 
@@ -75,47 +75,47 @@ Here is an example for meta.json:
         "study": "default"
     }
 
-Pay attention to the following:
+以下の点に注意してください。
 
-    - name: user provided name for the job
-    - resource_spec: resources required to perform this job at each site
-    - deploy_map: what apps go to which sites (see :ref:`deploy_map`)
-    - min_clients: minimum clients required for this job
-    - mandatory_clients: mandatory clients required for this job
-    - study: the study this job belongs to, set automatically from the session context at submit time (see :ref:`multi_study_guide`)
+    - name: ユーザーが指定するジョブの名前
+    - resource_spec: 各サイトでこのジョブを実行するために必要なリソース
+    - deploy_map: どのアプリケーションをどのサイトに配置するか( :ref:`deploy_map` を参照)
+    - min_clients: このジョブに必要な最小クライアント数
+    - mandatory_clients: このジョブに必須となるクライアント
+    - study: このジョブが属するスタディ。送信時のセッションコンテキストから自動的に設定されます( :ref:`multi_study_guide` を参照)
 
-Additional optional configuration parameters:
+追加のオプション設定パラメータ:
 
-    - stats_pool_config: configure statistics pool saving for post-job analysis
-    - launcher_spec: launcher-specific job execution settings such as Docker
-      or Kubernetes container settings and Slurm topology, memory, CPU, time,
-      and pending timeout. Keep portable resource requests such as
-      ``num_of_gpus`` in ``resource_spec``. See :ref:`launcher_spec`.
+    - stats_pool_config: ジョブ実行後の分析のための統計プールの保存を設定します
+    - launcher_spec: DockerやKubernetesのコンテナ設定、Slurmのトポロジ、メモリ、CPU、時間、
+      保留タイムアウトなど、ランチャー固有のジョブ実行設定。 ``num_of_gpus`` のような
+      可搬性のあるリソース要求は ``resource_spec`` に記述したままにしてください。
+      :ref:`launcher_spec` を参照してください。
 
-The system also keeps additional information about the job such as:
+システムはさらに、以下のようなジョブに関する追加情報も保持します。
 
-    - Submitter name
-    - Time of submission
-    - Current status of the job (submitted, approved, running, completed, etc.)
-    - Study the job belongs to
-    - Location of the final result
+    - 送信者の名前
+    - 送信日時
+    - ジョブの現在のステータス(submitted、approved、running、completed など)
+    - ジョブが属するスタディ
+    - 最終結果の保存場所
 
-Resources
-=========
-For a job to be runnable, the system must have sufficient resources: all relevant sites of the job must be able to
-support the job's specified resource requirements. Since resource is a generic concept - anything could be regarded
-as a resource - NVIDIA FLARE 2.1.0 itself does not define any specific resources. Instead, NVIDIA FLARE provides a general
-framework for resource definition and interpretation.
+リソース
+========
+ジョブが実行可能であるためには、システムに十分なリソースがなければなりません。すなわち、そのジョブに関係するすべての
+サイトが、ジョブで指定されたリソース要件を満たせる必要があります。リソースは汎用的な概念であり、あらゆるものがリソースと
+みなされ得るため、NVIDIA FLARE 2.1.0 自体は特定のリソースを定義していません。その代わりに、NVIDIA FLARE は
+リソースの定義と解釈のための汎用的なフレームワークを提供します。
 
 .. _launcher_spec:
 
-Launcher-Specific Execution Settings
-====================================
+ランチャー固有の実行設定
+========================================
 
-Docker, Kubernetes, and Slurm launchers read job runtime settings from
-``launcher_spec`` in ``meta.json``. Launcher selection is site policy, configured
-in the site's prepared startup kit. A job can carry settings for multiple
-launcher modes without choosing which mode a site uses.
+Docker、Kubernetes、Slurm の各ランチャーは、 ``meta.json`` 内の ``launcher_spec`` から
+ジョブの実行時設定を読み取ります。どのランチャーを使うかはサイトのポリシーであり、サイトの準備済み
+スタートアップキットで設定されます。ジョブは、どのモードをサイトが使用するかを選択することなく、
+複数のランチャーモード向けの設定を持つことができます。
 
 .. code-block:: json
 
@@ -156,48 +156,47 @@ launcher modes without choosing which mode a site uses.
         }
     }
 
-Use ``launcher_spec["default"][mode]`` for shared settings and
-``launcher_spec[site][mode]`` for site-specific overrides. Keep
-``resource_spec`` for portable scheduler-facing resource requirements such as
-``num_of_gpus``. Docker and Kubernetes translate that value into a container or
-pod GPU request. Slurm translates it to a one-node GPU request unless the
-``slurm`` block supplies explicit topology.
+共通の設定には ``launcher_spec["default"][mode]`` を、サイト固有の上書きには
+``launcher_spec[site][mode]`` を使用します。 ``num_of_gpus`` のような、スケジューラに提示される
+可搬性のあるリソース要件は ``resource_spec`` に記述したままにしてください。Docker と Kubernetes は
+その値をコンテナまたはPodのGPU要求に変換します。Slurm は、 ``slurm`` ブロックで明示的なトポロジが
+指定されない限り、その値を1ノードのGPU要求に変換します。
 
-The Slurm job block accepts ``image``, ``nodes``, ``gpus_per_node``,
-``cpus_per_node``, ``mem_per_node`` (MiB), ``time``, and
-``pending_timeout``. A job cannot select a Slurm partition, account, QOS,
-sandbox, setup command, or raw scheduler flags; those are site-owned and may
-be overridden per study. A job image requires BYOC authorization and overrides
-study/site image defaults. It must be an absolute site-visible existing file.
-A job may override ``pending_timeout`` only with a smaller positive value than
-the site's configured timeout; it cannot increase the site limit. Multi-node
-jobs require effective ``sandbox: none`` and must omit ``image``. A positive
-multi-node ``num_of_gpus`` requires explicit ``gpus_per_node``; whenever both
-are supplied, ``num_of_gpus`` must equal ``nodes * gpus_per_node``. See
-:ref:`slurm_job_launcher` for the deployment contract.
+Slurm のジョブブロックは、 ``image`` 、 ``nodes`` 、 ``gpus_per_node`` 、
+``cpus_per_node`` 、 ``mem_per_node`` (MiB)、 ``time`` 、 ``pending_timeout`` を受け付けます。
+ジョブは Slurm のパーティション、アカウント、QOS、サンドボックス、セットアップコマンド、生のスケジューラ
+フラグを選択することはできません。これらはサイトが所有するものであり、スタディごとに上書きされる場合があります。
+ジョブイメージにはBYOCの認可が必要であり、スタディやサイトのイメージのデフォルトを上書きします。それはサイトから
+参照可能な既存ファイルの絶対パスでなければなりません。ジョブが ``pending_timeout`` を上書きできるのは、
+サイトで設定されたタイムアウトより小さい正の値の場合のみであり、サイトの上限を引き上げることはできません。
+マルチノードジョブは実効的に ``sandbox: none`` である必要があり、 ``image`` を省略しなければなりません。
+マルチノードで ``num_of_gpus`` に正の値を指定する場合は、明示的な ``gpus_per_node`` が必要です。
+両方が指定された場合は常に、 ``num_of_gpus`` は ``nodes * gpus_per_node`` と等しくなければなりません。
+デプロイに関する契約(コントラクト)については :ref:`slurm_job_launcher` を参照してください。
 
 .. _deploy_map:
 
-Deploy Map
-==========
-The ``deploy_map`` is a map of which apps in the job being uploaded will be deployed to which FL client sites. Back in
-NVIDIA FLARE before 2.1.0, the admin command "deploy_app" was used to manually perform app deployment with the option
-to specify which sites to deploy to. Because the JobRunner now automatically picks up and handles the deployment and
-running of apps, it needs information about which sites each app should be deployed to, and it gets it from the
-``deploy_map`` section of meta.json.
+デプロイマップ
+====================
+``deploy_map`` は、アップロードされるジョブ内のどのアプリケーションをどのFLクライアントサイトにデプロイするかを示す
+マップです。NVIDIA FLARE 2.1.0 より前は、管理者コマンド "deploy_app" を使用して、デプロイ先サイトを指定する
+オプションとともに手動でアプリケーションのデプロイを行っていました。現在は JobRunner がアプリケーションのデプロイと
+実行を自動的に取得して処理するため、各アプリケーションをどのサイトにデプロイすべきかという情報が必要であり、それを
+meta.json の ``deploy_map`` セクションから取得します。
 
-Each app specified in the ``deploy_map`` must be included in the job being uploaded as an app folder directly in the job
-folder with meta.json.
+``deploy_map`` で指定された各アプリケーションは、meta.json とともにジョブフォルダ直下のアプリケーションフォルダとして、
+アップロードするジョブに含まれている必要があります。
 
-There is only one server, and only one app can be deployed to it for the Job, so "server" can appear only once in
-the ``deploy_map``.
+サーバーは1つしかなく、1つのジョブに対してデプロイできるアプリケーションも1つだけであるため、 "server" は
+``deploy_map`` に一度しか出現できません。
 
-The ``deploy_map`` cannot be empty, so the following is not allowed::
+``deploy_map`` を空にすることはできないため、以下は許可されません::
 
     "deploy_map": {}
 
-When specified as a site name, "@ALL" carries a special meaning of all sites to deploy to. If "@ALL" is used, there
-should be no other apps being deployed to the sites. This means the following example of ``deploy_map`` is not allowed::
+サイト名として指定された場合、 "@ALL" はデプロイ先となるすべてのサイトという特別な意味を持ちます。 "@ALL" を使用する
+場合、他のアプリケーションがそれらのサイトにデプロイされていてはいけません。つまり、以下の ``deploy_map`` の例は
+許可されません::
 
     "deploy_map": {
         "app1": ["@ALL"], "app2": ["site-1"]
@@ -205,132 +204,128 @@ should be no other apps being deployed to the sites. This means the following ex
 
 .. note::
 
-   When a job is submitted within a named study, ``@ALL`` is narrowed to only the sites enrolled in that study.
-   Additionally, all sites in the ``deploy_map`` must be enrolled in the active study or the submission will be
-   rejected. See :ref:`multi_study_guide` for details.
+   ジョブが名前付きスタディ内で送信された場合、 ``@ALL`` はそのスタディに登録されているサイトのみに絞り込まれます。
+   さらに、 ``deploy_map`` 内のすべてのサイトはアクティブなスタディに登録されている必要があり、そうでない場合は
+   送信が拒否されます。詳細は :ref:`multi_study_guide` を参照してください。
 
-If an empty list of sites is specified for an app in the ``deploy_map``, then that app is to be deployed to no sites,
-and no validation is done other than checking that the folder exists. This is the case for "app2" in the following valid
-example of ``deploy_map`` for a job containing app1 and app2::
+``deploy_map`` 内のアプリケーションに空のサイトリストが指定された場合、そのアプリケーションはどのサイトにも
+デプロイされず、フォルダが存在するかどうかの確認以外の検証は行われません。app1 と app2 を含むジョブに対する
+以下の有効な ``deploy_map`` の例における "app2" がこのケースに該当します::
 
     "deploy_map": {
         "app1": ["@ALL"], "app2": []
     }
 
-Resource-less Jobs
+リソース指定のないジョブ
+==================================
+同様に、単純なFLジョブやPOCモードでは、リソースは考慮すべき問題ではありません。この場合、ジョブ定義から
+リソース仕様(resource spec)を省略できます。必要なリソースなしでジョブを実行できるかを尋ねられたとき、
+FLクライアントは常に "Yes" と回答します。
+
+リソースに基づくジョブの自動化
+==========================================
+各ジョブはリソース要件(meta.json 内の resource_spec)を指定します。これは Python の辞書として表現され、
+キー/値のペアで :ref:`resource_manager_and_consumer` に設定された任意の要件を指定できます。
+
+サーバー上にはジョブスケジューラがあり、ジョブが実行可能かどうかを判断します。ジョブスケジューラは、リソース要件を
+踏まえてジョブを実行できるかどうかを各クライアントに問い合わせます(なお、ジョブはクライアントごとに異なる要件を
+持つことができます)。
+
+各クライアント上にはリソースマネージャーコンポーネントがあり、ジョブから渡されたリソース要件を満たせるかどうかを
+(check_resources メソッドを用いて)確認します。
+
+実行可能なクライアントがジョブのクライアント要件(最小クライアント数と必須クライアント)を満たしていれば、そのジョブは
+システムにとって実行可能となり、これらのクライアントにディスパッチされます。
+
+リソースを確認する際、一部のクライアントはリソースを予約することがあります(クラウドからインスタンスを起動する場合など)。
+
+すべてのクライアントを確認した後、ジョブスケジューラがジョブは実行不可能と判断した場合、クライアントのリソース
+マネージャーが呼び出され、そのジョブのために予約していた可能性のあるリソースが(リソースマネージャーの
+cancel_resources メソッドを用いて)キャンセルされます。
+
+ジョブスケジューラは、可能な限り多くのジョブを実行しようと定期的に呼び出されます。
+
+ジョブがクライアントにディスパッチされると、リソースマネージャーが呼び出され、必要なリソースが
+(allocate_resources メソッドを用いて)割り当てられます。クライアント上でジョブが開始されると、リソースコンシューマーが
+呼び出されてリソースが消費されます。
+
+ジョブが終了すると(正常完了または中断のいずれでも)、リソースマネージャーが再び呼び出され、(free_resources メソッドを
+用いて)リソースが解放されます。
+
+
+GPUに基づくジョブ自動化の例
+------------------------------------------
+ここでは、クライアントが十分なGPUを持っている場合にのみジョブがデプロイされる、GPUに基づくジョブ自動化の例を示します。
+
+まず、GPUのリソース要件が、ジョブの resource_spec 内で "num_gpus"/整数 というキー/値のペアとして定義されます。
+たとえば "num_gpus": 2 のように指定します。
+
+次に、クライアント上のリソースマネージャーが、呼び出されたときに2つのGPUを持っているかどうかを判断します。これは、
+リソースマネージャーの起動時に利用可能なGPUを静的に設定することで実現でき、あるいは自動検出できる場合もあります。
+ここでは、1つ目のアプローチを採用する単純なリソースマネージャーを使用します。これは利用可能なGPU IDのリストを持ち、
+リソース要件の確認を求められると、そのリストに少なくとも2つのGPU IDが含まれているかどうかを単純に確認します。
+
+3つ目に、ジョブスケジューラがジョブの実行を決定すると、リソースマネージャーが呼び出されて必要な2つのGPUを割り当てます。
+リソースマネージャーは2つのGPU IDのリストを返し、それらを利用可能なGPUのリストから取り除きます。
+
+4つ目に、ジョブが(別個の "バブル" の中で)開始されると、リソースコンシューマーが呼び出されてリソース(2つのGPU
+デバイスIDのリスト)を消費します。この場合、リソースコンシューマーは単純に CUDA_VISIBLE_DEVICES システム変数を
+その2つのGPU IDに設定します。これにより、同時実行される各ジョブが異なるGPUデバイスを使用することが保証されます。
+
+最後に、ジョブが終了すると、リソースマネージャーが呼び出されて割り当て済みのリソースを解放します。この場合は、
+単純に2つのGPU IDを自身のリストに戻します。
+
+
+ジョブランナー
 ==================
-Similarly, for simple FL jobs or in POC mode, resources are not a concern. In this case, the resource spec can be
-omitted from the job definition. The FL client always answers "Yes" when asked whether it can run a job without
-required resources.
+ジョブランナーは、実行時にジョブを管理する役割を担います。その責務は以下のとおりです。
 
-Resource-Based Job Automation
-=============================
-Each job specifies resource requirements (the resource_spec in the meta.json), which is expressed as a Python dictionary:
-the key/value pairs can specify any arbitrary requirement as configured in the :ref:`resource_manager_and_consumer`.
+    - 新しいジョブをいつスケジュールするかを判断すること
+    - 実行中のジョブの進捗を監視すること
+    - ジョブの実行状態を管理し、サーバーとクライアントの同期を保つこと
 
-There is a Job Scheduler on the Server, which decides whether a job is runnable. It asks these clients
-whether they can run the job, given the resource requirements (note: the job could have different requirements for
-different clients).
+ジョブランナーは、ジョブマネージャーから新たに送信された、または承認されたジョブがあるかどうかを定期的に確認します。
+まだ実行されていないジョブがある場合、ジョブランナーはそのジョブ候補をジョブスケジューラに送り、ジョブの実行準備が
+整っているかを確認します。ジョブスケジューラが、実行条件とクライアントのリソース要件を満たすジョブを返すと、
+ジョブランナーはサーバーおよび各クライアント向けのFLアプリケーションをそれぞれの宛先にディスパッチします。その後、
+ジョブランナーはFLサーバーアプリケーションとクライアントアプリケーションを起動してジョブを実行します。
 
-On each client, there is a Resource Manager component, it will check whether the resource requirements coming from a job
-can be satisfied (using a check_resources method).
+ジョブランナーは、実行中のジョブと対応するジョブIDを追跡します。ジョブの実行が完了するか、あるいはジョブの実行が
+中断されると、ジョブランナーは running_jobs テーブルからそのジョブIDを削除します。
 
-If runnable clients meet the job's client requirements (minimum number of clients and mandatory clients), then the
-job is runnable for the system, and the job is dispatched to these clients.
+ワンショット実行
+------------------------
+いったん送信されたジョブは、実行が成功したかどうかにかかわらず、実行される機会が1度だけです。実行されると、ジョブの
+ステータスが更新され、再度スケジュールされることはありません。同じジョブをもう一度実行したい場合、ユーザーは
+"clone job" コマンドを使って既存のジョブから新しいジョブを作成するか、同じジョブ定義を再度送信することができます。
 
-When checking resources, some clients might reserve resources. (like running an instance from the cloud).
+システム状態の自己修復
+------------------------------
+FLサーバーとクライアントが、ジョブ実行に関して同期していることは重要です。しかし分散システムにおいて、システムの
+すべての部分を常に同期させ続けることは不可能です。たとえば、ジョブのデプロイや起動の際に、一部のクライアントは
+成功し、他のクライアントは失敗するかもしれません。NVIDIA FLARE では、システムが大半の時間にわたり同期を保てるよう、
+ハートビートに基づく仕組みを実装しています。同期が崩れた場合でも、この仕組みによって各参加者を徐々に同期した状態へ
+戻すことができます。
 
-After checking all the clients and if the Job Scheduler decides the job is not runnable. The client's Resource
-Manager will be called to cancel the resources it might have reserved for the job (using the cancel_resources method in
-Resource Manager).
-
-The Job Scheduler is invoked periodically to try to run as many jobs as possible.
-
-Once a job is dispatched to a client, the Resource Manager is called to allocate the required resources
-(using the allocate_resources method). Once the job is started on the client, it will call the Resource Consumer to consume the
-resources.
-
-Once the job is finished (completed normally or aborted), the Resource Manager is called again to free the resources (using
-the free_resources method).
-
-
-Example of GPU-based job automation
------------------------------------
-Here is an example of GPU-based job automation, where a job is deployed only if clients have enough GPUs.
-
-First, the resource requirement of GPUs is defined as the key/value pair of "num_gpus"/integer in the job's
-resource_spec, say, "num_gpus": 2.
-
-Second, the Resource Manager on the Client decides whether it has 2 GPUs when called. This could be done by
-statically configuring available GPUs at the start of the Resource Manager, or it might be able to auto-detect. Here
-we use a simple Resource Manager that takes the 1st approach: it has a list of available GPU IDs. When called to
-check resource requirements, it simply checks whether the list contains at least 2 GPU IDs.
-
-Third, if the Job Scheduler decides to run the job, the Resource Manager will be called to allocate the 2 required
-GPUs - it will return a list of 2 GPU IDs and remove them from the list of available GPUs .
-
-Fourth, when the job is started (in a separate "bubble"), the Resource Consumer will be called to consume the
-resources (which is the list of 2 GPU device IDs). In this case, this Resource Consumer simply sets the
-CUDA_VISIBLE_DEVICES system variable to the 2 GPU IDs. This ensures that each concurrent job will be using different
-GPU devices.
-
-Finally, when the job is finished, the Resource Manager is called to free the allocated resources. In this case, it
-simply puts the 2 GPU IDs back to its list.
-
-
-Job Runner
-==========
-The Job Runner is responsible for managing jobs at runtime. It is responsible for:
-
-    - Deciding when to schedule a new job
-    - Monitoring the progress of running jobs
-    - Managing job execution state and ensuring the server and clients are in sync
-
-The Job Runner periodically checks if there are new submitted / approved jobs from the job
-manager. If there are jobs have not been run, Job runner sends the job candidates to the job scheduler to check for
-the job readiness. Once the job scheduler returns the job which satisfies the running condition and resource
-requirements for the clients, the job runner will dispatch the FL application for the server and each client to the
-corresponding destination. Then the job runner will start the FL server application and client applications to run
-the job.
-
-The job runner keeps track of the running jobs and the corresponding job ids. Once a job finishes running, or the
-job execution got aborted, the job runner will remove the job id from the running_jobs table.
-
-One-Shot Execution
-------------------
-Once submitted, a job only has one chance to be executed, whether the execution succeeds or not. Once executed, the
-job status will be updated and won't be scheduled again. If the user wants to run the same job again, the user can
-use the "clone job" command to make a new job from an existing job; or the user can submit the same job definition
-again.
-
-System State Self Healing
--------------------------
-It is important for the FL server and clients to be in sync in terms of job execution. However, in a distributed
-system, it is impossible to keep all parts of the system in sync at all times. For example, when deploying or
-starting the job, some clients may succeed while others may fail. NVIDIA FLARE implements a heartbeat-based mechanism for
-the system to keep in sync most of the time. In case they become out of sync, the mechanism can also gradually bring the parties
-back in sync.
-
-Each FL client periodically sends heartbeat messages to the FL server. The message contains the job IDs of the
-jobs that the client is running. The server keeps the job IDs of the jobs that each site should be running. If
-there is a discrepancy with the client running a job that should not be running, the server will ask the client to
-abort it.
+各FLクライアントは、FLサーバーへ定期的にハートビートメッセージを送信します。このメッセージには、そのクライアントが
+実行しているジョブのジョブIDが含まれます。サーバーは、各サイトが実行しているはずのジョブのジョブIDを保持しています。
+実行すべきでないジョブをクライアントが実行しているという不一致がある場合、サーバーはそのクライアントに中断を指示します。
 
 .. _job_scheduler_configuration:
 
-Job Scheduler Configuration
-===========================
-NVFLARE comes with a default job scheduler that periodically retrieves jobs waiting to be run from the job store.
-Since job scheduling is subject to resource availability on all clients, a job may fail to be scheduled if required resources
-are unavailable. The scheduler will have to try it again at a later time.
+ジョブスケジューラの設定
+========================================
+NVFLARE には、ジョブストアから実行待ちのジョブを定期的に取得するデフォルトのジョブスケジューラが付属しています。
+ジョブのスケジューリングはすべてのクライアントにおけるリソースの可用性に左右されるため、必要なリソースが利用できない
+場合、ジョブのスケジューリングは失敗することがあります。その場合、スケジューラは後で再試行する必要があります。
 
-This job scheduler tries to schedule jobs efficiently. On the one hand, it tries to schedule a waiting job as quickly as possible
-in the order of job submissions; on the other, it also tries to avoid scheduling the same job repeatedly in case that a job cannot be
-scheduled due to resource constraints. Unfortunately, these two goals are sometimes at odds with each other, depending on the nature of
-the jobs and resources available.
+このジョブスケジューラは、ジョブを効率的にスケジュールしようとします。一方では、待機中のジョブをジョブの送信順に
+できるだけ早くスケジュールしようとします。他方では、リソース制約によりジョブをスケジュールできない場合に、同じジョブを
+繰り返しスケジュールしようとするのを避けようともします。残念ながら、ジョブの性質や利用可能なリソースによっては、
+これら2つの目標は互いに相反することがあります。
 
-To let customers deal with the nature of their jobs efficiently, the behavior of the job scheduler can be configured through a set of
-parameters, as shown in its init method:
+ユーザーが自らのジョブの性質に応じて効率的に対処できるよう、ジョブスケジューラの挙動は、その init メソッドに示される
+一連のパラメータによって設定できます。
 
 .. code-block:: python
 
@@ -351,35 +346,40 @@ parameters, as shown in its init method:
                 max_schedule_interval: max interval between two schedules
             """
 
-NVFLARE is a multi-job system that allows multiple jobs to be running concurrently, as long as system resources are available.
+NVFLARE はマルチジョブシステムであり、システムリソースが利用可能である限り、複数のジョブを同時に実行できます。
 
-The ``max_jobs`` parameter controls how many jobs at the maximum are allowed at the same time. If you want your system to run only one
-job at a time, you can set it to 1.
+``max_jobs`` パラメータは、同時に許可されるジョブの最大数を制御します。システムで一度に1つのジョブだけを実行したい
+場合は、これを1に設定できます。
 
-The ``max_schedule_count`` parameter controls how many times at the maximum a job will be tried, in case it failed to be scheduled repeatedly.
-If you want the job to be tried forever, you can set this parameter to be a very large number, but it may never be scheduled if it requires resources
-that can never be satisfied. However, if you set this number to be too small, then the job may be given up prematurely (in this case the status code
-of the job is set to FINISHED:CANT_SCHEDULE), if the resources could be freed up by running jobs and satisfy the job's requirements.
+``max_schedule_count`` パラメータは、ジョブのスケジューリングが繰り返し失敗した場合に、そのジョブを最大何回試行するかを
+制御します。ジョブを永久に試行させたい場合は、このパラメータを非常に大きな数に設定できますが、決して満たされない
+リソースを必要とするジョブは永遠にスケジュールされない可能性があります。一方、この数を小さくしすぎると、実行中の
+ジョブによってリソースが解放され要件を満たせたはずの場合でも、ジョブが早々に諦められてしまう可能性があります
+(この場合、ジョブのステータスコードは FINISHED:CANT_SCHEDULE に設定されます)。
 
-The ``min_schedule_interval`` and ``max_schedule_interval`` parameters are used to control the frequency of scheduling of the same job, if it has
-to be tried multiple times. The job will be retried no less than the ``min_schedule_interval``, and no less than the max. Note that the scheduler wakes
-up every 1 second, so if you set the minimum to be less than 1 second, it will be treated as 1 second.
+``min_schedule_interval`` および ``max_schedule_interval`` パラメータは、同じジョブを複数回試行しなければならない
+場合に、そのスケジューリングの頻度を制御するために使用されます。ジョブは ``min_schedule_interval`` 以上の間隔を
+空けて再試行され、また最大値以上の間隔も空けられます。なお、スケジューラは1秒ごとに起動するため、最小値を1秒未満に
+設定した場合は1秒として扱われます。
 
-To avoid overly stressing the system, the scheduler uses an adaptive scheduling frequency algorithm. It doubles the interval every time it fails, until
-it reaches the ``max_schedule_interval``.
+システムに過度な負荷をかけないよう、スケジューラは適応的なスケジューリング頻度アルゴリズムを使用します。失敗するたびに
+間隔を2倍にし、 ``max_schedule_interval`` に達するまで増加させます。
 
-Combining Parameters to Achieve Optimal Scheduling Results
-----------------------------------------------------------
-So how to combine these parameters to achieve optimal scheduling results? It depends.
+最適なスケジューリング結果を得るためのパラメータの組み合わせ
+------------------------------------------------------------------------------
+では、最適なスケジューリング結果を得るために、これらのパラメータをどう組み合わせればよいのでしょうか。それは状況次第です。
 
-If your jobs usually take a short time to complete, you may want the jobs to be retried very frequently and many times (set ``max_schedule_interval`` to a small
-number, and ``max_schedule_count`` to a proper number).
+ジョブが通常は短時間で完了する場合、ジョブを非常に高い頻度で何度も再試行させたいでしょう
+( ``max_schedule_interval`` を小さな値に、 ``max_schedule_count`` を適切な値に設定します)。
 
-If your jobs usually take a long time, you may want the jobs to be tried less frequently but enough times to make sure that a job is not given up prematurely.
-You also don't want to have a long system idle time when all current jobs are done but waiting jobs are not tried in time (say < 10 seconds).
+ジョブが通常は長時間かかる場合、再試行の頻度は低くしつつ、ジョブが早々に諦められないよう十分な回数試行させたいでしょう。
+また、現在のジョブがすべて完了したのに待機中のジョブが適時(たとえば10秒未満で)試行されず、システムが長時間アイドル状態に
+なることも避けたいはずです。
 
-An overall strategy is perhaps to make sure the ``min_schedule_interval * max_schedule_count`` to be a little larger than the longest execution time of your jobs.
-For example, if you set ``min_schedule_interval`` to 10 seconds and your job execution could be as long as 1 hour, then ``max_schedule_count`` could be about 360.
+全体的な方針としては、 ``min_schedule_interval * max_schedule_count`` が、自分のジョブの最長実行時間より少し大きくなるように
+するとよいでしょう。たとえば、 ``min_schedule_interval`` を10秒に設定し、ジョブの実行時間が最大1時間になり得るなら、
+``max_schedule_count`` は360程度にするとよいでしょう。
 
-Or if you want a more predictable scheduling pattern, you could set both ``min_schedule_interval`` and ``max_schedule_interval`` to the same number (say 10 seconds),
-and ``max_schedule_count`` to a large number. This will make the scheduler try the same job every 10 seconds.
+あるいは、より予測しやすいスケジューリングパターンを望む場合は、 ``min_schedule_interval`` と ``max_schedule_interval`` の
+両方を同じ値(たとえば10秒)に設定し、 ``max_schedule_count`` を大きな数に設定することもできます。こうすると、スケジューラは
+同じジョブを10秒ごとに試行するようになります。

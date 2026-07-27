@@ -1,85 +1,85 @@
-###############################
-Secure Federated XGBoost Design
-###############################
+####################################
+セキュア連合 XGBoost の設計
+####################################
 
-Collaboration Modes and Secure Patterns
-=======================================
+コラボレーションモードとセキュアパターン
+==========================================
 
-Horizontal Secure
------------------
+水平セキュア
+-------------
 
-For horizontal XGBoost, each party holds "equal status" - whole feature and label for partial population, while the federated server performs aggregation, without owning any data.
-Hence in this case, the federated server is the "minor contributor" from model training perspective, and clients have a concern of leaking any information to the server.
-Under this setting, the protection is mainly against the federated server over local histograms.
+水平 XGBoost では、各パーティが「対等な立場」を持ちます。すなわち、部分的な母集団に対する全特徴量とラベルを保持し、連合サーバーはデータを一切保有せずに集約を行います。
+したがってこの場合、モデル学習の観点では連合サーバーが「マイナーな貢献者」であり、クライアント側にはサーバーへ情報が漏洩する懸念があります。
+この設定下では、保護は主に連合サーバーに対するローカルヒストグラムの保護となります。
 
-To protect the local histograms for horizontal collaboration, the local histograms will be encrypted before sending to the federated server for aggregation.
-The aggregation will then be performed over ciphertexts and the encrypted global histograms will be returned to clients, where they will be decrypted and used for tree building.
+水平コラボレーションにおいてローカルヒストグラムを保護するため、ローカルヒストグラムは集約のために連合サーバーへ送信される前に暗号化されます。
+集約は暗号文上で実行され、暗号化されたグローバルヒストグラムがクライアントに返され、そこで復号されてツリー構築に使用されます。
 
-Vertical Secure
----------------
+垂直セキュア
+-------------
 
-For vertical XGBoost, the active party holds the label, which cannot be accessed by passive parties and can be considered the most valuable asset for the whole process.
-Therefore, the active party in this case is the "major contributor" from model training perspective, and it will have a concern of leaking this information to passive clients.
-In this case, the security protection is mainly against passive clients over the label information.
+垂直 XGBoost では、アクティブパーティがラベルを保持します。これはパッシブパーティからはアクセスできず、プロセス全体にとって最も価値のある資産とみなせます。
+したがってこの場合、モデル学習の観点ではアクティブパーティが「主要な貢献者」であり、この情報がパッシブクライアントへ漏洩する懸念を持ちます。
+この場合、セキュリティ保護は主にパッシブクライアントに対するラベル情報の保護となります。
 
-To protect label information for vertical collaboration, at every round of XGBoost after the active party computes the gradients for each sample at the active party, the gradients will be encrypted before sending to passive parties.
-Upon receiving the encrypted gradients (ciphertext), they will be accumulated according to the specific feature distribution at each passive party.
-The resulting cumulative histograms will be returned to the active party, decrypted, and further be used for tree building at the active party.
+垂直コラボレーションにおいてラベル情報を保護するため、XGBoost の各ラウンドで、アクティブパーティが各サンプルの勾配を計算した後、その勾配はパッシブパーティへ送信される前に暗号化されます。
+暗号化された勾配（暗号文）を受け取ると、各パッシブパーティにおける固有の特徴量分布に従ってそれらが累積されます。
+その結果得られる累積ヒストグラムはアクティブパーティに返され、復号されて、アクティブパーティでのツリー構築にさらに使用されます。
 
-Decoupled Encryption with Processor Interface
-=============================================
+プロセッサーインターフェースによる暗号化の分離
+================================================
 
-In our current design, XGBoost communication is routed through the NVIDIA FLARE Communicator layer via local gRPC handlers.
-From communication's perspective, the previous direct messages within XGBoost are now handled by FL communicator - they become "external communications" to and from XGBoost via FL system.
-This gives us flexibilities in performing message operations both within XGBoost (before entering FL communicator) and within FL system (by FL communicator)
+現在の設計では、XGBoost の通信はローカル gRPC ハンドラーを介して NVIDIA FLARE コミュニケーター層へルーティングされます。
+通信の観点からは、これまで XGBoost 内部で直接やり取りされていたメッセージが FL コミュニケーターによって処理されるようになり、FL システムを経由して XGBoost に出入りする「外部通信」となります。
+これにより、XGBoost 内（FL コミュニケーターに入る前）と FL システム内（FL コミュニケーターによる処理）の両方でメッセージ操作を行う柔軟性が得られます。
 
 .. figure:: ../../../resources/xgb_communicator.jpg
     :height: 500px
 
-With NVFlare, the XGBoost plugin will be implemented in C++, while the FL system communicator will be implemented in Python. A processor interface is designed and developed to properly connect the two by taking plugins implemented towards a specific HE method and collaboration mode:
+NVFlare では、XGBoost プラグインは C++ で実装され、FL システムのコミュニケーターは Python で実装されます。特定の HE 手法とコラボレーションモードに向けて実装されたプラグインを取り込むことで、両者を適切に接続するプロセッサーインターフェースが設計・開発されています。
 
 .. figure:: ../../../resources/processor_interface_design.png
     :height: 500px
 
-Processor Interface Design
+プロセッサーインターフェースの設計
 
-  1. Upon receiving specific MPI calls from XGBoost, each corresponding party calls interface for data processing (serialization, etc.), providing necessary information: g/h pairs, or local G/H histograms
-  2. Processor interface performs necessary processing (and encryption), and send the results back as a processed buffer
-  3. Each party then forward the message to local gRPC handler on FL system side
-  4. After FL communication involving message routing and computation, each party receives the result buffer upon MPI calls.
-  5. Each FL party then sends the received buffer to processor interface for interpretation
-  6. Interface performs necessary processing (deserialization, etc.), recovers proper information, and sends the result back to XGBoost for further computation
+  1. XGBoost から特定の MPI 呼び出しを受け取ると、対応する各パーティがデータ処理（シリアライズなど）のためにインターフェースを呼び出し、必要な情報（g/h のペア、またはローカルの G/H ヒストグラム）を提供します
+  2. プロセッサーインターフェースが必要な処理（および暗号化）を行い、処理済みバッファとして結果を返します
+  3. 次に各パーティが、そのメッセージを FL システム側のローカル gRPC ハンドラーへ転送します
+  4. メッセージのルーティングと計算を伴う FL 通信の後、各パーティは MPI 呼び出しによって結果バッファを受け取ります
+  5. 次に各 FL パーティが、受け取ったバッファを解釈のためにプロセッサーインターフェースへ送ります
+  6. インターフェースが必要な処理（デシリアライズなど）を行い、適切な情報を復元して、さらなる計算のために結果を XGBoost へ返します
 
 
-Note that encryption/decryption can be performed either by processor interface (C++), or at local gRPC handler (Python) depending on the particular HE library and scheme being considered.
+なお、暗号化／復号は、検討対象となる HE ライブラリやスキームに応じて、プロセッサーインターフェース (C++) で実行することも、ローカル gRPC ハンドラー (Python) で実行することもできます。
 
-System Design
+システム設計
 =============
-With the secure solutions, communication patterns, and processor interface, below we provide example designs for secure federated XGBoost - both vertical and horizontal.
+セキュアなソリューション、通信パターン、プロセッサーインターフェースを踏まえ、以下ではセキュア連合 XGBoost（垂直・水平の両方）の設計例を示します。
 
-For vertical pipeline:
+垂直パイプラインの場合:
 
-  1. active party first compute g/h with the label information it owns
-  2. g/h data will be sent to processor interface, encrypted with C++ based encryption util library, and sent to passive party via FL communication
-  3. passive party provides indexing information for histogram computation according to local feature distributions, and the processor interface will perform aggregation with E(g/h) received.
-  4. The resulting E(G/H) will be sent to active party via FL message routing
-  5. Decrypted by processor interface on active party side, tree building can be performed with global histogram information
+  1. アクティブパーティが、自身の保有するラベル情報を用いてまず g/h を計算します
+  2. g/h データはプロセッサーインターフェースへ送られ、C++ ベースの暗号化ユーティリティライブラリで暗号化され、FL 通信を介してパッシブパーティへ送信されます
+  3. パッシブパーティは、ローカルの特徴量分布に従ってヒストグラム計算のためのインデックス情報を提供し、プロセッサーインターフェースが受け取った E(g/h) を用いて集約を実行します
+  4. 結果として得られる E(G/H) は、FL のメッセージルーティングを介してアクティブパーティへ送信されます
+  5. アクティブパーティ側のプロセッサーインターフェースで復号され、グローバルヒストグラム情報を用いてツリー構築を実行できます
 
 .. figure:: ../../../resources/secure_vertical_xgb.png
     :height: 500px
 
-Secure Vertical Federated XGBoost with XGBoost-side Encryption
-In this case, the "heavy-lifting" jobs - encryption, secure aggregation, etc. -  are done by processor interface.
+XGBoost 側で暗号化を行うセキュア垂直連合 XGBoost
+この場合、暗号化やセキュア集約などの「重い処理」はプロセッサーインターフェースが担当します。
 
-For horizontal pipeline:
+水平パイプラインの場合:
 
-  1. All parties sends their local G/H histograms to FL side via processor interface, in this design processor interface only performs buffer preparation without any complicated processing steps
-  2. Before sending to federated server, the G/H histograms will be encrypted at local gRPC handler with Python-based encryption util library
-  3. Federated server will perform secure aggregation over received partial E(G/H), and distribute the global E(G/H) to each clients, where the global histograms will be decrypted, and used for further tree-building
+  1. すべてのパーティがプロセッサーインターフェースを介してローカルの G/H ヒストグラムを FL 側へ送信します。この設計では、プロセッサーインターフェースは複雑な処理を行わず、バッファの準備のみを行います
+  2. 連合サーバーへ送信する前に、G/H ヒストグラムは Python ベースの暗号化ユーティリティライブラリを用いてローカル gRPC ハンドラーで暗号化されます
+  3. 連合サーバーは、受け取った部分的な E(G/H) に対してセキュア集約を実行し、グローバルな E(G/H) を各クライアントへ配布します。クライアント側ではグローバルヒストグラムが復号され、以降のツリー構築に使用されます
 
 .. figure:: ../../../resources/secure_horizontal_xgb.png
     :height: 500px
 
-Secure Horizontal Federated XGBoost with FL-side Encryption
-In this case, the encryption is done on the FL system side.
+FL 側で暗号化を行うセキュア水平連合 XGBoost
+この場合、暗号化は FL システム側で行われます。
 

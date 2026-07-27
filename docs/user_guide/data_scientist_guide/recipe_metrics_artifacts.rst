@@ -1,14 +1,13 @@
 .. _recipe_metrics_artifacts:
 
-Recipe Metrics Artifacts
-========================
+レシピのメトリクスアーティファクト
+====================================
 
-Built-in training aggregation recipes write standard metrics artifacts when the
-server workflow reports round-level aggregation metrics. These files make recipe
-results easier to consume from benchmark, reporting, and agent tooling without
-scraping server logs.
+組み込みの学習集約レシピは、サーバーワークフローがラウンド単位の集約メトリクスを報告する際に、
+標準のメトリクスアーティファクトを書き出します。これらのファイルにより、サーバーログをスクレイピング
+することなく、ベンチマーク、レポート、エージェント系ツールからレシピの結果を利用しやすくなります。
 
-The artifacts are written under the server run directory:
+アーティファクトはサーバーの実行ディレクトリ配下に書き出されます。
 
 .. code-block:: text
 
@@ -16,53 +15,50 @@ The artifacts are written under the server run directory:
      metrics_summary.json
      round_metrics.jsonl
 
-Recipes or workflows that do not report training aggregation metrics do not need
-to create these files. This includes PSI, stats-only jobs, and standalone
-cross-site validation. Cross-site validation continues to use its existing
-``cross_site_val/cross_val_results.json`` output.
+学習集約メトリクスを報告しないレシピやワークフローでは、これらのファイルを作成する必要はありません。
+これには PSI、統計のみのジョブ、単独で実行するクロスサイト検証が含まれます。クロスサイト検証は
+引き続き既存の ``cross_site_val/cross_val_results.json`` 出力を使用します。
 
-Recipe Behavior
+レシピの動作
 ---------------
 
-Users do not need to select this writer for supported built-in training
-aggregation recipes. The recipe setup installs it as part of the server
-configuration, and it writes files only when the workflow reports aggregation
-metrics.
+サポートされている組み込みの学習集約レシピでは、ユーザーがこのライターを選択する必要はありません。
+レシピのセットアップがサーバー設定の一部としてライターをインストールし、ワークフローが集約メトリクスを
+報告した場合にのみファイルを書き出します。
 
-This release does not expose a recipe argument to disable metrics artifacts. For
-custom jobs that should not write these artifacts, omit the metrics artifact
-writer from the server configuration.
+本リリースでは、メトリクスアーティファクトを無効化するレシピ引数は提供されていません。これらの
+アーティファクトを書き出したくないカスタムジョブでは、サーバー設定からメトリクスアーティファクト
+ライターを除外してください。
 
-Recorder Semantics
-------------------
+レコーダーのセマンティクス
+----------------------------
 
-The metrics artifact writer is a recorder. It persists metrics and metadata that
-workflows, aggregators, and model selectors already produce:
+メトリクスアーティファクトライターはレコーダーです。ワークフロー、アグリゲータ、モデルセレクタが
+すでに生成しているメトリクスとメタデータを永続化します。
 
-* official aggregated metrics from the round aggregation result
-* per-site metrics received from clients for each round
-* official best metric metadata published by model-selection logic
-* aggregation provenance, weights, and skipped values when available
+* ラウンド集約結果から得られる公式の集約メトリクス
+* 各ラウンドでクライアントから受け取ったサイトごとのメトリクス
+* モデル選択ロジックが公開する公式のベストメトリクスメタデータ
+* 利用可能な場合は、集約の来歴 (provenance)、重み、スキップされた値
 
-It does not recompute metrics, select a best round, infer max/min policy, parse
-logs, or compute nonlinear metrics such as AUROC from pooled predictions.
+このライターはメトリクスの再計算、ベストラウンドの選択、max/min ポリシーの推定、ログの解析、
+プールされた予測値からの AUROC のような非線形メトリクスの計算は行いません。
 
-Metric names are dynamic. Names such as ``auroc``, ``accuracy``, ``loss``,
-``dice``, ``rmse``, or ``f1`` are client or workflow metric keys, not hard-coded
-schema fields.
+メトリクス名は動的です。 ``auroc`` 、 ``accuracy`` 、 ``loss`` 、 ``dice`` 、 ``rmse`` 、 ``f1``
+といった名前は、クライアントまたはワークフローのメトリクスキーであり、ハードコードされたスキーマ
+フィールドではありません。
 
-Round numbers are recorded as provided by workflow metadata such as
-``AppConstants.CURRENT_ROUND`` or ``FLModel.current_round``. They are 0-based by
-default and are not renumbered by the writer.
+ラウンド番号は ``AppConstants.CURRENT_ROUND`` や ``FLModel.current_round`` などのワークフロー
+メタデータから提供されたとおりに記録されます。既定では 0 始まりであり、ライターによって振り直される
+ことはありません。
 
 ``metrics_summary.json``
 ------------------------
 
-``metrics_summary.json`` contains the final aggregated metrics from the last
-completed metrics round and, when available, official best metric metadata from
-the model selector.
+``metrics_summary.json`` には、最後に完了したメトリクスラウンドの最終集約メトリクスと、利用可能な
+場合はモデルセレクタからの公式のベストメトリクスメタデータが含まれます。
 
-Example:
+例:
 
 .. code-block:: json
 
@@ -108,18 +104,17 @@ Example:
      ]
    }
 
-Best metric fields are optional. They are present only when a selector or
-workflow publishes explicit best-selection metadata. The writer does not infer a
-best round from metric values.
+ベストメトリクス関連のフィールドは任意です。セレクタまたはワークフローが明示的なベスト選択メタデータを
+公開している場合にのみ存在します。ライターがメトリクス値からベストラウンドを推定することはありません。
 
 ``round_metrics.jsonl``
 -----------------------
 
-``round_metrics.jsonl`` contains one JSON object per completed metrics round.
-Each line records official aggregated metrics, per-site client metrics, optional
-aggregation metadata, and skipped metric values.
+``round_metrics.jsonl`` には、完了したメトリクスラウンドごとに 1 つの JSON オブジェクトが含まれます。
+各行には、公式の集約メトリクス、サイトごとのクライアントメトリクス、任意の集約メタデータ、および
+スキップされたメトリクス値が記録されます。
 
-Example line:
+行の例:
 
 .. code-block:: json
 
@@ -181,35 +176,32 @@ Example line:
      ]
    }
 
-Dynamic metric names are stored as ``name`` values in arrays rather than as JSON
-object keys. This avoids treating client-provided names as object structure in
-downstream tools.
+動的なメトリクス名は、JSON オブジェクトのキーとしてではなく、配列内の ``name`` の値として格納されます。
+これにより、下流のツールでクライアント由来の名前がオブジェクト構造として扱われることを防ぎます。
 
-Safe Metric Values
-------------------
-
-Clients are untrusted metric producers. The writer serializes only normalized
-JSON-safe scalar values and writes to fixed filenames under the server run
-directory.
-
-Official aggregated metrics accept finite numeric values and bool values.
-Per-site metrics accept finite numeric values, bool values, and bounded string
-values. Unsupported objects, tensors, arrays, nested containers, oversized
-values, ``NaN``, and ``Infinity`` are skipped and reported in
-``skipped_metrics`` with a bounded reason record.
-
-Downloaded Artifacts
+安全なメトリクス値
 --------------------
 
-Metrics files are part of the normal downloaded job result when they exist. For
-automation, use the job download JSON output to find the downloaded local paths
-instead of constructing paths from the workspace layout:
+クライアントは信頼できないメトリクス生成元です。ライターは正規化された JSON セーフなスカラー値のみを
+シリアライズし、サーバーの実行ディレクトリ配下の固定ファイル名に書き出します。
+
+公式の集約メトリクスは、有限の数値と真偽値を受け付けます。サイトごとのメトリクスは、有限の数値、
+真偽値、および長さが制限された文字列値を受け付けます。サポートされないオブジェクト、テンソル、配列、
+入れ子のコンテナ、サイズ超過の値、 ``NaN`` 、 ``Infinity`` はスキップされ、長さが制限された理由の
+レコードとともに ``skipped_metrics`` に報告されます。
+
+ダウンロードされたアーティファクト
+------------------------------------
+
+メトリクスファイルは、存在する場合は通常のダウンロード対象のジョブ結果に含まれます。自動化では、
+ワークスペースのレイアウトからパスを組み立てるのではなく、ジョブダウンロードの JSON 出力を使って
+ダウンロード先のローカルパスを見つけてください。
 
 .. code-block:: shell
 
    nvflare job download <job_id> -o ./downloads --format json
 
-Example response excerpt:
+レスポンスの抜粋例:
 
 .. code-block:: json
 
@@ -227,6 +219,6 @@ Example response excerpt:
      }
    }
 
-``metrics_summary`` and ``round_metrics`` are reported only when those files
-exist in the downloaded result. ``round_metrics`` is optional because older jobs
-and jobs without aggregation metrics do not create a per-round metrics file.
+``metrics_summary`` と ``round_metrics`` は、それらのファイルがダウンロード結果に存在する場合にのみ
+報告されます。古いジョブや集約メトリクスを持たないジョブはラウンドごとのメトリクスファイルを作成しない
+ため、 ``round_metrics`` は任意です。
