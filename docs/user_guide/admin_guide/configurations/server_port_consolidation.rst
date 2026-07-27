@@ -1,33 +1,33 @@
 .. _server_port_consolidation:
 
-Single-Port Server Deployment
-=============================
+シングルポートでのサーバーデプロイ
+========================================
 
-**FLARE requires only one open port** for the FL server. A single port handles both
-FL client/server communication and admin client/server communication.
+**FLARE が FL サーバー用に必要とする開放ポートは 1 つだけです。** 単一のポートで、
+FL クライアント / サーバー間の通信と、管理クライアント / サーバー間の通信の両方を処理します。
 
 .. note::
 
-   If your network policies require separate ports for different types of traffic,
-   you can optionally configure two separate ports. See `Using Separate Ports`_ below.
+   ネットワークポリシー上、トラフィックの種類ごとに別々のポートが必要な場合は、
+   オプションで 2 つのポートを個別に設定することもできます。以下の `個別ポートの使用`_ を参照してください。
 
 .. image:: ../../../resources/flare_byocc.png
     :height: 300px
 
-The diagram above illustrates the connection and authentication mechanisms enabled by
-single-port, TLS, and :ref:`BYOConn <byoconn>` features.
+上の図は、シングルポート、TLS、および :ref:`BYOConn <byoconn>` の各機能によって実現される
+接続および認証のメカニズムを示しています。
 
-Using Separate Ports
-~~~~~~~~~~~~~~~~~~~~
+個別ポートの使用
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-For environments where different network security policies apply to admin and client traffic,
-the system can still be provisioned with two separate port numbers. See the provisioning
-configuration below for details.
+管理トラフィックとクライアントトラフィックに異なるネットワークセキュリティポリシーが適用される環境では、
+システムを 2 つの個別のポート番号でプロビジョニングすることも可能です。詳細については、
+以下のプロビジョニング設定を参照してください。
 
-Port Number Provision
----------------------
+ポート番号のプロビジョニング
+----------------------------------
 
-The FL port number is specified with the ``fed_learn_port`` property in the project's provisioning configuration file (e.g., ``project.yml``). See the example below.
+FL のポート番号は、プロジェクトのプロビジョニング設定ファイル (例: ``project.yml``) の ``fed_learn_port`` プロパティで指定します。以下の例を参照してください。
 
 .. code-block:: yaml
 
@@ -41,7 +41,7 @@ The FL port number is specified with the ``fed_learn_port`` property in the proj
       host_names: [localhost, 127.0.0.1]
       default_host: localhost
 
-If the property is not explicitly specified, it defaults to 8002. By default, the ``fed_learn_port`` is also used as the ``admin_port``. However, you can specify a different port number using the ``admin_port`` property.
+このプロパティが明示的に指定されていない場合、デフォルトは 8002 になります。デフォルトでは、``fed_learn_port`` が ``admin_port`` としても使用されます。ただし、``admin_port`` プロパティを使って別のポート番号を指定することもできます。
 
 .. code-block:: yaml
 
@@ -56,14 +56,14 @@ If the property is not explicitly specified, it defaults to 8002. By default, th
       host_names: [localhost, 127.0.0.1]
       default_host: localhost
 
-Admin Client Configuration
---------------------------
+管理クライアントの設定
+----------------------------
 
-Once provisioned, an admin user will receive a startup kit, which is used to connect to the FLARE server using the admin client (or FLARE API).
+プロビジョニングが完了すると、管理ユーザーはスタートアップキットを受け取ります。これは、管理クライアント (または FLARE API) を使って FLARE サーバーに接続するために使用します。
 
-The ``startup`` folder in the kit contains essential configuration information that must not be modified by the user. If the file is modified, the admin client will detect it and will not connect to the server.
+キット内の ``startup`` フォルダには、ユーザーが変更してはならない重要な設定情報が含まれています。ファイルが変更された場合、管理クライアントはそれを検知し、サーバーに接続しません。
 
-The ``local`` folder in the kit contains the ``resources.json.default`` file, which includes configuration parameters that the user can modify.
+キット内の ``local`` フォルダには ``resources.json.default`` ファイルが含まれており、ここにはユーザーが変更可能な設定パラメータが含まれています。
 
 .. code-block:: json
 
@@ -78,49 +78,49 @@ The ``local`` folder in the kit contains the ``resources.json.default`` file, wh
     }
    }
 
-The user can edit this file and set the parameters to better fit their local environment.
+ユーザーはこのファイルを編集し、自分のローカル環境により適したパラメータを設定できます。
 
-Idle Timeout
-------------
+アイドルタイムアウト
+--------------------------
 
-For security, the admin client automatically shuts down when idle for too long. The ``idle_timeout`` parameter specifies how long the client is allowed to be idle before automatic shutdown.
+セキュリティのため、管理クライアントはアイドル状態が長すぎると自動的にシャットダウンします。``idle_timeout`` パラメータは、自動シャットダウンされるまでにクライアントがアイドル状態でいられる時間を指定します。
 
-The default value is 900 seconds.
+デフォルト値は 900 秒です。
 
-Login Timeout
--------------
+ログインタイムアウト
+--------------------------
 
-When the admin client is started, it attempts to log in. However, the FL server may or may not be available at login time. The admin client will continue attempting to connect until a preset timeout is reached.
+管理クライアントは起動時にログインを試みます。ただし、ログイン時に FL サーバーが利用可能であるとは限りません。管理クライアントは、あらかじめ設定されたタイムアウトに達するまで接続を試み続けます。
 
-The ``login_timeout`` parameter specifies how long the client will attempt to log in before quitting. The default value is 10 seconds.
+``login_timeout`` パラメータは、クライアントが終了するまでにログインを試みる時間を指定します。デフォルト値は 10 秒です。
 
-Authentication Message Timeout
-------------------------------
+認証メッセージのタイムアウト
+----------------------------------
 
-One of the login steps is authentication. Multiple messages are exchanged between the admin client and the FL server for mutual authentication.
+ログイン手順の 1 つが認証です。相互認証のために、管理クライアントと FL サーバーの間で複数のメッセージが交換されます。
 
-The ``authenticate_msg_timeout`` parameter specifies the timeout value for these messages. The default value is 2 seconds.
+``authenticate_msg_timeout`` パラメータは、これらのメッセージのタイムアウト値を指定します。デフォルト値は 2 秒です。
 
-Consider increasing this value only if your local network is slow.
+この値を大きくすることを検討するのは、ローカルネットワークが低速な場合のみにしてください。
 
-Enable Debug
-------------
+デバッグの有効化
+----------------------
 
-Normally, the admin client runs without printing debugging information. If you encounter errors, you can enable debugging to print detailed technical information.
+通常、管理クライアントはデバッグ情報を出力せずに動作します。エラーが発生した場合は、デバッグを有効にして詳細な技術情報を出力できます。
 
-To enable debugging, set the ``with_debug`` parameter to ``true``.
+デバッグを有効にするには、``with_debug`` パラメータを ``true`` に設定します。
 
-Command Prompt
---------------
+コマンドプロンプト
+------------------------
 
-When the admin client is started, it displays a prompt character for entering commands. This character is specified with the ``prompt`` parameter. You can change the prompt character to any character you prefer.
+管理クライアントを起動すると、コマンドを入力するためのプロンプト文字が表示されます。この文字は ``prompt`` パラメータで指定します。プロンプト文字は、お好みの任意の文字に変更できます。
 
-Command Timeout
----------------
+コマンドタイムアウト
+--------------------------
 
-Commands are sent to the FL server for execution through messages. The default timeout for each message is 5 seconds. If your network is slow, you may want to increase this to a larger value.
+コマンドはメッセージを通じて FL サーバーに送信され、実行されます。各メッセージのデフォルトのタイムアウトは 5 秒です。ネットワークが低速な場合は、この値を大きくするとよいでしょう。
 
-You can change the command timeout:
+コマンドタイムアウトは次の方法で変更できます。
 
-- If you are running the admin client, issue the ``timeout <value>`` command
-- Call the ``sess.set_timeout(value)`` method when using the FLARE API
+- 管理クライアントを実行している場合は、``timeout <value>`` コマンドを発行します
+- FLARE API を使用している場合は、``sess.set_timeout(value)`` メソッドを呼び出します

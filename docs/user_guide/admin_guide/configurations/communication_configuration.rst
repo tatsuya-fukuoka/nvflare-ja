@@ -1,46 +1,46 @@
 .. _communication_configuration:
 
 ###########################
-Communication Configuration
+通信の設定
 ###########################
 
-FLARE's communication system is based on the CellNet technology.
-CellNet supports logical communication. Each site in the system is called a communication cell, or simply a cell.
-All cells form a communication network called CellNet and each cell has a unique ID called Fully Qualified Cell Name (FQCN).
-Any cell can communicate with any other cells via their FQCNs, regardless how the messages are routed. 
+FLARE の通信システムは CellNet 技術に基づいています。
+CellNet は論理的な通信をサポートします。システム内の各サイトは通信セル、単にセルと呼ばれます。
+すべてのセルは CellNet と呼ばれる通信ネットワークを形成し、各セルは完全修飾セル名 (FQCN) と呼ばれる一意の ID を持ちます。
+どのセルも、メッセージがどのようにルーティングされるかにかかわらず、FQCN を介して他の任意のセルと通信できます。
 
-FLARE is a multi-job system in that multiple jobs can be executed at the same time.
-When a FLARE system is started, the CellNet consists of the server and one client cell for each site.
-All client cells are connected to the server cell. This topology is the backbone of the communication system and cells are called Parent Cells.
+FLARE は複数のジョブを同時に実行できるという意味でマルチジョブシステムです。
+FLARE システムが起動すると、CellNet はサーバーと、各サイトにつき 1 つのクライアントセルで構成されます。
+すべてのクライアントセルはサーバーセルに接続されます。このトポロジーは通信システムのバックボーンであり、これらのセルは親セル (Parent Cell) と呼ばれます。
 
-When a job is deployed, the job is done by new cells dedicated to the execution of the job, one cell at each site (server and clients).
-These cells are called Job Cells which are started when the job is deployed, and stopped when the job is finished.
+ジョブがデプロイされると、そのジョブはジョブの実行専用の新しいセルによって処理されます。セルは各サイト (サーバーおよびクライアント) に 1 つずつ作られます。
+これらのセルはジョブセル (Job Cell) と呼ばれ、ジョブのデプロイ時に開始され、ジョブの終了時に停止されます。
 
-This communication system provides many powerful features (multiple choices of communication drivers, large message streaming, ad-hoc direct connections, etc.).
-However, for these features to work well, they need to be configured properly.
+この通信システムは、多くの強力な機能 (複数の通信ドライバーの選択、大容量メッセージのストリーミング、アドホックな直接接続など) を提供します。
+ただし、これらの機能が適切に動作するためには、適切に設定する必要があります。
 
-This document describes all aspects that can be configured and how to configure them properly.
+本ドキュメントでは、設定可能なすべての項目と、それらを適切に設定する方法について説明します。
 
-The following aspects of the communication system can be configured:
+通信システムでは、次の項目を設定できます。
 
-- Parameters of communication drivers
-- Selection of gRPC driver implementation (asyncio vs. non-asyncio)
-- Configuration of ad-hoc connections
-- Configuration of internal connections
-- Messaging parameters
+- 通信ドライバーのパラメータ
+- gRPC ドライバー実装の選択 (asyncio 版か非 asyncio 版か)
+- アドホック接続の設定
+- 内部接続の設定
+- メッセージングのパラメータ
 
-General Configuration
+全般的な設定
 =====================
 
-The communication system is configured with the comm_config.json file. This file is to be maintained by Operation Staff of each FL site (servers and FL clients).
-This file must be placed in the site's "local" folder:
+通信システムは comm_config.json ファイルで設定します。このファイルは、各 FL サイト (サーバーおよび FL クライアント) の運用担当者が管理します。
+このファイルは、サイトの "local" フォルダに配置する必要があります。
 
 ``<site_workspace>/local/comm_config.json``
 
-Some aspects of the communication system are configured with simple variables (e.g. max_message_size).
-Variables can be defined in comm_config.json or via OS system environment variables.
+通信システムの一部の項目は、単純な変数 (例: max_message_size) で設定します。
+変数は comm_config.json 内で定義することも、OS のシステム環境変数を介して定義することもできます。
 
-To define a variable in comm_config.json, simply set it as the first-level element:
+comm_config.json 内で変数を定義するには、単に第 1 階層の要素として設定します。
 
 .. code-block:: json
 
@@ -48,12 +48,12 @@ To define a variable in comm_config.json, simply set it as the first-level eleme
     "max_message_size": 2000000000
   }
 
-You can also define the variable using an OS environment variable. The name of the env var the var name converted into uppercase and prefixed with ``NVFLARE_``.
-For example, the env var name for max_message_size is: ``NVFLARE_MAX_MESSAGE_SIZE``.
+OS の環境変数を使用して変数を定義することもできます。環境変数の名前は、変数名を大文字に変換し、``NVFLARE_`` を前置したものになります。
+たとえば、max_message_size に対応する環境変数名は ``NVFLARE_MAX_MESSAGE_SIZE`` です。
 
-If you define the same variable both in the file and as an environment variable, the value defined in the file takes precedence.
+同じ変数をファイルと環境変数の両方で定義した場合は、ファイルで定義した値が優先されます。
 
-The following is an example of the comm_config.json:
+以下は comm_config.json の例です。
 
 .. code-block:: json
 
@@ -94,54 +94,54 @@ The following is an example of the comm_config.json:
   }
 
 
-Configuration of Communication Drivers
+通信ドライバーの設定
 ======================================
 
-A communication driver is identified by its scheme (tcp, http, grpc, etc.).
-The details of the driver can be configured with a section named with the scheme in the config file. In the example above, the "grpc" section defines the gRPC driver's options.
+通信ドライバーは、そのスキーム (tcp、http、grpc など) によって識別されます。
+ドライバーの詳細は、設定ファイル内でスキーム名を持つセクションによって設定できます。上の例では、"grpc" セクションが gRPC ドライバーのオプションを定義しています。
 
-Note that different drivers have different configuration parameters.
+ドライバーによって設定パラメータが異なる点に注意してください。
 
-GRPC Configuration
+GRPC の設定
 ------------------
 
-The GRPC driver's details are defined in the "options" section within the "grpc" section. Please see GRPC documentation for details of available options.
+GRPC ドライバーの詳細は、"grpc" セクション内の "options" セクションで定義します。利用可能なオプションの詳細については、GRPC のドキュメントを参照してください。
 
-Note that since FLARE has built general messaging management for all drivers, you shouldn't need to configure GRPC options in most cases.
+FLARE はすべてのドライバーに対して汎用的なメッセージング管理機構を構築しているため、ほとんどの場合、GRPC のオプションを設定する必要はありません。
 
-GRPC Driver Selection
+GRPC ドライバーの選択
 ---------------------
 
-GRPC is the default scheme for communication between FL clients and the server.
-FLARE provides two implementations of GRPC drivers, one uses GRPC's asyncio version (AIO), another uses GRPC's non-asyncio version (non-AIO).
-The default driver is the non-AIO version.
+GRPC は、FL クライアントとサーバー間の通信におけるデフォルトのスキームです。
+FLARE は 2 種類の GRPC ドライバー実装を提供しており、1 つは GRPC の asyncio 版 (AIO) を使用し、もう 1 つは GRPC の非 asyncio 版 (非 AIO) を使用します。
+デフォルトのドライバーは非 AIO 版です。
 
-According to GRPC documentation, the AIO GRPC is slightly more efficient.
-But the main advantage is that it can handle many more simultaneous connections on the server side, and there is no need to configure the "num_workers" parameter.
+GRPC のドキュメントによれば、AIO 版の GRPC の方がわずかに効率的です。
+ただし主な利点は、サーバー側でより多くの同時接続を処理できること、および "num_workers" パラメータを設定する必要がないことです。
 
-Unfortunately the AIO GRPC client-side library is not stable under difficult network conditions where disconnects happen frequently.
-The non-AIO GRPC library seems very stable.
+残念ながら、AIO 版の GRPC クライアントライブラリは、切断が頻繁に発生するような厳しいネットワーク条件下では安定していません。
+非 AIO 版の GRPC ライブラリは非常に安定しているようです。
 
-If your network is stable and you have many clients and/or many concurrent jobs, you should consider using the AIO version of the GRPC driver.
-This is done by setting use_aio_grpc to true:
+ネットワークが安定していて、クライアント数が多い場合や同時実行ジョブが多い場合には、AIO 版の GRPC ドライバーの使用を検討してください。
+これは use_aio_grpc を true に設定することで行います。
 
 ``"use_aio_grpc": true``
 
-On the server side if you use the non-AIO gRPC driver, the default maximum number of workers is 100, meaning that there can be at most 100 concurrent connections to the server.
-If this is not enough, you will need to use the AIO gRPC driver.
+サーバー側で非 AIO 版の gRPC ドライバーを使用する場合、ワーカーの最大数のデフォルトは 100 です。つまり、サーバーへの同時接続は最大 100 までとなります。
+これで不十分な場合は、AIO 版の gRPC ドライバーを使用する必要があります。
 
-Ad-hoc Connections
+アドホック接続
 ==================
 
-By default, all sites only connect to the server. When a site needs to talk to another site, messages will be relayed through the server.
-To improve communication speed, it could be configured to allow the two sites to communicate directly, if network policies of the sites permit.
-A direct connection between two sites (cells) is called an ad-hoc connection.
+デフォルトでは、すべてのサイトはサーバーにのみ接続します。あるサイトが別のサイトと通信する必要がある場合、メッセージはサーバーを経由して中継されます。
+通信速度を向上させるために、サイトのネットワークポリシーが許可するならば、2 つのサイトが直接通信できるように設定することも可能です。
+2 つのサイト (セル) 間の直接接続は、アドホック接続と呼ばれます。
 
-First of all, the ad-hoc connection must be enabled. This is done by setting the allow_adhoc_conns variable to true (default value is false).
+まず第一に、アドホック接続を有効にする必要があります。これは allow_adhoc_conns 変数を true に設定することで行います (デフォルト値は false です)。
 
 ``"allow_adhoc_conns": true``
 
-Secondly, in the "adhoc" section, you can further specify what scheme to use for ad-hoc connections, as well as resources for establishing the connections.
+第二に、"adhoc" セクションで、アドホック接続に使用するスキームや、接続を確立するためのリソースをさらに指定できます。
 
 .. code-block:: json
 
@@ -154,70 +154,70 @@ Secondly, in the "adhoc" section, you can further specify what scheme to use for
     }
   }
 
-In this example, we use tcp for ad-hoc connections, and we will listen on port number 8008 or 9008.
-Note that the ad-hoc connection's port number is dynamically determined based on the port information in the config.
+この例では、アドホック接続に tcp を使用し、ポート番号 8008 または 9008 で待ち受けます。
+なお、アドホック接続のポート番号は、設定内のポート情報に基づいて動的に決定されます。
 
-Ad-hoc connections have the following limitations:
+アドホック接続には、次の制限があります。
 
-- They do not work well in environments with firewalls that only allow pre-defined ports. The listener may use a dynamically assigned port, so the connection can be blocked by firewall rules.
-- They are only a communication optimization. They are best-effort only, and the direct connection may not be created if the network environment does not allow it.
-- They are created on demand only after CellNet sees the first message from the target cell. Because establishing the ad-hoc connection takes time, there can be an initial delay before messages start going through the direct path.
+- 事前に定義されたポートのみを許可するファイアウォールが存在する環境では、うまく機能しません。リスナーが動的に割り当てられたポートを使用する可能性があるため、ファイアウォールのルールによって接続がブロックされることがあります。
+- あくまで通信の最適化にすぎません。ベストエフォートであり、ネットワーク環境が許可しない場合は直接接続が作成されないことがあります。
+- CellNet が対象セルからの最初のメッセージを受け取った後にオンデマンドで作成されます。アドホック接続の確立には時間がかかるため、メッセージが直接経路を通り始めるまでに初期の遅延が生じることがあります。
 
-Config Properties
+設定プロパティ
 -----------------
 
 Scheme
 ^^^^^^
 
-You specify the communication driver with the "scheme" property. Available schemes are grpc, http and tcp.
+通信ドライバーは "scheme" プロパティで指定します。利用可能なスキームは grpc、http、tcp です。
 
-If not specified, the default scheme is "tcp".
+指定しない場合、デフォルトのスキームは "tcp" です。
 
 Host
 ^^^^
 
-You specify the host of the connection with the "host" property. This value is part of the URL for the connector to connect to.
+接続先のホストは "host" プロパティで指定します。この値は、コネクタが接続するための URL の一部となります。
 
 Secure
 ^^^^^^
 
-The "secure" property to specifies whether the ad-hoc connections will use SSL.
+"secure" プロパティは、アドホック接続が SSL を使用するかどうかを指定します。
 
-Note that if secure is set to true for a site, then the site must have a "server certificate", even if the site is a FL Client.
-The site's "server certificate" is generated during the provision process, if you configure the "listening_host" property for the site in project.yml.
+あるサイトで secure が true に設定されている場合、そのサイトが FL クライアントであっても "サーバー証明書" を持っている必要がある点に注意してください。
+サイトの "サーバー証明書" は、project.yml でそのサイトの "listening_host" プロパティを設定していれば、プロビジョニングの過程で生成されます。
 
-In secure communication mode, this host name must match the Common Name of the site's "server certificate", which is the same as the "listening_host" property for the site in project.yml.
+セキュア通信モードでは、このホスト名はサイトの "サーバー証明書" の Common Name と一致する必要があります。これは project.yml におけるそのサイトの "listening_host" プロパティと同じ値です。
 
-The default value of "secure" is false.
+"secure" のデフォルト値は false です。
 
-Port Numbers
+ポート番号
 ^^^^^^^^^^^^
 
-You can specify port numbers to be used for connecting to the host. If not specified, an available port number will be dynamically assigned at the time the ad-hoc listener is created.
+ホストへの接続に使用するポート番号を指定できます。指定しない場合、アドホックリスナーの作成時に利用可能なポート番号が動的に割り当てられます。
 
-To specify a single port number using the "port" property:
+"port" プロパティを使用して単一のポート番号を指定する場合:
 
 ``"port": 8008``
-	
-To specify a list of port numbers using the "ports" property:
+
+"ports" プロパティを使用してポート番号のリストを指定する場合:
 
 ``"ports": [8008, 8009, 8010]``
 
-To specify a list of port number ranges using the "ports" property. The following example specifies two ranges of port numbers, one from 8008 to 9008, another from 18000 to 19000.
+"ports" プロパティを使用してポート番号の範囲のリストを指定する場合。次の例では、8008 から 9008 まで、および 18000 から 19000 までという 2 つのポート番号の範囲を指定しています。
 
 ``"ports": [8008-9008, 18000-19000]``
 
 
-Internal Connections
+内部接続
 ====================
 
-As described earlier, job cells are started when a job is deployed. There is one job cell at each site (server and FL clients).
-Job cells at one site are connected to the Parent cell of the same site. Such job-cell/parent-cell connections are called internal connections, since they are internal within the same site.
+前述のとおり、ジョブセルはジョブがデプロイされたときに開始されます。ジョブセルは各サイト (サーバーおよび FL クライアント) に 1 つずつ存在します。
+あるサイトのジョブセルは、同じサイトの親セルに接続されます。このようなジョブセルと親セルの接続は、同一サイト内で完結するため内部接続と呼ばれます。
 
-By default, internal connections use tcp drivers on dynamically determined port numbers.
-Since internal connections are used between processes running on the same host, they don't require SSL.
+デフォルトでは、内部接続は動的に決定されたポート番号上で tcp ドライバーを使用します。
+内部接続は同じホスト上で実行されるプロセス間で使用されるため、SSL を必要としません。
 
-If this default setup does not work for you, you can configure it to your liking in the "internal" section. For example:
+このデフォルトの構成が適さない場合は、"internal" セクションで好みに応じて設定できます。たとえば次のようにします。
 
 .. code-block:: json
 
@@ -230,19 +230,19 @@ If this default setup does not work for you, you can configure it to your liking
     }
   }
 
-In this example, we changed to use "grpc" as the communication scheme.
+この例では、通信スキームとして "grpc" を使用するように変更しています。
 
-The syntax and meanings of the properties are exactly the same as the "adhoc" configurations.
+プロパティの構文と意味は、"adhoc" の設定とまったく同じです。
 
-Messaging Parameters
-====================
+メッセージングのパラメータ
+==========================
 
-FLARE's messaging functions should work well with default configuration settings. However you may find it necessary to tune some parameters under some circumstances.
-This section describes all parameters that you can configure.
-                                                                   
-The messaging parameters can be specified in <site_workspace>/local/comm_config.json file as first-level elements, or by using environment variables as described in the beginning of this document.
+FLARE のメッセージング機能は、デフォルトの設定でも十分に動作するはずです。ただし、状況によっては一部のパラメータを調整する必要が生じることがあります。
+本セクションでは、設定可能なすべてのパラメータについて説明します。
 
-This is an example of comm_config.json file with default values for all the parameters,
+メッセージングのパラメータは、<site_workspace>/local/comm_config.json ファイル内で第 1 階層の要素として指定するか、本ドキュメントの冒頭で説明した環境変数を使用して指定できます。
+
+以下は、すべてのパラメータにデフォルト値を設定した comm_config.json ファイルの例です。
 
 .. code-block:: json
 
@@ -262,7 +262,7 @@ This is an example of comm_config.json file with default values for all the para
     "streaming_retry_max_pending_bytes": 33554432
   }
 
-When large amount of data are exchanged on busy hosts like in LLM training, following parameters are recommended in <site_workspace>/local/comm_config.json on both servers and clients,
+LLM の学習時のように、負荷の高いホスト上で大量のデータをやり取りする場合は、サーバーとクライアントの双方の <site_workspace>/local/comm_config.json で次のパラメータを設定することが推奨されます。
 
 .. code-block:: json
 
@@ -271,7 +271,7 @@ When large amount of data are exchanged on busy hosts like in LLM training, foll
     "streaming_ack_wait": 6000
   }
 
-The communication_timeout parameter should be adjusted as following on clients in <site_workspace>/local/resources.json,
+communication_timeout パラメータは、クライアントの <site_workspace>/local/resources.json で次のように調整してください。
 
 .. code-block:: json
 
@@ -282,110 +282,110 @@ The communication_timeout parameter should be adjusted as following on clients i
     },
   }
 
-Here are the detailed description of each messaging parameter,
+以下は、各メッセージングパラメータの詳細な説明です。
 
 comm_driver_path
 ----------------
 
-FLARE supports custom communication drivers. The paths to search for the drivers need to be configured using parameter "comm_driver_path".
-The parameter should be a list separated by colon. For example,
+FLARE はカスタムの通信ドライバーをサポートしています。ドライバーを検索するパスは、パラメータ "comm_driver_path" を使用して設定する必要があります。
+このパラメータはコロン区切りのリストである必要があります。たとえば次のようになります。
 
 ``"comm_driver_path": "/opt/drivers:/home/nvflare/drivers"``
 
 heartbeat_interval
 ------------------
 
-To keep the connection alive, FLARE exchanges a short message (PING/PONG) for each connection if no traffic is detected for a period of time.
-This is controlled through the parameter "heartbeat_interval". The unit is seconds and the default value is 60.
+接続を維持するため、FLARE は一定時間トラフィックが検出されない場合、各接続について短いメッセージ (PING/PONG) をやり取りします。
+これはパラメータ "heartbeat_interval" で制御されます。単位は秒で、デフォルト値は 60 です。
 
 ``"heartbeat_interval": 30``
 
-This parameter needs to be changed if the network closes idle connection too aggressively.
+ネットワークがアイドル接続を過度に積極的に閉じる場合は、このパラメータを変更する必要があります。
 
-FLARE supports streaming of large messages. With streaming, the message is sliced into chunks and each chunk is sent as an individual message.
-On the receiving end, the chunks are combined into the original large message. The following parameters control the general streaming behavior,
+FLARE は大容量メッセージのストリーミングをサポートしています。ストリーミングでは、メッセージはチャンクに分割され、各チャンクが個別のメッセージとして送信されます。
+受信側では、チャンクが元の大容量メッセージへと結合されます。次のパラメータは、ストリーミング全般の挙動を制御します。
 
 streaming_chunk_size
 --------------------
 
-The chunk size in bytes. The default value is 1M. When deciding chunk size the following factors must be considered:
-- Each chunk is sent with headers so there is some overhead (around 50 bytes) so try to avoid small chunks (< 1K).
-- The relaying server has to buffer the whole chunk so the memory usage will be higher with bigger chunks.
+チャンクサイズ (バイト単位) です。デフォルト値は 1M です。チャンクサイズを決める際は、次の要因を考慮する必要があります。
+- 各チャンクはヘッダーとともに送信されるためオーバーヘッド (約 50 バイト) が生じます。したがって、小さすぎるチャンク (1K 未満) は避けてください。
+- 中継サーバーはチャンク全体をバッファリングする必要があるため、チャンクが大きいほどメモリ使用量が増加します。
 
 streaming_max_blob_size
 -----------------------
 
-The maximum total size in bytes of a received blob stream. The default value is 2144337904 (about 2 GB).
-This limit is enforced before pre-allocating a declared-size blob and while buffering a blob whose size is not declared up front.
+受信する blob ストリームの合計サイズの最大値 (バイト単位) です。デフォルト値は 2144337904 (約 2 GB) です。
+この制限は、サイズが宣言された blob を事前割り当てする前、および事前にサイズが宣言されていない blob をバッファリングしている間に適用されます。
 
-This parameter is separate from ``max_message_size``. ``max_message_size`` limits each individual frame, while
-``streaming_max_blob_size`` limits the total blob size across all streamed chunks.
+このパラメータは ``max_message_size`` とは別のものです。``max_message_size`` は個々のフレームを制限するのに対し、
+``streaming_max_blob_size`` はストリーミングされるすべてのチャンクにわたる blob の合計サイズを制限します。
 
 streaming_read_timeout
 ----------------------
 
-The receiver of streaming times out after this value while waiting for the next chunk. The unit is seconds and the default is 60. 
+ストリーミングの受信側は、次のチャンクを待機する際にこの値でタイムアウトします。単位は秒で、デフォルトは 60 です。
 
-This timeout is used to detect dead senders. On a very slow network or extremely busy host, this value may need to be increased.
+このタイムアウトは、応答のない送信側を検出するために使用されます。非常に低速なネットワークや極めて負荷の高いホストでは、この値を増やす必要がある場合があります。
 
 streaming_max_out_seq_chunks
 ----------------------------
 
-The chunks may arrive on the receiving end out of sequence. 
-The receiver keeps out-of-sequence chunks in a reassembly buffer while waiting for the expected chunk to arrive.
-The streaming terminates with error if the number of chunks in the reassembly buffer is larger than this value. The default is 16. 
+チャンクは受信側に順序どおりに到着しないことがあります。
+受信側は、期待するチャンクの到着を待つ間、順序が前後したチャンクを再構成バッファに保持します。
+再構成バッファ内のチャンク数がこの値を超えると、ストリーミングはエラーで終了します。デフォルトは 16 です。
 
-The streaming implements a sliding-window protocol for flow-control. The receiver sends ACKs after the chunks are retrieved by the reader.
-The window is all the chunks sent but not being acknowledged by the receiver. Once the window reaches a certain size, the sender pauses and waits for more ACKs.
-Following parameters are used to control the flow-control behavior.
+ストリーミングは、フロー制御のためにスライディングウィンドウプロトコルを実装しています。受信側は、リーダーによってチャンクが取り出された後に ACK を送信します。
+ウィンドウとは、送信済みだが受信側から確認応答されていないすべてのチャンクのことです。ウィンドウが一定のサイズに達すると、送信側は一時停止してさらなる ACK を待ちます。
+次のパラメータは、このフロー制御の挙動を制御するために使用されます。
 
 streaming_window_size
 ---------------------
 
-The sliding window size in bytes. The default is 16M. 
+スライディングウィンドウのサイズ (バイト単位) です。デフォルトは 16M です。
 
-The larger the window size, the smoother the flow of data  but the memory usage will be higher.
+ウィンドウサイズが大きいほどデータの流れは滑らかになりますが、メモリ使用量は増加します。
 
 streaming_ack_interval
 ----------------------
 
-This parameter controls how often the receiver sends ACKs to the sender.
-he unit is bytes and the default value is 4M (1/4 of the window size).
+このパラメータは、受信側が送信側に ACK を送る頻度を制御します。
+単位はバイトで、デフォルト値は 4M (ウィンドウサイズの 1/4) です。
 
-The smaller the value, the smoother the sliding window moves, however it generates more messages.
+値が小さいほどスライディングウィンドウの移動は滑らかになりますが、生成されるメッセージ数は増加します。
 
 streaming_ack_wait
 ------------------
 
-The number of seconds that the sender waits for the next ACK.
-The default value is 10 seconds. 
+送信側が次の ACK を待機する秒数です。
+デフォルト値は 10 秒です。
 
-This timeout is used to detect dead receivers. On a very slow network, this value may need to be increased.
+このタイムアウトは、応答のない受信側を検出するために使用されます。非常に低速なネットワークでは、この値を増やす必要がある場合があります。
 
 streaming_reliable
 ------------------
 
-Whether the streaming sender retries chunks that fail to send or have not been acknowledged.
-The default value is ``false`` so mixed-version deployments continue to interoperate during rolling upgrades.
+ストリーミングの送信側が、送信に失敗したチャンクや確認応答されていないチャンクを再送するかどうかを指定します。
+デフォルト値は ``false`` です。これは、ローリングアップグレード中にバージョンが混在するデプロイメントでも相互運用を継続できるようにするためです。
 
-Set this to ``true`` on sites that support reliable streaming, or pass an explicit per-call reliable setting when using the streaming APIs.
+信頼性のあるストリーミングをサポートするサイトではこれを ``true`` に設定するか、ストリーミング API の使用時に呼び出しごとに明示的な reliable 設定を渡してください。
 
 streaming_retry_wait
 --------------------
 
-The number of seconds that a reliable streaming sender waits before retrying an unacknowledged chunk.
-The default value is 5 seconds.
+信頼性のあるストリーミングの送信側が、確認応答されていないチャンクを再試行するまでに待機する秒数です。
+デフォルト値は 5 秒です。
 
 streaming_retry_timeout
 -----------------------
 
-The maximum number of seconds that a reliable streaming sender keeps retrying an unacknowledged chunk before failing the stream.
-The default value is 60 seconds.
+信頼性のあるストリーミングの送信側が、ストリームを失敗とする前に、確認応答されていないチャンクの再試行を続ける最大秒数です。
+デフォルト値は 60 秒です。
 
 streaming_retry_max_pending_bytes
 ---------------------------------
 
-The maximum total payload bytes that a reliable streaming sender keeps in memory for retry.
-The default value is twice ``streaming_window_size``.
+信頼性のあるストリーミングの送信側が、再試行のためにメモリ上に保持するペイロードの合計バイト数の最大値です。
+デフォルト値は ``streaming_window_size`` の 2 倍です。
 
-Set this to 0 or a negative value to disable the retry pending-byte limit.
+再試行の保留バイト数の制限を無効にするには、これを 0 または負の値に設定してください。

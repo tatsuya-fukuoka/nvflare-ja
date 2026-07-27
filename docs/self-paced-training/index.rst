@@ -191,7 +191,7 @@ NVIDIA FLARE によるフェデレーテッドラーニングの全 5 部構成�
     `第 10 章の動画 <https://github.com/NVIDIA/NVFlare/blob/main/examples/tutorials/self-paced-training/part-4_advanced_federated_learning/chapter-10_federated_XGBoost/video.md>`_
 
 パート 5: 業界におけるフェデレーテッドラーニングの応用
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 このセクションでは、ヘルスケア、ライフサイエンス、金融サービスを中心に、NVIDIA FLARE が実世界の業界でどのように活用されているかを紹介します。フェデレーテッドラーニングが組織をまたいだ協働、プライバシー保護、イノベーションをどのように可能にするかを学びます。
 
