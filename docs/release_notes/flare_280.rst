@@ -1,432 +1,423 @@
-**************************
-What's New in FLARE v2.8.0
-**************************
+**********************************
+FLARE v2.8.0 の新機能
+**********************************
 
-NVIDIA FLARE 2.8.0 focuses on making production federated learning easier to
-operate across organizations, studies, and runtime environments. The release
-adds Docker and Kubernetes job launchers, a broader automation-friendly
-CLI, distributed provisioning, multi-study support, stronger observability, and
-additional production hardening. It also adds new examples and research bundles
-for multimodal, language-model, Docker, Kubernetes, and privacy-oriented
-federated learning workflows.
+NVIDIA FLARE 2.8.0 は、本番環境でのフェデレーテッドラーニングを、組織・スタディ・
+ランタイム環境をまたいでより運用しやすくすることに重点を置いています。本リリースでは、
+Docker および Kubernetes のジョブランチャー、より幅広い自動化に適した CLI、分散
+プロビジョニング、マルチスタディ対応、強化された可観測性、そして追加の本番向け堅牢化が
+加わりました。さらに、マルチモーダル、言語モデル、Docker、Kubernetes、プライバシー
+指向のフェデレーテッドラーニングワークフロー向けの新しいサンプルとリサーチバンドルも
+追加されています。
 
-Release Highlights
-==================
+リリースのハイライト
+====================
 
-- **Modern NVFlare CLI**: expanded ``nvflare`` command groups for jobs,
-  system operations, local config, startup kits, recipes, distributed
-  provisioning, and deployment preparation, with JSON output and schema support
-  so operators and automation systems can run FLARE workflows without relying
-  on console-only behavior.
-- **Distributed provisioning**: new ``nvflare cert`` and ``nvflare package``
-  workflows let participants keep private keys local while Project Admins
-  approve certificate requests and generate signed packages, improving security
-  ownership in cross-organization deployments.
-- **Deployment prepare and runtime packaging**: new ``nvflare deploy prepare``
-  flow packages existing startup kits for Docker and Kubernetes runtimes,
-  including Kubernetes environments on AWS, Azure, and GCP, so provisioning and
-  runtime packaging can be handled as separate repeatable steps.
-- **Docker and Kubernetes job launchers**: each site can configure a
-  process, Docker, or Kubernetes job launcher. With the matching launcher
-  configured, host-based jobs run as subprocesses, Docker-based jobs run as job
-  containers, and Kubernetes-based jobs run as separate job pods, giving
-  production sites Docker/Kubernetes isolation and resource handling plus
-  study-scoped dataset mounts for stronger data isolation.
-- **Multi-study support**: study definitions in ``project.yml``, study-scoped
-  sessions, study-aware admin operations, and study CLI commands let one FLARE
-  deployment host multiple collaborations without mixing participants,
-  authorization, data access, or operational context.
-- **Live log streaming**: site and job logs stream to the server while jobs are
-  running, reducing time to diagnose remote training failures and making CLI
-  automation more responsive.
-- **Security and production hardening**: origin-bound auth tokens, safer archive
-  handling, stricter private-key file permissions, safer loading paths, stronger
-  job metadata validation, and additional dashboard/API hardening reduce common
-  operational risk in federated deployments.
-- **Feature election**: a new federated feature selection workflow lets clients
-  perform local feature selection for tabular datasets and share feature scores,
-  not raw data, so FLARE can aggregate a global feature mask for downstream
-  training.
-- **Tensor disk offload for FedAvg**: enabling ``enable_tensor_disk_offload=True``
-  significantly reduces server peak memory during FedAvg aggregation. Instead of
-  holding all client tensor updates in memory simultaneously, each update is written
-  to a temporary safetensors file on disk and consumed lazily during aggregation.
-  The benefit scales with model size and client count.
-- **Large-model streaming reliability**: large tensor broadcasts are more robust
-  when many clients retry after delayed EOF responses. Finished download refs are
-  handled idempotently, and subprocess Client API jobs now reject unbounded result
-  resends or missing download-completion waits that can turn one slow transfer into
-  repeated large-model retries.
-- **New examples and contributed research**: MedGemma, Qwen3-VL, Codon-FM,
-  FedUMM, financial-services fraud detection, Docker job examples, distributed
-  provisioning examples, Hello JAX, and Hello log streaming help teams start
-  from working patterns instead of assembling production and research workflows
-  from scratch.
+- **モダンな NVFlare CLI**: ジョブ、システム操作、ローカル設定、スタートアップキット、
+  レシピ、分散プロビジョニング、デプロイ準備に対応した ``nvflare`` コマンドグループを
+  拡張し、JSON 出力とスキーマをサポートしました。これにより、オペレーターや自動化
+  システムはコンソール専用の動作に依存せずに FLARE ワークフローを実行できます。
+- **分散プロビジョニング**: 新しい ``nvflare cert`` および ``nvflare package``
+  ワークフローにより、参加者は秘密鍵をローカルに保持したまま、Project Admin が証明書
+  リクエストを承認して署名済みパッケージを生成できるようになり、組織横断デプロイに
+  おけるセキュリティの所有権が向上します。
+- **デプロイ準備とランタイムパッケージング**: 新しい ``nvflare deploy prepare``
+  フローは、既存のスタートアップキットを Docker および Kubernetes ランタイム向けに
+  パッケージ化します。AWS、Azure、GCP 上の Kubernetes 環境も対象となるため、
+  プロビジョニングとランタイムパッケージングを別々の再現可能なステップとして扱えます。
+- **Docker および Kubernetes のジョブランチャー**: 各サイトは、プロセス、Docker、
+  Kubernetes のいずれかのジョブランチャーを設定できます。対応するランチャーを設定すると、
+  ホストベースのジョブはサブプロセスとして、Docker ベースのジョブはジョブコンテナとして、
+  Kubernetes ベースのジョブは個別のジョブ Pod として実行されます。これにより、本番
+  サイトは Docker/Kubernetes の分離とリソース管理に加え、より強固なデータ分離のための
+  スタディスコープのデータセットマウントを利用できます。
+- **マルチスタディ対応**: ``project.yml`` でのスタディ定義、スタディスコープの
+  セッション、スタディを認識する管理操作、そしてスタディ CLI コマンドにより、1 つの
+  FLARE デプロイで複数のコラボレーションをホストしても、参加者、認可、データアクセス、
+  運用コンテキストが混在しないようになります。
+- **ライブログストリーミング**: ジョブの実行中にサイトログとジョブログがサーバーへ
+  ストリーミングされるため、リモートの学習失敗を診断するまでの時間が短縮され、CLI
+  自動化の応答性も向上します。
+- **セキュリティと本番向け堅牢化**: 発信元にバインドされた認証トークン、より安全な
+  アーカイブ処理、より厳格な秘密鍵ファイルのパーミッション、安全なロードパス、強化された
+  ジョブメタデータ検証、追加のダッシュボード/API 堅牢化により、フェデレーテッド
+  デプロイにおける一般的な運用リスクを低減します。
+- **フィーチャーエレクション**: 新しいフェデレーテッド特徴選択ワークフローにより、
+  クライアントはテーブル形式データセットに対してローカルな特徴選択を行い、生データでは
+  なく特徴スコアを共有できます。これにより FLARE は、後段の学習で利用できるグローバルな
+  特徴マスクを集約できます。
+- **FedAvg 向けテンソルディスクオフロード**: ``enable_tensor_disk_offload=True``
+  を有効にすると、FedAvg の集約時におけるサーバーのピークメモリを大幅に削減できます。
+  すべてのクライアントのテンソル更新を同時にメモリ上に保持するのではなく、各更新を
+  ディスク上の一時 safetensors ファイルに書き出し、集約中に遅延的に読み込みます。
+  この効果はモデルサイズとクライアント数に応じて拡大します。
+- **大規模モデルのストリーミング信頼性**: 遅延した EOF 応答の後に多数のクライアントが
+  リトライする場合でも、大規模テンソルのブロードキャストがより堅牢になりました。完了済みの
+  ダウンロード参照は冪等に処理され、サブプロセスの Client API ジョブは、1 回の遅い転送を
+  大規模モデルの繰り返しリトライに変えてしまう可能性のある、無制限な結果再送や
+  ダウンロード完了待ちの欠如を拒否するようになりました。
+- **新しいサンプルとコントリビュートされたリサーチ**: MedGemma、Qwen3-VL、Codon-FM、
+  FedUMM、金融サービスの不正検知、Docker ジョブのサンプル、分散プロビジョニングの
+  サンプル、Hello JAX、Hello ログストリーミングにより、チームは本番向け・研究向け
+  ワークフローをゼロから組み立てるのではなく、動作するパターンから始められます。
 
-NVFlare CLI and Automation
+NVFlare CLI と自動化
+====================
+
+FLARE 2.8.0 では、公開されている ``nvflare`` コマンドラインの範囲が大幅に拡張されました。
+CLI は、より一貫したコマンド構成、機械可読な出力のサポート、そしてスクリプトや自動化
+システム向けのより優れたエラーコントラクトを備えています。
+
+これが本番運用にとって重要なのは、同じインターフェースを人間、シェルスクリプト、
+サービス自動化、その他のツールが一貫して利用できるようになるためです。ジョブ、
+システムステータス、スタートアップキットの選択、レシピ、プロビジョニング、デプロイ準備を、
+手動のコンソール操作を必要とせずに構造化された形で照会できます。
+
+主な追加点は、ジョブ操作、システム操作、ローカル設定、レシピ探索、分散プロビジョニング、
+パッケージ組み立て、デプロイ準備のためのコマンドグループです。多くのコマンドが構造化
+出力とスキーマ探索をサポートするようになり、スクリプト、ノートブック、運用ツールでの
+利用が容易になりました。
+
+詳細は :ref:`nvflare_cli`、:ref:`job_cli`、:ref:`system_command`、
+:ref:`config_command`、:ref:`recipe_command` を参照してください。
+
+実践的な CLI ワークフローについては、
+:github_nvflare_link:`NVFlare CLI チュートリアル <examples/tutorials/nvflare_cli.ipynb>`
+を参照してください。
+
+デプロイとプロビジョニング
 ==========================
 
-FLARE 2.8.0 significantly expands the public ``nvflare`` command-line surface.
-The CLI now has a more consistent command layout, machine-readable output
-support, and better error contracts for scripts and automation systems.
+分散プロビジョニング
+--------------------
 
-This matters for production operations because the same interfaces can now be
-used consistently by humans, shell scripts, service automation, and other
-tooling. Jobs, system status, startup-kit selection, recipes, provisioning, and
-deployment preparation can be queried in structured form instead of requiring
-manual console interaction.
+FLARE 2.8.0 では、参加者が集中型のプロビジョナーからすべてのスタートアップキット素材を
+受け取るのではなく、ローカルで秘密鍵と証明書署名要求を生成するケース向けに、分散
+プロビジョニングワークフローを導入しました。
 
-The main additions are command groups for job operations, system operations,
-local configuration, recipe discovery, distributed provisioning, package
-assembly, and deployment preparation. Many commands now support structured
-output and schema discovery, making them easier to use in scripts, notebooks,
-and operational tooling.
+これは組織横断のコラボレーションにとって重要です。秘密鍵を Project Admin が生成したり、
+組織間で転送したりする必要がなくなるためです。各参加者は自身の鍵素材を作成・保持でき、
+鍵の取り扱いリスクを低減しながら、Project Admin は引き続き承認、署名済みパッケージ、
+ルート CA の信頼を管理します。既存の集中型プロビジョニングモデルを好むチームは、
+そのまま利用を継続できます。
 
-For details, see :ref:`nvflare_cli`, :ref:`job_cli`, :ref:`system_command`,
-:ref:`config_command`, and :ref:`recipe_command`.
+このワークフローには、参加者側の証明書リクエスト、Project Admin による承認、署名済み
+パッケージの生成、ルート CA の検証、承認済みパッケージからのスタートアップキット組み立てが
+含まれます。鍵の所有権と参加者主導の証明書リクエストが重要となるデプロイを想定しています。
 
-For a hands-on CLI workflow, see the
-:github_nvflare_link:`NVFlare CLI tutorial <examples/tutorials/nvflare_cli.ipynb>`.
+:ref:`distributed_provisioning`、:ref:`cert_command`、:ref:`package_command`
+を参照してください。
 
-Deployment and Provisioning
-===========================
-
-Distributed Provisioning
-------------------------
-
-FLARE 2.8.0 introduces a distributed provisioning workflow for cases where
-participants generate local private keys and certificate-signing requests
-instead of receiving all startup-kit materials from a centralized provisioner.
-
-This is important for cross-organization collaborations because private keys no
-longer need to be generated by the Project Admin or transferred between
-organizations. Each participant can create and keep its own key material,
-reducing key-handling risk, while the Project Admin still controls approvals,
-signed packages, and root CA trust. Teams that prefer the existing centralized
-provisioning model can continue to use it.
-
-The workflow adds participant-side certificate requests, Project Admin approval,
-signed package generation, root CA verification, and startup-kit assembly from
-approved packages. It is intended for deployments where key ownership and
-participant-controlled certificate requests are important.
-
-See :ref:`distributed_provisioning`, :ref:`cert_command`, and
-:ref:`package_command`.
-
-For a runnable walkthrough, see the
-:github_nvflare_link:`distributed provisioning example <examples/advanced/distributed_provision>`.
+実行可能な手順の解説は、
+:github_nvflare_link:`分散プロビジョニングのサンプル <examples/advanced/distributed_provision>`
+を参照してください。
 
 Deploy Prepare
 --------------
 
-The new ``nvflare deploy prepare`` command packages existing provisioned
-startup kits for runtime targets such as Docker and Kubernetes. This separates
-startup-kit generation from runtime-specific packaging, making deployments more
-repeatable across local, Docker, Kubernetes, and cloud-managed Kubernetes
-environments such as AWS, Azure, and GCP.
+新しい ``nvflare deploy prepare`` コマンドは、プロビジョニング済みの既存スタートアップ
+キットを Docker や Kubernetes といったランタイムターゲット向けにパッケージ化します。
+これによりスタートアップキットの生成とランタイム固有のパッケージングが分離され、
+ローカル、Docker、Kubernetes、および AWS、Azure、GCP などのクラウドマネージド
+Kubernetes 環境をまたいでデプロイの再現性が高まります。
 
-This separation is useful operationally because the same provisioned identities
-can be reused across runtime-specific packaging flows. Teams can prepare a
-startup kit once, then produce Docker or Kubernetes artifacts without changing
-the provisioning model.
+この分離は運用上有用です。同じプロビジョニング済みアイデンティティを、ランタイム固有の
+パッケージングフローで再利用できるためです。チームはスタートアップキットを一度準備すれば、
+プロビジョニングモデルを変更せずに Docker や Kubernetes のアーティファクトを生成できます。
 
-See the :ref:`deploy_prepare_command` user guide for Docker and Kubernetes
-runtime preparation.
+Docker および Kubernetes ランタイムの準備については、:ref:`deploy_prepare_command`
+ユーザーガイドを参照してください。
 
-Docker and Kubernetes Job Execution
------------------------------------
+Docker および Kubernetes でのジョブ実行
+---------------------------------------
 
-FLARE 2.8.0 adds Docker and Kubernetes job launchers so sites can align
-FLARE jobs with the runtime isolation and resource controls they already use.
-Each site must be configured with the matching job launcher for the intended
-runtime. With that launcher configured, the pattern is:
+FLARE 2.8.0 では Docker および Kubernetes のジョブランチャーが追加され、各サイトは
+すでに利用しているランタイムの分離機構やリソース制御に FLARE ジョブを合わせられます。
+各サイトには、意図するランタイムに対応するジョブランチャーを設定する必要があります。
+そのランチャーを設定した場合のパターンは次のとおりです。
 
-- process job launcher for a host-based parent: jobs run as subprocesses;
-- Docker job launcher for a Docker-based parent: jobs run as Docker
-  containers;
-- Kubernetes job launcher for a Kubernetes-based parent pod: jobs run as
-  separate Kubernetes job pods.
+- ホストベースの親に対するプロセスジョブランチャー: ジョブはサブプロセスとして実行されます。
+- Docker ベースの親に対する Docker ジョブランチャー: ジョブは Docker コンテナとして
+  実行されます。
+- Kubernetes ベースの親 Pod に対する Kubernetes ジョブランチャー: ジョブは個別の
+  Kubernetes ジョブ Pod として実行されます。
 
-This matters because Docker and Kubernetes deployments can now use their runtime
-isolation instead of treating every job as a local subprocess. Study-dataset
-mapping is also carried into containers and pods, so each job sees only the
-datasets configured for its study scope, reducing cross-study data exposure.
+これが重要なのは、Docker および Kubernetes のデプロイが、すべてのジョブをローカルの
+サブプロセスとして扱うのではなく、それぞれのランタイム分離を利用できるようになるためです。
+スタディとデータセットのマッピングもコンテナや Pod に引き継がれるため、各ジョブは自身の
+スタディスコープに設定されたデータセットのみを参照でき、スタディ横断のデータ露出が
+低減されます。
 
-Highlights:
+ハイライト:
 
-- Kubernetes deployments can launch jobs in separate pods when configured with
-  the Kubernetes job launcher.
-- Docker deployments can launch jobs as separate containers when configured with
-  the Docker job launcher.
-- Study-dataset mappings provide study-scoped data isolation for Docker
-  containers and Kubernetes job pods.
-- CPU, memory, storage, and GPU requirements can be delegated to Docker or
-  Kubernetes resource handling.
-- Kubernetes job workspace transfer no longer depends on a shared job PVC.
-- Runtime packaging, Helm chart updates, Docker job examples, multicloud
-  Kubernetes support, and Brev scripted deployment guides make these modes
-  easier to try and operate across AWS, Azure, and GCP environments.
+- Kubernetes ジョブランチャーを設定すると、Kubernetes デプロイは個別の Pod で
+  ジョブを起動できます。
+- Docker ジョブランチャーを設定すると、Docker デプロイは個別のコンテナとしてジョブを
+  起動できます。
+- スタディとデータセットのマッピングにより、Docker コンテナと Kubernetes ジョブ Pod に
+  スタディスコープのデータ分離が提供されます。
+- CPU、メモリ、ストレージ、GPU の要件を Docker または Kubernetes のリソース管理に
+  委譲できます。
+- Kubernetes のジョブワークスペース転送は、共有のジョブ PVC に依存しなくなりました。
+- ランタイムパッケージング、Helm チャートの更新、Docker ジョブのサンプル、マルチクラウド
+  Kubernetes サポート、Brev のスクリプト化デプロイガイドにより、これらのモードを
+  AWS、Azure、GCP 環境で試したり運用したりしやすくなっています。
 
-For deployment details, see the :ref:`deploy_prepare_command` user guide and
-the :ref:`helm_chart` Kubernetes deployment guide. Additional references include
-:ref:`containerized_deployment`, :ref:`brev_deployment`, and
-:ref:`brev_scripted_deployment`.
+デプロイの詳細は、:ref:`deploy_prepare_command` ユーザーガイドおよび
+:ref:`helm_chart` Kubernetes デプロイガイドを参照してください。その他の参考資料として
+:ref:`containerized_deployment`、:ref:`brev_deployment`、
+:ref:`brev_scripted_deployment` があります。
 
-For a runnable Docker workflow using ``nvflare deploy prepare``, see the
-:github_nvflare_link:`Docker job launcher example <examples/docker>`.
+``nvflare deploy prepare`` を使った実行可能な Docker ワークフローは、
+:github_nvflare_link:`Docker ジョブランチャーのサンプル <examples/docker>`
+を参照してください。
 
-Multi-Study and Runtime Operations
-==================================
+マルチスタディとランタイム運用
+==============================
 
-Multi-Study Support
--------------------
-
-FLARE 2.8.0 adds study-aware deployment and administration support. A single
-deployment can define multiple studies, each with its own participating sites
-and admin role mappings.
-
-This is important for organizations that run more than one collaboration on the
-same FLARE infrastructure. Study scope keeps participant membership,
-authorization, admin sessions, and operational commands tied to the intended
-collaboration, reducing the risk of cross-study confusion or accidental access.
-
-The feature is intended to help one deployment support multiple projects or
-consortia while keeping each study's participants, permissions, sessions,
-commands, and data access scoped to that study. Study support is available in
-administration workflows, CLI workflows, the FLARE API, production environments,
-and local PoC development.
-
-See :ref:`multi_study_guide` for design and configuration details, and
-:ref:`study_command` for runtime management.
-
-Live Log Streaming
+マルチスタディ対応
 ------------------
 
-FLARE can now stream job logs from clients to the server while the job is
-running. Operators can inspect logs through server-side files or CLI commands
-without waiting for the job to finish.
+FLARE 2.8.0 では、スタディを認識するデプロイと管理のサポートが追加されました。単一の
+デプロイで複数のスタディを定義でき、それぞれが独自の参加サイトと管理ロールのマッピングを
+持てます。
 
-This shortens the feedback loop for production jobs, especially when training
-runs remotely or for a long time. Operators can follow failures, progress, and
-site-specific behavior while the run is active instead of waiting for final job
-artifacts.
+これは、同じ FLARE インフラ上で複数のコラボレーションを運用する組織にとって重要です。
+スタディスコープにより、参加者のメンバーシップ、認可、管理セッション、運用コマンドが
+意図したコラボレーションに紐づけられ、スタディ間の混同や誤ったアクセスのリスクが
+低減されます。
 
-Operators can retrieve or follow job logs through the CLI and control log
-streaming behavior at the site level. This is intended to make remote job
-debugging and production monitoring less dependent on manual access to each
-client machine.
+この機能は、1 つのデプロイで複数のプロジェクトやコンソーシアムをサポートしつつ、各
+スタディの参加者、権限、セッション、コマンド、データアクセスをそのスタディにスコープ
+限定することを目的としています。スタディのサポートは、管理ワークフロー、CLI ワークフロー、
+FLARE API、本番環境、およびローカルの PoC 開発で利用できます。
 
-See :ref:`live_log_streaming` and :ref:`site_config`.
+設計と構成の詳細は :ref:`multi_study_guide` を、ランタイム管理については
+:ref:`study_command` を参照してください。
 
-For a runnable job example, see
-:github_nvflare_link:`Hello log streaming <examples/hello-world/hello-log-streaming>`.
+ライブログストリーミング
+------------------------
 
-Recipes, APIs, and ML Features
-==============================
+FLARE は、ジョブの実行中にクライアントからサーバーへジョブログをストリーミングできる
+ようになりました。オペレーターはジョブの終了を待たずに、サーバー側のファイルや CLI
+コマンドを通じてログを確認できます。
 
-2.8.0 continues the Recipe API and Client API direction from 2.7.x, with
-additional workflow coverage and production fixes. These changes make recipe and
-API-based workflows easier to automate, monitor, and operate in study-aware
-environments.
+これにより、特にリモートや長時間の学習実行時において、本番ジョブのフィードバックループが
+短縮されます。オペレーターは最終的なジョブアーティファクトを待つことなく、実行中に障害、
+進捗、サイト固有の挙動を追跡できます。
 
-Highlights include improved study-aware API behavior, better recipe run
-management, updated Flower integration, stronger FedAvg and PyTorch workflow
-handling, XGBoost and SVTPrivacy fixes, and Python support aligned to 3.10
-through 3.14.
+オペレーターは CLI を通じてジョブログを取得またはフォローでき、ログストリーミングの
+挙動をサイト単位で制御できます。これは、リモートジョブのデバッグと本番監視が、各
+クライアントマシンへの手動アクセスに依存しないようにすることを目的としています。
 
-See :ref:`job_recipe`, :ref:`available_recipes`, :ref:`flare_api`, and
-:ref:`api_evolution`.
+:ref:`live_log_streaming` と :ref:`site_config` を参照してください。
 
-For tutorial examples, see the
-:github_nvflare_link:`Hello FLARE API notebook <examples/tutorials/flare_api.ipynb>`
-and :github_nvflare_link:`Job Recipe notebook <examples/tutorials/job_recipe.ipynb>`.
+実行可能なジョブのサンプルは、
+:github_nvflare_link:`Hello ログストリーミング <examples/hello-world/hello-log-streaming>`
+を参照してください。
 
-Feature Election
-----------------
+レシピ、API、ML 機能
+====================
 
-FLARE 2.8.0 adds feature election, a federated feature selection workflow for
-tabular datasets. Clients perform local feature selection and share selected
-features and scores rather than raw data; FLARE aggregates the results into a
-global feature mask that can be used for downstream federated training.
+2.8.0 は 2.7.x からの Recipe API と Client API の方向性を継続し、ワークフローの
+カバレッジ拡大と本番向け修正を加えています。これらの変更により、レシピおよび API ベースの
+ワークフローを、スタディを認識する環境で自動化、監視、運用しやすくなります。
 
-For a runnable workflow, see the
-:github_nvflare_link:`feature election example <examples/advanced/feature_election>`.
+ハイライトには、スタディを認識する API 挙動の改善、レシピ実行管理の向上、Flower 連携の
+更新、FedAvg と PyTorch ワークフロー処理の強化、XGBoost と SVTPrivacy の修正、
+そして Python 3.10 から 3.14 に合わせたサポートが含まれます。
 
-Large Models and LLM Workflows
-==============================
+:ref:`job_recipe`、:ref:`available_recipes`、:ref:`flare_api`、
+:ref:`api_evolution` を参照してください。
 
-FLARE 2.8.0 builds on the large-model work from 2.7.2 with additional tensor
-offload, run-scoped temp cleanup, improved timeout guidance for large transfers,
-and new example coverage.
+チュートリアルのサンプルは、
+:github_nvflare_link:`Hello FLARE API ノートブック <examples/tutorials/flare_api.ipynb>`
+および :github_nvflare_link:`Job Recipe ノートブック <examples/tutorials/job_recipe.ipynb>`
+を参照してください。
 
-These improvements help large-model FL jobs operate under tighter memory and
-runtime constraints, while the new examples give teams concrete starting points
-for multimodal and language-model workloads.
+フィーチャーエレクション
+------------------------
 
-Large-Model Streaming Reliability
----------------------------------
+FLARE 2.8.0 では、テーブル形式データセット向けのフェデレーテッド特徴選択ワークフローで
+あるフィーチャーエレクションが追加されました。クライアントはローカルで特徴選択を行い、
+生データではなく選択された特徴とスコアを共有します。FLARE はその結果を集約して、後段の
+フェデレーテッド学習に利用できるグローバルな特徴マスクを作成します。
 
-The streaming layer now treats late retries of normally finished download refs
-as idempotent terminal responses instead of fatal missing-ref errors. This
-addresses high-fanout large-model broadcasts where a client has completed a
-download but retries because the final EOF response was delayed by network or
-server-side contention.
+実行可能なワークフローは、
+:github_nvflare_link:`フィーチャーエレクションのサンプル <examples/advanced/feature_election>`
+を参照してください。
 
-The fix applies at the ``DownloadService`` layer, so it benefits large payload
-transfers regardless of whether they come from FedAvg, Client API subprocess
-jobs, tensor disk offload, or another feature built on the same streaming
-path. Cleanup caused by transaction timeout or explicit deletion still returns
-an invalid-ref error; only normally finished transactions are tombstoned for
-late terminal retries.
+大規模モデルと LLM ワークフロー
+===============================
 
-Subprocess Client API jobs also validate risky retry settings earlier. In
-particular, ``max_resends=None`` is now rejected for
-``ClientAPILauncherExecutor`` jobs because unlimited resends can create an
-unbounded sequence of large download transactions, and
-``download_complete_timeout=None`` is rejected because the subprocess must stay
-alive while the server finishes pulling tensors from it. Jobs with explicitly
-configured large streaming request timeouts now receive warnings when related
-pipe/download-completion timeouts are shorter than the configured streaming
-timeout. Recipe-generated external-process jobs serialize the bounded
-``max_resends=3`` default in executor args, and top-level
-``recipe.add_client_config({"max_resends": N})`` overrides are applied before
-the subprocess Client API config is written.
+FLARE 2.8.0 は 2.7.2 での大規模モデル対応を土台に、追加のテンソルオフロード、実行単位に
+スコープされた一時ファイルのクリーンアップ、大容量転送のタイムアウトに関するガイダンスの
+改善、そして新しいサンプルのカバレッジを追加しています。
 
-Server Memory: Tensor Disk Offload
------------------------------------
+これらの改善により、大規模モデルの FL ジョブをより厳しいメモリおよびランタイム制約の下で
+運用しやすくなり、新しいサンプルはマルチモーダルおよび言語モデルのワークロードに対する
+具体的な出発点をチームに提供します。
 
-FLARE 2.8.0 introduces tensor disk offload for PyTorch FedAvg jobs, which
-significantly reduces peak server memory during aggregation. Instead of holding
-all client tensor updates in memory simultaneously, each update is written to a
-temporary safetensors file on disk and consumed lazily. The benefit scales with
-model size and client count.
+大規模モデルのストリーミング信頼性
+----------------------------------
 
-A 5 GB model measurement shows that tensor disk offload keeps server peak
-memory nearly flat as the number of clients increases, while the in-memory
-aggregation path grows with the number of client updates.
+ストリーミング層は、正常に完了したダウンロード参照に対する遅延リトライを、致命的な
+参照欠落エラーではなく冪等な終端応答として扱うようになりました。これは、クライアントが
+ダウンロードを完了しているにもかかわらず、ネットワークやサーバー側の競合により最終的な
+EOF 応答が遅延したためにリトライする、高ファンアウトな大規模モデルのブロードキャストに
+対処するものです。
+
+この修正は ``DownloadService`` 層に適用されるため、FedAvg、Client API のサブプロセス
+ジョブ、テンソルディスクオフロード、あるいは同じストリーミング経路の上に構築された他の
+機能のいずれに由来するかにかかわらず、大容量ペイロードの転送に効果があります。
+トランザクションのタイムアウトや明示的な削除によるクリーンアップは、引き続き無効な参照
+エラーを返します。遅延した終端リトライのためにトゥームストーン化されるのは、正常に完了した
+トランザクションのみです。
+
+サブプロセスの Client API ジョブは、リスクのあるリトライ設定をより早い段階で検証する
+ようにもなりました。特に、``ClientAPILauncherExecutor`` ジョブでは
+``max_resends=None`` が拒否されるようになりました。無制限の再送は大容量ダウンロード
+トランザクションの無限列を生み出す可能性があるためです。また
+``download_complete_timeout=None`` も拒否されます。サーバーがサブプロセスから
+テンソルを引き出し終えるまで、サブプロセスは生存し続ける必要があるためです。大規模
+ストリーミングのリクエストタイムアウトを明示的に設定したジョブでは、関連する
+パイプ/ダウンロード完了のタイムアウトが設定済みのストリーミングタイムアウトより短い場合に
+警告が出るようになりました。レシピが生成する外部プロセスジョブは、上限のある
+``max_resends=3`` というデフォルト値を executor の引数にシリアライズし、トップレベルの
+``recipe.add_client_config({"max_resends": N})`` による上書きは、サブプロセスの
+Client API 設定が書き出される前に適用されます。
+
+サーバーメモリ: テンソルディスクオフロード
+------------------------------------------
+
+FLARE 2.8.0 では PyTorch の FedAvg ジョブ向けにテンソルディスクオフロードが導入され、
+集約時のサーバーのピークメモリを大幅に削減します。すべてのクライアントのテンソル更新を
+同時にメモリ上に保持するのではなく、各更新をディスク上の一時 safetensors ファイルに
+書き出し、遅延的に読み込みます。この効果はモデルサイズとクライアント数に応じて拡大します。
+
+5 GB のモデルでの計測では、テンソルディスクオフロードによりクライアント数が増えても
+サーバーのピークメモリはほぼ横ばいに保たれる一方、インメモリの集約経路ではクライアント
+更新数に応じて増加することが示されています。
 
 .. image:: ../resources/server_peak_memory_disk_offload.png
    :alt: Server peak memory with tensor disk offload enabled and disabled
    :width: 80%
 
-To enable, set ``enable_tensor_disk_offload=True`` on ``FedAvgRecipe`` or the
-``FedAvg`` controller. In FLARE 2.8.0, this disk-backed tensor path is available
-for streamed PyTorch tensors in FedAvg workflows.
+有効化するには、``FedAvgRecipe`` または ``FedAvg`` コントローラーで
+``enable_tensor_disk_offload=True`` を設定します。FLARE 2.8.0 では、この
+ディスクバックのテンソル経路は FedAvg ワークフローでストリーミングされる PyTorch
+テンソルに対して利用できます。
 
-Deployment note: temporary files use the server process temp directory
-(``TMPDIR`` or the OS default such as ``/tmp``). In containers or Kubernetes,
-``/tmp`` is often RAM-backed (``tmpfs``), which eliminates the memory-saving
-benefit; point ``TMPDIR`` to a disk-backed mount before starting the server.
-See :ref:`notes_on_large_models` for deployment guidance.
+デプロイ時の注意: 一時ファイルはサーバープロセスの一時ディレクトリ(``TMPDIR``
+または ``/tmp`` などの OS のデフォルト)を使用します。コンテナや Kubernetes では
+``/tmp`` が RAM ベース(``tmpfs``)であることが多く、その場合メモリ削減の効果は
+失われます。サーバーを起動する前に ``TMPDIR`` をディスクバックのマウント先に
+向けてください。デプロイのガイダンスは :ref:`notes_on_large_models` を参照してください。
 
-For configuration details, see :doc:`/programming_guide/tensor_downloader` and
-:doc:`/programming_guide/memory_management`.
+設定の詳細は :doc:`/programming_guide/tensor_downloader` および
+:doc:`/programming_guide/memory_management` を参照してください。
 
-Corresponding examples include
-:github_nvflare_link:`BioNeMo <examples/advanced/bionemo>`,
-:github_nvflare_link:`Qwen3-VL <examples/advanced/qwen3-vl>`,
-:github_nvflare_link:`MedGemma <examples/advanced/medgemma>`, and
-:github_nvflare_link:`Codon-FM <examples/advanced/codon-fm>`.
+対応するサンプルには、
+:github_nvflare_link:`BioNeMo <examples/advanced/bionemo>`、
+:github_nvflare_link:`Qwen3-VL <examples/advanced/qwen3-vl>`、
+:github_nvflare_link:`MedGemma <examples/advanced/medgemma>`、
+:github_nvflare_link:`Codon-FM <examples/advanced/codon-fm>` があります。
 
-Security and Hardening
-======================
+セキュリティと堅牢化
+====================
 
-This release includes a broad set of security, validation, and operational
-hardening changes.
+本リリースには、セキュリティ、検証、運用面の堅牢化に関する幅広い変更が含まれています。
 
-The focus is reducing deployment risk in environments where jobs, startup kits,
-archives, credentials, and admin/API traffic cross organizational boundaries.
+重点は、ジョブ、スタートアップキット、アーカイブ、資格情報、管理/API トラフィックが
+組織の境界をまたぐ環境において、デプロイのリスクを低減することにあります。
 
-Key areas include stronger runtime authentication binding, safer archive and path
-validation, stricter private-key file permissions, safer deserialization and
-subprocess handling, confidential-computing attestation hardening, dashboard/API
-hardening, and clearer error behavior for admin and job operations.
+主な領域には、ランタイム認証バインディングの強化、より安全なアーカイブおよびパスの検証、
+より厳格な秘密鍵ファイルのパーミッション、より安全なデシリアライズとサブプロセス処理、
+コンフィデンシャルコンピューティングのアテステーション堅牢化、ダッシュボード/API の
+堅牢化、そして管理およびジョブ操作におけるより明確なエラー挙動が含まれます。
 
-Reliability and Bug Fixes
-=========================
+信頼性とバグ修正
+================
 
-These changes improve day-to-day operability by making job state, startup,
-resource visibility, and failure reporting more predictable across local,
-Docker, Kubernetes, and server-connected workflows.
+これらの変更は、ジョブの状態、起動、リソースの可視性、障害報告を、ローカル、Docker、
+Kubernetes、サーバー接続の各ワークフローにわたってより予測可能にすることで、日々の
+運用性を向上させます。
 
-Notable improvements include more consistent job status publication, clearer
-errors for missing or running jobs, more reliable startup and log-streaming
-behavior, Docker and Kubernetes runtime fixes, better GPU visibility handling,
-cleaner client failure reporting, corrected paired-duration monitoring metrics
-when an end event is skipped, and refreshed integration-test and CI coverage.
+注目すべき改善点には、より一貫したジョブステータスの公開、存在しないジョブや実行中の
+ジョブに対するより明確なエラー、より信頼性の高い起動とログストリーミングの挙動、Docker と
+Kubernetes のランタイム修正、より優れた GPU 可視性の処理、よりクリーンなクライアント
+障害報告、終了イベントがスキップされた場合のペア期間モニタリング指標の修正、そして
+刷新された統合テストと CI のカバレッジが含まれます。
 
-New Examples and Research
-=========================
+新しいサンプルとリサーチ
+========================
 
-2.8.0 adds or updates a wide range of examples and contributed research
-implementations.
+2.8.0 では、幅広いサンプルとコントリビュートされたリサーチ実装が追加・更新されました。
 
-These assets matter because they turn new platform capabilities into runnable
-starting points for teams evaluating FLARE in concrete domains, including
-containerized operations, multimodal models, financial services, and
-privacy-oriented research.
+これらの資産が重要なのは、新しいプラットフォーム機能を、コンテナ化された運用、
+マルチモーダルモデル、金融サービス、プライバシー指向の研究といった具体的な領域で FLARE を
+評価するチームにとって、実行可能な出発点に変えるためです。
 
-Research updates in 2.8.0 include:
+2.8.0 におけるリサーチの更新は次のとおりです。
 
-- :github_nvflare_link:`FedUMM <research/fedumm>`: a new federated learning
-  implementation for unified multimodal models, using parameter-efficient LoRA
-  adapter federation for multimodal foundation-model workflows.
-- :github_nvflare_link:`financial-services fraud detection <research/fsi-fraud-detection>`:
-  a new privacy-preserving federated fraud detection implementation with
-  synthetic payment transaction generation, heterogeneous site configurations,
-  federated analytics, federated training, interpretability, and differential
-  privacy experimentation.
-- Existing :github_nvflare_link:`FedBPT <research/fed-bpt>` research was
-  updated with a Job API entry point for running and exporting FLARE jobs.
+- :github_nvflare_link:`FedUMM <research/fedumm>`: 統合マルチモーダルモデル向けの
+  新しいフェデレーテッドラーニング実装。マルチモーダル基盤モデルのワークフローに向けて、
+  パラメータ効率の高い LoRA アダプタのフェデレーションを利用します。
+- :github_nvflare_link:`金融サービスの不正検知 <research/fsi-fraud-detection>`:
+  合成的な決済トランザクション生成、異種のサイト構成、フェデレーテッドアナリティクス、
+  フェデレーテッド学習、解釈可能性、差分プライバシーの実験を備えた、新しい
+  プライバシー保護型のフェデレーテッド不正検知実装。
+- 既存の :github_nvflare_link:`FedBPT <research/fed-bpt>` リサーチが、FLARE
+  ジョブの実行およびエクスポート用の Job API エントリポイントで更新されました。
 
-Examples and research assets include:
+サンプルとリサーチ資産には次のものが含まれます。
 
-- :github_nvflare_link:`Hello JAX <examples/hello-world/hello-jax>`.
-- :github_nvflare_link:`Hello log streaming <examples/hello-world/hello-log-streaming>`.
-- :github_nvflare_link:`Docker job execution <examples/docker>`.
-- :github_nvflare_link:`distributed provisioning <examples/advanced/distributed_provision>`.
-- :github_nvflare_link:`feature election <examples/advanced/feature_election>`.
-- :github_nvflare_link:`MedGemma <examples/advanced/medgemma>`.
-- :github_nvflare_link:`Qwen3-VL <examples/advanced/qwen3-vl>`.
-- :github_nvflare_link:`Codon-FM <examples/advanced/codon-fm>`.
-- :github_nvflare_link:`FedUMM <research/fedumm>`.
-- :github_nvflare_link:`financial-services fraud detection <research/fsi-fraud-detection>`.
+- :github_nvflare_link:`Hello JAX <examples/hello-world/hello-jax>`
+- :github_nvflare_link:`Hello ログストリーミング <examples/hello-world/hello-log-streaming>`
+- :github_nvflare_link:`Docker でのジョブ実行 <examples/docker>`
+- :github_nvflare_link:`分散プロビジョニング <examples/advanced/distributed_provision>`
+- :github_nvflare_link:`フィーチャーエレクション <examples/advanced/feature_election>`
+- :github_nvflare_link:`MedGemma <examples/advanced/medgemma>`
+- :github_nvflare_link:`Qwen3-VL <examples/advanced/qwen3-vl>`
+- :github_nvflare_link:`Codon-FM <examples/advanced/codon-fm>`
+- :github_nvflare_link:`FedUMM <research/fedumm>`
+- :github_nvflare_link:`金融サービスの不正検知 <research/fsi-fraud-detection>`
 
-Compatibility and Migration Notes
-=================================
+互換性と移行に関する注意
+========================
 
-- Python 3.9 is no longer listed as a supported development target. FLARE 2.8.0
-  targets Python 3.10, 3.11, 3.12, 3.13, and 3.14.
-- The deprecated FLAdminAPI surface has been removed. Use the FLARE API,
-  Recipe environments, and ``nvflare`` CLI workflows for new automation.
-- HA/Overseer code has been removed from the 2.8 branch.
+- Python 3.9 はサポート対象の開発ターゲットとして掲載されなくなりました。FLARE 2.8.0 は
+  Python 3.10、3.11、3.12、3.13、3.14 を対象としています。
+- 非推奨であった FLAdminAPI は削除されました。新しい自動化には FLARE API、Recipe
+  環境、``nvflare`` CLI ワークフローを使用してください。
+- HA/Overseer のコードは 2.8 ブランチから削除されました。
 
-Class allow-list migration from 2.7
------------------------------------
+2.7 からのクラス許可リストの移行
+--------------------------------
 
-NVFLARE 2.8 adds built-in component class authorization for non-BYOC jobs. If
-``class_allow_list`` is omitted from ``resources.json`` or
-``resources.json.default``, NVFLARE uses its curated default list of built-in
-component classes. The adjacent ``class_list_enforcement_mode`` setting accepts
-``"enforce"`` or ``"warn"`` and defaults to ``"enforce"`` when omitted. Thus,
-omitting both settings uses the built-in list in enforce mode.
+NVFLARE 2.8 では、非 BYOC ジョブに対する組み込みのコンポーネントクラス認可が追加
+されました。``resources.json`` または ``resources.json.default`` から
+``class_allow_list`` が省略されている場合、NVFLARE は組み込みコンポーネントクラスの
+厳選されたデフォルトリストを使用します。隣接する ``class_list_enforcement_mode``
+設定は ``"enforce"`` または ``"warn"`` を受け付け、省略時は ``"enforce"`` が
+既定となります。したがって、両方の設定を省略すると、組み込みリストが enforce モードで
+使用されます。
 
-BYOC-enabled users and jobs keep the same behavior they had in 2.7. The built-in
-class allow-list check is skipped for BYOC jobs, so these settings do not change
-which job-provided classes they can load.
+BYOC が有効なユーザーおよびジョブは、2.7 と同じ動作を維持します。BYOC ジョブでは組み込みの
+クラス許可リストチェックがスキップされるため、これらの設定はジョブが提供するどのクラスを
+ロードできるかを変更しません。
 
-Choose the migration path that matches who owns the component trust boundary
-and how much discovery the application still needs:
+コンポーネントの信頼境界を誰が所有するか、そしてアプリケーションがまだどれだけの探索を
+必要とするかに応じて、移行パスを選択してください。
 
-1. **Upgrader with custom components: built-in default list + warn, then
-   reviewed prefixes + enforce.** Start by omitting ``class_allow_list`` so the
-   built-in default remains effective, and set ``class_list_enforcement_mode``
-   to ``"warn"``. Run representative jobs, read the warnings for unmatched
-   custom classes, and review those classes. Then configure an explicit list
-   containing the required built-in entries plus the reviewed custom class or
-   package prefixes, and switch the mode to ``"enforce"``. This path lets the
-   application continue running while the operator builds a least-privilege
-   policy.
+1. **カスタムコンポーネントを持つアップグレード利用者: 組み込みデフォルトリスト + warn、
+   その後レビュー済みプレフィックス + enforce。** まず ``class_allow_list`` を省略して
+   組み込みデフォルトを有効なままにし、``class_list_enforcement_mode`` を
+   ``"warn"`` に設定します。代表的なジョブを実行し、一致しなかったカスタムクラスに関する
+   警告を読み、それらのクラスをレビューします。その後、必要な組み込みエントリに加えて、
+   レビュー済みのカスタムクラスまたはパッケージのプレフィックスを含む明示的なリストを
+   設定し、モードを ``"enforce"`` に切り替えます。このパスでは、オペレーターが最小権限の
+   ポリシーを構築する間もアプリケーションを実行し続けられます。
 
    .. code-block:: json
 
@@ -435,12 +426,11 @@ and how much discovery the application still needs:
            "class_list_enforcement_mode": "warn"
        }
 
-2. **Operator who owns the trust boundary: wildcard + either mode.** Configure
-   ``class_allow_list`` as ``["*"]`` when the site operator deliberately accepts
-   every component class. The enforcement mode is irrelevant when the wildcard
-   is present: all other list entries are ignored, and an audit event records
-   that the operator selected the unrestricted policy and identifies its policy
-   source.
+2. **信頼境界を所有するオペレーター: ワイルドカード + いずれのモードでも可。**
+   サイトのオペレーターがすべてのコンポーネントクラスを意図的に受け入れる場合は、
+   ``class_allow_list`` を ``["*"]`` に設定します。ワイルドカードが存在する場合、
+   適用モードは無関係です。他のすべてのリストエントリは無視され、オペレーターが無制限の
+   ポリシーを選択したことと、そのポリシーの出所を示す監査イベントが記録されます。
 
    .. code-block:: json
 
@@ -449,12 +439,12 @@ and how much discovery the application still needs:
            "class_allow_list": ["*"]
        }
 
-3. **Locked-down production: curated prefixes + enforce.** Configure only the
-   reviewed built-in and application classes or package prefixes the site needs,
-   and use ``"enforce"``. An explicitly configured list replaces the built-in
-   default, so copy any required built-in entries into the curated list. A
-   trailing ``.`` authorizes a whole package; an entry without it represents a
-   fully qualified class path.
+3. **ロックダウンされた本番環境: 厳選されたプレフィックス + enforce。** サイトが必要と
+   する、レビュー済みの組み込みクラスおよびアプリケーションクラス、またはパッケージ
+   プレフィックスのみを設定し、``"enforce"`` を使用します。明示的に設定されたリストは
+   組み込みデフォルトを置き換えるため、必要な組み込みエントリは厳選リストにコピーして
+   ください。末尾の ``.`` はパッケージ全体を認可し、末尾に付けないエントリは完全修飾の
+   クラスパスを表します。
 
    .. code-block:: json
 
@@ -468,29 +458,27 @@ and how much discovery the application still needs:
            ]
        }
 
-``"warn"`` relaxes the 2.8 protection and should be used only as a discovery
-step in a trusted migration environment. ``"*"`` is an explicit decision to
-place the component trust boundary outside this allow-list check; use it only
-when the site operator accepts that responsibility. An explicitly configured
-malformed ``class_allow_list`` remains a configuration error for non-BYOC jobs
-in either enforcement mode. Audit writes are retried on later matching
-component checks when the audit service is temporarily unavailable. Simulator
-runs use warning logs because their auditor is a no-op.
+``"warn"`` は 2.8 の保護を緩めるものであり、信頼できる移行環境での探索ステップとしてのみ
+使用してください。``"*"`` は、コンポーネントの信頼境界をこの許可リストチェックの外側に
+置くという明示的な判断です。サイトのオペレーターがその責任を受け入れる場合にのみ使用して
+ください。明示的に設定された不正な形式の ``class_allow_list`` は、いずれの適用モードでも
+非 BYOC ジョブにとって設定エラーのままです。監査サービスが一時的に利用できない場合、
+監査の書き込みは後続の該当するコンポーネントチェック時にリトライされます。シミュレーターの
+実行では、監査機構が no-op であるため警告ログが使用されます。
 
-See the :ref:`migration_guide` for additional API and configuration migration
-notes.
+API と設定の移行に関する追加の注意事項は :ref:`migration_guide` を参照してください。
 
-Getting Started
-===============
+はじめかた
+==========
 
-To explore the new 2.8.0 workflows:
+新しい 2.8.0 のワークフローを試すには:
 
-- start with :ref:`quickstart` for a basic FLARE run.
-- use :ref:`nvflare_cli` for the current CLI command surface.
-- use :ref:`distributed_provisioning` for participant-managed certificates and
-  signed startup-kit packaging.
-- use :ref:`deploy_prepare_command` for Docker and Kubernetes runtime
-  packaging.
-- use :ref:`multi_study_guide` for multi-tenant deployment configuration.
-- browse :ref:`available_recipes` and the new examples under
-  ``examples/hello-world`` and ``examples/advanced``.
+- 基本的な FLARE の実行は :ref:`quickstart` から始めてください。
+- 現在の CLI コマンド群については :ref:`nvflare_cli` を使用してください。
+- 参加者が管理する証明書と署名済みスタートアップキットのパッケージングには
+  :ref:`distributed_provisioning` を使用してください。
+- Docker および Kubernetes のランタイムパッケージングには
+  :ref:`deploy_prepare_command` を使用してください。
+- マルチテナントのデプロイ構成には :ref:`multi_study_guide` を使用してください。
+- :ref:`available_recipes` および ``examples/hello-world`` と
+  ``examples/advanced`` 配下の新しいサンプルをご覧ください。

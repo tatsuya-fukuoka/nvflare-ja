@@ -1,23 +1,23 @@
-#########################
-Workflows and Controllers
-#########################
+##########################################
+ワークフローと Controller
+##########################################
 
-A workflow has one or more controllers, each implementing a specific coordination strategy. For example, the ScatterAndGather
-(SAG) controller implements a popular strategy that is typically used for the fed-average type of federated training. The
-CrossSiteValidation controller implements a strategy to let every client site evaluate every other site's model. You can put together
-a workflow that uses any number of controllers.
+ワークフローは 1 つ以上の Controller を持ち、それぞれが特定の協調戦略を実装します。例えば、ScatterAndGather
+(SAG) Controller は、fed-average 型のフェデレーテッド学習で一般的に使用される代表的な戦略を実装しています。
+CrossSiteValidation Controller は、すべてのクライアントサイトが他のすべてのサイトのモデルを評価できるようにする
+戦略を実装しています。任意の数の Controller を組み合わせてワークフローを構成できます。
 
-We provide the FLModel-based :ref:`model_controller` which provides a straightforward way for users to write controllers.
-We also have the original :ref:`Controller API <controllers>` with more FLARE-specific functionalities, which many of our existing workflows are based upon.
+FLModel ベースの :ref:`model_controller` を提供しており、これはユーザーが Controller を書くための分かりやすい方法を提供します。
+また、より FLARE 固有の機能を備えた従来の :ref:`Controller API <controllers>` もあり、既存のワークフローの多くはこれを基盤としています。
 
-We have implemented several server controlled federated learning workflows (fed-average, cyclic controller, cross-site evaluation) with the server-side controllers.
-In these workflows, FL clients get tasks assigned by the controller, execute the tasks, and submit results back to the server.
+サーバー側の Controller を用いて、サーバー制御によるフェデレーテッドラーニングのワークフロー (fed-average、cyclic controller、cross-site evaluation) をいくつか実装しています。
+これらのワークフローでは、FL クライアントは Controller からタスクを割り当てられ、そのタスクを実行し、結果をサーバーに提出します。
 
-In certain cases, if the server cannot be trusted, it should not be involved in communication with sensitive information.
-To address this concern, NVFlare introduces Client Controlled Workflows (CCWF) to facilitate peer-to-peer communication among clients.
+場合によっては、サーバーが信頼できないときには、機微な情報を伴う通信にサーバーを関与させるべきではありません。
+この懸念に対処するため、NVFlare はクライアント間のピアツーピア通信を実現する Client Controlled Workflows (CCWF) を導入しています。
 
 
-Controllers can be configured in ``config_fed_server.json`` in the workflows section:
+Controller は ``config_fed_server.json`` の workflows セクションで設定できます。
 
 .. code-block::
 
@@ -33,8 +33,8 @@ Controllers can be configured in ``config_fed_server.json`` in the workflows sec
       }
   ]
 
-To configure controllers using the JobAPI, define the controller and send it to the server.
-This code will automatically generate the server configuration for the controller:
+JobAPI を使って Controller を設定するには、Controller を定義してサーバーに送信します。
+このコードにより、Controller 用のサーバー設定が自動的に生成されます。
 
 .. code-block:: python
 
@@ -45,7 +45,7 @@ This code will automatically generate the server configuration for the controlle
   )
   job.to(controller, "server")
 
-Please refer to the following sections for more details about the different types of controllers.
+さまざまな種類の Controller に関する詳細は、以下のセクションを参照してください。
 
 .. toctree::
    :maxdepth: 3

@@ -1,12 +1,12 @@
-**************************
-What's New in FLARE v2.3.0
-**************************
+**********************************
+FLARE v2.3.0 の新機能
+**********************************
 
-Cloud Deployment Support
-========================
-The Dashboard UI and FL entities have expanded support for :ref:`cloud_deployment` for both Azure and AWS.
-Simple CLI commands now exist to create the infrastructure, deploy, and start the Dashboard UI,
-FL Server, and FL Client(s):
+クラウドデプロイメントのサポート
+========================================
+Dashboard UI と FL エンティティは、Azure と AWS の両方における :ref:`cloud_deployment` のサポートを拡張しました。
+インフラの作成、デプロイ、そして Dashboard UI、FL サーバー、FL クライアントの起動を行うシンプルな CLI コマンドが
+利用できるようになりました。
 
 .. code-block:: bash
 
@@ -14,135 +14,134 @@ FL Server, and FL Client(s):
     <server-startup-kit>/start.sh --cloud azure | aws
     <client-startup-kit>/start.sh --cloud azure | aws
 
-These start scripts can automatically create the needed resources, VMs, networking, security groups, and deploy FLARE
-to the newly created infrastructure and start the FLARE system.
+これらの起動スクリプトは、必要なリソース、VM、ネットワーク、セキュリティグループを自動的に作成し、新しく作成された
+インフラに FLARE をデプロイして FLARE システムを起動できます。
 
-Python Version Support
-----------------------
-FLARE is now supported for Python 3.9 and Python 3.10, so FLARE 2.3.0 will support Python versions 3.8, 3.9, 3.10.
-Python 3.7 is no longer actively supported and tested.
+Python バージョンのサポート
+----------------------------------
+FLARE は Python 3.9 および Python 3.10 でサポートされるようになったため、FLARE 2.3.0 は Python バージョン 3.8、3.9、3.10 をサポートします。
+Python 3.7 は、積極的なサポートおよびテストの対象ではなくなりました。
 
-New FLARE API to provide better user experience 
------------------------------------------------
-The new FLARE API is an improved version of the FLAdminAPI with better ease of use. FLARE API currently supports selected commands. See
-:ref:`Migrating to FLARE API <migrating_to_flare_api>` for details on migrating to the new FLARE API. For now, the FLAdminAPI should still remain functional.
-For details on the FLARE API, you can see this notebook: https://github.com/NVIDIA/NVFlare/blob/2.3/examples/tutorials/flare_api.ipynb.
+ユーザー体験を向上させる新しい FLARE API
+------------------------------------------------
+新しい FLARE API は、FLAdminAPI をより使いやすく改良したバージョンです。FLARE API は現在、一部のコマンドをサポートしています。
+新しい FLARE API への移行の詳細については、:ref:`FLARE API への移行 <migrating_to_flare_api>` を参照してください。当面の間、FLAdminAPI も引き続き機能します。
+FLARE API の詳細については、こちらのノートブックをご覧ください: https://github.com/NVIDIA/NVFlare/blob/2.3/examples/tutorials/flare_api.ipynb
 
-Job Signing for Improved Security
----------------------------------
-Before a job is submitted to the server, the submitter's private key is used to sign each file's digest to ensure that custom code is signed.
-Each folder has one signature file, which maps file names to the signatures of all files inside that folder. The signer's certificate is also
-included for signature verification. The verification is performed at deployment time, rather than submission time, as the clients do not receive
-the job until the job is deployed.
+セキュリティ向上のためのジョブ署名
+------------------------------------------
+ジョブがサーバーにサブミットされる前に、サブミッターの秘密鍵を使って各ファイルのダイジェストに署名し、カスタムコードが署名されていることを保証します。
+各フォルダーには 1 つの署名ファイルがあり、ファイル名とそのフォルダー内のすべてのファイルの署名を対応付けます。署名検証のために、署名者の証明書も
+含まれます。ジョブがデプロイされるまでクライアントはジョブを受け取らないため、検証はサブミット時ではなくデプロイ時に実行されます。
 
-Client-Side Model Initialization
---------------------------------
-Prior to FLARE 2.3.0, model initialization was performed on the server-side.
-The model was either initialized from a model file or custom model initiation code. Pre-defining a model file required extra steps of pre-generating
-and saving the model file and then sending it over to the server. Running custom model initialization code on server could be a security risk.
+クライアント側でのモデル初期化
+--------------------------------------
+FLARE 2.3.0 より前は、モデルの初期化はサーバー側で行われていました。
+モデルは、モデルファイルから初期化されるか、カスタムのモデル初期化コードによって初期化されていました。モデルファイルを事前定義するには、モデルファイルを
+事前に生成して保存し、それをサーバーへ送信するという余分な手順が必要でした。また、サーバー上でカスタムのモデル初期化コードを実行することはセキュリティリスクになり得ました。
 
-FLARE 2.3.0 introduces another way to initialize the model on the client side. The FL Server can select
-the initial model based on a user-chosen strategy. Here is an example using client-side model initialization: https://github.com/NVIDIA/NVFlare/tree/2.3/examples/hello-world/hello-pt.
-You can read more about this feature in :ref:`initialize_global_weights_workflow`.
+FLARE 2.3.0 では、クライアント側でモデルを初期化する別の方法を導入します。FL サーバーは、ユーザーが選択したストラテジーに基づいて
+初期モデルを選択できます。クライアント側モデル初期化を使用した例はこちらです: https://github.com/NVIDIA/NVFlare/tree/2.3/examples/hello-world/hello-pt
+この機能の詳細については、:ref:`initialize_global_weights_workflow` をご覧ください。
 
-Traditional Machine Learning Examples
--------------------------------------
-Several new examples have been added to support using traditional machine learning algorithms in federated learning:
-   - :github_nvflare_link:`Linear model <examples/advanced/sklearn-linear>` using scikit-learn library via
-     `iterative SGD training <https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html>`_.
-     Linear and logistic regressions can be implemented following this iterative example by adopting different loss functions.
-   - :github_nvflare_link:`SVM <examples/advanced/sklearn-svm>` using scikit-learn library. In this two-step process, the server performs an additional round of SVM over the collected supporting vectors from clients.
-   - :github_nvflare_link:`K-Means <examples/advanced/sklearn-kmeans>` using scikit-learn library via
-     `mini-batch K-Means method <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.MiniBatchKMeans.html>`_.
-     In this iterative process, each client performs mini-batch K-Means and the server syncs the updates for the global model.
-   - :github_nvflare_link:`Random Forest <examples/advanced/random_forest>` using XGBoost library with
-     `random forest functionality <https://xgboost.readthedocs.io/en/stable/tutorials/rf.html>`_. In this two-step process, clients
-     construct sub-forests on their local data, and the server ensembles all collected sub-forests to produce the global random forest.
+従来型の機械学習の例
+-----------------------------
+フェデレーテッドラーニングで従来型の機械学習アルゴリズムを利用できるよう、いくつかの新しい例が追加されました。
+   - scikit-learn ライブラリを用いた :github_nvflare_link:`線形モデル <examples/advanced/sklearn-linear>`（
+     `反復的な SGD 学習 <https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html>`_ を使用）。
+     この反復的な例に従い、異なる損失関数を採用することで、線形回帰やロジスティック回帰を実装できます。
+   - scikit-learn ライブラリを用いた :github_nvflare_link:`SVM <examples/advanced/sklearn-svm>`。この 2 段階のプロセスでは、サーバーがクライアントから収集したサポートベクターに対して、さらに 1 ラウンドの SVM を実行します。
+   - scikit-learn ライブラリを用いた :github_nvflare_link:`K-Means <examples/advanced/sklearn-kmeans>`（
+     `ミニバッチ K-Means 手法 <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.MiniBatchKMeans.html>`_ を使用）。
+     この反復的なプロセスでは、各クライアントがミニバッチ K-Means を実行し、サーバーがグローバルモデルに向けて更新を同期します。
+   - XGBoost ライブラリの `ランダムフォレスト機能 <https://xgboost.readthedocs.io/en/stable/tutorials/rf.html>`_ を用いた
+     :github_nvflare_link:`ランダムフォレスト <examples/advanced/random_forest>`。この 2 段階のプロセスでは、クライアントが
+     ローカルデータ上でサブフォレストを構築し、サーバーが収集したすべてのサブフォレストをアンサンブルしてグローバルなランダムフォレストを生成します。
 
-Vertical Learning
+垂直学習
 -----------------
 
 Federated Private Set Intersection (PSI)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In order to support vertical learning use cases such as secure user-id matching and feature
-over-lapping discovery, we have developed a multi-party private set intersection (PSI) operator
-that allows for the secure discovery of data intersections. Our approach leverages OpenMined's two-party
-`Private Set Intersection Cardinality protocol <https://github.com/OpenMined/PSI>`_, which is based on ECDH and Bloom Filters, and we have
-made this protocol available for multi-party use. More information on our approach and how to use the
-PSI operator can be found in the :github_nvflare_link:`PSI Example <examples/advanced/psi/README.md>`.
+セキュアなユーザー ID マッチングや特徴量の重複発見といった垂直学習のユースケースをサポートするために、私たちは
+データの交差集合を安全に発見できるマルチパーティの Private Set Intersection（PSI）オペレーターを開発しました。
+このアプローチでは、ECDH と Bloom Filter に基づく OpenMined の 2 者間
+`Private Set Intersection Cardinality プロトコル <https://github.com/OpenMined/PSI>`_ を活用し、このプロトコルを
+マルチパーティで利用できるようにしました。私たちのアプローチと PSI オペレーターの使い方の詳細については、
+:github_nvflare_link:`PSI の例 <examples/advanced/psi/README.md>` を参照してください。
 
-It is worth noting that PSI is used as a pre-processing step in the split learning example, which can be found in this
-:github_nvflare_link:`notebook <examples/advanced/vertical_federated_learning/cifar10-splitnn/README.md>`.
+なお、PSI は Split Learning の例において前処理ステップとして使用されている点に注目してください。その例はこちらの
+:github_nvflare_link:`ノートブック <examples/advanced/vertical_federated_learning/cifar10-splitnn/README.md>` にあります。
 
 Split Learning
 ~~~~~~~~~~~~~~
-Split Learning can allow the training of deep neural networks on vertically separated data. With this release, we include an `example <https://github.com/NVIDIA/NVFlare/blob/2.3/examples/advanced/vertical_federated_learning/cifar10-splitnn/README.md>`_
-on how to run `split learning <https://arxiv.org/abs/1810.06060>`_ using the CIFAR-10 dataset assuming one client holds the images and the other client holds the labels to compute losses and accuracy metrics.
+Split Learning は、垂直に分割されたデータ上でディープニューラルネットワークを学習させることを可能にします。本リリースでは、一方のクライアントが画像を保持し、
+もう一方のクライアントが損失と精度メトリクスを計算するためのラベルを保持していると仮定して、CIFAR-10 データセットを用いて
+`split learning <https://arxiv.org/abs/1810.06060>`_ を実行する方法を示す `例 <https://github.com/NVIDIA/NVFlare/blob/2.3/examples/advanced/vertical_federated_learning/cifar10-splitnn/README.md>`_ を含めています。
 
-Activations and corresponding gradients are being exchanged between the clients using FLARE's new communication API.
+活性化値とそれに対応する勾配は、FLARE の新しい通信 API を用いてクライアント間で交換されます。
 
-New Example for NLP
--------------------
-The new :github_nvflare_link:`NLP-NER Example <examples/advanced/nlp-ner/README.md>` illustrates both `BERT <https://github.com/google-research/bert>`_ and
-`GPT-2 <https://github.com/openai/gpt-2>`__ models from `Hugging Face <https://huggingface.co/>`_ (`BERT-base-uncased <https://huggingface.co/bert-base-uncased>`_, `GPT-2 <https://huggingface.co/gpt2>`__)
-on a Named Entity Recognition (NER) task using the `NCBI disease dataset <https://pubmed.ncbi.nlm.nih.gov/24393765/>`_.
+NLP の新しい例
+-----------------------
+新しい :github_nvflare_link:`NLP-NER の例 <examples/advanced/nlp-ner/README.md>` では、`Hugging Face <https://huggingface.co/>`_ の
+`BERT <https://github.com/google-research/bert>`_ と `GPT-2 <https://github.com/openai/gpt-2>`__ の両モデル（`BERT-base-uncased <https://huggingface.co/bert-base-uncased>`_、`GPT-2 <https://huggingface.co/gpt2>`__）を、
+`NCBI disease データセット <https://pubmed.ncbi.nlm.nih.gov/24393765/>`_ を用いた固有表現抽出（NER）タスクで紹介します。
 
-Research Areas
+研究領域
 --------------
 
 FedSM
 ~~~~~
-The :github_nvflare_link:`FedSM example <research/fed-sm/README.md>` illustrates the personalized federated learning algorithm `FedSM <https://arxiv.org/abs/2203.10144>`_
-accepted to CVPR 2022. It bridges the different data distributions across clients via a SoftPull mechanism and utilizes
-a Super Model. A model selector is trained to predict the belongings of a particular sample to any of the clients'
-personalized models or global model. The training of this model also illustrates a challenging federated learning scenario
-with extreme label-imbalance, where each local training is only based on a single label towards the optimization for
-classification of a number of classes equivalent to the number of clients. In this case, the higher-order moments of the
-Adam optimizer are also averaged and synced together with model updates.
+:github_nvflare_link:`FedSM の例 <research/fed-sm/README.md>` では、CVPR 2022 に採択されたパーソナライズドフェデレーテッドラーニングアルゴリズム
+`FedSM <https://arxiv.org/abs/2203.10144>`_ を紹介します。FedSM は SoftPull メカニズムを通じてクライアント間で異なるデータ分布を橋渡しし、
+Super Model を活用します。モデルセレクターは、特定のサンプルがどのクライアントのパーソナライズドモデル、あるいはグローバルモデルに属するかを
+予測するように学習されます。このモデルの学習はまた、極端なラベル不均衡を伴う困難なフェデレーテッドラーニングのシナリオも示しています。そこでは、
+各ローカル学習が単一のラベルのみに基づいて行われる一方で、クライアント数と同じ数のクラスの分類に向けて最適化が行われます。この場合、
+Adam オプティマイザーの高次モーメントもモデル更新とともに平均化・同期されます。
 
 Auto-FedRL
 ~~~~~~~~~~
-The :github_nvflare_link:`Auto-FedRL example <research/auto-fed-rl/README.md>` implements the automated machine learning solution described in
-`Auto-FedRL: Federated Hyperparameter Optimization for Multi-institutional Medical Image Segmentation <https://arxiv.org/abs/2203.06338>`_ accepted to ECCV 2022.
-Conventional hyperparameter optimization algorithms are often impractical in real-world FL applications as they involve numerous training trials,
-which are often not affordable with limited computing budgets.
-Auto-FedRL proposes an efficient reinforcement learning (RL)-based federated hyperparameter optimization algorithm,
-in which an online RL agent can dynamically adjust the hyperparameters of each client based on the current training progress.
+:github_nvflare_link:`Auto-FedRL の例 <research/auto-fed-rl/README.md>` は、ECCV 2022 に採択された
+`Auto-FedRL: Federated Hyperparameter Optimization for Multi-institutional Medical Image Segmentation <https://arxiv.org/abs/2203.06338>`_ に記載された自動機械学習ソリューションを実装しています。
+従来のハイパーパラメーター最適化アルゴリズムは、多数の学習トライアルを伴うため、実世界の FL アプリケーションではしばしば非現実的です。
+限られた計算予算では、そうしたトライアルを賄えないことが多いためです。
+Auto-FedRL は、効率的な強化学習（RL）ベースのフェデレーテッドハイパーパラメーター最適化アルゴリズムを提案します。
+このアルゴリズムでは、オンラインの RL エージェントが現在の学習の進捗に基づいて各クライアントのハイパーパラメーターを動的に調整できます。
 
-Quantifying Data Leakage in Federated Learning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This research :github_nvflare_link:`example <research/quantifying-data-leakage/README.md>` contains the tools necessary to recreate the chest X-ray experiments described in
-`Do Gradient Inversion Attacks Make Federated Learning Unsafe? <https://arxiv.org/abs/2202.06924>`_, accepted to IEEE Transactions on Medical Imaging.
-It presents new ways to measure and visualize potential data leakage in FL using a new FLARE filter
-that can quantify the data leakage for each client and visualize it as a function of the FL training rounds.
-Quantifying the data leakage in FL can help determine the optimal tradeoffs between privacy-preserving techniques, such as differential privacy, and model accuracy based on quantifiable metrics.
+フェデレーテッドラーニングにおけるデータ漏洩の定量化
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+この研究 :github_nvflare_link:`例 <research/quantifying-data-leakage/README.md>` には、IEEE Transactions on Medical Imaging に採択された
+`Do Gradient Inversion Attacks Make Federated Learning Unsafe? <https://arxiv.org/abs/2202.06924>`_ で説明されている胸部 X 線実験を再現するために必要なツールが含まれています。
+この例では、各クライアントのデータ漏洩を定量化し、それを FL 学習ラウンドの関数として可視化できる新しい FLARE フィルターを用いて、
+FL における潜在的なデータ漏洩を測定・可視化する新しい方法を示します。
+FL におけるデータ漏洩を定量化することで、差分プライバシーのようなプライバシー保護技術とモデル精度との間の最適なトレードオフを、定量可能な指標に基づいて判断する助けになります。
 
-Communication Framework Upgrades
---------------------------------
-There should be no visible changes in terms of the configuration and usage patterns for the end user, but the underlying communication
-layer has been improved to allow for greater flexibility and performance. These new communication features will be made generally available in next release.
+通信フレームワークのアップグレード
+------------------------------------------
+エンドユーザーにとって、設定や利用パターンに目に見える変更はないはずですが、基盤となる通信レイヤーは
+より高い柔軟性と性能を実現するために改善されました。これらの新しい通信機能は、次のリリースで一般提供される予定です。
 
 **********************************
-Migration to 2.3.0: Notes and Tips
+2.3.0 への移行: 注意点とヒント
 **********************************
-2.3.0 introduces a few API and behavior changes. This migration guide will help you to migrate from the previous NVFLARE version to the current version.
+2.3.0 では、いくつかの API と挙動の変更が導入されています。この移行ガイドは、以前の NVFLARE バージョンから現在のバージョンへ移行する際に役立ちます。
 
 1. FLARE API
 ------------
-FLARE API is the FLAdminAPI redesigned for a better user experience in version 2.3. To understand the FLARE API usage, the relationship to
-the FLAdmin API, and migration steps, please refer to :ref:`Migrating to FLARE API <migrating_to_flare_api>`.
+FLARE API は、バージョン 2.3 においてより良いユーザー体験のために再設計された FLAdminAPI です。FLARE API の使い方、FLAdmin API との関係、
+および移行手順を理解するには、:ref:`FLARE API への移行 <migrating_to_flare_api>` を参照してください。
 
-2. Enhancements to the ``list_jobs`` command
+2. ``list_jobs`` コマンドの機能強化
 --------------------------------------------
-The ``list_jobs`` command now has an option ``-r`` to display the results in reverse chronological order by submitted time. A ``-m`` option
-has been added to limit the maximum number of jobs returned.
+``list_jobs`` コマンドに、サブミット時刻の新しい順（逆時系列順）で結果を表示する ``-r`` オプションが追加されました。また、返されるジョブの
+最大数を制限する ``-m`` オプションも追加されました。
 
-3. Redesign of communication layer
+3. 通信レイヤーの再設計
 ----------------------------------
-NVFLARE 2.3.0 comes with a new communication layer. Although the full-fledged features will not be generally available until the next release, the
-underlying communication engine is already replaced, and you might see changes in logging.
+NVFLARE 2.3.0 には新しい通信レイヤーが搭載されています。本格的な機能が一般提供されるのは次のリリースになりますが、
+基盤となる通信エンジンはすでに置き換えられており、ログ出力に変化が見られる場合があります。
 
-As such, we have to change a few communication related APIs in :class:`ClientEngineExecutorSpec<nvflare.private.fed.client.client_engine_executor_spec.ClientEngineExecutorSpec>`:
+そのため、:class:`ClientEngineExecutorSpec<nvflare.private.fed.client.client_engine_executor_spec.ClientEngineExecutorSpec>` において、通信関連の API をいくつか変更する必要がありました。
 
 
 FLARE 2.2.x
@@ -198,10 +197,10 @@ FLARE 2.3.0
 
       """
 
-4. Controller behavior changes
+4. Controller の挙動変更
 ------------------------------
-Inside :class:`ControllerSpec<nvflare.apis.controller_spec.ControllerSpec>`, the usage of ``wait_time_after_min_received``
-has been changed to no longer wait if all responses are received.
+:class:`ControllerSpec<nvflare.apis.controller_spec.ControllerSpec>` の内部で、``wait_time_after_min_received`` の挙動が変更され、
+すべてのレスポンスを受信した場合には待機しないようになりました。
 
 .. code-block:: python
 
@@ -216,35 +215,35 @@ has been changed to no longer wait if all responses are received.
           wait_time_after_min_received: int = 0,
         ):
 
-Prior to release 2.3.0,
+リリース 2.3.0 より前:
 
-Wait_time_after_min_received: this means after min_response received, we will wait wait_time_after_min_received.
+Wait_time_after_min_received: min_response を受信した後、wait_time_after_min_received の時間だけ待機することを意味します。
 
-In Release 2.3.0: 
+リリース 2.3.0 では:
 
-Wait_time_after_min_received: If min_response received, but not all responses are received, we will wait wait_time_after_min_received.
-If all responses are received, there is no wait.
+Wait_time_after_min_received: min_response を受信したものの、すべてのレスポンスを受信していない場合に、wait_time_after_min_received の時間だけ待機します。
+すべてのレスポンスを受信した場合は、待機しません。
 
-5. Behavior changes to POC ``–stop``
+5. POC ``–stop`` の挙動変更
 ------------------------------------
-In 2.2.x version, the POC stop will try to kill the process directly regardless the system state. 
+2.2.x のバージョンでは、POC の stop はシステムの状態にかかわらず、プロセスを直接強制終了しようとしていました。
 
-In 2.3.0 version, the stop command will try with the following:
+2.3.0 のバージョンでは、stop コマンドは次の手順を試みます。
 
-  #. Connect to the server
-  #. If server can be connected, then list active jobs
-  #. Abort all active jobs
-  #. Call system shutdown, and wait for system to gradually shutdown
-  #. Wait for system to shut down with max_timeout of 30 seconds
-  #. After that, we try kill the process (this was the entirety of the 2.2.x behavior)
+  #. サーバーに接続します
+  #. サーバーに接続できた場合は、アクティブなジョブを一覧表示します
+  #. すべてのアクティブなジョブを中止します
+  #. システムのシャットダウンを呼び出し、システムが段階的にシャットダウンするのを待ちます
+  #. 最大 30 秒のタイムアウトでシステムのシャットダウンを待ちます
+  #. その後、プロセスの強制終了を試みます（これが 2.2.x の挙動のすべてでした）
 
-6. Scatter and Gather Controller API changes
---------------------------------------------
-A new argument has been added to :class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>`. ``allow_empty_global_weights`` is
-an optional boolean to determine whether or not to allow empty global weights and defaults to False.
+6. Scatter and Gather Controller の API 変更
+--------------------------------------------------
+:class:`ScatterAndGather<nvflare.app_common.workflows.scatter_and_gather.ScatterAndGather>` に新しい引数が追加されました。``allow_empty_global_weights`` は、
+空のグローバルウェイトを許可するかどうかを決めるオプションのブール値で、デフォルトは False です。
 
-Some pipelines can have empty global weights at the first round, such that clients start training from scratch without any global info.
+パイプラインによっては、最初のラウンドでグローバルウェイトが空になり、クライアントがグローバル情報なしでゼロから学習を開始する場合があります。
 
-7. Updates to the Job Scheduler Configuration
+7. Job Scheduler の設定に関する更新
 ---------------------------------------------
-See :ref:`job_scheduler_configuration` for information on how the Job Scheduler can be configured with different arguments.
+Job Scheduler をさまざまな引数で設定する方法については、:ref:`job_scheduler_configuration` を参照してください。

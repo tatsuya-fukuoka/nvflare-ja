@@ -1,133 +1,124 @@
-###################
-System Architecture
-###################
+##########################
+システムアーキテクチャ
+##########################
 
-NVIDIA FLARE is designed with the idea that less is more, using a spec based design principle to focus on what is
-essential (solutions to hard, tedious problems others do not want to solve) and to allow other people to be able to do
-what they want to do in real world applications. FL is an open ended space, so the spec based design allows others to
-bring their own implementations and solutions for various components.
+NVIDIA FLARE は「less is more (少ないほど豊かである)」という考えのもとに設計されており、スペックベースの設計原則を用いることで、本質的なこと (他の人が解決したがらない難しく面倒な問題への解決策) に注力し、他の人が実世界のアプリケーションでやりたいことをできるようにしています。FL はオープンエンドな領域であるため、スペックベースの設計により、他の人がさまざまなコンポーネントに対して独自の実装や解決策を持ち込めるようになっています。
 
 .. _concepts_and_system_components:
 
-******************************
-Concepts and System Components
-******************************
+************************************
+概念とシステムコンポーネント
+************************************
 
-Spec-based Programming for System Service Objects
-=================================================
-NVIDIA FLARE needs additional services for storage, job definition management, etc. There are many ways to implement such services. For example,
-storage could be implemented with a file system, AWS S3, or some database technologies. Similarly, job definition
-management could be done with simple file reading or a sophisticated solution with a database or search engine.
+システムサービスオブジェクトのスペックベースプログラミング
+============================================================
+NVIDIA FLARE は、ストレージやジョブ定義管理などのための追加サービスを必要とします。こうしたサービスを実装する方法は数多くあります。例えば、ストレージはファイルシステム、AWS S3、あるいは何らかのデータベース技術で実装できます。同様に、ジョブ定義管理は単純なファイル読み取りでも、データベースや検索エンジンを用いた高度なソリューションでも実現できます。
 
-To allow any of these solutions in NVIDIA FLARE, we take a spec-based approach for such objects. Each such service will
-provide an interface definition (the spec), and all implementations must follow the spec. The spec defines the
-required behaviors for the implementation. At the same time, we provide some implementations that follow these specs.
+NVIDIA FLARE でこれらいずれのソリューションも使えるようにするため、そうしたオブジェクトについてはスペックベースのアプローチを採用しています。こうした各サービスはインターフェース定義 (スペック) を提供し、すべての実装はそのスペックに従わなければなりません。スペックは実装に求められる振る舞いを定義します。同時に、これらのスペックに従ういくつかの実装も提供しています。
 
-Spec definitions and provided implementations are below for the different system components.
+各システムコンポーネントについてのスペック定義と提供される実装は以下のとおりです。
 
 .. _system_components:
 
-System Components
-=================
-See the example :ref:`project_yml` for how these components are configured in StaticFileBuilder.
+システムコンポーネント
+========================
+これらのコンポーネントが StaticFileBuilder でどのように設定されるかについては、:ref:`project_yml` の例を参照してください。
 
-Job Definition Manager
-----------------------
-The Job Definition Manager config specifies the Python object that manages the access and manipulation of Job Definition objects stored in the Job Storage.
+ジョブ定義マネージャー
+------------------------
+ジョブ定義マネージャーの設定では、ジョブストレージに保存されたジョブ定義オブジェクトへのアクセスと操作を管理する Python オブジェクトを指定します。
 
-The system reserved component id, job_manager, is used to denote the Job Definition Manager in the project.yml file.
+システム予約のコンポーネント ID である job_manager は、project.yml ファイル内でジョブ定義マネージャーを表すために使用されます。
 
-This component is specified as one item in the components.server section.
+このコンポーネントは components.server セクションの 1 項目として指定されます。
 
-This configuration is included in the fed_server.json of the Server's Startup Kit.
+この設定はサーバーのスタートアップキットの fed_server.json に含まれます。
 
 :class:`Job Definition Manager Spec<nvflare.apis.job_def_manager_spec.JobDefManagerSpec>`
 
-NVIDIA FLARE provides a simple implementation that is based on scanning of job definition objects:
+NVIDIA FLARE は、ジョブ定義オブジェクトのスキャンに基づく単純な実装を提供しています。
 
     - :class:`Simple Job Def Manager<nvflare.apis.impl.job_def_manager.SimpleJobDefManager>`
 
-Job Storage
-^^^^^^^^^^^
-The Job definition is stored in a persistent store (used by Simple Job Def Manager). The Job Storage config specifies the Python object that manages the access to the store.
+ジョブストレージ
+^^^^^^^^^^^^^^^^^^
+ジョブ定義は永続ストア (Simple Job Def Manager が使用) に保存されます。ジョブストレージの設定では、そのストアへのアクセスを管理する Python オブジェクトを指定します。
 
-This component is specified as one item in the components.server section.
+このコンポーネントは components.server セクションの 1 項目として指定されます。
 
-This configuration is included in the fed_server.json of the Server's Startup Kit.
+この設定はサーバーのスタートアップキットの fed_server.json に含まれます。
 
 .. note::
 
-   The default storage is `FilesystemStorage<nvflare.app_common.storages.filesystem_storage.FilesystemStorage>` and is
-   configured to use paths available in the file system to persist data. Other implementations can be used instead that
-   may need to take other arguments or configurations.
+   デフォルトのストレージは `FilesystemStorage<nvflare.app_common.storages.filesystem_storage.FilesystemStorage>` であり、
+   データを永続化するためにファイルシステム上で利用可能なパスを使うように設定されています。代わりに他の実装を使うこともでき、
+   その場合は別の引数や設定が必要になることがあります。
 
-Job Scheduler
--------------
-The Job scheduler is responsible for determining the next job to run. Job scheduler config specifies the Job scheduler Python object.
+ジョブスケジューラー
+----------------------
+ジョブスケジューラーは、次に実行するジョブを決定する役割を担います。ジョブスケジューラーの設定では、ジョブスケジューラーの Python オブジェクトを指定します。
 
-The system reserved component id, job_scheduler, is used to denote the Job Scheduler in the project.yml file.
+システム予約のコンポーネント ID である job_scheduler は、project.yml ファイル内でジョブスケジューラーを表すために使用されます。
 
-This component is specified as one item in the components.server section.
+このコンポーネントは components.server セクションの 1 項目として指定されます。
 
-This configuration is included in the fed_server.json of the Server's Startup Kit.
+この設定はサーバーのスタートアップキットの fed_server.json に含まれます。
 
 :class:`Job Scheduler Spec<nvflare.apis.job_scheduler_spec.JobSchedulerSpec>`
 
-NVIDIA FLARE provides a default implementation of the Job Scheduler that does resource based scheduling as described in the beginning:
+NVIDIA FLARE は、冒頭で説明したリソースベースのスケジューリングを行うジョブスケジューラーのデフォルト実装を提供しています。
 
     - :class:`Default Job Scheduler<nvflare.app_common.job_schedulers.job_scheduler.DefaultJobScheduler>`
 
-Storage
--------
-Storage is used in Job Storage and Job Execution State Storage. See the specific sections for more details.
+ストレージ
+------------
+ストレージはジョブストレージおよびジョブ実行状態ストレージで使用されます。詳細は該当するセクションを参照してください。
 
 :class:`Storage Spec<nvflare.apis.storage.StorageSpec>`
 
-NVIDIA FLARE provides two simple storage implementations:
+NVIDIA FLARE は 2 つの単純なストレージ実装を提供しています。
 
     - :class:`File System Storage<nvflare.app_common.storages.filesystem_storage.FilesystemStorage>`
     - :class:`AWS S3 Storage<nvflare.app_common.storages.s3_storage.S3Storage>`
 
-Resource Manager
------------------
-The Resource Manager is responsible for managing job resources on FL Client. Resource Manager config specifies the Resource Manager Python object.
+リソースマネージャー
+----------------------
+リソースマネージャーは、FL クライアント上のジョブリソースを管理する役割を担います。リソースマネージャーの設定では、リソースマネージャーの Python オブジェクトを指定します。
 
-The system reserved component id, resource_manager, is used to denote the Resource Manager in the project.yml file.
+システム予約のコンポーネント ID である resource_manager は、project.yml ファイル内でリソースマネージャーを表すために使用されます。
 
-This component is specified as one item in the components.client section.
+このコンポーネントは components.client セクションの 1 項目として指定されます。
 
-This configuration is included in the fed_client.json of the FL Client's Startup Kit.
+この設定は FL クライアントのスタートアップキットの fed_client.json に含まれます。
 
 :class:`Resource Manager Spec<nvflare.apis.resource_manager_spec.ResourceManagerSpec>`
 
-NVIDIA FLARE provides a simple resource manager that manages resources as a list of items:
+NVIDIA FLARE は、リソースを項目のリストとして管理する単純なリソースマネージャーを提供しています。
 
     - :class:`List Resource Manager<nvflare.app_common.resource_managers.list_resource_manager.ListResourceManager>`
 
-Resource Consumer
------------------
-The Resource Consumer is responsible for consuming and/or initializing job resources on FL Client. The Resource Consumer
-config specifies the Resource Consumer Python object.
+リソースコンシューマー
+------------------------
+リソースコンシューマーは、FL クライアント上でジョブリソースを消費および/または初期化する役割を担います。リソースコンシューマーの設定では、リソースコンシューマーの Python オブジェクトを指定します。
 
-This configuration is included in the fed_client.json of the FL Client's Startup Kit.
+この設定は FL クライアントのスタートアップキットの fed_client.json に含まれます。
 
-The system reserved component id, resource_consumer, is used to denote the Resource Consumer in the project.yml file.
+システム予約のコンポーネント ID である resource_consumer は、project.yml ファイル内でリソースコンシューマーを表すために使用されます。
 
-This component is specified as one item in the components.client section.
+このコンポーネントは components.client セクションの 1 項目として指定されます。
 
 :class:`Resource Consumer Spec<nvflare.apis.resource_manager_spec.ResourceConsumerSpec>`
 
-NVIDIA FLARE provides a GPU resource consumer:
+NVIDIA FLARE は GPU リソースコンシューマーを提供しています。
 
     - :class:`GPU Resource Consumer<nvflare.app_common.resource_consumers.gpu_resource_consumer.GPUResourceConsumer>`
 
-Snapshot Persisting
--------------------
-The Job Execution State is persisted in snapshots with the Job Execution State Storage.
+スナップショットの永続化
+--------------------------
+ジョブ実行状態は、ジョブ実行状態ストレージによってスナップショットとして永続化されます。
 
-Job Execution State Storage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Job Execution State is stored in a persistent store. The Job Execution State Storage config specifies the Python
-object that manages the access to the store.
+ジョブ実行状態ストレージ
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+ジョブ実行状態は永続ストアに保存されます。ジョブ実行状態ストレージの設定では、そのストアへのアクセスを管理する Python オブジェクトを指定します。
 
-This configuration is included in the fed_server.json of the Server's Startup Kit.
+この設定はサーバーのスタートアップキットの fed_server.json に含まれます。

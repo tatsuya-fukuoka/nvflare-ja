@@ -1,100 +1,97 @@
 .. _tensor_downloader:
 
-#######################
+##################################
 FLARE Tensor Downloader
-#######################
+##################################
 
-This guide explains the Tensor Downloader feature in NVIDIA FLARE, which provides memory-efficient
-transfer of large PyTorch models in federated learning workflows.
+このガイドでは、フェデレーテッドラーニングのワークフローにおいて大規模な PyTorch モデルを
+メモリ効率よく転送するための、NVIDIA FLARE の Tensor Downloader 機能について説明します。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Overview
-========
+概要
+====
 
-What is the Tensor Downloader?
-------------------------------
+Tensor Downloader とは何か
+--------------------------
 
-The Tensor Downloader is a memory optimization feature that enables efficient transfer of large PyTorch
-tensors (model parameters) between the FL server and clients. Instead of serializing entire models into
-memory before transmission, it streams tensors incrementally, significantly reducing peak memory usage.
+Tensor Downloader は、FL サーバーとクライアントの間で大規模な PyTorch テンソル (モデルパラメータ) を
+効率的に転送できるようにするメモリ最適化機能です。送信前にモデル全体をメモリ上でシリアライズするのではなく、
+テンソルを逐次的にストリーミングすることで、ピーク時のメモリ使用量を大幅に削減します。
 
-Why Do We Need It?
-------------------
+なぜ必要なのか
+--------------
 
-In traditional federated learning, when the server sends a global model to clients (or when clients
-send updates back), the entire model must be:
+従来のフェデレーテッドラーニングでは、サーバーがグローバルモデルをクライアントに送信するとき (あるいは
+クライアントが更新を返送するとき)、モデル全体を次のように扱う必要があります。
 
-1. **Serialized into memory** - Converting the model to bytes requires additional memory equal to or
-   greater than the model size
-2. **Held in memory during transmission** - The serialized bytes must remain in memory until
-   transmission completes
-3. **Multiplied for multiple recipients** - When sending to N clients simultaneously, memory pressure
-   increases dramatically
+1. **メモリ上でのシリアライズ** - モデルをバイト列に変換するには、モデルサイズと同等以上の追加メモリが必要になります
+2. **送信中のメモリ保持** - シリアライズされたバイト列は、送信が完了するまでメモリ上に残しておく必要があります
+3. **複数の受信者分だけ倍増** - N 個のクライアントに同時送信する場合、メモリ圧迫が劇的に増大します
 
-For large language models (LLMs) and other large-scale models, this can cause:
+大規模言語モデル (LLM) やその他の大規模モデルでは、これにより次のような問題が発生し得ます。
 
-- **Out-of-memory errors** when available RAM is insufficient
-- **Severe performance degradation** when memory is saturated
-- **System instability** affecting other processes
+- 利用可能な RAM が不足した場合の **メモリ不足エラー**
+- メモリが飽和した場合の **深刻な性能低下**
+- 他のプロセスに影響を及ぼす **システムの不安定化**
 
-The Tensor Downloader solves these problems by using a **pull-based, incremental streaming** approach.
+Tensor Downloader は、**プルベースの逐次ストリーミング** 方式を用いることでこれらの問題を解決します。
 
-Key Benefits
-------------
+主な利点
+--------
 
-- **Reduced Memory Footprint**: 20-50% reduction in memory usage on both server and client sides
-  (based on testing with 5GB models and 4 clients using FedAvg)
+- **メモリフットプリントの削減**: サーバー側・クライアント側ともにメモリ使用量が 20〜50% 削減されます
+  (5GB のモデルと 4 クライアントで FedAvg を用いたテストに基づく)
 
-- **No Code Changes Required**: The optimization is built into PyTorch workflows and works
-  automatically with existing training code
+- **コード変更が不要**: この最適化は PyTorch ワークフローに組み込まれており、既存の学習コードで
+  自動的に動作します
 
-- **Scalable to Multiple Clients**: Each client downloads at its own pace without blocking others
+- **複数クライアントへのスケーラビリティ**: 各クライアントは他のクライアントをブロックすることなく、
+  自分のペースでダウンロードします
 
-- **Secure Serialization**: Uses the `safetensors` format which avoids pickle-based security
-  vulnerabilities
+- **セキュアなシリアライズ**: pickle ベースのセキュリティ脆弱性を回避する `safetensors` 形式を使用します
 
-- **Reliable Transfer**: Pull-based architecture handles heterogeneous network conditions gracefully
+- **信頼性の高い転送**: プルベースのアーキテクチャにより、多様なネットワーク状況にうまく対応します
 
-Limitations
------------
+制限事項
+--------
 
-- **PyTorch and NumPy Only**: The streaming download feature supports PyTorch tensors and NumPy arrays.
-  TensorFlow models are not currently supported and will use traditional serialization.
+- **PyTorch と NumPy のみ**: ストリーミングダウンロード機能は PyTorch テンソルと NumPy 配列をサポートします。
+  TensorFlow モデルは現在サポートされておらず、従来のシリアライズが使用されます。
 
-- **Custom Tensor Types**: Custom tensor types or non-standard model formats are not directly supported.
-  Convert your custom tensors to PyTorch tensors (``torch.Tensor``) or NumPy arrays (``numpy.ndarray``)
-  to benefit from the streaming download feature.
+- **カスタムテンソル型**: カスタムテンソル型や非標準のモデル形式は直接サポートされていません。
+  ストリーミングダウンロード機能の恩恵を受けるには、カスタムテンソルを PyTorch テンソル (``torch.Tensor``)
+  または NumPy 配列 (``numpy.ndarray``) に変換してください。
 
 
-How to Use It (User Perspective)
-================================
+使い方 (ユーザーの視点)
+=======================
 
-For Standard Users
-------------------
+一般的なユーザーの場合
+----------------------
 
-**Good news: You don't need to do anything!**
+**朗報です。何もする必要はありません!**
 
-The Tensor Downloader is built into all PyTorch workflows in FLARE 2.7.2+. When you use:
+Tensor Downloader は FLARE 2.7.2 以降のすべての PyTorch ワークフローに組み込まれています。以下を使う場合が該当します。
 
-- ``PTFedAvg`` controller
+- ``PTFedAvg`` コントローラー
 - ``PTFileModelPersistor``
 - ``PTClientAPILauncherExecutor``
 - ``PTInProcessClientAPIExecutor``
-- Any PyTorch-based Recipe (``FedAvgRecipe`` from ``nvflare.app_opt.pt.recipes``)
+- PyTorch ベースの任意の Recipe (``nvflare.app_opt.pt.recipes`` の ``FedAvgRecipe``)
 
-The TensorDecomposer is automatically registered and handles tensor streaming transparently.
+TensorDecomposer は自動的に登録され、テンソルのストリーミングを透過的に処理します。
 
-Client Memory Note for Large Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+大規模モデルにおけるクライアントメモリに関する注意
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TensorDownloader reduces transfer-time memory pressure, and client-side parameter references are
-also released after ``flare.send()`` when ``clear_cache=True`` (default). In CPython, tensors are
-typically reclaimed as soon as their last reference is dropped.
+TensorDownloader は転送時のメモリ圧迫を軽減します。また、``clear_cache=True`` (デフォルト) の場合、
+クライアント側のパラメータ参照も ``flare.send()`` の後に解放されます。CPython では、テンソルは通常、
+最後の参照が破棄されるとすぐに回収されます。
 
-For multi-GB payloads, avoid keeping extra references longer than needed:
+数 GB のペイロードでは、必要以上に長く余分な参照を保持しないようにしてください。
 
 .. code-block:: python
 
@@ -110,11 +107,11 @@ For multi-GB payloads, avoid keeping extra references longer than needed:
         del input_model
         del output_model
 
-``gc.collect()`` remains a supplemental safeguard for cyclic objects; it is not the primary
-mechanism for releasing tensor memory in this flow.
+``gc.collect()`` は循環参照オブジェクトに対する補助的な安全策として引き続き有効ですが、
+このフローにおいてテンソルメモリを解放する主要な仕組みではありません。
 
-Example: Using PyTorch FedAvg Recipe
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+例: PyTorch FedAvg Recipe を使う
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -135,8 +132,8 @@ Example: Using PyTorch FedAvg Recipe
     env = SimEnv(num_clients=2)
     run = recipe.execute(env)
 
-Example: Using PTFedAvg Controller Directly
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+例: PTFedAvg コントローラーを直接使う
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -154,20 +151,20 @@ Example: Using PTFedAvg Controller Directly
     )
     job.to(controller, "server")
 
-Configuration
--------------
+設定
+----
 
-The Tensor Downloader behavior can be configured via chunk size settings in your job configuration files.
+Tensor Downloader の動作は、ジョブ設定ファイル内のチャンクサイズ設定を通じて構成できます。
 
-**Configuration Parameters:**
+**設定パラメータ:**
 
-- ``tensor_download_chunk_size``: Chunk size for PyTorch tensor downloads (default: 2097152 = 2MB)
-- ``np_download_chunk_size``: Chunk size for NumPy array downloads (default: 2097152 = 2MB)
+- ``tensor_download_chunk_size``: PyTorch テンソルのダウンロードのチャンクサイズ (デフォルト: 2097152 = 2MB)
+- ``np_download_chunk_size``: NumPy 配列のダウンロードのチャンクサイズ (デフォルト: 2097152 = 2MB)
 
-Using Recipe API (Recommended)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Recipe API を使う (推奨)
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-For users working with recipes, use the ``add_server_config()`` method:
+Recipe を使って作業しているユーザーは、``add_server_config()`` メソッドを使用してください。
 
 .. code-block:: python
 
@@ -187,10 +184,10 @@ For users working with recipes, use the ``add_server_config()`` method:
         "streaming_per_request_timeout": 600
     })
 
-Using Job API
-^^^^^^^^^^^^^
+Job API を使う
+^^^^^^^^^^^^^^
 
-For users working directly with the Job API:
+Job API を直接使って作業しているユーザーの場合は次のとおりです。
 
 .. code-block:: python
 
@@ -205,34 +202,33 @@ For users working directly with the Job API:
         "streaming_per_request_timeout": 600
     })
 
-Tuning for Large Models
-^^^^^^^^^^^^^^^^^^^^^^^
+大規模モデル向けのチューニング
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For very large models (multiple GB), you may want to tune chunk sizes for optimal performance.
-Larger chunks mean fewer network requests but higher per-chunk memory usage. Smaller chunks
-reduce memory but increase network overhead.
+非常に大規模なモデル (数 GB) では、最適な性能を得るためにチャンクサイズをチューニングしたい場合があります。
+チャンクを大きくするとネットワークリクエスト数は減りますが、チャンクあたりのメモリ使用量は増加します。
+チャンクを小さくするとメモリは削減されますが、ネットワークのオーバーヘッドが増加します。
 
-When tensor streaming is used from subprocess-mode Client API jobs, also tune the
-subprocess timeout settings that govern task reads, result ACKs, and server-side
-download completion. In particular, keep ``PEER_READ_TIMEOUT``,
-``download_complete_timeout``, and ``tensor_min_download_timeout`` aligned with
-the configured streaming per-request timeout. See :ref:`timeout_troubleshooting`
-and :doc:`/programming_guide/timeouts`.
+サブプロセスモードの Client API ジョブからテンソルストリーミングを使用する場合は、タスクの読み取り、
+結果の ACK、サーバー側のダウンロード完了を制御するサブプロセスのタイムアウト設定もチューニングしてください。
+特に、``PEER_READ_TIMEOUT``、``download_complete_timeout``、``tensor_min_download_timeout`` を、
+設定したストリーミングのリクエストごとのタイムアウトと整合させてください。:ref:`timeout_troubleshooting`
+および :doc:`/programming_guide/timeouts` を参照してください。
 
-**Example config_fed_server.conf with chunk size tuning:**
+**チャンクサイズをチューニングした config_fed_server.conf の例:**
 
 .. code-block::
 
     format_version = 2
-    
+
     # Chunk sizes for streaming large models (2MB default)
     np_download_chunk_size = 2097152
     tensor_download_chunk_size = 2097152
     streaming_per_request_timeout = 600
-    
+
     task_data_filters = []
     task_result_filters = []
-    
+
     components = [
       {
         id = "json_generator"
@@ -240,7 +236,7 @@ and :doc:`/programming_guide/timeouts`.
         args {}
       }
     ]
-    
+
     workflows = [
       {
         id = "swarm_controller"
@@ -261,13 +257,13 @@ and :doc:`/programming_guide/timeouts`.
       }
     ]
 
-Disabling the Tensor Downloader
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tensor Downloader を無効化する
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you prefer to disable the streaming download feature and use traditional serialization instead,
-set the chunk sizes to zero.
+ストリーミングダウンロード機能を無効にして、代わりに従来のシリアライズを使用したい場合は、
+チャンクサイズをゼロに設定してください。
 
-**Using Recipe API:**
+**Recipe API を使う場合:**
 
 .. code-block:: python
 
@@ -277,48 +273,47 @@ set the chunk sizes to zero.
         "tensor_download_chunk_size": 0
     })
 
-**Using Job API:**
+**Job API を使う場合:**
 
 .. code-block:: python
 
     job.to_server({"np_download_chunk_size": 0, "tensor_download_chunk_size": 0})
 
-**Using config files directly:**
+**設定ファイルを直接使う場合:**
 
 .. code-block::
 
     format_version = 2
-    
+
     # Set to 0 to disable streaming download (use native serialization)
     np_download_chunk_size = 0
     tensor_download_chunk_size = 0
-    
+
     task_data_filters = []
     task_result_filters = []
-    
+
     # ... rest of configuration
 
 
-How It Works (Advanced Users)
-=============================
+仕組み (上級ユーザー向け)
+=========================
 
-This section explains the internal architecture for developers who want to understand or
-extend the Tensor Downloader functionality.
+このセクションでは、Tensor Downloader の機能を理解または拡張したい開発者向けに、内部アーキテクチャを説明します。
 
-Architecture Overview
----------------------
+アーキテクチャの概要
+--------------------
 
-The Tensor Downloader consists of several components:
+Tensor Downloader は複数のコンポーネントで構成されています。
 
-1. **TensorDecomposer**: A FOBS decomposer that handles PyTorch tensor serialization
-2. **TensorDownloadable**: Represents a collection of tensors ready for incremental download
-3. **TensorConsumer**: Processes downloaded tensor chunks on the receiving side
-4. **Download Service**: Manages the pull-based download protocol
+1. **TensorDecomposer**: PyTorch テンソルのシリアライズを扱う FOBS の decomposer
+2. **TensorDownloadable**: 逐次ダウンロードの準備が整ったテンソルのコレクションを表現します
+3. **TensorConsumer**: 受信側でダウンロードされたテンソルチャンクを処理します
+4. **Download Service**: プルベースのダウンロードプロトコルを管理します
 
-Pull-Based vs Push-Based Transfer
----------------------------------
+プルベース転送とプッシュベース転送
+----------------------------------
 
-Traditional (Push-Based):
+従来型 (プッシュベース):
 
 .. code-block:: text
 
@@ -329,7 +324,7 @@ Traditional (Push-Based):
       |-------- Full Model ------------>|
       |                                 |  [Deserialize]
 
-Tensor Downloader (Pull-Based):
+Tensor Downloader (プルベース):
 
 .. code-block:: text
 
@@ -348,11 +343,10 @@ Tensor Downloader (Pull-Based):
       |           ...                   |
       |                                 |  [Reassemble model]
 
-The Serialization Flow
-----------------------
+シリアライズの流れ
+------------------
 
-1. **Registration**: When a PyTorch component initializes, it registers the ``TensorDecomposer``
-   with FOBS:
+1. **登録**: PyTorch コンポーネントが初期化されるとき、``TensorDecomposer`` を FOBS に登録します。
 
    .. code-block:: python
 
@@ -361,10 +355,9 @@ The Serialization Flow
 
        fobs.register(TensorDecomposer)
 
-2. **Tensor Collection**: During serialization, FOBS collects all tensors in the payload into
-   a dictionary.
+2. **テンソルの収集**: シリアライズ中に、FOBS がペイロード内のすべてのテンソルを辞書に収集します。
 
-3. **Downloadable Creation**: The tensors are wrapped in a ``TensorDownloadable`` object:
+3. **Downloadable の生成**: テンソルは ``TensorDownloadable`` オブジェクトにラップされます。
 
    .. code-block:: python
 
@@ -378,15 +371,14 @@ The Serialization Flow
                tensor_to_send = {key: self.base_obj[key]}
                return save_tensors(tensor_to_send)  # safetensors format
 
-4. **Reference ID Generation**: A unique reference ID (RID) is generated and sent to recipients
-   instead of the actual tensors.
+4. **参照 ID の生成**: 一意の参照 ID (RID) が生成され、実際のテンソルの代わりに受信者に送信されます。
 
-5. **Incremental Download**: Each recipient requests tensors one at a time using the RID.
+5. **逐次ダウンロード**: 各受信者は RID を使って、テンソルを 1 つずつリクエストします。
 
-The TensorDecomposer
---------------------
+TensorDecomposer
+----------------
 
-The ``TensorDecomposer`` extends ``ViaDownloaderDecomposer`` and provides:
+``TensorDecomposer`` は ``ViaDownloaderDecomposer`` を拡張したもので、次の機能を提供します。
 
 .. code-block:: python
 
@@ -409,10 +401,10 @@ The ``TensorDecomposer`` extends ``ViaDownloaderDecomposer`` and provides:
             # Fallback: deserialize single tensor
             return load(data).get("t")
 
-Using the Low-Level API
------------------------
+低レベル API を使う
+-------------------
 
-For advanced use cases, you can use the tensor download API directly:
+高度なユースケースでは、テンソルダウンロード API を直接使用できます。
 
 .. code-block:: python
 
@@ -442,10 +434,10 @@ For advanced use cases, you can use the tensor download API directly:
     # Load into model
     model.load_state_dict(state_dict)
 
-See Also
+参考情報
 ========
 
-- :ref:`decomposer_for_large_object` - Details on the FOBS decomposer system and file-based decomposers
-- :ref:`file_streaming` - File streaming for other large data types
-- :ref:`swarm_learning_large_models` - Parameter tuning for large model workflows
-- :ref:`timeout_troubleshooting` - Timeout tuning for large Client API subprocess jobs
+- :ref:`decomposer_for_large_object` - FOBS の decomposer システムとファイルベースの decomposer の詳細
+- :ref:`file_streaming` - その他の大規模データ型向けのファイルストリーミング
+- :ref:`swarm_learning_large_models` - 大規模モデルのワークフロー向けのパラメータチューニング
+- :ref:`timeout_troubleshooting` - 大規模な Client API サブプロセスジョブ向けのタイムアウトチューニング

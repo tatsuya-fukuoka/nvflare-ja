@@ -1,26 +1,26 @@
-**************************
-What's New in FLARE v2.6.0
-**************************
+*****************************
+FLARE v2.6.0 の新機能
+*****************************
 
-Message Quantization
-====================
-Message quantization offers a solution to reduce communication overhead in federated learning by reducing the precision of transmitted updates. This feature is particularly beneficial for large language models (LLMs) where the default fp32 message precision can artificially inflate message size. For more details, see :ref:`Message Quantization <message_quantization>`.
+メッセージ量子化
+================
+メッセージ量子化は、送信される更新情報の精度を下げることで、フェデレーテッドラーニングにおける通信オーバーヘッドを削減するソリューションを提供します。この機能は、デフォルトの fp32 のメッセージ精度によってメッセージサイズが不必要に肥大化してしまう大規模言語モデル (LLM) において特に有効です。詳細については :ref:`メッセージ量子化 <message_quantization>` を参照してください。
 
-Key features:
-  - Quantization and dequantization implemented with filter mechanism
-  - No code changes required from user side - same training script works with/without quantization
-  - Training and aggregation performed at original precision to minimize impact on training process
-  - Support for both numpy arrays and torch Tensors
-  - Direct cropping and casting for fp32 to fp16 conversion
-  - 8- and 4-bit quantization using bitsandbytes
+主な機能:
+  - 量子化および逆量子化をフィルター機構で実装
+  - ユーザー側でのコード変更は不要 - 同じトレーニングスクリプトが量子化の有無にかかわらず動作します
+  - トレーニングプロセスへの影響を最小限に抑えるため、トレーニングと集約は元の精度で実行
+  - numpy 配列と torch Tensor の両方をサポート
+  - fp32 から fp16 への変換には直接的なクロッピングとキャストを使用
+  - bitsandbytes による 8 ビットおよび 4 ビット量子化
 
 .. image:: ../resources/message_quantization.png
     :height: 300px
 
 
-The table below illustrates the message size in MB for a 1B parameter LLM under different precisions. You can find more details regarding training loss curve alignments in the :github_nvflare_link:`LLM example <examples/advanced/llm/README.md>`.
+以下の表は、1B パラメータの LLM における精度ごとのメッセージサイズ (MB) を示しています。トレーニング損失曲線の整合性に関する詳細は :github_nvflare_link:`LLM の例 <examples/advanced/llm/README.md>` を参照してください。
 
-.. table:: Message Size under Different Quantization Precisions
+.. table:: 量子化精度ごとのメッセージサイズ
    :widths: auto
    :align: center
 
@@ -40,188 +40,189 @@ The table below illustrates the message size in MB for a 1B parameter LLM under 
    | (fp4, nf4)  |             |                |             |
    +-------------+-------------+----------------+-------------+
 
-By applying message quantization techniques, FL can achieve significant bandwidth savings, and for training LLM with Supervised Fine-Tuning (SFT) in our experiments. As shown in the Figure below, message quantization does not sacrifice model convergence quality with regard to the training loss.
+メッセージ量子化技術を適用することで、FL は大幅な帯域幅の削減を実現できます。これは、当社の実験における教師ありファインチューニング (SFT) を用いた LLM のトレーニングでも同様です。下図に示すとおり、メッセージ量子化はトレーニング損失に関してモデルの収束品質を損なうことはありません。
 
 .. image:: ../resources/quantization_loss.png
     :height: 300px
 
-Native Tensor Transfer
+ネイティブ Tensor 転送
 ----------------------
-FLARE 2.6.0 introduces support for native tensor transfer, allowing PyTorch tensors to be sent directly without serialization overhead. This eliminates the need for Tensor to Numpy conversion, preserving the original FPnn format. The feature is currently supported for PyTorch only.
+FLARE 2.6.0 ではネイティブ Tensor 転送のサポートが導入され、PyTorch のテンソルをシリアライズのオーバーヘッドなしに直接送信できるようになりました。これにより Tensor から Numpy への変換が不要になり、元の FPnn 形式が保持されます。この機能は現時点では PyTorch のみでサポートされています。
 
-Model Streaming Enhancements
-----------------------------
-Reduce Local Memory Usage
-~~~~~~~~~~~~~~~~~~~~~~~~~
-The new object container streaming feature processes and transmits models incrementally, rather than requiring the entire dictionary of gradients to be stored in memory at once. This significantly reduces memory overhead for large models. For more details, see :class:`ContainerStreamer<nvflare.app_common.streamers.container_streamer.ContainerStreamer>`.
+モデルストリーミングの強化
+--------------------------
+ローカルメモリ使用量の削減
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+新しいオブジェクトコンテナストリーミング機能は、勾配のディクショナリ全体を一度にメモリ上に保持することを必要とせず、モデルを段階的に処理・送信します。これにより、大規模モデルにおけるメモリオーバーヘッドが大幅に削減されます。詳細については :class:`ContainerStreamer<nvflare.app_common.streamers.container_streamer.ContainerStreamer>` を参照してください。
 
-For example, a 70GB model with 1GB item-max:
-  - Regular transmission: 70GB + 70GB = 140GB memory needed
-  - Container streaming: 70GB + 1GB = 71GB memory needed
+例として、item-max が 1GB の 70GB モデルの場合:
+  - 通常の送信: 70GB + 70GB = 140GB のメモリが必要
+  - コンテナストリーミング: 70GB + 1GB = 71GB のメモリが必要
 
-Support Unlimited Memory Streaming
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-File-based streaming is introduced to handle models larger than available memory. This feature reads files chunk-by-chunk, requiring only enough memory to hold one chunk of data. The memory usage is independent of model size and only depends on file I/O settings. For more details, see :class:`FileStreamer<nvflare.app_common.streamers.file_streamer.FileStreamer>`.
+無制限のメモリストリーミングのサポート
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+利用可能なメモリよりも大きなモデルを扱うため、ファイルベースのストリーミングが導入されました。この機能はファイルをチャンク単位で読み込むため、1 チャンク分のデータを保持できるだけのメモリしか必要としません。メモリ使用量はモデルサイズに依存せず、ファイル I/O の設定にのみ依存します。詳細については :class:`FileStreamer<nvflare.app_common.streamers.file_streamer.FileStreamer>` を参照してください。
 
-Memory comparison for sending a 1B model:
-  - Regular transmission: 42,427 MB peak memory, 47s completion time
-  - Container streaming: 23,265 MB peak memory, 50s completion time
-  - File streaming: 19,176 MB peak memory, 170s completion time
+1B モデルを送信する場合のメモリ比較:
+  - 通常の送信: ピークメモリ 42,427 MB、完了時間 47 秒
+  - コンテナストリーミング: ピークメモリ 23,265 MB、完了時間 50 秒
+  - ファイルストリーミング: ピークメモリ 19,176 MB、完了時間 170 秒
 
-Note: Streaming enhancements are not yet integrated into high-level APIs or existing FL algorithm controllers/executors. Users can build custom controllers or executors to leverage this feature.
+注意: ストリーミングの強化機能は、まだ高レベル API や既存の FL アルゴリズムの Controller/Executor には統合されていません。この機能を活用するには、ユーザーがカスタムの Controller または Executor を構築できます。
 
-Structured Logging
-------------------
-The structured logging feature addresses several customer concerns:
-  - JSON format logging for data observability tools
-  - Separation of training logs from communication logs
-  - Dynamic log level changes for production debugging
-  - Package-level hierarchy for granular control
+構造化ロギング
+--------------
+構造化ロギング機能は、以下のようなお客様の課題に対応します:
+  - データ可観測性ツール向けの JSON 形式ロギング
+  - トレーニングログと通信ログの分離
+  - 本番環境でのデバッグのための動的なログレベル変更
+  - きめ細かな制御のためのパッケージレベルの階層構造
 
-Key improvements:
-  - Changed from `fileConfig <https://docs.python.org/3/library/logging.config.html>`_ to `dictConfig <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`_
-  - The new FLARE Loggers are designed to follow the package level hierarchy using dot separated logger names in order to facilitate granular control at different levels
-  - :doc:`Default Logging Configuration file <../user_guide/admin_guide/configurations/logging_configuration>` `log_config.json.default` for all NVFLARE sub-systems with pre-configured handlers for console level colors, logs, error logs, structured json logs, and fl training logs
-  - :doc:`Dynamic Logging Configuration Commands <../user_guide/admin_guide/configurations/logging_configuration>` to allow dynamic change logging configuration without restarting the FL system
-  - To support various needs and backward compatibility, we now have the following default log files:
-    - log.txt: default log file from previous NVFLARE versions
-    - log.json: JSON format log
-    - error_log.txt: ERROR level logs to error_log.txt for quick error lookup
-    - log_fl.txt: FL task-specific logs (removes the system and communication related logs and clearly shows logs related to FL tasks such as training)
-  - Predefined logging modes for simulator:
-    - Concise (default): only FL tasks logs
-    - Full: previous logging configuration
-    - Verbose: debug level logging
+主な改善点:
+  - `fileConfig <https://docs.python.org/3/library/logging.config.html>`_ から `dictConfig <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`_ への変更
+  - 新しい FLARE Logger は、さまざまなレベルできめ細かな制御を可能にするため、ドット区切りのロガー名を用いてパッケージレベルの階層に従うように設計されています
+  - すべての NVFLARE サブシステム向けの :doc:`デフォルトのロギング設定ファイル <../user_guide/admin_guide/configurations/logging_configuration>` `log_config.json.default` には、コンソールレベルのカラー、ログ、エラーログ、構造化 JSON ログ、FL トレーニングログ用のハンドラーがあらかじめ設定されています
+  - FL システムを再起動せずにロギング設定を動的に変更できる :doc:`動的ロギング設定コマンド <../user_guide/admin_guide/configurations/logging_configuration>`
+  - さまざまなニーズと後方互換性をサポートするため、現在は以下のデフォルトログファイルがあります:
+    - log.txt: 従来の NVFLARE バージョンからのデフォルトログファイル
+    - log.json: JSON 形式のログ
+    - error_log.txt: エラーを素早く見つけられるように ERROR レベルのログを error_log.txt に出力
+    - log_fl.txt: FL タスク固有のログ (システムおよび通信関連のログを除外し、トレーニングなどの FL タスクに関連するログを明確に表示します)
+  - シミュレータ向けの定義済みロギングモード:
+    - Concise (デフォルト): FL タスクのログのみ
+    - Full: 従来のロギング設定
+    - Verbose: デバッグレベルのロギング
 
-For details, please refer to `logging tutorials <https://github.com/NVIDIA/NVFlare/blob/2.6/examples/tutorials/logging.ipynb>`_ and :doc:`logging documentation <../user_guide/admin_guide/configurations/logging_configuration>`.
+詳細については、`ロギングのチュートリアル <https://github.com/NVIDIA/NVFlare/blob/2.6/examples/tutorials/logging.ipynb>`_ および :doc:`ロギングのドキュメント <../user_guide/admin_guide/configurations/logging_configuration>` を参照してください。
 
-Federated Statistics Extension
-------------------------------
-Quantiles Support: Introduces quantile computation for federated statistics, helping summarize data distribution by providing key points that indicate how values are spread. Quantiles divide a probability distribution or dataset into intervals with equal probabilities, providing insights into data distribution patterns. For more details, see :ref:`Federated Statistics Overview <federated_statistics>`.
+フェデレーテッド統計の拡張
+--------------------------
+分位数のサポート: フェデレーテッド統計に分位数計算が導入されました。これは、値がどのように分布しているかを示す重要なポイントを提供することで、データ分布の要約を支援します。分位数は確率分布やデータセットを等しい確率の区間に分割し、データ分布のパターンに関する洞察を提供します。詳細については :ref:`フェデレーテッド統計の概要 <federated_statistics>` を参照してください。
 
-System Monitoring
------------------
-FLARE Monitoring provides system metrics tracking for federated learning jobs, focusing on job and system lifecycle metrics. It leverages StatsD Exporter to monitor FLARE job and system events, which can be scraped by Prometheus and visualized with Grafana. This differs from machine learning experiment tracking by focusing on system-level metrics rather than training metrics. For more information, see :ref:`Monitoring <monitoring>`.
+システムモニタリング
+--------------------
+FLARE モニタリングは、フェデレーテッドラーニングのジョブに対するシステムメトリクスの追跡機能を提供し、ジョブおよびシステムのライフサイクルメトリクスに焦点を当てています。StatsD Exporter を活用して FLARE のジョブおよびシステムのイベントを監視し、Prometheus でスクレイプして Grafana で可視化できます。これは、トレーニングメトリクスではなくシステムレベルのメトリクスに焦点を当てている点で、機械学習の実験管理とは異なります。詳細については :ref:`モニタリング <monitoring>` を参照してください。
 
 .. image:: ../resources/system_monitoring.png
     :height: 450px
 
-Flower Integration v2
+Flower 連携 v2
+--------------
+NVFlare は、クライアントアプリを supernode プロセスから分離した最新の Flower システムアーキテクチャに対応するよう更新されました。ユーザー向けの機能はすべて従来どおりです。この更新の利点の一つは、2 つのシステム間でジョブのステータス情報をより正確に共有できるようになったことです。
+
+この連携により、Flower で開発されたアプリケーションを、コードを一切変更することなく FLARE ランタイム上でネイティブに実行できます。Flower の広く採用されている使いやすい設計ツールおよび API と、FLARE の産業グレードのランタイムを統合することで、エンドツーエンドのデプロイパイプラインが簡素化されます。
+
+この連携の詳細については、当社の `ブログ <https://developer.nvidia.com/blog/supercharging-the-federated-learning-ecosystem-by-integrating-flower-and-nvidia-flare>`_ を参照してください。
+
+HTTP ドライバーの強化
 ---------------------
-NVFlare has been updated to work with the latest Flower system architecture, which separates the client app from the supernode process. All user-facing functions remain the same. One benefit of this update is that job status information can be shared between the two systems more accurately.
-
-This integration enables applications developed with Flower to run natively on the FLARE runtime without requiring any code modifications. By unifying Flower's widely adopted, easy-to-use design tools and APIs with FLARE's industrial-grade runtime, this integration simplifies the end-to-end deployment pipeline.
-
-For more details on this integration, see our `blog <https://developer.nvidia.com/blog/supercharging-the-federated-learning-ecosystem-by-integrating-flower-and-nvidia-flare>`_.
-
-HTTP Driver Enhancement
------------------------
-The HTTP driver has been completely rewritten using aiohttp, significantly improving reliability and efficiency. The new implementation resolves previous issues with poor performance and network error recovery, matching the performance of GRPC and TCP drivers.
+HTTP ドライバーは aiohttp を用いて全面的に書き直され、信頼性と効率性が大幅に向上しました。新しい実装は、性能の低さやネットワークエラーからの回復に関する従来の問題を解消し、GRPC および TCP ドライバーと同等の性能を実現しています。
 
 FLARE + BioNemo 2
 -----------------
-NVFlare examples have been upgraded to use `BioNeMo 2 <https://docs.nvidia.com/bionemo-framework/latest/>`_, enabling significant performance improvements on downstream tasks. The integrated BioNeMo ESM2 base models (650M) demonstrate notable gains in accuracy:
+NVFlare の例は `BioNeMo 2 <https://docs.nvidia.com/bionemo-framework/latest/>`_ を使用するようにアップグレードされ、下流タスクにおける大幅な性能向上が可能になりました。統合された BioNeMo ESM2 ベースモデル (650M) は、精度において顕著な向上を示しています:
 
-Subcellular Localization (SCL) Prediction:
-  - BioNeMo 1: 0.773 accuracy
-  - BioNeMo 2: 0.788 accuracy
-  - FL: 0.776 to 0.817 accuracy improvement
+細胞内局在 (SCL) 予測:
+  - BioNeMo 1: 精度 0.773
+  - BioNeMo 2: 精度 0.788
+  - FL: 精度 0.776 から 0.817 への向上
 
-New Features
-~~~~~~~~~~~~
-TensorBoard Metric Streaming Callback
-"""""""""""""""""""""""""""""""""""""
-Implemented a callback for PyTorch Lightning to stream training metrics to the FL server via NVFlare, allowing real-time visualization of training curves.
+新機能
+~~~~~~
+TensorBoard メトリクスストリーミングコールバック
+""""""""""""""""""""""""""""""""""""""""""""""""
+PyTorch Lightning 向けに、NVFlare を介してトレーニングメトリクスを FL サーバーへストリーミングするコールバックを実装し、トレーニング曲線のリアルタイム可視化を可能にしました。
 
-Downstream Task Fitting
-~~~~~~~~~~~~~~~~~~~~~~~
-Local Fine-Tuning tends to overfit, with training accuracy diverging from validation early. In contrast, Federated Averaging (FedAvg) models show continual performance improvement, highlighting the benefits of federated generalization over isolated training.
+下流タスクのフィッティング
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+ローカルでのファインチューニングは過学習しやすく、トレーニング精度が早い段階で検証精度から乖離する傾向があります。これに対して、Federated Averaging (FedAvg) のモデルは継続的な性能向上を示しており、孤立したトレーニングに対するフェデレーテッドな汎化の利点が浮き彫りになっています。
 
-For more details, see our :github_nvflare_link:`BioNeMo examples <examples/advanced/bionemo>`.
+詳細については、当社の :github_nvflare_link:`BioNeMo の例 <examples/advanced/bionemo>` を参照してください。
 
-Tutorials and Education
------------------------
-Self-paced-training tutorials covering:
-  - Introduction to Federated Learning
-  - Federated Learning System
-  - Security and Privacy
-  - Advanced Topics in Federated Learning
-  - Federated Learning in Different Industries
+チュートリアルと教育コンテンツ
+------------------------------
+以下の内容をカバーする自習型トレーニングチュートリアル:
+  - フェデレーテッドラーニング入門
+  - フェデレーテッドラーニングシステム
+  - セキュリティとプライバシー
+  - フェデレーテッドラーニングの高度なトピック
+  - さまざまな業界におけるフェデレーテッドラーニング
 
-New Examples
-------------
-1. Federated Embedding Model Training
-2. Object Streaming
-3. System Monitoring
-4. Distributed Optimization
-5. Logging Tutorial
-
-
+新しい例
+--------
+1. フェデレーテッド埋め込みモデルのトレーニング
+2. オブジェクトストリーミング
+3. システムモニタリング
+4. 分散最適化
+5. ロギングのチュートリアル
 
 
-**********************************
-Migration to 2.6.0: Notes and Tips
-**********************************
-
-Dashboard Changes
------------------
-
-In NVIDIA FLARE 2.6, several changes have been made to the Dashboard:
-
-#. All API endpoints are now prefixed with ``/nvflare-dashboard/api/v1/``. For example, the login endpoint has changed from ``/api/v1/login`` to ``/nvflare-dashboard/api/v1/login``.
-   This change affects all API calls to the dashboard backend. Update your client applications accordingly.
-
-#. The overseer and additional server for HA mode have been removed. The project configuration now only includes information about the main server.
-
-#. The ``FLARE_DASHBOARD_NAMESPACE`` constant has been added to the codebase. All API endpoints should now use this namespace prefix.
 
 
-ScriptRunner Changes in FLARE 2.6.0
------------------------------------
+*******************************
+2.6.0 への移行: 注意点とヒント
+*******************************
 
-Overview
-~~~~~~~~
+Dashboard の変更点
+------------------
 
-FLARE 2.6.0 introduces a new `server_expected_format` parameter to enhance data exchange flexibility across the entire pipeline. This parameter is now available in:
+NVIDIA FLARE 2.6 では、Dashboard にいくつかの変更が加えられました:
+
+#. すべての API エンドポイントに ``/nvflare-dashboard/api/v1/`` というプレフィックスが付くようになりました。たとえば、ログインエンドポイントは ``/api/v1/login`` から ``/nvflare-dashboard/api/v1/login`` に変更されています。
+   この変更は Dashboard バックエンドへのすべての API 呼び出しに影響します。クライアントアプリケーションを適宜更新してください。
+
+#. HA モード用の overseer および追加サーバーは削除されました。プロジェクト設定にはメインサーバーの情報のみが含まれるようになりました。
+
+#. ``FLARE_DASHBOARD_NAMESPACE`` 定数がコードベースに追加されました。すべての API エンドポイントは、このネームスペースプレフィックスを使用する必要があります。
+
+
+FLARE 2.6.0 における ScriptRunner の変更点
+------------------------------------------
+
+概要
+~~~~
+
+FLARE 2.6.0 では、パイプライン全体でのデータ交換の柔軟性を高めるために、新しい `server_expected_format` パラメータが導入されました。このパラメータは現在、以下で利用可能です:
 - `ScriptRunner`
 - `ClientAPILauncherExecutor`
 - `InProcessClientAPIExecutor`
 
-## Previous Implementation
-Previously, data format was controlled by:
-- `params_exchange_format` in executors
-- `framework` in `ScriptRunner`
+## 従来の実装
+従来、データ形式は以下によって制御されていました:
+- Executor における `params_exchange_format`
+- `ScriptRunner` における `framework`
 
-These parameters only defined the communication format between the NVFlare client and the user script. For example, setting `params_exchange_format` to "pytorch" meant the client communicated with the script using PyTorch tensors.
+これらのパラメータは、NVFlare クライアントとユーザースクリプト間の通信形式のみを定義するものでした。たとえば、`params_exchange_format` を "pytorch" に設定すると、クライアントは PyTorch のテンソルを用いてスクリプトと通信することを意味していました。
 
-However, the server-to-client communication was always restricted to NumPy arrays.
+しかし、サーバーとクライアント間の通信は常に NumPy 配列に限定されていました。
 
-New Implementation
-~~~~~~~~~~~~~~~~~~
+新しい実装
+~~~~~~~~~~
 
-With FLARE 2.6.0, we now support:
-1. End-to-end PyTorch tensor pipeline
-2. Flexible format specification at each communication boundary
-3. Native PyTorch tensor transmission
+FLARE 2.6.0 では、以下がサポートされるようになりました:
+1. エンドツーエンドの PyTorch テンソルパイプライン
+2. 各通信境界における柔軟な形式指定
+3. ネイティブな PyTorch テンソル転送
 
-The new `server_expected_format` parameter specifically controls the format used in server-client communication. When set to "pytorch", the entire pipeline - from server to client to script - can operate using PyTorch tensors without any format conversion.
+新しい `server_expected_format` パラメータは、サーバーとクライアント間の通信で使用される形式を明示的に制御します。"pytorch" に設定すると、サーバーからクライアント、スクリプトに至るまでのパイプライン全体を、形式変換なしに PyTorch テンソルで動作させることができます。
 
 
-FileStreamer Wire-Protocol Key Namespace Change
------------------------------------------------
+FileStreamer のワイヤープロトコルのキーネームスペース変更
+----------------------------------------------------------
 
-As part of sharing the chunk-protocol between ``FileStreamer`` and the new ``LogStreamer``,
-the Shareable keys for ``KEY_DATA``, ``KEY_DATA_SIZE``, ``KEY_EOF``, and ``KEY_FILE_NAME``
-have been renamed from the ``"FileStreamer.*"`` namespace to the shared ``"Streamer.*"``
-namespace.
+チャンクプロトコルを ``FileStreamer`` と新しい ``LogStreamer`` の間で共有する取り組みの一環として、
+``KEY_DATA``、``KEY_DATA_SIZE``、``KEY_EOF``、``KEY_FILE_NAME`` の Shareable キーが
+``"FileStreamer.*"`` ネームスペースから共有の ``"Streamer.*"`` ネームスペースへ
+名称変更されました。
 
-This is a breaking change on the wire: a sender and receiver running different NVFlare
-versions will not interoperate for file streaming, because the receiver will not find the
-expected keys in the incoming Shareable. NVFlare deployments must use the same version on
-both server and clients, so this does not affect supported configurations, but anyone
-performing a staged rollout must upgrade server and clients together.
+これはワイヤー上での破壊的変更です。異なる NVFlare バージョンで動作している送信側と受信側は、
+受信側が受信 Shareable の中で期待するキーを見つけられないため、ファイルストリーミングにおいて
+相互運用できません。NVFlare のデプロイではサーバーとクライアントで同じバージョンを使用する必要があるため、
+サポート対象の構成には影響しませんが、段階的なロールアウトを行う場合は、
+サーバーとクライアントを同時にアップグレードする必要があります。
 
-Code that uses the public ``FileStreamer`` API (``stream_file``, ``get_file_name``,
-etc.) is unaffected. Only code that reads the raw ``stream_ctx`` keys by their string
-values needs to be updated to use the new ``"Streamer.*"`` names (or, preferably, import
-the ``KEY_*`` constants from ``nvflare.app_common.streamers.streamer_base``).
+公開された ``FileStreamer`` API (``stream_file``、``get_file_name`` など) を使用する
+コードは影響を受けません。生の ``stream_ctx`` キーを文字列値で読み取っているコードのみ、
+新しい ``"Streamer.*"`` という名称を使用するように更新する必要があります
+(または、より望ましい方法として ``nvflare.app_common.streamers.streamer_base`` から
+``KEY_*`` 定数をインポートしてください)。

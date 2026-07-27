@@ -1,138 +1,138 @@
-************************
-What's New in FLARE v2.2
-************************
+****************************
+FLARE v2.2 の新機能
+****************************
 
-Goals of v2.2 and New Features
-==============================
-With FLARE v2.2, the primary goals were to:
- - Accelerate the federated learning workflow
- - Simplify deploying a federated learning project in the real-world
- - Support federated data science
- - Enable integration with other platforms
+v2.2 の目標と新機能
+====================================
+FLARE v2.2 における主な目標は、次のとおりでした。
+ - フェデレーテッドラーニングのワークフローを加速すること
+ - 実世界でフェデレーテッドラーニングプロジェクトを展開する作業を簡素化すること
+ - フェデレーテッドデータサイエンスをサポートすること
+ - 他のプラットフォームとの統合を可能にすること
 
-To accomplish these goals, a set of key new tools and features were developed, including:
+これらの目標を達成するために、以下を含む一連の重要な新しいツールと機能が開発されました。
  - FL Simulator
  - FLARE Dashboard
- - :ref:`Dynamic Provisioning <dynamic_provisioning_cli>`
- - Improved :ref:`POC (proof of concept) command <poc_command>`
+ - :ref:`動的プロビジョニング <dynamic_provisioning_cli>`
+ - 改良された :ref:`POC（概念実証）コマンド <poc_command>`
  - :ref:`Docker Compose <docker_compose>`
  - :ref:`preflight_check`
- - Site-policy management
+ - サイトポリシー管理
  - Federated XGboost <https://github.com/NVIDIA/NVFlare/tree/2.2/examples/xgboost>
  - Federated Statistics <https://github.com/NVIDIA/NVFlare/tree/2.2/examples/federated_statistics>
  - MONAI Integration <https://github.com/NVIDIA/NVFlare/tree/2.2/integration/monai>
 
-The sections below provide an overview of these features.  For more detailed documentation and usage information, refer to the :ref:`User Guide <user_guide>` and :ref:`Programming Guide <programming_guide>`.
+以下のセクションでは、これらの機能の概要を説明します。より詳細なドキュメントと使用方法については、:ref:`ユーザーガイド <user_guide>` および :ref:`プログラミングガイド <programming_guide>` を参照してください。
 
 FL Simulator
 ~~~~~~~~~~~~
-The :ref:`FL Simulator <fl_simulator>` is a lightweight tool that allows you to build, debug, and run a FLARE
-application locally without explicitly deploying a provisioned FL system.  The FL Simulator provides both a CLI for
-interactive use and an API for developing workflows programmatically. Clients are implemented using threads for each
-client. If running in an environment with limited resources, multiple clients can be run sequentially using single
-threads (or GPUs). This allows for testing the scalability of an application even with limited resources.
+:ref:`FL Simulator <fl_simulator>` は、プロビジョニング済みの FL システムを明示的にデプロイすることなく、FLARE
+アプリケーションをローカルでビルド、デバッグ、実行できる軽量なツールです。FL Simulator は、対話的に利用するための
+CLI と、プログラムからワークフローを開発するための API の両方を提供します。クライアントは、クライアントごとに
+スレッドを用いて実装されます。リソースが限られた環境で実行する場合は、単一のスレッド（または GPU）を使って複数の
+クライアントを順次実行できます。これにより、限られたリソースであってもアプリケーションのスケーラビリティをテストできます。
 
-Users can run the FL Simulator in a python environment to debug FLARE application code directly. Jobs can be submitted
-directly to the simulator without debugging, just as in a production FLARE deployment.  This allows you to build, debug,
-and test in an interactive environment, and then deploy the same application in production without modification.
+ユーザーは Python 環境で FL Simulator を実行し、FLARE アプリケーションのコードを直接デバッグできます。デバッグを行わずに、
+本番の FLARE デプロイメントと同じようにジョブをシミュレーターへ直接サブミットすることもできます。これにより、対話的な環境で
+ビルド、デバッグ、テストを行い、同じアプリケーションを変更なしで本番環境にデプロイできます。
 
-POC mode upgrade
-~~~~~~~~~~~~~~~~
-For researchers who prefer to use :ref:`POC (proof of concept) <poc_command>` mode, the usage has been improved for
-provisioning and starting a server and clients locally.
+POC モードのアップグレード
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:ref:`POC（概念実証） <poc_command>` モードの利用を好む研究者のために、ローカルでサーバーとクライアントを
+プロビジョニングして起動する際の使い勝手が改善されました。
 
-FLARE Dashboard and Provisioning
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :ref:`FLARE Dashboard <nvflare_dashboard_ui>` provides a web UI that allows a project administrator to configure a
-project and distribute client startup kits without the need to gather client information up-front, or manually configure
-the project using the usual ``project.yml`` configuration.  Once the details of the project have been configured,
-:ref:`provisioning <provisioning>` of client systems and FLARE Console users, is done on the fly. The web UI allows users to
-register, and once approved, download project startup kits on-demand.  For those who wish to provision manually, the
-provisioning CLI is still included in the main nvflare CLI:
+FLARE Dashboard とプロビジョニング
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:ref:`FLARE Dashboard <nvflare_dashboard_ui>` は、プロジェクト管理者がクライアント情報を事前に収集したり、通常の
+``project.yml`` 設定を手動で構成したりすることなく、プロジェクトを設定してクライアントのスタートアップキットを配布できる
+Web UI を提供します。プロジェクトの詳細を設定すると、クライアントシステムと FLARE Console ユーザーの
+:ref:`プロビジョニング <provisioning>` がその場で行われます。Web UI により、ユーザーは登録を行い、承認され次第、
+必要に応じてプロジェクトのスタートアップキットをダウンロードできます。手動でプロビジョニングしたい方のために、
+プロビジョニング CLI も引き続きメインの nvflare CLI に含まれています。
 
 .. code-block:: shell
 
   nvflare provision -h
 
-The CLI method of provisioning has also been enhanced to allow for :ref:`dynamic provisioning <dynamic_provisioning_cli>`,
-allowing the addition of new sites or users without the need to re-provision existing sites.
+CLI によるプロビジョニング方法も強化され、:ref:`動的プロビジョニング <dynamic_provisioning_cli>` が可能になりました。
+これにより、既存のサイトを再プロビジョニングすることなく、新しいサイトやユーザーを追加できます。
 
-In addition to these enhancements to the provisioning workflow, we provide some new tools to simplify local deployment
-and troubleshoot client connectivity.  First is a ``docker-compose`` :ref:`utility <docker_compose>` that allows the
-administrator to provision a set of local startup kits, and issue ``docker-compose up`` to start the server and connect
-all clients.
+プロビジョニングワークフローに対するこれらの拡張に加えて、ローカルデプロイの簡素化とクライアント接続のトラブルシューティングを
+支援する新しいツールをいくつか提供します。1 つ目は ``docker-compose`` :ref:`ユーティリティ <docker_compose>` で、
+管理者が一連のローカルスタートアップキットをプロビジョニングし、``docker-compose up`` を実行することでサーバーを起動し、
+すべてのクライアントを接続できます。
 
-We also provide a new :ref:`pre-flight check <preflight_check>` to help remote sites troubleshoot potential environment
-and connectivity issues before attempting to connect to the FL Server.
+また、リモートサイトが FL サーバーへ接続を試みる前に、潜在的な環境や接続の問題をトラブルシューティングできるよう、
+新しい :ref:`プリフライトチェック <preflight_check>` も提供します。
 
 .. code-block:: shell
 
   nvflare preflight-check -h
 
-This command will examine all available provisioned packages (server, admin, clients, overseers) to check connections
-between the different components (server, clients, overseers), ports, dns, storage access, etc., and provide suggestions
-for how to fix any potential issues.
+このコマンドは、利用可能なすべてのプロビジョニング済みパッケージ（サーバー、管理者、クライアント、オーバーシーア）を調査し、
+各コンポーネント（サーバー、クライアント、オーバーシーア）間の接続、ポート、DNS、ストレージアクセスなどを確認して、
+潜在的な問題を修正する方法についての提案を提供します。
 
-Federated Data Science
-~~~~~~~~~~~~~~~~~~~~~~
+フェデレーテッドデータサイエンス
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Federated XGBoost
 """""""""""""""""
 
-XGBoost is a popular machine learning method used by applied data scientists in a wide variety of applications. In FLARE v2.2,
-we introduce federated XGBoost integration, with a controller and executor that run distributed XGBoost training among a group
-of clients.  See the :github_nvflare_link:`hello-xgboost example <examples/xgboost>` to get started.
+XGBoost は、応用データサイエンティストが幅広い用途で利用している人気の高い機械学習手法です。FLARE v2.2 では、
+クライアントのグループ間で分散 XGBoost 学習を実行する Controller と Executor を備えた、フェデレーテッド XGBoost 統合を
+導入します。まずは :github_nvflare_link:`hello-xgboost の例 <examples/xgboost>` をご覧ください。
 
 Federated Statistics
 """"""""""""""""""""
-Before implementing a federated training application, a data scientist often performs a process of data exploration,
-analysis, and feature engineering. One method of data exploration is to explore the statistical distribution of a dataset.
-With FLARE v2.2, we introduce federated statistics operators - a server controller and client executor.  With these
-pre-defined operators, users define the statistics to be calculated locally on each client dataset, and the workflow
-controller generates an output json file that contains global as well as individual site statistics.  This data can be
-visualized to allow site-to-site and feature-to-feature comparison of metrics and histograms across the set of clients.
+フェデレーテッド学習アプリケーションを実装する前に、データサイエンティストはしばしばデータの探索、分析、特徴量エンジニアリングの
+プロセスを行います。データ探索の 1 つの手法は、データセットの統計的分布を調べることです。
+FLARE v2.2 では、フェデレーテッド統計オペレーター（サーバー Controller とクライアント Executor）を導入します。これらの
+事前定義済みオペレーターを使って、ユーザーは各クライアントのデータセット上でローカルに計算する統計量を定義し、ワークフローの
+Controller がグローバルおよび個々のサイトの統計量を含む出力 JSON ファイルを生成します。このデータを可視化することで、
+クライアント群にまたがるサイト間・特徴量間のメトリクスやヒストグラムの比較が可能になります。
 
-Site Policy Management and Security
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+サイトポリシー管理とセキュリティ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Although the concept of client authorization and security policies are not new in FLARE, version 2.2 has shifted to
-federated :ref:`site policy management <site_policy_management>`. In the past, authorization policies were defined by the
-project administrator at time of provisioning, or in the job specification.  The shift to federated site policy allows
-individual sites to control:
+クライアント認可とセキュリティポリシーという概念自体は FLARE で新しいものではありませんが、バージョン 2.2 では
+フェデレーテッドな :ref:`サイトポリシー管理 <site_policy_management>` へと移行しました。従来、認可ポリシーは
+プロビジョニング時にプロジェクト管理者が定義するか、ジョブの仕様で定義されていました。フェデレーテッドサイトポリシーへの移行により、
+個々のサイトが次の項目を制御できるようになります。
 
- - Site security policy
- - Resource management
- - Data privacy
+ - サイトのセキュリティポリシー
+ - リソース管理
+ - データプライバシー
 
-With these new federated controls, the individual site has full control over authorization policies, what resources are
-available to the client workflow, and what security filters are applied to incoming and outgoing traffic.
+これらの新しいフェデレーテッドな制御により、個々のサイトは認可ポリシー、クライアントのワークフローが利用できるリソース、
+送受信トラフィックに適用されるセキュリティフィルターを完全に制御できます。
 
-There is a new :ref:`project.yml template <project_yml>` for FLARE v2.2, and previous startup kits from previous versions (which contain the old TLS certificates)
-will need to be re-provisioned.
+FLARE v2.2 向けの新しい :ref:`project.yml テンプレート <project_yml>` が用意されており、以前のバージョンのスタートアップキット
+（古い TLS 証明書を含むもの）は再プロビジョニングが必要になります。
 
-In addition to the federated site policy, FLARE v2.2 also introduces secure logging and security auditing.  Secure
-logging, when enabled, limits client output to only file and line numbers in the event of an error, rather than a full
-traceback, preventing unintentionally disclosing site-specific information to the project administrator.  Secure
-auditing keeps a site-specific log of all access and commands performed by the project admin.
+フェデレーテッドサイトポリシーに加えて、FLARE v2.2 ではセキュアロギングとセキュリティ監査も導入されます。セキュアロギングを
+有効にすると、エラー発生時のクライアント出力が完全なトレースバックではなくファイル名と行番号のみに制限され、サイト固有の情報が
+意図せずプロジェクト管理者に開示されるのを防ぎます。セキュア監査は、プロジェクト管理者が実行したすべてのアクセスとコマンドを
+サイト固有のログとして記録します。
 
-Migration to 2.2.1: Notes and Tips
-----------------------------------
+2.2.1 への移行: 注意点とヒント
+----------------------------------------
 
-Stop using Pickle in favor of using FOBS to serialize/deserialize data between Client and Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Prior to NVFLARE 2.1.4, NVFLARE used python's `pickle <https://docs.python.org/3/library/pickle.html>`_ to transfer data between the FL clients and server.
-NVFLARE now uses the FLARE Object Serializer (FOBS). You might experience failures if your code is still using Pickle. 
-To migrate the code or if you experience errors due to this, please refer to :github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>`.
+クライアントとサーバー間のデータのシリアライズ/デシリアライズには Pickle をやめて FOBS を使用する
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NVFLARE 2.1.4 より前のバージョンでは、NVFLARE は FL クライアントとサーバー間のデータ転送に Python の `pickle <https://docs.python.org/3/library/pickle.html>`_ を使用していました。
+NVFLARE は現在、FLARE Object Serializer（FOBS）を使用します。コードが依然として Pickle を使用している場合、失敗が発生する可能性があります。
+コードを移行する場合、またはこれが原因でエラーが発生する場合は、:github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>` を参照してください。
 
-Another type of failure is due to data types that are not supported by FOBS. By default FOBS supports some data types, if the data type (Custom Class or Class from 3rd parties)
-is not part of supported FOBS data type, then you need to follow the instructions at
-:github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>`.
+もう 1 つの失敗の要因は、FOBS がサポートしていないデータ型です。FOBS はデフォルトでいくつかのデータ型をサポートしていますが、そのデータ型（カスタムクラスやサードパーティのクラス）が
+サポート対象の FOBS データ型に含まれていない場合は、
+:github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>` の手順に従う必要があります。
 
-Essentially, to address this type of issue, you need to do the following steps:
-  - Create a FobDecomposer class for the targeted data type
-  - Register the newly created FobDecomposer before the data type is transmitted between client and server.
+基本的に、この種の問題に対処するには、次の手順を実行する必要があります。
+  - 対象のデータ型に対する FobDecomposer クラスを作成します
+  - クライアントとサーバー間でそのデータ型が転送される前に、新しく作成した FobDecomposer を登録します
 
-The following examples are directly copied from :github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>`.
+以下の例は、:github_nvflare_link:`Flare Object Serializer (FOBS) <nvflare/fuel/utils/fobs/README.rst>` からそのまま引用したものです。
 
 .. code-block:: python
 
@@ -158,7 +158,7 @@ The following examples are directly copied from :github_nvflare_link:`Flare Obje
         def recompose(self, data: Any) -> Simple:
             return Simple(data[0], data[1], data[2])
 
-Register the data type in FOBS before the data type is used, then you can register the newly created FOBDecomposer
+データ型が使用される前に FOBS へそのデータ型を登録します。これにより、新しく作成した FOBDecomposer を登録できます。
 
 .. code-block:: python
 
@@ -166,19 +166,19 @@ Register the data type in FOBS before the data type is used, then you can regist
 
 .. note::
 
-  The decomposers must be registered in both server and client code before FOBS is used.
-  A good place for registration is the constructors for the controllers and executors. It can also be done in the START_RUN event handler.
+  Decomposer は、FOBS を使用する前にサーバー側とクライアント側の両方のコードで登録する必要があります。
+  登録に適した場所は、Controller や Executor のコンストラクターです。START_RUN イベントハンドラーで行うこともできます。
 
-Use FOBS to serialize data before you use sharable
-""""""""""""""""""""""""""""""""""""""""""""""""""
-A custom object cannot be put in shareable directly, it must be serialized using FOBS first.
-Assuming custom_data contains custom type, this is how data can be stored in shareable:
+shareable を使用する前に FOBS でデータをシリアライズする
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+カスタムオブジェクトを shareable に直接格納することはできません。まず FOBS を使ってシリアライズする必要があります。
+custom_data がカスタム型を含んでいると仮定すると、shareable にデータを格納する方法は次のとおりです。
 
 .. code-block:: python
 
     shareable[CUSTOM_DATA] = fobs.dumps(custom_data)
 
-On the receiving end:
+受信側では次のようにします。
 
 .. code-block:: python
 
@@ -187,30 +187,30 @@ On the receiving end:
 
 .. note::
 
-  This does not work:
+  次の方法は機能しません。
 
   .. code-block:: python
-  
+
     shareable[CUSTOM_DATA] = custom_data
 
-Replace TLS certificates
-~~~~~~~~~~~~~~~~~~~~~~~~
-With 2.2.1, the authorization model has been changed so previous startup kits (which contain the old TLS certificates) will no longer work. You will need to clean up
-the old setartup kits and re-provision your project.
+TLS 証明書の置き換え
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.2.1 では認可モデルが変更されたため、以前のスタートアップキット（古い TLS 証明書を含むもの）は動作しなくなります。古いスタートアップキットを
+クリーンアップし、プロジェクトを再プロビジョニングする必要があります。
 
-Use new Project.yml template
+新しい Project.yml テンプレートの使用
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.2.1 では、フェデレーテッドサイトポリシーに新しい project.yml テンプレートが必要です。:ref:`project_yml` を参照してください。
+
+新しい local ディレクトリ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-With 2.2.1, federated site policies require the new project.yml template. Please refer to :ref:`project_yml`.
+2.2.1 では、provision コマンドは ``startup`` ディレクトリだけでなく ``local`` ディレクトリも生成します。
+これまで ``project.yml`` にあったリソース割り当ては、この新しい ``local`` ディレクトリ内の ``resources.json`` ファイルに記述することが想定されており、
+各サイト/クライアントが場所ごとに個別に管理する必要があります。
+デフォルトのポリシーを変更したい場合は、自サイトの ``authorization.json`` および ``privacy.json`` ファイルも ``local`` ディレクトリに
+配置または修正する必要があります。
 
-New local directory
-~~~~~~~~~~~~~~~~~~~
-With 2.2.1, the provision command will produce not only the ``startup`` directory, but a ``local`` directory. 
-The resource allocation that used to be in ``project.yml`` is now expected in a ``resources.json`` file in this new ``local`` directory, and each
-sites/clients needs to manage this separately for each location.
-You need to place/modify your own site's ``authorization.json`` and ``privacy.json`` files in the ``local`` directory as well if you want to
-change the default policies.
-
-The default configurations are provided in each site's local directory:
+デフォルトの設定は、各サイトの local ディレクトリに提供されています。
 
 .. code-block::
 
@@ -220,4 +220,4 @@ The default configurations are provided in each site's local directory:
     ├── privacy.json.sample
     └── resources.json.default
 
-These defaults can be overridden by removing the default suffix and modifying the configuration as needed for the specific site.
+これらのデフォルトは、default というサフィックスを削除し、対象サイトに合わせて設定を修正することで上書きできます。
