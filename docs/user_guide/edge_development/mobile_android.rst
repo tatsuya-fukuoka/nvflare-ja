@@ -1,35 +1,35 @@
 .. _mobile_android_api:
 
-#########################
-Android SDK API Reference
-#########################
+##############################
+Android SDK API リファレンス
+##############################
 
-This document provides a comprehensive API reference for the NVIDIA FLARE Android SDK, enabling federated learning on Android devices using ExecuTorch.
+本ドキュメントでは、ExecuTorch を用いて Android デバイス上で連合学習を実行するための NVIDIA FLARE Android SDK について、包括的な API リファレンスを提供します。
 
 .. note::
-   This API reference assumes familiarity with the :ref:`mobile development guide <flare_mobile>` and basic Android development concepts.
+   本 API リファレンスは、:ref:`モバイル開発ガイド <flare_mobile>` および Android 開発の基本的な概念を理解していることを前提としています。
 
-Overview
+概要
 ========
 
-The Android SDK provides native Kotlin/Java libraries for implementing federated learning on Android devices. The SDK handles communication with FLARE servers, model training using ExecuTorch, and data management.
+Android SDK は、Android デバイス上で連合学習を実装するためのネイティブな Kotlin/Java ライブラリを提供します。この SDK は、FLARE サーバーとの通信、ExecuTorch を用いたモデルトレーニング、およびデータ管理を担当します。
 
-Key Components
-==============
+主要なコンポーネント
+======================
 
-* **AndroidFlareRunner**: Main orchestrator for federated learning.
-* **Connection**: HTTP/HTTPS communication with FLARE servers.
-* **ETTrainer**: ExecuTorch-based model training.
-* **DataSource**: Interface for providing training data.
-* **Dataset**: Data interface for training examples.
+* **AndroidFlareRunner**: 連合学習の中心的なオーケストレーターです。
+* **Connection**: FLARE サーバーとの HTTP/HTTPS 通信を行います。
+* **ETTrainer**: ExecuTorch ベースのモデルトレーニングを行います。
+* **DataSource**: トレーニングデータを提供するためのインターフェースです。
+* **Dataset**: トレーニング用サンプルのデータインターフェースです。
 
 AndroidFlareRunner
 ==================
 
-The main orchestrator for federated learning on Android devices. Handles job fetching, task execution, result reporting, component resolution, filtering, and event handling.
+Android デバイス上での連合学習における中心的なオーケストレーターです。ジョブの取得、タスクの実行、結果の報告、コンポーネントの解決、フィルタリング、イベント処理を担当します。
 
-Constructor
------------
+コンストラクター
+------------------
 
 .. code-block:: kotlin
 
@@ -46,50 +46,50 @@ Constructor
        resolverRegistry: Map<String, Class<*>>? = null
    )
 
-Parameters
-~~~~~~~~~~
+パラメータ
+~~~~~~~~~~~~
 
-* ``context``: Android application context.
-* ``connection``: Connection instance for server communication.
-* ``jobName``: Name of the FL job to participate in.
-* ``dataSource``: Data source providing training data.
-* ``deviceInfo``: Device metadata (``device_id``, ``platform``, etc.).
-* ``userInfo``: User metadata (``user_id``, etc.).
-* ``jobTimeout``: Timeout in seconds for job operations.
-* ``inFilters``: Optional input filters for data processing.
-* ``outFilters``: Optional output filters for result processing.
-* ``resolverRegistry``: Optional component resolver registry.
+* ``context``: Android のアプリケーションコンテキストです。
+* ``connection``: サーバー通信のための Connection インスタンスです。
+* ``jobName``: 参加する FL ジョブの名前です。
+* ``dataSource``: トレーニングデータを提供するデータソースです。
+* ``deviceInfo``: デバイスのメタデータです ( ``device_id`` 、 ``platform`` など)。
+* ``userInfo``: ユーザーのメタデータです ( ``user_id`` など)。
+* ``jobTimeout``: ジョブ操作のタイムアウト (秒) です。
+* ``inFilters``: データ処理用の入力フィルターです (省略可)。
+* ``outFilters``: 結果処理用の出力フィルターです (省略可)。
+* ``resolverRegistry``: コンポーネントリゾルバーのレジストリです (省略可)。
 
-What is a Resolver?
+リゾルバーとは?
 -------------------
 
-A **Resolver** is a component that maps string identifiers to actual class implementations. In the context of FLARE's edge SDK, resolvers are used to dynamically instantiate training components, filters, and other plugins based on configuration data received from the server.
+**リゾルバー** とは、文字列の識別子を実際のクラス実装に対応付けるコンポーネントです。FLARE のエッジ SDK においてリゾルバーは、サーバーから受け取った構成データに基づいて、トレーニングコンポーネント、フィルター、その他のプラグインを動的にインスタンス化するために使用されます。
 
-For example, when the server sends a job configuration that specifies a trainer component, the resolver looks up the string identifier (like "ETTrainerExecutor") and maps it to the actual class that should be instantiated. This allows for flexible, configuration-driven component loading without hardcoding specific implementations.
+例えば、サーバーがトレーナーコンポーネントを指定するジョブ構成を送信すると、リゾルバーは "ETTrainerExecutor" のような文字列識別子を検索し、インスタンス化すべき実際のクラスに対応付けます。これにより、特定の実装をハードコーディングすることなく、構成ドリブンで柔軟にコンポーネントを読み込めるようになります。
 
-The ``resolverRegistry`` parameter allows you to register custom resolvers for your own components, enabling the system to dynamically load and instantiate them as needed.
+``resolverRegistry`` パラメータを使うと、独自のコンポーネント用にカスタムリゾルバーを登録でき、必要に応じてシステムがそれらを動的に読み込んでインスタンス化できるようになります。
 
-Properties
-----------
+プロパティ
+------------
 
 .. code-block:: kotlin
 
    val jobName: String
    // The name of the federated learning job
 
-Methods
--------
+メソッド
+----------
 
 run()
 ~~~~~~
 
-Starts the main federated learning loop. This method runs continuously until the job is complete or stopped.
+連合学習のメインループを開始します。このメソッドは、ジョブが完了するか停止されるまで継続的に実行されます。
 
 .. code-block:: kotlin
 
    fun run()
 
-**Usage:**
+**使い方:**
 
 .. code-block:: kotlin
 
@@ -100,13 +100,13 @@ Starts the main federated learning loop. This method runs continuously until the
 stop()
 ~~~~~~
 
-Stops the federated learning process and cleans up resources.
+連合学習の処理を停止し、リソースを解放します。
 
 .. code-block:: kotlin
 
    fun stop()
 
-**Usage:**
+**使い方:**
 
 .. code-block:: kotlin
 
@@ -115,36 +115,36 @@ Stops the federated learning process and cleans up resources.
        flareRunner.stop()
    }
 
-Built-in Component Resolvers
-----------------------------
+組み込みのコンポーネントリゾルバー
+------------------------------------
 
-The ``AndroidFlareRunner`` includes built-in resolvers for common components:
+``AndroidFlareRunner`` には、一般的なコンポーネント向けの組み込みリゾルバーが含まれています。
 
-* ``Executor.ETTrainerExecutor``: ExecuTorch-based training executor.
-* ``Trainer.DLTrainer``: Deep learning trainer (mapped to ``ETTrainerExecutor``).
-* ``Filter.NoOpFilter``: No-operation filter.
-* ``EventHandler.NoOpEventHandler``: No-operation event handler.
-* ``Batch.SimpleBatch``: Simple batch processing.
+* ``Executor.ETTrainerExecutor``: ExecuTorch ベースのトレーニングエグゼキューターです。
+* ``Trainer.DLTrainer``: ディープラーニングのトレーナーです ( ``ETTrainerExecutor`` に対応付けられます)。
+* ``Filter.NoOpFilter``: 何もしないフィルターです。
+* ``EventHandler.NoOpEventHandler``: 何もしないイベントハンドラーです。
+* ``Batch.SimpleBatch``: シンプルなバッチ処理です。
 
 Connection
 ==========
 
-Manages HTTP/HTTPS communication with FLARE servers. Handles authentication, certificate validation, and request/response processing.
+FLARE サーバーとの HTTP/HTTPS 通信を管理します。認証、証明書の検証、リクエスト/レスポンスの処理を担当します。
 
-Constructor
------------
+コンストラクター
+------------------
 
 .. code-block:: kotlin
 
    Connection(context: Context)
 
-Parameters
-~~~~~~~~~~
+パラメータ
+~~~~~~~~~~~~
 
-* ``context``: Android application context
+* ``context``: Android のアプリケーションコンテキスト
 
-Properties
-----------
+プロパティ
+------------
 
 .. code-block:: kotlin
 
@@ -160,64 +160,64 @@ Properties
    fun getUserInfo(): Map<String, String>
    // Get current user information
 
-Methods
--------
+メソッド
+----------
 
 setCapabilities(capabilities)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sets device capabilities for the connection.
+接続に対してデバイスのケイパビリティを設定します。
 
 .. code-block:: kotlin
 
    fun setCapabilities(capabilities: Map<String, Any>)
 
-**Parameters:**
-* ``capabilities``: Map of device capabilities.
+**パラメータ:**
+* ``capabilities``: デバイスのケイパビリティのマップです。
 
 setUserInfo(userInfo)
 ~~~~~~~~~~~~~~~~~~~~~
 
-Sets user information for the connection.
+接続に対してユーザー情報を設定します。
 
 .. code-block:: kotlin
 
    fun setUserInfo(userInfo: Map<String, String>)
 
-**Parameters:**
-* ``userInfo``: Map of user information.
+**パラメータ:**
+* ``userInfo``: ユーザー情報のマップです。
 
 setScheme(scheme)
 ~~~~~~~~~~~~~~~~~
 
-Sets the HTTP scheme (http/https).
+HTTP のスキーム (http/https) を設定します。
 
 .. code-block:: kotlin
 
    fun setScheme(scheme: String)
 
-**Parameters:**
-* ``scheme``: ``"http"`` or ``"https"``.
+**パラメータ:**
+* ``scheme``: ``"http"`` または ``"https"`` です。
 
 setAllowSelfSignedCerts(allow)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Configures whether to allow self-signed certificates.
+自己署名証明書を許可するかどうかを設定します。
 
 .. code-block:: kotlin
 
    fun setAllowSelfSignedCerts(allow: Boolean)
 
-**Parameters:**
-* ``allow``: ``true`` to allow self-signed certificates.
+**パラメータ:**
+* ``allow``: 自己署名証明書を許可する場合は ``true`` です。
 
 .. warning::
-   Allowing self-signed certificates creates security vulnerabilities. Only use in development or controlled environments.
+   自己署名証明書を許可すると、セキュリティ上の脆弱性が生じます。開発環境または管理された環境でのみ使用してください。
 
 getJob(jobName, deviceInfo, userInfo)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Requests a job from the server.
+サーバーにジョブを要求します。
 
 .. code-block:: kotlin
 
@@ -227,17 +227,17 @@ Requests a job from the server.
        userInfo: Map<String, String>
    ): JobResponse?
 
-**Parameters:**
-* ``jobName``: Name of the job to request.
-* ``deviceInfo``: Device information.
-* ``userInfo``: User information.
+**パラメータ:**
+* ``jobName``: 要求するジョブの名前です。
+* ``deviceInfo``: デバイス情報です。
+* ``userInfo``: ユーザー情報です。
 
-**Returns:** ``JobResponse`` if successful, ``null`` otherwise.
+**戻り値:** 成功した場合は ``JobResponse`` 、それ以外の場合は ``null`` です。
 
 getTask(jobId, taskName)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Requests a task from the server.
+サーバーにタスクを要求します。
 
 .. code-block:: kotlin
 
@@ -246,16 +246,16 @@ Requests a task from the server.
        taskName: String
    ): TaskResponse?
 
-**Parameters:**
-* ``jobId``: Job identifier.
-* ``taskName``: Name of the task to request.
+**パラメータ:**
+* ``jobId``: ジョブの識別子です。
+* ``taskName``: 要求するタスクの名前です。
 
-**Returns:** ``TaskResponse`` if successful, ``null`` otherwise.
+**戻り値:** 成功した場合は ``TaskResponse`` 、それ以外の場合は ``null`` です。
 
 reportResult(jobId, taskId, result)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Reports task results to the server.
+タスクの結果をサーバーに報告します。
 
 .. code-block:: kotlin
 
@@ -265,20 +265,20 @@ Reports task results to the server.
        result: Map<String, Any>
    ): ResultResponse?
 
-**Parameters:**
-* ``jobId``: Job identifier.
-* ``taskId``: Task identifier.
-* ``result``: Task execution results.
+**パラメータ:**
+* ``jobId``: ジョブの識別子です。
+* ``taskId``: タスクの識別子です。
+* ``result``: タスクの実行結果です。
 
-**Returns:** ``ResultResponse`` if successful, ``null`` otherwise.
+**戻り値:** 成功した場合は ``ResultResponse`` 、それ以外の場合は ``null`` です。
 
 ETTrainer
 =========
 
-ExecuTorch-based trainer for on-device model training. Implements ``AutoCloseable`` for proper resource management.
+オンデバイスでのモデルトレーニングを行う ExecuTorch ベースのトレーナーです。適切なリソース管理のために ``AutoCloseable`` を実装しています。
 
-Constructor
------------
+コンストラクター
+------------------
 
 .. code-block:: kotlin
 
@@ -288,20 +288,20 @@ Constructor
        dataset: Dataset? = null
    )
 
-Parameters
-~~~~~~~~~~
+パラメータ
+~~~~~~~~~~~~
 
-* ``context``: Android application context.
-* ``meta``: Model metadata.
-* ``dataset``: Optional dataset for training.
+* ``context``: Android のアプリケーションコンテキストです。
+* ``meta``: モデルのメタデータです。
+* ``dataset``: トレーニング用のデータセットです (省略可)。
 
-Methods
--------
+メソッド
+----------
 
 train(config, dataset, modelData)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Trains the model using the provided configuration and dataset.
+指定された構成とデータセットを用いてモデルをトレーニングします。
 
 .. code-block:: kotlin
 
@@ -312,16 +312,16 @@ Trains the model using the provided configuration and dataset.
        modelData: ByteArray
    ): Map<String, Any>
 
-**Parameters:**
-* ``config``: Training configuration.
-* ``dataset``: Training dataset.
-* ``modelData``: Model data in ExecuTorch format.
+**パラメータ:**
+* ``config``: トレーニングの構成です。
+* ``dataset``: トレーニング用データセットです。
+* ``modelData``: ExecuTorch 形式のモデルデータです。
 
-**Returns:** Training results including loss and predictions.
+**戻り値:** 損失と予測を含むトレーニング結果です。
 
-**Throws:** ``Exception`` if training fails.
+**スロー:** トレーニングに失敗した場合は ``Exception`` をスローします。
 
-**Usage:**
+**使い方:**
 
 .. code-block:: kotlin
 
@@ -332,19 +332,19 @@ Trains the model using the provided configuration and dataset.
 close()
 ~~~~~~~
 
-Closes the trainer and releases resources.
+トレーナーを閉じてリソースを解放します。
 
 .. code-block:: kotlin
 
    override fun close()
 
-DataSource Interface
-====================
+DataSource インターフェース
+============================
 
-Interface for providing training data to the FL system.
+FL システムにトレーニングデータを提供するためのインターフェースです。
 
-Interface Definition
---------------------
+インターフェース定義
+----------------------
 
 .. code-block:: kotlin
 
@@ -352,25 +352,25 @@ Interface Definition
        fun getDataset(jobName: String, context: Context): Dataset
    }
 
-Methods
--------
+メソッド
+----------
 
 getDataset(jobName, context)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Retrieves a dataset for the specified job.
+指定されたジョブ用のデータセットを取得します。
 
 .. code-block:: kotlin
 
    fun getDataset(jobName: String, context: Context): Dataset
 
-**Parameters:**
-* ``jobName``: Name of the federated learning job.
-* ``context``: FLARE context.
+**パラメータ:**
+* ``jobName``: 連合学習ジョブの名前です。
+* ``context``: FLARE のコンテキストです。
 
-**Returns:** ``Dataset`` instance for training.
+**戻り値:** トレーニング用の ``Dataset`` インスタンスです。
 
-**Example Implementation:**
+**実装例:**
 
 .. code-block:: kotlin
 
@@ -384,13 +384,13 @@ Retrieves a dataset for the specified job.
        }
    }
 
-Dataset Interface
-=================
+Dataset インターフェース
+==========================
 
-Interface for providing training examples to the trainer.
+トレーナーにトレーニング用サンプルを提供するためのインターフェースです。
 
-Interface Definition
---------------------
+インターフェース定義
+----------------------
 
 .. code-block:: kotlin
 
@@ -399,43 +399,43 @@ Interface Definition
        fun getBatch(batchSize: Int): List<Map<String, Any>>
    }
 
-Methods
--------
+メソッド
+----------
 
 size()
 ~~~~~~
 
-Returns the total number of examples in the dataset.
+データセットに含まれるサンプルの総数を返します。
 
 .. code-block:: kotlin
 
    fun size(): Int
 
-**Returns:** Number of examples.
+**戻り値:** サンプル数です。
 
 getBatch(batchSize)
 ~~~~~~~~~~~~~~~~~~~
 
-Retrieves a batch of training examples.
+トレーニング用サンプルのバッチを取得します。
 
 .. code-block:: kotlin
 
    fun getBatch(batchSize: Int): List<Map<String, Any>>
 
-**Parameters:**
-* ``batchSize``: Number of examples to return.
+**パラメータ:**
+* ``batchSize``: 返すサンプルの数です。
 
-**Returns:** List of training examples.
+**戻り値:** トレーニング用サンプルのリストです。
 
-**Example Implementation:**
+**実装例:**
 
 .. code-block:: kotlin
 
    class MyDataset : Dataset {
        private val data = mutableListOf<Map<String, Any>>()
-       
+
        override fun size(): Int = data.size
-       
+
        override fun getBatch(batchSize: Int): List<Map<String, Any>> {
            return data.shuffled().take(batchSize)
        }
@@ -444,10 +444,10 @@ Retrieves a batch of training examples.
 TrainingConfig
 ==============
 
-Configuration class for training parameters.
+トレーニングのパラメータを保持する構成クラスです。
 
-Properties
-----------
+プロパティ
+------------
 
 .. code-block:: kotlin
 
@@ -469,28 +469,28 @@ Properties
    val outFilters: List<Filter>?
    // Output filters
 
-Usage Examples
+使用例
 ==============
 
-Basic Setup
------------
+基本的なセットアップ
+----------------------
 
 .. code-block:: kotlin
 
    class MainActivity : AppCompatActivity() {
        private lateinit var flareRunner: AndroidFlareRunner
-       
+
        override fun onCreate(savedInstanceState: Bundle?) {
            super.onCreate(savedInstanceState)
-           
+
            // Create connection
            val connection = Connection(this)
            connection.setScheme("https")
            connection.setAllowSelfSignedCerts(false) // Use true for development only
-           
+
            // Create data source
            val dataSource = MyDataSource()
-           
+
            // Create FlareRunner
            flareRunner = AndroidFlareRunner(
                context = this,
@@ -505,7 +505,7 @@ Basic Setup
                userInfo = mapOf("user_id" to getUserId()),
                jobTimeout = 30.0f
            )
-           
+
            // Start federated learning
            lifecycleScope.launch {
                flareRunner.run()
@@ -513,8 +513,8 @@ Basic Setup
        }
    }
 
-Custom Data Source
-------------------
+カスタムデータソース
+----------------------
 
 .. code-block:: kotlin
 
@@ -524,20 +524,20 @@ Custom Data Source
        }
    }
 
-Custom Dataset
---------------
+カスタムデータセット
+----------------------
 
 .. code-block:: kotlin
 
    class XORDataset(private val split: String) : Dataset {
        private val data = generateXORData()
-       
+
        override fun size(): Int = data.size
-       
+
        override fun getBatch(batchSize: Int): List<Map<String, Any>> {
            return data.shuffled().take(batchSize)
        }
-       
+
        private fun generateXORData(): List<Map<String, Any>> {
            // Generate XOR training data
            return listOf(
@@ -549,22 +549,22 @@ Custom Dataset
        }
    }
 
-Error Handling
+エラー処理
 ==============
 
-The Android SDK provides comprehensive error handling through exceptions and logging.
+Android SDK は、例外とロギングを通じて包括的なエラー処理を提供します。
 
-Common Exceptions
+よくある例外
 -----------------
 
-* ``NVFlareError`` (``com.nvidia.nvflare.sdk.core.NVFlareError``): Custom base exception for FLARE-related errors.
-* ``IOException`` (``java.io.IOException``): Standard Java exception for network communication errors.
-* ``RuntimeException`` (``java.lang.RuntimeException``): Standard Java exception for general runtime errors.
+* ``NVFlareError`` ( ``com.nvidia.nvflare.sdk.core.NVFlareError`` ): FLARE 関連のエラーを表すカスタムの基底例外です。
+* ``IOException`` ( ``java.io.IOException`` ): ネットワーク通信エラーを表す標準的な Java の例外です。
+* ``RuntimeException`` ( ``java.lang.RuntimeException`` ): 一般的な実行時エラーを表す標準的な Java の例外です。
 
-Exception Hierarchy
+例外の階層
 -------------------
 
-The SDK uses a custom exception hierarchy where ``NVFlareError`` extends ``Exception`` and provides specific error types. In practice, the Android app primarily handles ``ServerRequestedStop`` specifically, while other errors are handled generically:
+この SDK では、``NVFlareError`` が ``Exception`` を継承し、具体的なエラー型を提供するカスタムの例外階層を使用しています。実際には、Android アプリは主に ``ServerRequestedStop`` のみを個別に処理し、それ以外のエラーは汎用的に処理します。
 
 .. code-block:: kotlin
 
@@ -576,7 +576,7 @@ The SDK uses a custom exception hierarchy where ``NVFlareError`` extends ``Excep
        data class AuthError(override val message: String) : NVFlareError()
        data class ServerError(override val message: String) : NVFlareError()
        data class NetworkError(override val message: String) : NVFlareError()
-       
+
        // Training related
        data class InvalidMetadata(override val message: String) : NVFlareError()
        data class InvalidModelData(override val message: String) : NVFlareError()
@@ -584,10 +584,10 @@ The SDK uses a custom exception hierarchy where ``NVFlareError`` extends ``Excep
        object ServerRequestedStop : NVFlareError()
    }
 
-Error Handling Best Practices
------------------------------
+エラー処理のベストプラクティス
+--------------------------------
 
-The Android SDK uses a simplified error handling approach that catches generic exceptions and provides specific handling for ``NVFlareError.ServerRequestedStop``:
+Android SDK は、汎用的な例外を捕捉しつつ ``NVFlareError.ServerRequestedStop`` については個別に処理する、シンプルなエラー処理のアプローチを採用しています。
 
 .. code-block:: kotlin
 
@@ -595,7 +595,7 @@ The Android SDK uses a simplified error handling approach that catches generic e
        val result = flareRunner.run()
    } catch (e: Exception) {
        Log.e("FLARE", "Training failed with error: $e")
-       
+
        // Check for specific NVFlareError types
        if (e is NVFlareError.ServerRequestedStop) {
            Log.i("FLARE", "Server requested stop")
@@ -607,12 +607,12 @@ The Android SDK uses a simplified error handling approach that catches generic e
    }
 
 .. note::
-   The Connection class does use more specific error handling, converting ``IOException`` to ``NVFlareError.NetworkError`` and throwing appropriate ``NVFlareError`` subtypes based on HTTP status codes. However, the main application code uses the simplified approach shown above.
+   Connection クラスでは、より具体的なエラー処理が行われており、``IOException`` を ``NVFlareError.NetworkError`` に変換したり、HTTP のステータスコードに応じて適切な ``NVFlareError`` のサブタイプをスローしたりします。ただし、アプリケーション本体のコードでは、上記のシンプルなアプローチを採用しています。
 
-Logging
--------
+ロギング
+----------
 
-The SDK uses Android's standard logging system. Enable debug logging to see detailed information:
+この SDK は Android の標準的なロギングシステムを使用します。詳細な情報を確認するには、デバッグログを有効にしてください。
 
 .. code-block:: kotlin
 
@@ -620,39 +620,39 @@ The SDK uses Android's standard logging system. Enable debug logging to see deta
        Log.d("AndroidFlareRunner", "Starting federated learning")
    }
 
-Troubleshooting
-===============
+トラブルシューティング
+========================
 
-Common Issues
--------------
+よくある問題
+--------------
 
-**Build Errors**
-* Ensure all dependencies are properly linked.
-* Check ExecuTorch library compatibility.
-* Verify SDK files are correctly copied.
+**ビルドエラー**
+* すべての依存関係が正しくリンクされていることを確認してください。
+* ExecuTorch ライブラリの互換性を確認してください。
+* SDK のファイルが正しくコピーされていることを確認してください。
 
-**Runtime Errors**
-* Check network connectivity.
-* Verify server configuration.
-* Review device logs for specific error messages.
+**実行時エラー**
+* ネットワーク接続を確認してください。
+* サーバーの構成を確認してください。
+* 具体的なエラーメッセージについてデバイスのログを確認してください。
 
-**Performance Issues**
-* Monitor memory usage during training.
-* Optimize model architecture.
-* Adjust batch sizes and training parameters.
+**パフォーマンスの問題**
+* トレーニング中のメモリ使用量を監視してください。
+* モデルアーキテクチャを最適化してください。
+* バッチサイズやトレーニングパラメータを調整してください。
 
-**Certificate Errors**
-* Use proper certificate validation in production.
-* Consider certificate pinning for enhanced security.
-* Test with self-signed certificates in development only.
+**証明書のエラー**
+* 本番環境では適切な証明書検証を行ってください。
+* セキュリティを強化するために証明書ピンニングを検討してください。
+* 自己署名証明書でのテストは開発環境に限定してください。
 
-Best Practices
-==============
+ベストプラクティス
+====================
 
-* **Resource Management**: Always use try-with-resources or ``AutoCloseable`` for ``ETTrainer``.
-* **Error Handling**: Implement comprehensive error handling and logging.
-* **Security**: Use proper certificate validation in production.
-* **Performance**: Monitor memory usage and optimize model size.
-* **Testing**: Test with various network conditions and device configurations.
+* **リソース管理**: ``ETTrainer`` には常に try-with-resources または ``AutoCloseable`` を使用してください。
+* **エラー処理**: 包括的なエラー処理とロギングを実装してください。
+* **セキュリティ**: 本番環境では適切な証明書検証を行ってください。
+* **パフォーマンス**: メモリ使用量を監視し、モデルサイズを最適化してください。
+* **テスト**: さまざまなネットワーク状況やデバイス構成でテストしてください。
 
-For more information, see the :ref:`mobile development guide <flare_mobile>` and `edge examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_
+詳細については、:ref:`モバイル開発ガイド <flare_mobile>` および `エッジのサンプル <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/edge>`_ を参照してください。

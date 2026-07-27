@@ -1,13 +1,13 @@
 .. _package_command:
 
-###############
-Package Command
-###############
+##########################
+パッケージコマンド
+##########################
 
-``nvflare package`` assembles a startup kit from a signed zip returned by the
-Project Admin and the requester's local private key.
+``nvflare package`` は、プロジェクト管理者から返却された署名済み zip と、要求元のローカル秘密鍵から
+スタートアップキットを組み立てます。
 
-The public distributed provisioning form is:
+分散プロビジョニングにおける公開された形式は次のとおりです。
 
 .. code-block:: none
 
@@ -16,41 +16,38 @@ The public distributed provisioning form is:
                           [--force] [--schema]
                           input
 
-The ``input`` positional argument is the ``*.signed.zip`` file produced by
-``nvflare cert approve``.
+位置引数 ``input`` は、 ``nvflare cert approve`` が生成した ``*.signed.zip`` ファイルです。
 
-*******************
-Basic Package Flow
-*******************
+******************************
+基本的なパッケージ化の流れ
+******************************
 
-For a site request created in ``./hospital-a`` and approved with the default
-``--out`` (which writes the signed zip next to the request zip):
+``./hospital-a`` に作成され、既定の ``--out`` （リクエスト zip の隣に署名済み zip を書き出します）で
+承認されたサイトリクエストの場合は次のようにします。
 
 .. code-block:: shell
 
    nvflare package hospital-a/hospital-a.signed.zip
 
-This still validates the signed zip, signed metadata, certificate chain, and
-local private-key match. It does not perform an out-of-band root CA fingerprint
-comparison.
+この場合でも、署名済み zip、署名済みメタデータ、証明書チェーン、ローカル秘密鍵の一致は検証されます。
+ただし、帯域外でのルート CA フィンガープリントの比較は行われません。
 
-To verify the signed zip root CA against the value received from the Project
-Admin through a trusted out-of-band channel, pass the expected fingerprint:
+信頼できる帯域外チャネルを通じてプロジェクト管理者から受け取った値と、署名済み zip のルート CA を
+照合するには、期待するフィンガープリントを渡します。
 
 .. code-block:: shell
 
    nvflare package hospital-a/hospital-a.signed.zip --fingerprint <rootca_fingerprint_sha256>
 
-The longer spelling ``--expected-fingerprint`` is also accepted:
+より長い綴りの ``--expected-fingerprint`` も受け付けられます。
 
 .. code-block:: shell
 
    nvflare package hospital-a/hospital-a.signed.zip \
        --expected-fingerprint <rootca_fingerprint_sha256>
 
-If the signed zip is not next to the request folder (for example, after a
-remote transfer back to the requester), specify the local request folder
-explicitly:
+署名済み zip がリクエストフォルダの隣にない場合（たとえば、リモート転送を経て要求元に戻された場合など）は、
+ローカルのリクエストフォルダを明示的に指定します。
 
 .. code-block:: shell
 
@@ -58,81 +55,73 @@ explicitly:
        --request-dir ./hospital-a \
        --fingerprint <rootca_fingerprint_sha256>
 
-The command validates that:
+このコマンドは次の点を検証します。
 
-- the signed zip contains ``signed.json``, ``signed.json.sig``, ``site.yaml``,
-  one signed certificate, and ``rootCA.pem``;
-- ``signed.json.sig`` verifies against ``rootCA.pem`` before the signed
-  endpoint, scheme, connection security, or ``ca_info`` fields are trusted;
-- the signed zip does not contain private keys;
-- the local private key matches the signed certificate;
-- the certificate chains to ``rootCA.pem``;
-- signed CA fingerprint metadata matches the ``rootCA.pem`` in the signed zip;
-- local ``request.json`` metadata and signed metadata match;
-- identity fields in the local request-folder ``site.yaml`` match the signed
-  zip.
+- 署名済み zip に ``signed.json`` 、 ``signed.json.sig`` 、 ``site.yaml`` 、
+  1 つの署名済み証明書、および ``rootCA.pem`` が含まれていること
+- 署名済みのエンドポイント、スキーム、接続セキュリティ、 ``ca_info`` の各フィールドを信頼する前に、
+  ``signed.json.sig`` が ``rootCA.pem`` に対して検証されること
+- 署名済み zip に秘密鍵が含まれていないこと
+- ローカルの秘密鍵が署名済み証明書と一致すること
+- 証明書が ``rootCA.pem`` までチェーンしていること
+- 署名済みの CA フィンガープリントメタデータが、署名済み zip 内の ``rootCA.pem`` と一致すること
+- ローカルの ``request.json`` のメタデータと署名済みメタデータが一致すること
+- ローカルのリクエストフォルダにある ``site.yaml`` の識別子フィールドが署名済み zip と一致すること
 
-The command always prints ``rootca_fingerprint_sha256`` in its result. Without
-``--fingerprint <rootca_fingerprint_sha256>``, packaging does not perform an
-out-of-band trust comparison.
+このコマンドは、結果に常に ``rootca_fingerprint_sha256`` を出力します。
+``--fingerprint <rootca_fingerprint_sha256>`` を指定しない場合、パッケージ化では帯域外の信頼比較は行われません。
 
-The signed ``ca_info`` check prevents accidental CA mixing inside the package
-workspace, but it does not replace out-of-band fingerprint verification because
-the signed zip carries its own ``rootCA.pem``.
-Older signed zips that do not contain signed CA metadata are treated as deploy
-version ``00`` and use the fingerprint computed from the included
-``rootCA.pem`` for workspace consistency checks.
+署名済みの ``ca_info`` チェックは、パッケージワークスペース内での意図しない CA の混在を防ぎますが、
+署名済み zip はそれ自体の ``rootCA.pem`` を含んでいるため、帯域外でのフィンガープリント検証の代わりにはなりません。
+署名済み CA メタデータを含まない古い署名済み zip は、デプロイバージョン ``00`` として扱われ、
+ワークスペースの一貫性チェックには同梱の ``rootCA.pem`` から計算したフィンガープリントが使用されます。
 
-The output goes under:
+出力先は次の場所になります。
 
 .. code-block:: text
 
    <workspace>/<project-name>/prod_<NN>/<identity>/
 
-For example:
+例を示します。
 
 .. code-block:: text
 
    workspace/hospital_federation/prod_00/hospital-a/
 
-The deploy version comes from signed CA metadata in ``signed.json``. It is set
-by ``nvflare cert init --deploy-version`` and defaults to ``00``. Normally
-ignore it. Multiple participants approved by the same CA and deploy version are
-packaged side by side in the same ``prod_00`` directory. Packaging does not
-increment a directory counter for each participant.
+デプロイバージョンは ``signed.json`` 内の署名済み CA メタデータから決まります。この値は
+``nvflare cert init --deploy-version`` で設定され、既定値は ``00`` です。通常は気にする必要はありません。
+同じ CA とデプロイバージョンで承認された複数の参加者は、同じ ``prod_00`` ディレクトリ内に並べて
+パッケージ化されます。パッケージ化では、参加者ごとにディレクトリのカウンターが増えることはありません。
 
-If ``prod_<NN>`` already exists, ``nvflare package`` verifies that the existing
-package root uses the same ``rootCA.pem`` fingerprint. A root CA mismatch is a
-hard error. Deploy version ``00`` maps to ``prod_00``; deploy version ``01``
-maps to ``prod_01``. Use ``--force`` only to replace an existing participant
-under the same deploy version and CA.
+``prod_<NN>`` が既に存在する場合、 ``nvflare package`` は既存のパッケージルートが同じ ``rootCA.pem``
+フィンガープリントを使用しているかを検証します。ルート CA の不一致は致命的なエラーです。デプロイバージョン
+``00`` は ``prod_00`` に、デプロイバージョン ``01`` は ``prod_01`` に対応します。 ``--force`` は、
+同一のデプロイバージョンおよび CA の下にある既存の参加者を置き換える場合にのみ使用してください。
 
-****************************
-Connection Configuration
-****************************
+********************
+接続設定
+********************
 
-The package command does not require an endpoint argument in the distributed
-provisioning flow.
+分散プロビジョニングのフローでは、package コマンドにエンドポイント引数を指定する必要はありません。
 
-Connection values are resolved from:
+接続に関する値は次の情報源から解決されます。
 
-- ``signed.json`` in the signed zip, which contains the Project Admin-approved
-  ``scheme``, default ``connection_security``, ``server`` endpoint from
-  ``project_profile.yaml``, and signed ``ca_info`` from ``ca.json``;
-- the original local participant definition in the request folder, which
-  contains participant identity and package-time fields.
+- 署名済み zip 内の ``signed.json`` 。これにはプロジェクト管理者が承認した ``scheme`` 、既定の
+  ``connection_security`` 、 ``project_profile.yaml`` 由来の ``server`` エンドポイント、および
+  ``ca.json`` 由来の署名済み ``ca_info`` が含まれます
+- リクエストフォルダ内にある元のローカル参加者定義。これには参加者の識別情報と、パッケージ化時の
+  フィールドが含まれます
 
-The server host and port fields are part of the signed approval metadata.
-``nvflare package`` uses the signed ``server`` endpoint to generate startup
-kits. Client and user request folders do not provide local endpoint overrides.
-If the server endpoint changes after approval, update ``project_profile.yaml``
-and regenerate affected signed zips.
+サーバーのホストおよびポートのフィールドは、署名済み承認メタデータの一部です。
+``nvflare package`` は、スタートアップキットの生成に署名済みの ``server`` エンドポイントを使用します。
+クライアントおよびユーザーのリクエストフォルダは、ローカルなエンドポイントの上書きを提供しません。
+承認後にサーバーのエンドポイントが変更された場合は、 ``project_profile.yaml`` を更新し、影響を受ける
+署名済み zip を再生成してください。
 
-Local package-time fields that are intentionally excluded from the signed zip,
-such as custom builders and the server-side ``connection_security`` override,
-remain local packaging inputs.
+カスタムビルダーやサーバー側の ``connection_security`` の上書きなど、意図的に署名済み zip から
+除外されているパッケージ化時のローカルフィールドは、引き続きローカルなパッケージ化の入力として残ります。
 
-Client and user participant definitions do not include the server endpoint:
+クライアントおよびユーザーの参加者定義には、サーバーのエンドポイントは含まれません。
 
 .. code-block:: yaml
 
@@ -141,7 +130,7 @@ Client and user participant definitions do not include the server endpoint:
        type: client
        org: hospital_alpha
 
-For user startup kits, the same signed endpoint from ``signed.json`` is used:
+ユーザーのスタートアップキットについても、 ``signed.json`` 内の同じ署名済みエンドポイントが使用されます。
 
 .. code-block:: yaml
 
@@ -151,8 +140,7 @@ For user startup kits, the same signed endpoint from ``signed.json`` is used:
        org: hospital_alpha
        role: lead
 
-For server kits, ``connection_security`` may be set in the server participant
-definition:
+サーバーキットの場合は、サーバー参加者の定義で ``connection_security`` を設定できます。
 
 .. code-block:: yaml
 
@@ -162,16 +150,16 @@ definition:
        org: hospital_central
        connection_security: mtls
 
-This server-side value is a local package-time override. It is read from the
-request folder when building the server kit. It is not approved by the Project
-Admin and is not distributed as federation policy. If it is not set, package
-uses the default ``connection_security`` from the signed zip.
+このサーバー側の値は、パッケージ化時のローカルな上書きです。サーバーキットのビルド時にリクエストフォルダから
+読み込まれます。これはプロジェクト管理者によって承認されるものではなく、フェデレーションのポリシーとして
+配布されることもありません。設定されていない場合、package は署名済み zip 内の既定の
+``connection_security`` を使用します。
 
-**************************
-Package a User Startup Kit
-**************************
+****************************************
+ユーザースタートアップキットのパッケージ化
+****************************************
 
-For a lead user:
+lead ユーザーの場合は次のようにします。
 
 .. code-block:: shell
 
@@ -179,13 +167,13 @@ For a lead user:
    nvflare cert approve alice@hospital-alpha.org/alice@hospital-alpha.org.request.zip --ca-dir ./ca --profile project_profile.yaml
    nvflare package alice@hospital-alpha.org/alice@hospital-alpha.org.signed.zip --fingerprint <rootca_fingerprint_sha256>
 
-The generated startup kit contains:
+生成されるスタートアップキットには次のファイルが含まれます。
 
 .. code-block:: text
 
    startup/fl_admin.sh
 
-Run it with:
+次のコマンドで実行します。
 
 .. code-block:: shell
 
@@ -193,34 +181,33 @@ Run it with:
    ./startup/fl_admin.sh
 
 ****************
-Main Arguments
+主な引数
 ****************
 
-- ``input``: approved ``*.signed.zip`` returned by ``nvflare cert approve``.
-- ``-w, --workspace``: workspace root directory. Default: ``workspace``.
-- ``--request-dir``: local request directory containing the private key,
-  ``request.json``, and the full local participant definition. Use it when the
-  signed zip is not next to the request folder and local request state is not
-  available.
-- ``--fingerprint``: expected SHA256 fingerprint for
-  ``rootCA.pem`` in the signed zip. The command fails if it does not match.
-- ``--expected-fingerprint``: longer spelling for ``--fingerprint``.
-- ``--force``: allow replacing an existing participant package under the same
-  ``prod_<NN>`` directory when the signed CA information still matches. It
-  does not bypass root CA mismatch checks.
-- ``--schema``: print JSON schema for this command.
+- ``input``: ``nvflare cert approve`` が返した承認済みの ``*.signed.zip`` です。
+- ``-w, --workspace``: ワークスペースのルートディレクトリです。既定値: ``workspace`` 。
+- ``--request-dir``: 秘密鍵、 ``request.json`` 、およびローカル参加者定義の全体を含む、ローカルの
+  リクエストディレクトリです。署名済み zip がリクエストフォルダの隣になく、ローカルのリクエスト状態を
+  利用できない場合に使用します。
+- ``--fingerprint``: 署名済み zip 内の ``rootCA.pem`` に期待される SHA256 フィンガープリントです。
+  一致しない場合、コマンドは失敗します。
+- ``--expected-fingerprint``: ``--fingerprint`` のより長い綴りです。
+- ``--force``: 署名済み CA 情報が引き続き一致している場合に、同じ ``prod_<NN>`` ディレクトリ配下の
+  既存の参加者パッケージを置き換えることを許可します。ルート CA の不一致チェックを回避するものでは
+  ありません。
+- ``--schema``: このコマンドの JSON スキーマを出力します。
 
-*********************
-JSON Output and Help
-*********************
+***************************
+JSON 出力とヘルプ
+***************************
 
-Use ``--schema`` for machine-readable command discovery:
+機械可読なコマンド探索には ``--schema`` を使用します。
 
 .. code-block:: shell
 
    nvflare package --schema
 
-The top-level CLI also supports JSON output mode:
+トップレベルの CLI は JSON 出力モードもサポートしています。
 
 .. code-block:: shell
 
@@ -228,5 +215,4 @@ The top-level CLI also supports JSON output mode:
        --fingerprint <rootca_fingerprint_sha256> \
        --format json
 
-For the end-to-end distributed provisioning workflow, see
-:ref:`distributed_provisioning`.
+分散プロビジョニングのエンドツーエンドのワークフローについては、 :ref:`distributed_provisioning` を参照してください。

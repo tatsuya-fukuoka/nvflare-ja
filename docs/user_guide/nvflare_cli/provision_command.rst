@@ -1,8 +1,8 @@
 *****************************
-Provision command
+プロビジョニングコマンド
 *****************************
 
-Running ``nvflare provision -h`` shows all available options.
+``nvflare provision -h`` を実行すると、利用可能なすべてのオプションが表示されます。
 
 .. code-block:: shell
 
@@ -23,29 +23,29 @@ Running ``nvflare provision -h`` shows all available options.
     --force                                                      skip Y/N confirmation prompts
     --schema                                                     print command schema as JSON and exit
 
-Running ``provision`` without any options and without a project.yml file in the current working directory will prompt
-to copy a default project.yml to the current working directory.
+オプションを何も指定せず、かつカレントワーキングディレクトリに project.yml ファイルが存在しない状態で
+``provision`` を実行すると、デフォルトの project.yml をカレントワーキングディレクトリにコピーするかどうかを
+確認するプロンプトが表示されます。
 
-JSON mode
-=========
+JSON モード
+===========
 
-``nvflare provision --format json`` returns only a JSON envelope on
-stdout. When the command generates a sample project file, the JSON ``data``
-section includes structured guidance such as:
+``nvflare provision --format json`` は、標準出力に JSON エンベロープのみを返します。
+コマンドがサンプルのプロジェクトファイルを生成する場合、JSON の ``data`` セクションには
+次のような構造化されたガイダンスが含まれます。
 
 - ``message``
 - ``next_step``
 - ``suggested_command``
 
-This keeps JSON output machine-readable while still carrying follow-up
-instructions.
+これにより、JSON 出力を機械可読なまま保ちながら、後続の手順も併せて伝えることができます。
 
-Root CA validity
-================
+ルート CA の有効期間
+====================
 
-Centralized provisioning creates a self-signed project root CA that is valid
-for 360 days by default. To select a different initial validity, set the
-positive integer ``root_valid_days`` for ``CertBuilder`` in ``project.yml``:
+集中型のプロビジョニングでは、デフォルトで 360 日間有効な自己署名のプロジェクトルート CA が
+作成されます。初期の有効期間を変更するには、``project.yml`` の ``CertBuilder`` に正の整数の
+``root_valid_days`` を設定します。
 
 .. code-block:: yaml
 
@@ -54,26 +54,25 @@ positive integer ``root_valid_days`` for ``CertBuilder`` in ``project.yml``:
        args:
          root_valid_days: 3650
 
-This setting only applies when a workspace creates its root. Later runs reuse
-the root in the workspace's ``state`` directory and report its actual
-``NotBefore`` and ``NotAfter`` values. A configured validity that does not
-match the existing root fails clearly. Participant certificates keep their
-normal 360-day validity unless the root expires sooner.
+この設定は、ワークスペースがルートを作成するときにのみ適用されます。以降の実行では、
+ワークスペースの ``state`` ディレクトリにあるルートを再利用し、その実際の ``NotBefore`` および
+``NotAfter`` の値を報告します。既存のルートと一致しない有効期間が設定されている場合は、
+明確にエラーとなります。参加者の証明書は、ルートがそれより先に失効しない限り、通常どおり
+360 日間の有効期間を保ちます。
 
-Changing an established root requires a separate multi-root rollover;
-``root_valid_days`` never extends or replaces it.
+確立済みのルートを変更するには、別途マルチルートのロールオーバーが必要です。
+``root_valid_days`` によって既存のルートが延長されたり置き換えられたりすることは決してありません。
 
-Certificate Identity Overrides
-==============================
+証明書アイデンティティのオーバーライド
+======================================
 
-For mTLS deployments, each CellNet endpoint is authenticated against the peer
-certificate common name (CN). By default, the expected certificate identity is
-derived from the participant name or FQCN. If a participant intentionally uses a
-certificate CN that differs from its FLARE site name, set ``auth_identity`` in
-``project.yml`` before provisioning.
+mTLS 構成のデプロイメントでは、各 CellNet エンドポイントはピア証明書のコモンネーム (CN) に対して
+認証されます。デフォルトでは、期待される証明書アイデンティティは参加者名または FQCN から導出されます。
+参加者が意図的に FLARE のサイト名とは異なる証明書 CN を使用する場合は、プロビジョニングの前に
+``project.yml`` で ``auth_identity`` を設定してください。
 
-For example, if the FLARE site is named ``site-1`` but its certificate CN is
-``server.example.com``:
+たとえば、FLARE のサイト名が ``site-1`` で、その証明書 CN が ``server.example.com`` である場合は
+次のようになります。
 
 .. code-block:: yaml
 
@@ -83,45 +82,41 @@ For example, if the FLARE site is named ``site-1`` but its certificate CN is
        org: nvidia
        auth_identity: server.example.com
 
-Provisioning uses this value to generate the corresponding startup-kit
-configuration, including peer identity mappings needed by the server and by job
-cells. A job cell such as ``site-1.<job_id>`` still authenticates with the
-parent site's configured certificate identity.
+プロビジョニングではこの値を使用して、サーバーおよびジョブセルが必要とするピアアイデンティティの
+マッピングを含む、対応するスタートアップキットの構成を生成します。``site-1.<job_id>`` のようなジョブセルも、
+引き続き親サイトに設定された証明書アイデンティティで認証されます。
 
 .. important::
 
-   Endpoint-to-CN binding is enforced when an mTLS transport exposes the
-   authenticated peer CN. Some active-side gRPC connections do not expose the
-   peer CN to the Python driver, so NVFlare accepts those active connections and
-   relies on passive-side endpoint validation plus the normal application-layer
-   authentication checks.
+   エンドポイントと CN のバインディングは、mTLS トランスポートが認証済みのピア CN を公開している場合に
+   適用されます。アクティブ側の gRPC 接続の一部は Python ドライバーにピア CN を公開しないため、
+   NVFlare はそれらのアクティブな接続を受け入れ、パッシブ側のエンドポイント検証と通常の
+   アプリケーション層の認証チェックに依存します。
 
-   Admin console cells use per-session endpoint names and authenticate the admin
-   user by certificate/user identity on the admin listener. Keep admin
-   application-layer authentication configured and protected.
+   Admin コンソールのセルはセッションごとのエンドポイント名を使用し、管理者ユーザーを admin リスナー上で
+   証明書／ユーザーアイデンティティによって認証します。admin のアプリケーション層認証は必ず構成し、
+   保護された状態を維持してください。
 
-   ``auth_identity`` is loaded when a FLARE process starts. After rotating site
-   certificates or changing certificate CNs, regenerate the startup kits as
-   needed and restart the affected FLARE processes so the in-memory identity
-   resolver uses the new certificate identity.
+   ``auth_identity`` は FLARE プロセスの起動時に読み込まれます。サイト証明書をローテーションしたり
+   証明書 CN を変更したりした後は、必要に応じてスタートアップキットを再生成し、影響を受ける FLARE プロセスを
+   再起動して、メモリ上のアイデンティティリゾルバーが新しい証明書アイデンティティを使用するようにしてください。
 
 .. warning::
 
-   Do not edit ``startup/fed_client.json`` or ``startup/fed_server.json`` by
-   hand in a signed startup kit. If ``startup/signature.json`` is present, the
-   startup configuration is covered by the signature and manual edits invalidate
-   that signature. Change ``project.yml`` and re-run provisioning so the startup
-   configuration and signature are generated together.
+   署名済みのスタートアップキットに含まれる ``startup/fed_client.json`` や ``startup/fed_server.json`` を
+   手作業で編集しないでください。``startup/signature.json`` が存在する場合、スタートアップ構成は署名の対象に
+   含まれており、手作業の編集はその署名を無効にします。``project.yml`` を変更してプロビジョニングを再実行し、
+   スタートアップ構成と署名が一緒に生成されるようにしてください。
 
 .. _dynamic_provisioning_cli:
 
-Dynamic Provisioning
+動的プロビジョニング
 ====================
 
-The options ``--add_user`` and ``--add_client`` allow for adding to an existing project. Both of these commands take a yaml
-file to define the additional participant to provision.
+``--add_user`` および ``--add_client`` オプションを使用すると、既存のプロジェクトに追加できます。
+どちらのコマンドも、プロビジョニングする追加の参加者を定義する yaml ファイルを受け取ります。
 
-Sample user.yaml for ``--add_user``:
+``--add_user`` 用の user.yaml のサンプル:
 
 .. code-block:: yaml
 
@@ -130,7 +125,7 @@ Sample user.yaml for ``--add_user``:
     role: project_admin
 
 
-Sample client.yaml for ``--add_client``:
+``--add_client`` 用の client.yaml のサンプル:
 
 .. code-block:: yaml
 
@@ -145,14 +140,15 @@ Sample client.yaml for ``--add_client``:
       resource_consumer:    # This id is reserved by system.  Do not change it.
         path: nvflare.app_common.resource_consumers.gpu_resource_consumer.GPUResourceConsumer
         args:
- 
 
-After running ``nvflare provision`` with ``--add_user`` or ``--add_client`` followed by the name of the yaml file (:mod:`nvflare.lighter.provision` will
-look for the yaml file in the current directory), the new user or client will be included in the prod_NN folder.
 
-To permanently include users or clients, please update the project.yml.
+``--add_user`` または ``--add_client`` に yaml ファイル名を続けて ``nvflare provision`` を実行すると
+( :mod:`nvflare.lighter.provision` はカレントディレクトリから yaml ファイルを探します)、
+新しいユーザーまたはクライアントが prod_NN フォルダに含まれます。
+
+ユーザーやクライアントを恒久的に含めるには、project.yml を更新してください。
 
 .. note::
 
-   To use multi-study features, set ``api_version: 4`` in your ``project.yml`` and add a ``studies:``
-   section. See :ref:`multi_study_guide` for details.
+   マルチスタディ機能を使用するには、``project.yml`` で ``api_version: 4`` を設定し、``studies:``
+   セクションを追加してください。詳細は :ref:`multi_study_guide` を参照してください。
