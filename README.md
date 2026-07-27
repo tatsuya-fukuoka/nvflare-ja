@@ -8,7 +8,8 @@
 
 - 翻訳のベース: [NVIDIA/NVFlare](https://github.com/NVIDIA/NVFlare) `main` ブランチの `docs/` ディレクトリ
   - ベースコミット: `2c63764cce36a98104701dc297f467a8aa3f5da6` (2026-07時点)
-- 主要ページから優先的に翻訳しており、未翻訳ページは英語原文のまま掲載しています。翻訳状況は [TRANSLATION_STATUS.md](TRANSLATION_STATUS.md) を参照してください。
+- **全 214 ページの日本語翻訳が完了しています。** ページ単位の一覧は [TRANSLATION_STATUS.md](TRANSLATION_STATUS.md) を参照してください。
+- コードブロック、コマンド、ファイルパス、設定キー名、クラス名などの識別子は原文のまま保持しています。
 - APIリファレンス(apidocs)は自動生成のため翻訳対象外とし、[公式APIリファレンス](https://nvflare.readthedocs.io/en/main/apidocs/modules.html)へのリンクとしています。
 - 翻訳内容と原文に差異がある場合は、常に[公式ドキュメント(英語)](https://nvflare.readthedocs.io/en/main/index.html)が優先されます。
 
