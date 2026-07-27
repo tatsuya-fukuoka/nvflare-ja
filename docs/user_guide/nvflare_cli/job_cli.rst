@@ -1,14 +1,14 @@
 .. _job_cli:
 
-#########################
-NVIDIA FLARE Job CLI
-#########################
+#############################
+NVIDIA FLARE ジョブ CLI
+#############################
 
-The ``nvflare job`` command family is used to submit, inspect, monitor, and
-manage federated learning jobs from an admin startup kit.
+``nvflare job`` コマンドファミリは、管理者用スタートアップキットから連合学習ジョブを投入し、確認し、
+監視し、管理するために使用します。
 
-Before using server-connected job commands, either run ``nvflare poc prepare``
-or activate a registered startup kit with :ref:`config_command`:
+サーバー接続を伴うジョブコマンドを使用する前に、 ``nvflare poc prepare`` を実行するか、
+:ref:`config_command` で登録済みのスタートアップキットを有効化してください。
 
 .. code-block:: shell
 
@@ -16,7 +16,7 @@ or activate a registered startup kit with :ref:`config_command`:
    nvflare config use project_admin
 
 ***********************
-Command Usage
+コマンドの使い方
 ***********************
 
 .. code-block:: none
@@ -42,64 +42,61 @@ Command Usage
      create          [DEPRECATED] use 'python job.py --export --export-dir <job_folder>' + 'nvflare job submit -j <job_folder>'
      show_variables  [DEPRECATED] use 'nvflare recipe list' or the Job Recipe API
 
-*****************
-Common Workflow
-*****************
+*************************
+一般的なワークフロー
+*************************
 
-1. Export or prepare a job folder.
-2. Submit the job with ``nvflare job submit -j <job_folder>``.
-3. In automation, wait for completion with ``nvflare job wait <job_id>``.
-   For interactive progress output, use ``nvflare job monitor <job_id>``.
-4. Inspect metadata, stats, or logs as needed.
-5. Download, clone, abort, or delete the job when appropriate.
+1. ジョブフォルダをエクスポートまたは準備します。
+2. ``nvflare job submit -j <job_folder>`` でジョブを投入します。
+3. 自動化では ``nvflare job wait <job_id>`` で完了を待ちます。
+   対話的に進捗を表示したい場合は ``nvflare job monitor <job_id>`` を使用します。
+4. 必要に応じて、メタデータ、統計情報、ログを確認します。
+5. 適切なタイミングで、ジョブのダウンロード、クローン、中断、削除を行います。
 
-*****************************
-Startup Kit Selection
-*****************************
+*********************************
+スタートアップキットの選択
+*********************************
 
-Server-connected job commands use this startup kit resolution order:
+サーバー接続を伴うジョブコマンドは、次の順序でスタートアップキットを解決します。
 
-1. Optional ``--kit-id <id>``: override the active startup kit for this command
-   only by using a registered startup-kit ID.
-2. Optional ``--startup-kit <path>``: override the active startup kit for this
-   command only by using an explicit admin startup-kit directory.
-3. ``NVFLARE_STARTUP_KIT_DIR`` when set.
-4. ``startup_kits.active`` from ``~/.nvflare/config.conf``.
-5. If no source resolves to a valid admin startup kit, the command fails before connecting.
+1. 任意の ``--kit-id <id>``: 登録済みのスタートアップキット ID を使用して、このコマンドに限り有効な
+   スタートアップキットを上書きします。
+2. 任意の ``--startup-kit <path>``: 明示的な管理者用スタートアップキットディレクトリを使用して、この
+   コマンドに限り有効なスタートアップキットを上書きします。
+3. 設定されている場合は ``NVFLARE_STARTUP_KIT_DIR`` 。
+4. ``~/.nvflare/config.conf`` の ``startup_kits.active`` 。
+5. いずれの情報源からも有効な管理者用スタートアップキットが解決できない場合、コマンドは接続前に失敗します。
 
-``--kit-id`` and ``--startup-kit`` are not required. When provided, they take
-precedence over the active startup kit for the current command only and do not
-change the globally active startup kit. They are useful for scripts, notebooks,
-and concurrent workflows that must not mutate ``~/.nvflare/config.conf``.
+``--kit-id`` と ``--startup-kit`` は必須ではありません。指定された場合は、現在のコマンドに限り有効な
+スタートアップキットより優先され、グローバルに有効なスタートアップキットは変更されません。これらは、
+``~/.nvflare/config.conf`` を変更してはならないスクリプト、ノートブック、並行ワークフローで有用です。
 
-****************
-Submit a Job
-****************
+********************
+ジョブの投入
+********************
 
-Use ``nvflare job submit`` to submit a pre-built NVFlare job folder:
+ビルド済みの NVFlare ジョブフォルダを投入するには、 ``nvflare job submit`` を使用します。
 
 .. code-block:: shell
 
    nvflare job submit -j /tmp/nvflare/hello-pt
 
-Submit options:
+submit のオプション:
 
-- ``-j, --job_folder``: job folder path. Defaults to ``./current_job``.
-- ``--study``: submit into a named study when the server is configured for
-  multi-study access. If omitted, the literal study name ``default`` is
-  submitted.
-- ``--submit-token``: caller-generated token for retry-safe submit and later
-  recovery with ``nvflare job list --submit-token``.
-- ``-debug, --debug``: keep the temporary copied job folder for inspection.
-- ``--schema``: print the command schema as JSON and exit.
+- ``-j, --job_folder``: ジョブフォルダのパスです。既定値は ``./current_job`` です。
+- ``--study``: サーバーがマルチスタディアクセス用に構成されている場合に、名前付きスタディへ投入します。
+  省略した場合は、リテラルのスタディ名 ``default`` が投入されます。
+- ``--submit-token``: リトライ安全な投入と、後から ``nvflare job list --submit-token`` で復旧するための、
+  呼び出し側が生成するトークンです。
+- ``-debug, --debug``: 確認のために、一時的にコピーされたジョブフォルダを保持します。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Submit returns immediately with a ``job_id``. It does not wait for terminal
-job status.
+submit は ``job_id`` を返して直ちに戻ります。ジョブが終端ステータスに達するまで待機することはありません。
 
-To change job configuration values, edit the exported job files before
-submission. Submit-time ``-f/--config_file`` overrides are not supported.
+ジョブの設定値を変更するには、投入前にエクスポートされたジョブファイルを編集してください。投入時の
+``-f/--config_file`` による上書きはサポートされていません。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -108,26 +105,26 @@ Examples:
    nvflare job list --kit-id project_admin
    nvflare job submit -j /tmp/nvflare/hello-pt --startup-kit /path/to/admin@nvidia.com
 
-Registered startup kit paths must point to the admin startup kit directory
-itself, not the broader ``prod_00`` root.
+登録するスタートアップキットのパスは、より広い ``prod_00`` のルートではなく、管理者用スタートアップキット
+ディレクトリそのものを指す必要があります。
 
-Example JSON success response:
+JSON の成功レスポンスの例:
 
 .. code-block:: json
 
    {"schema_version": "1", "status": "ok", "exit_code": 0, "data": {"job_id": "abc123"}}
 
-If the server is configured for studies, you can target one explicitly:
+サーバーがスタディ用に構成されている場合は、次のように明示的に対象を指定できます。
 
 .. code-block:: shell
 
    nvflare job submit -j /tmp/nvflare/my_job --study cancer_research
 
-Retry-Safe Submit Tokens
-========================
+リトライ安全な投入トークン
+==========================
 
-Use ``--submit-token`` when an automated caller may retry a submit after a
-timeout or lost client connection:
+自動化された呼び出し側が、タイムアウトやクライアント接続の切断の後に投入をリトライする可能性がある場合は、
+``--submit-token`` を使用します。
 
 .. code-block:: shell
 
@@ -137,51 +134,45 @@ timeout or lost client connection:
        --submit-token "$TOKEN" \
        --format json
 
-``--submit-token`` is optional. When provided, it must be generated by the
-caller and is used as an idempotency and recovery value for one intended
-submit. NVFlare does not auto-generate a submit token when the flag is omitted.
-The token is not an authentication token, session token, startup-kit credential,
-API key, or certificate secret. Normal startup-kit authentication and
-authorization still apply.
+``--submit-token`` は任意です。指定する場合は呼び出し側が生成する必要があり、1 回の意図した投入に対する
+冪等性および復旧用の値として使用されます。このフラグを省略した場合、NVFlare が投入トークンを自動生成する
+ことはありません。このトークンは認証トークン、セッショントークン、スタートアップキットの資格情報、API キー、
+証明書の秘密情報のいずれでもありません。通常のスタートアップキットによる認証と認可は引き続き適用されます。
 
-Tokens must be non-empty, at most 128 characters, and use only letters,
-numbers, ``.``, ``_``, ``:``, or ``-``.
+トークンは空でなく、128 文字以内で、英字、数字、 ``.`` 、 ``_`` 、 ``:`` 、 ``-`` のみを使用する必要が
+あります。
 
-Submit-token scope is the selected server/project context, study, submitter
-identity, and token value. Reusing the same token with the same job content in
-the same scope returns the existing ``job_id``. Reusing it with different job
-content fails with ``SUBMIT_TOKEN_CONFLICT``. The same token may be used in a
-different study because studies are separate job namespaces.
+投入トークンのスコープは、選択されたサーバー／プロジェクトのコンテキスト、スタディ、投入者のアイデンティティ、
+およびトークンの値です。同じスコープ内で、同じジョブ内容に対して同じトークンを再利用すると、既存の
+``job_id`` が返されます。異なるジョブ内容で再利用した場合は ``SUBMIT_TOKEN_CONFLICT`` で失敗します。
+スタディはジョブの名前空間として分離されているため、同じトークンを別のスタディで使用することはできます。
 
-If a job created with ``--submit-token`` is later deleted, the server keeps the
-submit record as ``job_deleted``. A later submit or list lookup with the same
-token returns ``SUBMIT_TOKEN_JOB_DELETED`` instead of silently recreating the
-deleted job. Use a new submit token to submit the job again.
+``--submit-token`` を使って作成されたジョブが後から削除された場合、サーバーは投入レコードを
+``job_deleted`` として保持します。同じトークンで後から投入や list の検索を行うと、削除されたジョブが
+黙って再作成されることはなく、 ``SUBMIT_TOKEN_JOB_DELETED`` が返されます。そのジョブを再度投入するには、
+新しい投入トークンを使用してください。
 
-The submitted job path should point to the job content root. When the submitted
-artifact is a zip file with one wrapper directory around the job content, the
-wrapper is ignored for submit-token content hashing so a normal
-``zip -r my_job.zip my_job/`` archive matches submitting ``my_job/`` directly.
-Submitting the parent directory that contains ``my_job/`` is different content
-and may conflict when retried with the same token.
+投入するジョブのパスは、ジョブ内容のルートを指す必要があります。投入する成果物が、ジョブ内容を 1 つの
+ラッパーディレクトリで包んだ zip ファイルである場合、投入トークンの内容ハッシュの計算ではそのラッパーが
+無視されます。そのため、通常の ``zip -r my_job.zip my_job/`` によるアーカイブは、 ``my_job/`` を直接投入した
+場合と一致します。 ``my_job/`` を含む親ディレクトリを投入した場合は異なる内容とみなされ、同じトークンで
+リトライすると衝突する可能性があります。
 
-The token is stored only as server-owned submission metadata. It is not written
-to the job's ``meta.json``; that file remains job-owned execution metadata such
-as ``deploy_map``, ``resource_spec``, ``min_clients``, and launcher settings.
-If ``--submit-token`` is omitted, submit behavior is unchanged and each submit
-creates a new job as before. The server still records the submitted job through
-the normal job store and job history, but no retry-safe submit-token record is
-created. The job cannot later be recovered with ``job list --submit-token``
-unless the original submit used a caller-provided token.
+トークンは、サーバーが所有する投入メタデータとしてのみ保存されます。ジョブの ``meta.json`` には書き込まれず、
+このファイルは ``deploy_map`` 、 ``resource_spec`` 、 ``min_clients`` 、ランチャー設定といった、ジョブが
+所有する実行メタデータのままです。 ``--submit-token`` を省略した場合、投入の動作は変わらず、各投入は
+従来どおり新しいジョブを作成します。サーバーは通常のジョブストアおよびジョブ履歴を通じて投入されたジョブを
+記録しますが、リトライ安全な投入トークンのレコードは作成されません。元の投入で呼び出し側が用意したトークンが
+使われていない限り、そのジョブを後から ``job list --submit-token`` で復旧することはできません。
 
-After a client-side timeout or session loss, recover the accepted job with
-``job list --submit-token``:
+クライアント側のタイムアウトやセッションの喪失が発生した後は、 ``job list --submit-token`` で受理済みの
+ジョブを復旧します。
 
 .. code-block:: shell
 
    nvflare job list --study cancer_research --submit-token "$TOKEN" --format json
 
-If the recovered job was deleted, JSON output uses the normal error envelope:
+復旧対象のジョブが削除されていた場合、JSON 出力は通常のエラーエンベロープを使用します。
 
 .. code-block:: json
 
@@ -197,16 +188,16 @@ If the recovered job was deleted, JSON output uses the normal error envelope:
      }
    }
 
-``--submit-token`` is only for ``job submit`` and ``job list``. To monitor,
-download, abort, delete, or clone the recovered job, first resolve the
-``job_id`` with ``job list --submit-token`` and then use the normal job command.
+``--submit-token`` は ``job submit`` と ``job list`` のみで使用できます。復旧したジョブを監視、
+ダウンロード、中断、削除、クローンするには、まず ``job list --submit-token`` で ``job_id`` を解決し、
+その後に通常のジョブコマンドを使用してください。
 
-***********************
-Wait or Monitor a Job
-***********************
+***********************************
+ジョブの待機または監視
+***********************************
 
-Use ``nvflare job wait`` when a script or agent needs one final command result
-after the job reaches a terminal state:
+スクリプトやエージェントが、ジョブが終端状態に達した後に 1 つの最終的なコマンド結果を必要とする場合は、
+``nvflare job wait`` を使用します。
 
 .. code-block:: shell
 
@@ -214,40 +205,39 @@ after the job reaches a terminal state:
    nvflare job wait <job_id> --study cancer_research
    nvflare job wait <job_id> --timeout 3600 --interval 5 --format json
 
-``job wait`` accepts:
+``job wait`` は次の引数を受け付けます。
 
-- ``job_id``: job ID to wait for.
-- ``--timeout``: max seconds to wait; must be greater than or equal to ``0``.
-  Default: ``0`` (no timeout).
-- ``--interval``: poll interval in seconds; must be greater than ``0``.
-  Default: ``2``.
-- ``--study``: wait for a job in a named study. Use the same study name used at
-  submission time. If omitted, the literal study name ``default`` is used.
-- ``--schema``: print the command schema as JSON and exit.
+- ``job_id``: 待機対象のジョブ ID です。
+- ``--timeout``: 待機する最大秒数です。 ``0`` 以上である必要があります。
+  既定値: ``0`` （タイムアウトなし）。
+- ``--interval``: ポーリング間隔（秒）です。 ``0`` より大きい必要があります。
+  既定値: ``2`` 。
+- ``--study``: 名前付きスタディ内のジョブを待機します。投入時に使用したものと同じスタディ名を指定して
+  ください。省略した場合は、リテラルのスタディ名 ``default`` が使用されます。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Unlike ``job monitor``, ``job wait`` is the single-envelope automation command.
-It does not stream progress lines. In JSON mode, stdout contains exactly one
-final JSON envelope with the terminal job status and metadata; human-readable
-diagnostics still go to stderr.
+``job monitor`` とは異なり、 ``job wait`` は単一エンベロープの自動化向けコマンドです。進捗行を
+ストリーミングすることはありません。JSON モードでは、標準出力には終端のジョブステータスとメタデータを
+含む最終的な JSON エンベロープがちょうど 1 つだけ出力され、人間向けの診断情報は引き続き標準エラー出力に
+送られます。
 
-Exit behavior:
+終了時の動作:
 
-- exit code ``0``: job finished successfully.
-- exit code ``1``: job reached a terminal failure state, such as ``FAILED``,
-  ``FINISHED_EXCEPTION``, ``ABORTED``, or ``ABANDONED``.
-- exit code ``2``: connection, authentication, or authorization failure prevented waiting.
-- exit code ``3``: wait timeout.
+- 終了コード ``0``: ジョブが正常に完了しました。
+- 終了コード ``1``: ジョブが ``FAILED`` 、 ``FINISHED_EXCEPTION`` 、 ``ABORTED`` 、 ``ABANDONED`` などの
+  終端の失敗状態に達しました。
+- 終了コード ``2``: 接続、認証、または認可の失敗により待機できませんでした。
+- 終了コード ``3``: 待機がタイムアウトしました。
 
-This enables CI/CD-style chaining without parsing progress output:
+これにより、進捗出力を解析することなく CI/CD 形式の連結が可能になります。
 
 .. code-block:: shell
 
    JOB=$(nvflare job submit -j ./my_job --format json | jq -r .data.job_id)
    nvflare job wait $JOB --format json && nvflare job download $JOB
 
-Use ``nvflare job monitor`` when a human wants progress updates while waiting.
-It streams status lines to stderr and returns the final result when the job
-reaches a terminal state:
+待機中に人間が進捗の更新を確認したい場合は、 ``nvflare job monitor`` を使用します。ステータス行を標準
+エラー出力にストリーミングし、ジョブが終端状態に達したときに最終結果を返します。
 
 .. code-block:: shell
 
@@ -255,88 +245,86 @@ reaches a terminal state:
    nvflare job monitor <job_id> --study cancer_research
    nvflare job monitor <job_id> --timeout 3600 --format jsonl
 
-Monitor options:
+monitor のオプション:
 
-- ``job_id``: job ID to monitor.
-- ``--timeout``: max seconds to wait; must be greater than or equal to ``0``.
-  Default: ``0`` (no timeout).
-- ``--interval``: poll interval in seconds; must be greater than ``0``.
-  Default: ``2``.
-- ``--study``: monitor a job in a named study. Use the same study name used
-  at submission time. If omitted, the literal study name ``default`` is used.
-- ``--stats-target``: where to fetch stats from. Choices: ``server``, ``client``, ``all``. Default: ``server``.
-- ``--metric``: extra metric key to surface from stats. Repeatable.
-- ``--schema``: print the command schema as JSON and exit.
+- ``job_id``: 監視対象のジョブ ID です。
+- ``--timeout``: 待機する最大秒数です。 ``0`` 以上である必要があります。
+  既定値: ``0`` （タイムアウトなし）。
+- ``--interval``: ポーリング間隔（秒）です。 ``0`` より大きい必要があります。
+  既定値: ``2`` 。
+- ``--study``: 名前付きスタディ内のジョブを監視します。投入時に使用したものと同じスタディ名を指定して
+  ください。省略した場合は、リテラルのスタディ名 ``default`` が使用されます。
+- ``--stats-target``: 統計情報の取得元です。選択肢: ``server`` 、 ``client`` 、 ``all`` 。既定値: ``server`` 。
+- ``--metric``: 統計情報から表示する追加のメトリックキーです。繰り返し指定できます。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-``job monitor`` exit behavior matches ``job wait``:
+``job monitor`` の終了時の動作は ``job wait`` と同じです。
 
-- exit code ``0``: job finished successfully
-- exit code ``1``: job reached a terminal failure state: ``FAILED``, ``FINISHED_EXCEPTION``, ``ABORTED``, or ``ABANDONED``
-- exit code ``2``: connection, authentication, or authorization failure prevented monitoring
-- exit code ``3``: monitor timeout
+- 終了コード ``0``: ジョブが正常に完了しました
+- 終了コード ``1``: ジョブが終端の失敗状態（ ``FAILED`` 、 ``FINISHED_EXCEPTION`` 、 ``ABORTED`` 、
+  ``ABANDONED`` ）に達しました
+- 終了コード ``2``: 接続、認証、または認可の失敗により監視できませんでした
+- 終了コード ``3``: 監視がタイムアウトしました
 
-For automation that needs progress events, use ``--format jsonl``. Each stdout
-line is one complete JSON object. Progress events include ``terminal: false``;
-the final event always includes ``terminal: true``. Timeout emits a final event
-with ``status: "TIMEOUT"`` and exits with code ``3``. Successful terminal job
-statuses such as ``FINISHED_OK`` are normalized to ``status: "COMPLETED"`` and
-the raw server status is preserved in ``job_status``. Connection,
-authentication, and authorization failures emit a terminal error event with
-``status: "error"`` and the specific code in ``error_code``.
+進捗イベントを必要とする自動化では ``--format jsonl`` を使用します。標準出力の各行が 1 つの完全な JSON
+オブジェクトになります。進捗イベントには ``terminal: false`` が含まれ、最終イベントには常に
+``terminal: true`` が含まれます。タイムアウトの場合は ``status: "TIMEOUT"`` を持つ最終イベントを出力し、
+終了コード ``3`` で終了します。 ``FINISHED_OK`` のような成功時の終端ジョブステータスは
+``status: "COMPLETED"`` に正規化され、サーバーの生のステータスは ``job_status`` に保持されます。接続、
+認証、認可の失敗では、 ``status: "error"`` と具体的なコードを ``error_code`` に含む終端のエラーイベントが
+出力されます。
 
-Example JSONL terminal event:
+JSONL の終端イベントの例:
 
 .. code-block:: json
 
    {"schema_version":"1","event":"terminal","job_id":"abc123","status":"COMPLETED","job_status":"FINISHED_OK","terminal":true}
 
-*********************
-List and Inspect Jobs
-*********************
+*******************************
+ジョブの一覧表示と確認
+*******************************
 
-List jobs currently known to the server:
+現在サーバーが把握しているジョブを一覧表示します。
 
 .. code-block:: shell
 
    nvflare job list
 
-Common list filters:
+よく使う list のフィルタ:
 
-- ``-n, --name``: filter by job name prefix.
-- ``-i, --id``: filter by job ID prefix.
-- ``-r, --reverse``: reverse sort order.
-- ``-m, --max``: maximum number of results to return.
-- ``--study``: list jobs from a named study. If omitted, the literal study name
-  ``default`` is used. Values such as ``all`` are passed through to the server
-  unchanged.
-- ``--submit-token``: find the job associated with a retry-safe submit token in
-  the selected study. This is the recovery path after submitting with
-  ``--submit-token``.
-- ``--schema``: print the command schema as JSON and exit.
+- ``-n, --name``: ジョブ名のプレフィックスで絞り込みます。
+- ``-i, --id``: ジョブ ID のプレフィックスで絞り込みます。
+- ``-r, --reverse``: ソート順を逆にします。
+- ``-m, --max``: 返す結果の最大件数です。
+- ``--study``: 名前付きスタディのジョブを一覧表示します。省略した場合は、リテラルのスタディ名
+  ``default`` が使用されます。 ``all`` のような値はそのままサーバーに渡されます。
+- ``--submit-token``: 選択されたスタディ内で、リトライ安全な投入トークンに紐づくジョブを検索します。
+  これは ``--submit-token`` を使って投入した後の復旧経路です。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Retrieve metadata for a single job:
+単一のジョブのメタデータを取得します。
 
 .. code-block:: shell
 
    nvflare job meta <job_id>
    nvflare job meta <job_id> --study cancer_research
 
-Use metadata to inspect job identity, lifecycle fields, and server-reported
-status information after submission. Human output is grouped into a concise
-summary; use ``--format json`` to retrieve the full raw metadata envelope.
+メタデータは、投入後にジョブの識別情報、ライフサイクルのフィールド、サーバーが報告するステータス情報を
+確認するために使用します。人間向けの出力は簡潔なサマリーにまとめられます。生のメタデータエンベロープ全体を
+取得するには ``--format json`` を使用してください。
 
-All job-ID lookup and control commands accept ``--study``. Use the same study
-name used at submission time. If omitted, the command searches the literal
-``default`` study. If the job is not found, the error reports which study was
-searched and suggests retrying with ``--study``.
+ジョブ ID による検索および制御を行うすべてのコマンドは ``--study`` を受け付けます。投入時に使用したものと
+同じスタディ名を指定してください。省略した場合、コマンドはリテラルの ``default`` スタディを検索します。
+ジョブが見つからない場合、エラーはどのスタディを検索したかを報告し、 ``--study`` を付けて再試行するよう
+提案します。
 
-``nvflare job meta`` also supports ``--schema``.
+``nvflare job meta`` も ``--schema`` をサポートします。
 
-******************************
-Download, Clone, Abort, Delete
-******************************
+********************************************
+ダウンロード・クローン・中断・削除
+********************************************
 
-Download job results:
+ジョブの結果をダウンロードします。
 
 .. code-block:: shell
 
@@ -344,27 +332,26 @@ Download job results:
    nvflare job download <job_id> --study cancer_research -o ./downloads
    nvflare job download <job_id> --study cancer_research --force
 
-For automation, use JSON output:
+自動化では JSON 出力を使用します。
 
 .. code-block:: shell
 
    nvflare job download <job_id> -o ./downloads --format json
 
-The job must be in a terminal state before download. For a running job, wait
-first:
+ダウンロードの前に、ジョブは終端状態になっている必要があります。実行中のジョブの場合は、まず待機します。
 
 .. code-block:: shell
 
    nvflare job wait <job_id> --study cancer_research
    nvflare job download <job_id> --study cancer_research
 
-The local destination defaults to ``./<job_id>``. If that directory already
-exists, the command fails unless ``--force`` is specified. Use ``--force`` only
-when replacing the existing local download is intended.
+ローカルの保存先の既定値は ``./<job_id>`` です。そのディレクトリが既に存在する場合、 ``--force`` を
+指定しない限りコマンドは失敗します。 ``--force`` は、既存のローカルダウンロードを置き換えることが意図
+されている場合にのみ使用してください。
 
-Human output remains concise and prints only the final download location. Use
-``--format json`` when agents or scripts need paths to downloaded artifacts. The
-JSON success response reports local paths on the machine running the CLI:
+人間向けの出力は簡潔なままで、最終的なダウンロード先のみを表示します。エージェントやスクリプトが
+ダウンロードされた成果物のパスを必要とする場合は ``--format json`` を使用してください。JSON の成功
+レスポンスは、CLI を実行しているマシン上のローカルパスを報告します。
 
 .. code-block:: json
 
@@ -389,25 +376,23 @@ JSON success response reports local paths on the machine running the CLI:
      }
    }
 
-``download_path`` is the final local directory returned by the download API.
-``path`` is a backward-compatible alias for ``download_path`` when present.
+``download_path`` は、ダウンロード API が返す最終的なローカルディレクトリです。
+``path`` は、存在する場合の ``download_path`` の後方互換エイリアスです。
 
-``artifacts`` contains local paths for files found under ``download_path``.
-Agents and scripts should use ``data.artifacts.*`` as the source of truth for
-consumable files instead of assuming a server workspace layout or constructing
-paths from ``download_path``. ``missing_artifacts`` lists expected categories,
-such as model, metrics, or client logs, that were not found locally. Missing
-artifacts do not make the command fail when the download itself succeeds.
-``round_metrics`` is reported when the per-round JSONL artifact exists; it is
-optional because older jobs and jobs without aggregation metrics do not create it.
+``artifacts`` には、 ``download_path`` の下で見つかったファイルのローカルパスが含まれます。エージェントや
+スクリプトは、サーバーのワークスペースレイアウトを前提としたり ``download_path`` からパスを組み立てたり
+するのではなく、利用可能なファイルの正となる情報源として ``data.artifacts.*`` を使用してください。
+``missing_artifacts`` には、モデル、メトリクス、クライアントログなど、ローカルに見つからなかった想定
+カテゴリが列挙されます。ダウンロード自体が成功していれば、成果物が欠けていてもコマンドが失敗することは
+ありません。 ``round_metrics`` は、ラウンドごとの JSONL 成果物が存在する場合に報告されます。古いジョブや
+集約メトリクスを持たないジョブでは作成されないため、これは任意です。
 
-Global-model discovery uses server provenance rather than the order of files in
-the download tree. Common model filenames are considered only in canonical
-server-owned locations such as ``workspace``, ``server``, and ``app_server``;
-client checkpoints are not labeled as the global model. Jobs that save the global
-model under a custom filename can place ``artifact_manifest.json`` in a canonical
-server-owned location. The manifest requires schema version ``1`` and a path
-relative to the manifest:
+グローバルモデルの検出には、ダウンロードツリー内のファイルの順序ではなく、サーバーのプロベナンスが
+使用されます。一般的なモデルのファイル名は、 ``workspace`` 、 ``server`` 、 ``app_server`` といった
+サーバーが所有する正規の場所においてのみ考慮され、クライアントのチェックポイントがグローバルモデルとして
+ラベル付けされることはありません。グローバルモデルをカスタムのファイル名で保存するジョブは、サーバーが
+所有する正規の場所に ``artifact_manifest.json`` を配置できます。マニフェストにはスキーマバージョン ``1``
+と、マニフェストからの相対パスが必要です。
 
 .. code-block:: json
 
@@ -418,30 +403,30 @@ relative to the manifest:
      }
    }
 
-Manifest paths must stay inside the downloaded job tree and cannot traverse
-symlinks. When a manifest is present, it is authoritative; the CLI does not fall
-back to filename guessing if the manifest is invalid or its target is absent.
+マニフェストのパスは、ダウンロードされたジョブツリーの内部に留まる必要があり、シンボリックリンクを
+たどることはできません。マニフェストが存在する場合はそれが正となり、マニフェストが不正であったり対象が
+存在しなかったりしても、CLI はファイル名の推測にフォールバックしません。
 
-When ``artifact_discovery`` is ``skipped``, the CLI did not have a local
-directory to inspect, so ``artifacts`` and ``missing_artifacts`` are ``null``
-instead of claiming that expected artifacts were verified absent.
+``artifact_discovery`` が ``skipped`` の場合、CLI には検査対象のローカルディレクトリがなかったため、
+想定される成果物が存在しないことを検証済みであると主張する代わりに、 ``artifacts`` と
+``missing_artifacts`` は ``null`` になります。
 
-The server download protocol is unchanged; these artifact paths are computed
-locally by the CLI after the result has been downloaded.
+サーバーのダウンロードプロトコルは変更されていません。これらの成果物のパスは、結果がダウンロードされた後に
+CLI がローカルで計算したものです。
 
-Clone an existing job:
+既存のジョブをクローンします。
 
 .. code-block:: shell
 
    nvflare job clone <job_id>
    nvflare job clone <job_id> --study cancer_research
 
-``nvflare job clone`` clones the full server-side job for reuse. The current
-CLI surface takes the source ``job_id``, optional ``--study``, and ``--schema``.
-It returns ``source_job_id`` and ``new_job_id``. Use the returned ``new_job_id``
-to monitor or manage the cloned job.
+``nvflare job clone`` は、再利用のためにサーバー側のジョブ全体をクローンします。現在の CLI のインター
+フェースは、クローン元の ``job_id`` 、任意の ``--study`` 、 ``--schema`` を受け取ります。戻り値として
+``source_job_id`` と ``new_job_id`` を返します。クローンされたジョブを監視・管理するには、返された
+``new_job_id`` を使用してください。
 
-Abort a running job:
+実行中のジョブを中断します。
 
 .. code-block:: shell
 
@@ -449,7 +434,7 @@ Abort a running job:
    nvflare job abort <job_id> --study cancer_research
    nvflare job abort <job_id> --force
 
-Delete a job:
+ジョブを削除します。
 
 .. code-block:: shell
 
@@ -457,24 +442,21 @@ Delete a job:
    nvflare job delete <job_id> --study cancer_research
    nvflare job delete <job_id> --force
 
-Notes:
+注意事項:
 
-- ``abort`` and ``delete`` support ``--force`` to skip the confirmation prompt.
-- ``abort`` and ``delete`` search the selected study. If omitted, ``default``
-  is used.
-- ``delete --format json`` returns ``job_id`` and
-  ``submit_records_marked_deleted``. When this count is nonzero, future use of
-  the same submit token returns ``SUBMIT_TOKEN_JOB_DELETED``.
-- ``download`` supports ``-o, --output-dir`` to choose the destination
-  directory. Default: job-specific directory under the current working
-  directory (``./<job_id>``).
-- ``clone``, ``download``, ``abort``, and ``delete`` all support ``--schema``.
+- ``abort`` と ``delete`` は、確認プロンプトをスキップする ``--force`` をサポートします。
+- ``abort`` と ``delete`` は、選択されたスタディを検索します。省略した場合は ``default`` が使用されます。
+- ``delete --format json`` は ``job_id`` と ``submit_records_marked_deleted`` を返します。この件数が
+  0 でない場合、同じ投入トークンを今後使用すると ``SUBMIT_TOKEN_JOB_DELETED`` が返されます。
+- ``download`` は、保存先ディレクトリを選択する ``-o, --output-dir`` をサポートします。既定値は、
+  カレントワーキングディレクトリ配下のジョブ固有のディレクトリ（ ``./<job_id>`` ）です。
+- ``clone`` 、 ``download`` 、 ``abort`` 、 ``delete`` はいずれも ``--schema`` をサポートします。
 
-**************
-Observability
-**************
+**********************
+オブザーバビリティ
+**********************
 
-Retrieve job logs from the server-side log store:
+サーバー側のログストアからジョブのログを取得します。
 
 .. code-block:: shell
 
@@ -486,56 +468,49 @@ Retrieve job logs from the server-side log store:
    nvflare job logs <job_id> --site all --max-bytes 200000
    nvflare job logs <job_id> --study cancer_research
 
-``job logs`` accepts:
+``job logs`` は次の引数を受け付けます。
 
-- ``--study``: retrieve logs for a job in a named study. If omitted, ``job
-  logs`` searches the default study. Use the same study name used for
-  ``job submit`` or ``job list``.
-- ``--site server``: return the server job log. This is the default.
-- ``--site <client_name>``: return that client's job log after it has been
-  streamed to and stored by the server.
-- ``--site all``: return the server log and all client logs currently available
-  in the server-side log store. If a known job site does not have stored log
-  content, the JSON response includes it under ``unavailable``.
-- ``--sites`` is accepted as an alias for ``--site`` but still selects one
-  target value.
-- ``--tail N``: return at most the last N log lines per site.
-- ``--since timestamp``: return timestamped log lines at or after the timestamp
-  when line timestamps are parseable. Continuation lines following an included
-  timestamped line are included.
-- ``--max-bytes N``: return at most N UTF-8 bytes per site.
-- ``job logs`` also supports ``--schema``.
+- ``--study``: 名前付きスタディ内のジョブのログを取得します。省略した場合、 ``job logs`` は既定の
+  スタディを検索します。 ``job submit`` や ``job list`` で使用したものと同じスタディ名を指定してください。
+- ``--site server``: サーバーのジョブログを返します。これが既定です。
+- ``--site <client_name>``: そのクライアントのジョブログを、サーバーにストリーミングされて保存された後に
+  返します。
+- ``--site all``: サーバーのログと、サーバー側のログストアに現在利用可能なすべてのクライアントログを
+  返します。既知のジョブサイトに保存されたログの内容がない場合、JSON レスポンスではそのサイトが
+  ``unavailable`` の下に含まれます。
+- ``--sites`` は ``--site`` のエイリアスとして受け付けられますが、選択できる対象は 1 つの値のみです。
+- ``--tail N``: サイトごとに、最後の N 行までのログを返します。
+- ``--since timestamp``: 行のタイムスタンプが解析可能な場合に、そのタイムスタンプ以降のタイムスタンプ付き
+  ログ行を返します。含まれるタイムスタンプ付きの行に続く継続行も含まれます。
+- ``--max-bytes N``: サイトごとに、最大 N UTF-8 バイトまでを返します。
+- ``job logs`` も ``--schema`` をサポートします。
 
-If no explicit bound is provided, ``job logs`` returns at most the last 500
-lines per site. JSON output includes ``logs_truncated``, per-site availability
-and line/byte counts under ``sites``, and the applied ``filters``.
-When any of ``--tail``, ``--since``, or ``--max-bytes`` is provided, the
-default 500-line tail is disabled and ``filters.default_tail_applied`` is
-``false``. The explicit bounds are applied in this order: ``--since``,
-``--tail``, then ``--max-bytes``.
+明示的な上限が指定されていない場合、 ``job logs`` はサイトごとに最後の 500 行までを返します。JSON 出力には
+``logs_truncated`` 、 ``sites`` の下のサイトごとの利用可否と行数／バイト数、および適用された ``filters``
+が含まれます。 ``--tail`` 、 ``--since`` 、 ``--max-bytes`` のいずれかが指定された場合、既定の 500 行の
+tail は無効化され、 ``filters.default_tail_applied`` は ``false`` になります。明示的な上限は
+``--since`` 、 ``--tail`` 、 ``--max-bytes`` の順に適用されます。
 
-The bound options are applied by the CLI after the server returns the stored
-log content. They bound the printed or JSON output from ``nvflare job logs``;
-they do not reduce the amount of log content requested from the server. If a
-large log is already limited by the server-side maximum response size before it
-reaches the CLI, these client-side bounds are applied to that returned content.
+これらの上限オプションは、サーバーが保存されたログの内容を返した後に CLI 側で適用されます。これらは
+``nvflare job logs`` が表示または JSON 出力する内容を制限するものであり、サーバーに要求するログの量を
+減らすものではありません。大きなログが CLI に届く前にサーバー側の最大レスポンスサイズで既に制限されている
+場合、これらのクライアント側の上限は返された内容に対して適用されます。
 
-In normal human output mode, ``job logs`` prints the log text directly. With
-``--site all``, each site is separated by a short header. Use ``--format json``
-when a structured ``logs`` dictionary is needed for automation.
+通常の人間向け出力モードでは、 ``job logs`` はログのテキストをそのまま表示します。 ``--site all`` を
+指定した場合、各サイトは短いヘッダーで区切られます。自動化のために構造化された ``logs`` の辞書が必要な
+場合は ``--format json`` を使用してください。
 
-``job logs`` does not provide a built-in ``grep`` option. Pipe or post-process
-the returned content when text matching is needed.
+``job logs`` には組み込みの ``grep`` オプションはありません。テキストのマッチングが必要な場合は、返された
+内容をパイプするか後処理してください。
 
-Client logs are not fetched from client machines at command time. The command
-asks the server for logs that were already streamed to the server during the
-job. Streamed client logs are read from the server job workspace, where they are
-stored as ``<client_name>/log.txt`` or ``<client_name>/log.json`` depending on
-the configured log streamer; after the job workspace is archived, the same files
-are read from the stored job ``workspace`` artifact.
+クライアントのログは、コマンドの実行時にクライアントのマシンから取得されるわけではありません。このコマンドは、
+ジョブの実行中に既にサーバーへストリーミングされていたログをサーバーに要求します。ストリーミングされた
+クライアントのログは、サーバーのジョブワークスペースから読み込まれます。そこでは、構成されたログストリーマーに
+応じて ``<client_name>/log.txt`` または ``<client_name>/log.json`` として保存されます。ジョブワークスペースが
+アーカイブされた後は、保存されたジョブの ``workspace`` 成果物から同じファイルが読み込まれます。
 
-To enable client job log streaming in a portable recipe job, use the Recipe log
-streaming helper:
+ポータブルな Recipe ジョブでクライアントのジョブログのストリーミングを有効にするには、Recipe のログ
+ストリーミングヘルパーを使用します。
 
 .. code-block:: python
 
@@ -545,19 +520,17 @@ streaming helper:
    # Or stream a text log file instead.
    recipe.enable_log_streaming("log.txt")
 
-System-level logging configuration in ``resources.json.default`` is separate
-from this job-level opt-in. Some deployments may configure a server-side
-log receiver globally, but using the Recipe helper makes the job self-contained
-across POC and production deployments.
+``resources.json.default`` にあるシステムレベルのログ設定は、このジョブレベルのオプトインとは別のものです。
+デプロイメントによっては、サーバー側のログレシーバーをグローバルに構成している場合もありますが、Recipe の
+ヘルパーを使用すると、POC と本番のデプロイメントの両方でジョブが自己完結したものになります。
 
-``nvflare job logs --format json`` uses ``log.json`` when available and falls
-back to ``log.txt`` otherwise. Human output prints readable text; if only
-``log.json`` is available, the CLI renders the JSON log records as text for
-display.
+``nvflare job logs --format json`` は、利用可能な場合は ``log.json`` を使用し、そうでない場合は
+``log.txt`` にフォールバックします。人間向けの出力は読みやすいテキストを表示します。 ``log.json`` のみが
+利用可能な場合、CLI は表示のために JSON のログレコードをテキストとして描画します。
 
-The ``examples/hello-world/hello-log-streaming`` example shows this pattern.
+``examples/hello-world/hello-log-streaming`` のサンプルは、このパターンを示しています。
 
-Change logging configuration for a running job:
+実行中のジョブのログ設定を変更します。
 
 .. code-block:: shell
 
@@ -566,75 +539,73 @@ Change logging configuration for a running job:
    nvflare job log-config <job_id> msg_only
    nvflare job log-config <job_id> DEBUG --study cancer_research
 
-``job log-config`` accepts:
+``job log-config`` は次の引数を受け付けます。
 
-- positional ``level``: ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``
-- log modes: ``concise``, ``msg_only``, ``full``, ``verbose``, ``reload``
-- ``--site``: target site name or ``all``. Default: ``all``; specifying
-  ``--site all`` explicitly is equivalent to omitting it.
-- ``--study``: study containing the job. If omitted, ``default`` is used.
-- ``--schema``: print the command schema as JSON and exit
+- 位置引数 ``level``: ``DEBUG`` 、 ``INFO`` 、 ``WARNING`` 、 ``ERROR`` 、 ``CRITICAL``
+- ログモード: ``concise`` 、 ``msg_only`` 、 ``full`` 、 ``verbose`` 、 ``reload``
+- ``--site``: 対象のサイト名または ``all`` です。既定値は ``all`` で、 ``--site all`` を明示的に
+  指定することは省略した場合と同等です。
+- ``--study``: ジョブが含まれるスタディです。省略した場合は ``default`` が使用されます。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します
 
-Show running job statistics:
+実行中のジョブの統計情報を表示します。
 
 .. code-block:: shell
 
    nvflare job stats <job_id>
    nvflare job stats <job_id> --study cancer_research
 
-``job stats`` supports ``--study`` to select the study containing the job, and
-``--site`` to target a specific site or ``all``. The default site is ``all``,
-so specifying ``--site all`` explicitly is equivalent to omitting it.
-It also supports ``--schema``.
+``job stats`` は、ジョブが含まれるスタディを選択する ``--study`` と、特定のサイトまたは ``all`` を対象に
+する ``--site`` をサポートします。既定のサイトは ``all`` であるため、 ``--site all`` を明示的に指定する
+ことは省略した場合と同等です。
+また ``--schema`` もサポートします。
 
-***************************
-Recipe-Based Job Creation
-***************************
+***********************************
+Recipe ベースのジョブ作成
+***********************************
 
-The recommended way to create a new job folder is through the Job Recipe API or
-an example ``job.py`` script that supports ``--export``:
+新しいジョブフォルダを作成する推奨の方法は、Job Recipe API を使用するか、 ``--export`` をサポートする
+サンプルの ``job.py`` スクリプトを使用することです。
 
 .. code-block:: shell
 
    python job.py --export --export-dir /tmp/nvflare/hello-pt
    nvflare job submit -j /tmp/nvflare/hello-pt
 
-To discover built-in recipes, use:
+組み込みの recipe を探索するには、次を使用します。
 
 .. code-block:: shell
 
    nvflare recipe list
 
-Deprecated commands:
+非推奨のコマンド:
 
-- ``nvflare job create``: retained for compatibility. Prefer ``python job.py --export`` followed by ``nvflare job submit``.
-- ``nvflare job list_templates``: use ``nvflare recipe list``.
-- ``nvflare job show_variables``: use the Job Recipe API.
+- ``nvflare job create``: 互換性のために残されています。 ``python job.py --export`` の後に ``nvflare job submit`` を実行する方法を推奨します。
+- ``nvflare job list_templates``: ``nvflare recipe list`` を使用してください。
+- ``nvflare job show_variables``: Job Recipe API を使用してください。
 
-Current deprecation notes:
+現時点の非推奨に関する注意:
 
-- ``nvflare job create`` still exposes template- and config-oriented arguments for
-  legacy workflows.
-- ``nvflare job list_templates`` and ``nvflare job show_variables`` remain
-  available for backward compatibility but are not the preferred interfaces for
-  recipe discovery or job-variable inspection.
+- ``nvflare job create`` は、レガシーなワークフローのために、テンプレートおよび設定を指向した引数を
+  引き続き公開しています。
+- ``nvflare job list_templates`` と ``nvflare job show_variables`` は後方互換性のために引き続き利用
+  できますが、recipe の探索やジョブ変数の確認のための推奨インターフェースではありません。
 
-*********************
-JSON Output and Help
-*********************
+*************************
+JSON 出力とヘルプ
+*************************
 
-Add ``--format json`` anywhere after the subcommand for machine-readable output:
+機械可読な出力を得るには、サブコマンドより後の任意の位置に ``--format json`` を追加します。
 
 .. code-block:: shell
 
    nvflare job meta <job_id> --format json
 
-``--format json`` may be placed anywhere in the command after the subcommand
-name. stdout contains a single JSON envelope; human-readable progress and
-diagnostics go to stderr.
+``--format json`` は、サブコマンド名より後であればコマンド内のどこに置いても構いません。標準出力には単一の
+JSON エンベロープが出力され、人間向けの進捗表示と診断情報は標準エラー出力に送られます。
 
-Use ``--schema`` for machine-readable command discovery. ``--schema`` always
-returns JSON regardless of ``--format``, so the flag is not needed with it:
+機械可読なコマンド探索には ``--schema`` を使用します。 ``--schema`` は ``--format`` の指定に関係なく常に
+JSON を返すため、このフラグを併用する必要はありません。
 
 .. code-block:: shell
 
@@ -642,14 +613,13 @@ returns JSON regardless of ``--format``, so the flag is not needed with it:
    nvflare job wait --schema
    nvflare job monitor --schema
 
-Schema fields such as ``mutating`` and ``idempotent`` describe the command as a
-whole, not the effective behavior of one invocation. For example, ``job submit``
-reports ``idempotent: false`` because plain submission can create duplicate jobs
-when retried after a timeout. It also reports ``retry_token.supported: true`` to
-show that ``--submit-token`` makes retries safe for identical job content in the
-same study by the same submitter. ``job list --submit-token`` is different:
-there ``--submit-token`` is only a lookup filter, so ``retry_token.supported``
-remains ``false``.
+``mutating`` や ``idempotent`` といったスキーマのフィールドは、1 回の呼び出しの実効的な振る舞いではなく、
+コマンド全体の性質を表します。たとえば ``job submit`` は ``idempotent: false`` と報告します。これは、
+単純な投入ではタイムアウト後にリトライすると重複したジョブが作成されうるためです。また
+``retry_token.supported: true`` も報告し、 ``--submit-token`` によって、同じ投入者が同じスタディに同一の
+ジョブ内容を投入する場合のリトライが安全になることを示します。 ``job list --submit-token`` は異なります。
+そちらでの ``--submit-token`` は単なる検索フィルタであるため、 ``retry_token.supported`` は ``false``
+のままです。
 
-Human-readable argument errors print command help first, followed by the
-specific error and hint. JSON mode prints only the JSON error envelope.
+人間向けの引数エラーでは、まずコマンドのヘルプが表示され、その後に具体的なエラーとヒントが表示されます。
+JSON モードでは JSON のエラーエンベロープのみが出力されます。

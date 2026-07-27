@@ -3,17 +3,34 @@
 .. _researcher_area:
 
 ####################
-Researcher Area
+研究者向けエリア
 ####################
 
 FedSM
 ======
-The FedSM example illustrates the personalized federated learning algorithm FedSM accepted to CVPR 2022. It bridges the different data distributions across clients via a SoftPull mechanism and utilizes a Super Model. A model selector is trained to predict the belongings of a particular sample to any of the clients’ personalized models or global model. The training of this model also illustrates a challenging federated learning scenario with extreme label-imbalance, where each local training is only based on a single label towards the optimization for classification of a number of classes equivalent to the number of clients. In this case, the higher-order moments of the Adam optimizer are also averaged and synced together with model updates.
+FedSM のサンプルは、CVPR 2022 に採択されたパーソナライズド連合学習アルゴリズム FedSM を示すものです。
+SoftPull と呼ばれる仕組みによってクライアント間で異なるデータ分布を橋渡しし、Super Model を活用します。
+ある特定のサンプルが、いずれかのクライアントのパーソナライズドモデルとグローバルモデルのどちらに
+属するかを予測するモデルセレクタが学習されます。このモデルの学習は、極端なラベル不均衡を伴う
+難しい連合学習のシナリオも示しています。そこでは、各ローカル学習が単一のラベルのみに基づいて行われる
+一方で、クライアント数と同じ数のクラスの分類に向けた最適化を行う必要があります。この場合、Adam
+オプティマイザの高次モーメントについても、モデル更新と併せて平均化および同期が行われます。
 
 Auto-FedRL
 ===========
-The Auto-FedRL example implements the automated machine learning solution described in Auto-FedRL: Federated Hyperparameter Optimization for Multi-institutional Medical Image Segmentation accepted to ECCV 2022. Conventional hyperparameter optimization algorithms are often impractical in real-world FL applications as they involve numerous training trials, which are often not affordable with limited computing budgets. Auto-FedRL proposes an efficient reinforcement learning (RL)-based federated hyperparameter optimization algorithm, in which an online RL agent can dynamically adjust the hyperparameters of each client based on the current training progress.
+Auto-FedRL のサンプルは、ECCV 2022 に採択された Auto-FedRL: Federated Hyperparameter Optimization for
+Multi-institutional Medical Image Segmentation で述べられている自動機械学習のソリューションを実装した
+ものです。従来のハイパーパラメータ最適化アルゴリズムは、多数の学習試行を伴うため、限られた計算予算では
+現実的でないことが多く、実世界の連合学習アプリケーションではしばしば実用に耐えません。Auto-FedRL は、
+効率的な強化学習 (RL) ベースの連合ハイパーパラメータ最適化アルゴリズムを提案するもので、オンラインの
+RL エージェントが現在の学習の進捗に基づいて各クライアントのハイパーパラメータを動的に調整します。
 
 Quantifying Data Leakage in Federated Learning
 ===============================================
-This research example contains the tools necessary to recreate the chest X-ray experiments described in Do Gradient Inversion Attacks Make Federated Learning Unsafe?, accepted to IEEE Transactions on Medical Imaging. It presents new ways to measure and visualize potential data leakage in FL using a new FLARE filter that can quantify the data leakage for each client and visualize it as a function of the FL training rounds. Quantifying the data leakage in FL can help determine the optimal tradeoffs between privacy-preserving techniques, such as differential privacy, and model accuracy based on quantifiable metrics.
+この研究サンプルには、IEEE Transactions on Medical Imaging に採択された Do Gradient Inversion Attacks
+Make Federated Learning Unsafe? で述べられている胸部 X 線の実験を再現するために必要なツールが含まれて
+います。この研究では、クライアントごとのデータ漏洩を定量化し、それを連合学習の学習ラウンドの関数として
+可視化できる新しい FLARE のフィルタを用いて、連合学習における潜在的なデータ漏洩を測定・可視化する
+新しい方法を提示します。連合学習におけるデータ漏洩を定量化することで、差分プライバシーなどの
+プライバシー保護技術とモデル精度との間の最適なトレードオフを、定量化可能な指標に基づいて判断する
+助けになります。
