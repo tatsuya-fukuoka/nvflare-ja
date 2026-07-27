@@ -1,54 +1,53 @@
 .. _client_controlled_workflows:
 
-###########################
-Client Controlled Workflows
-###########################
+##################################################################
+クライアント制御ワークフロー
+##################################################################
 
-Server-based controlling usually assumes that the server is trusted by all clients since results submitted by the FL clients may contain
-sensitive information (e.g. trained model weights). The assumption that the server is always trusted may not be true. In case that the
-server is not to be trusted, the server must not be involved in communication with sensitive information. To achieve this, NVFlare
-introduces Client Controlled Workflows (CCWF) in order to allow peer-to-peer communication among clients.
+サーバーベースの制御では、通常、FLクライアントが送信する結果に機密情報(例: トレーニング済みのモデル重み)が含まれる可能性があるため、
+サーバーがすべてのクライアントから信頼されていることを前提としています。サーバーが常に信頼できるという前提は、成り立たない場合があります。
+サーバーが信頼できない場合、サーバーは機密情報を含む通信に関与してはなりません。これを実現するために、NVFlareは
+クライアント間のピアツーピア通信を可能にするクライアント制御ワークフロー\ (Client Controlled Workflows: CCWF)\ を導入しています。
 
-A federated learning workflow has two aspects that need to be managed: the overall job status management (health of the client sites) and
-the training logic management (how and when tasks are assigned). In server-controlled workflows, both aspects are managed by the server.
+連合学習のワークフローには、管理すべき2つの側面があります。全体的なジョブステータス管理(クライアントサイトの健全性)と、
+トレーニングロジック管理(タスクをどのように、いつ割り当てるか)です。サーバー制御ワークフローでは、両方の側面をサーバーが管理します。
 
-With client controlled workflows, the learning logic management is done by clients (peers): FL clients conduct the learning control logic
-by communicating with other clients without involving the FL server (peer-to-peer). The server's job is now only for the monitoring of the
-overall job status - in case any abnormal conditions occur (e.g. a client crashes or gets stuck), so the job can be aborted quickly instead
-of running forever.
+クライアント制御ワークフローでは、学習ロジックの管理はクライアント(ピア)によって行われます。FLクライアントは、FLサーバーを介さずに
+他のクライアントと通信することで学習制御ロジックを実行します(ピアツーピア)。サーバーの仕事は、全体的なジョブステータスの監視のみとなります。
+これは、異常な状態(例: クライアントのクラッシュやスタック)が発生した場合に、ジョブを永久に実行し続けるのではなく、
+すみやかに中断できるようにするためです。
 
-Client controlled workflows provide the implementation of:
+クライアント制御ワークフローは、以下の実装を提供します:
 
-    - A general framework for developing client controlled workflows
-    - Three commonly used peer-to-peer workflows:
-        - Cyclic learning
-        - Swarm learning
-        - Cross site model evaluation
+    - クライアント制御ワークフローを開発するための汎用フレームワーク
+    - よく使用される3つのピアツーピアワークフロー:
+        - サイクリック学習(Cyclic learning)
+        - スウォーム学習(Swarm learning)
+        - クロスサイトモデル評価
 
-************************************************
-Client Controlled Workflow Development Framework
-************************************************
-NVFlare is a multi-job system. A job is submitted to the system. The server schedules and deploys the job to all relevant sites (server and
-clients). The framework captures the common patterns for all client controlled workflows:
+****************************************************************************************************
+クライアント制御ワークフロー開発フレームワーク
+****************************************************************************************************
+NVFlareはマルチジョブシステムです。ジョブがシステムに送信されると、サーバーはジョブをスケジュールし、関連するすべてのサイト(サーバーと
+クライアント)にデプロイします。このフレームワークは、すべてのクライアント制御ワークフローに共通するパターンを捉えています:
 
-    - Configuration of the workflow
-    - Synchronization of clients before starting the workflow
-    - Start the workflow from a specified starting point
-    - Monitor overall job progress
-    - End the workflow properly
+    - ワークフローの設定
+    - ワークフロー開始前のクライアントの同期
+    - 指定された開始ポイントからのワークフローの開始
+    - 全体的なジョブ進捗の監視
+    - ワークフローの適切な終了
 
-This framework is implemented with two base classes: :class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` and
-:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController`. 
+このフレームワークは、:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` と
+:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` という2つの基底クラスで実装されています。
 
-Server Side Controller
-======================
+サーバー側コントローラー
+================================================
 
-All FLARE jobs must have a server side controller. With client controlled workflows, the :class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` base class
-implements the job lifecycle management that does not involve any sensitive training information. It is the
-:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` (and its subclasses) that controls the execution of training and
-sensitive data communications.
+すべてのFLAREジョブには、サーバー側のコントローラーが必要です。クライアント制御ワークフローでは、:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` 基底クラスが、
+機密性の高いトレーニング情報を一切扱わないジョブライフサイクル管理を実装しています。トレーニングの実行と
+機密データ通信を制御するのは、:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController`\ (およびそのサブクラス)です。
 
-All client controlled workflows must have a server side controller that extends this base class.
+すべてのクライアント制御ワークフローには、この基底クラスを拡張したサーバー側コントローラーが必要です。
 
 .. code-block:: python
 
@@ -73,69 +72,69 @@ All client controlled workflows must have a server side controller that extends 
             private_p2p: bool = True,
         ):
 
-Init args for ServerSideController
-----------------------------------
+ServerSideControllerの初期化引数
+------------------------------------------------------------
 
-``num_rounds`` - the number of rounds to be performed. This is a workflow config parameter, and will be sent to all clients.
+``num_rounds`` - 実行するラウンド数。これはワークフロー設定パラメータであり、すべてのクライアントに送信されます。
 
-``start_round`` - the starting round number. This is a workflow config parameter, and will be sent to all clients.
+``start_round`` - 開始ラウンド番号。これはワークフロー設定パラメータであり、すべてのクライアントに送信されます。
 
-``task_name_prefix`` - the prefix for task names of this workflow. The workflow requires multiple tasks (e.g. config and start) between the server
-controller and the client controller. The full names of these tasks are <prefix>_config and <prefix>_start. Subclasses may send additional tasks.
-Naming these tasks with a common prefix can make it easier to configure task executors for FL clients: instead of specifying each task name explicitly
-for the client side executor in config_fed_client.json, you can simply specify <prefix>_* for that executor. This will route all tasks with the <prefix>
-to the specified executor.
+``task_name_prefix`` - このワークフローのタスク名のプレフィックス。ワークフローでは、サーバーコントローラーとクライアントコントローラーの間で
+複数のタスク(例: configとstart)が必要です。これらのタスクの完全な名前は<prefix>_configと<prefix>_startです。サブクラスは追加のタスクを送信する場合があります。
+これらのタスクに共通のプレフィックスを付けることで、FLクライアントのタスクエグゼキューターの設定が容易になります。config_fed_client.jsonで
+クライアント側エグゼキューターに各タスク名を明示的に指定する代わりに、そのエグゼキューターに<prefix>_*を指定するだけで済みます。これにより、<prefix>を持つ
+すべてのタスクが指定されたエグゼキューターにルーティングされます。
 
-``participating_clients`` - the names of the clients that will participate in the job. If None, then all clients will be participants.
+``participating_clients`` - ジョブに参加するクライアントの名前。Noneの場合、すべてのクライアントが参加者になります。
 
-``result_clients`` - names of the clients that will receive final learning results. Unlike in server controlled workflows where the final results are sent
-to the server and kept by the server, with client controlled workflows, results will only be kept by clients.
+``result_clients`` - 最終的な学習結果を受け取るクライアントの名前。最終結果がサーバーに送信されサーバーに保持されるサーバー制御ワークフローとは異なり、
+クライアント制御ワークフローでは、結果はクライアントのみが保持します。
 
-``result_clients_policy`` - how to determine result_clients if their names are not explicitly specified. Possible values are:
-  - ``ALL`` - all participating clients
-  - ``ANY`` - any one of the participating clients
-  - ``EMPTY`` - no result_clients
-  - ``DISALLOW`` - does not allow implicit - result_clients must be explicitly specified
+``result_clients_policy`` - result_clientsの名前が明示的に指定されていない場合に、それをどのように決定するか。指定可能な値は次のとおりです:
+  - ``ALL`` - すべての参加クライアント
+  - ``ANY`` - 参加クライアントのうち任意の1つ
+  - ``EMPTY`` - result_clientsなし
+  - ``DISALLOW`` - 暗黙の指定を許可しない - result_clientsを明示的に指定する必要があります
 
-``configure_task_timeout`` - the amount of time to wait for clients' responses to the config task before timeout.
+``configure_task_timeout`` - configタスクに対するクライアントの応答をタイムアウトまで待つ時間。
 
-``starting_client`` - name of the starting client. After all participating clients finished the config task properly, the ServerSideController will send
-the task to start the workflow to the specified starting client.
+``starting_client`` - 開始クライアントの名前。すべての参加クライアントがconfigタスクを正常に完了した後、ServerSideControllerは
+指定された開始クライアントにワークフローを開始するタスクを送信します。
 
-``starting_client_policy`` - how to determine the starting client if the name is not explicitly specified. Possible values are:
-  - ``ANY`` - any one of the participating clients (randomly chosen)
-  - ``EMPTY`` - no starting client
-  - ``DISALLOW`` - does not allow implicit - starting_client must be explicitly specified
+``starting_client_policy`` - 名前が明示的に指定されていない場合に、開始クライアントをどのように決定するか。指定可能な値は次のとおりです:
+  - ``ANY`` - 参加クライアントのうち任意の1つ(ランダムに選択)
+  - ``EMPTY`` - 開始クライアントなし
+  - ``DISALLOW`` - 暗黙の指定を許可しない - starting_clientを明示的に指定する必要があります
 
-``start_task_timeout`` - how long to wait for the starting client to finish the "start" task. If timed out, the job will be aborted. Note that if the
-starting_client is not specified, then no start task will be sent.
+``start_task_timeout`` - 開始クライアントが"start"タスクを完了するまで待つ時間。タイムアウトした場合、ジョブは中断されます。
+starting_clientが指定されていない場合、startタスクは送信されないことに注意してください。
 
-``max_status_report_interval`` - the maximum amount of time allowed for a client to miss a status report. In other words, if a client fails to report
-its status for this much time, the client will be considered in trouble and the job will be aborted.
+``max_status_report_interval`` - クライアントがステータスレポートを欠かすことが許容される最大時間。言い換えると、クライアントがこの時間だけ
+ステータスの報告に失敗した場合、そのクライアントは問題があるとみなされ、ジョブは中断されます。
 
-``progress_timeout``- the maximum amount of time allowed for the workflow to not make any progress. In other words, at least one participating client
-must have made progress during this time. Otherwise, the workflow will be considered to be in trouble and the job will be aborted.
+``progress_timeout`` - ワークフローが進捗しないことが許容される最大時間。言い換えると、この時間内に少なくとも1つの参加クライアントが
+進捗している必要があります。そうでない場合、ワークフローは問題があるとみなされ、ジョブは中断されます。
 
-``end_workflow_timeout`` - timeout for ending workflow message. 
+``end_workflow_timeout`` - ワークフロー終了メッセージのタイムアウト。
 
-ServerSideController processing logic
--------------------------------------
+ServerSideControllerの処理ロジック
+------------------------------------------------------------
 
-The ServerSideController's process logic is as follows:
+ServerSideControllerの処理ロジックは次のとおりです:
 
-    - At the start of the job, the server will broadcast config parameters to all participating clients of the job (the <prefix>_config task). This also serves another purpose: making sure that all clients are ready to run this job. If any client fails to retrieve or process the config before timeout, the job will be aborted.
-    - If the starting_client is specified, the server will send the <prefix>_start task to the starting client. If the starting client fails to start the workflow, the job is aborted.
-    - Waits for the workflow to be completed. During this time, each client should periodically send its status update to the server. If a client fails to send an update for the specified amount of time (max_status_report_interval), the job is aborted. If there is no overall progress from any client for the configured amount of time (progress_timeout), the job is aborted. When a client reports the workflow is all done, the job ends normally.
-    - When the job is ended (aborted or normally), send a message to all clients to end the workflow.
+    - ジョブの開始時に、サーバーはジョブのすべての参加クライアントに設定パラメータをブロードキャストします(<prefix>_configタスク)。これには別の目的もあります。すべてのクライアントがこのジョブを実行する準備ができていることを確認することです。いずれかのクライアントがタイムアウトまでに設定の取得や処理に失敗した場合、ジョブは中断されます。
+    - starting_clientが指定されている場合、サーバーは開始クライアントに<prefix>_startタスクを送信します。開始クライアントがワークフローの開始に失敗した場合、ジョブは中断されます。
+    - ワークフローの完了を待ちます。この間、各クライアントは定期的にステータス更新をサーバーに送信する必要があります。クライアントが指定された時間(max_status_report_interval)内に更新の送信に失敗した場合、ジョブは中断されます。設定された時間(progress_timeout)の間、どのクライアントからも全体的な進捗がない場合、ジョブは中断されます。クライアントがワークフローの完了を報告すると、ジョブは正常に終了します。
+    - ジョブが終了したとき(中断または正常終了)、すべてのクライアントにワークフローを終了するメッセージを送信します。
 
-Client Side Controller
-======================
+クライアント側コントローラー
+====================================================
 
-:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` is the counterpart of the :class:`nvflare.app_common.ccwf.server_ctl.ServerSideController`
-on the client side, implemented as an executor. It collaborates with the ServerSideController to implement job lifecycle management functions
-(configuration and starting of the workflow, report job status updates, etc.).
-In addition, it also provides convenience methods for common functions (e.g. update status, broadcast final results to result receiving clients)
-needed by subclasses that implement concrete workflows.
+:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` は、クライアント側における :class:`nvflare.app_common.ccwf.server_ctl.ServerSideController`
+の対となる存在で、エグゼキューターとして実装されています。ServerSideControllerと連携して、ジョブライフサイクル管理機能
+(ワークフローの設定と開始、ジョブステータス更新の報告など)を実装します。
+さらに、具体的なワークフローを実装するサブクラスが必要とする共通機能(例: ステータス更新、結果受信クライアントへの最終結果のブロードキャスト)
+のための便利なメソッドも提供します。
 
 .. code-block:: python
 
@@ -153,72 +152,71 @@ needed by subclasses that implement concrete workflows.
             allow_busy_task: bool = False,
         ):
 
-Init Args:
-----------
+初期化引数:
+--------------------
 
-``task_name_prefix`` - the prefix for task names of this workflow. Unlike server-controlled workflows, with client controlled workflows, clients send tasks to each other. All such tasks are named with this prefix.
+``task_name_prefix`` - このワークフローのタスク名のプレフィックス。サーバー制御ワークフローとは異なり、クライアント制御ワークフローではクライアントが互いにタスクを送信します。それらのタスクはすべてこのプレフィックスを付けて命名されます。
 
-``learn_task_name`` - this is the name of the task that is typically executed by a learning executor that may have already been implemented. You can use any existing learning executor with client controlled workflows without having to change it. Simply tell the ClientSideController the name of the learning task.
+``learn_task_name`` - 通常、すでに実装済みの学習エグゼキューターが実行するタスクの名前です。既存の学習エグゼキューターを変更することなく、クライアント制御ワークフローで使用できます。学習タスクの名前をClientSideControllerに伝えるだけで済みます。
 
-``persistor_id`` - the ID of the persistor component. The persistor is used to load the initial model and save results (i.e. the best and/or the last model) during the training process. 
+``persistor_id`` - persistorコンポーネントのID。persistorは、初期モデルのロードと、トレーニングプロセス中の結果(すなわち最良モデルおよび/または最終モデル)の保存に使用されます。
 
-``shareable_generator_id`` - the ID of the shareable generator component. The shareable generator is responsible for converting between the learnable object (e.g. a full model) and shareable objects (e.g. the weights to be trained and partial training results like weight diffs).
+``shareable_generator_id`` - shareable generatorコンポーネントのID。shareable generatorは、learnableオブジェクト(例: 完全なモデル)とshareableオブジェクト(例: トレーニング対象の重みや、重み差分のような部分的なトレーニング結果)の間の変換を担当します。
 
-``learn_task_check_interval`` - the interval for checking a new learning task to execute. Learning tasks are executed in a dedicated thread (one task a time), which periodically checks for the learning task to execute.
+``learn_task_check_interval`` - 実行すべき新しい学習タスクをチェックする間隔。学習タスクは専用スレッドで実行され(一度に1タスク)、そのスレッドが定期的に実行すべき学習タスクをチェックします。
 
-``learn_task_ack_timeout`` - the timeout for receiving ack from the client that is assigned the learning task. Learning tasks are assigned from one client to another. When a learning task is received, the receiving client simply queues it for the task execution thread, and then sends an ack to the task sending client. 
+``learn_task_ack_timeout`` - 学習タスクを割り当てられたクライアントからのackを受信するまでのタイムアウト。学習タスクはあるクライアントから別のクライアントに割り当てられます。学習タスクを受信すると、受信側クライアントはそれをタスク実行スレッドのキューに入れ、タスク送信元のクライアントにackを送信します。
 
-``learn_task_abort_timeout`` - the timeout for waiting for the learning task to abort. Under certain circumstances, the currently running learning task needs to be aborted (e.g. when the abort command is received from the user). 
+``learn_task_abort_timeout`` - 学習タスクの中断を待つタイムアウト。特定の状況下では、現在実行中の学習タスクを中断する必要があります(例: ユーザーからabortコマンドを受け取った場合)。
 
-``final_result_ack_timeout`` - the timeout for receiving responses from clients after sending them final results. At the end of the workflow, a client that holds the final results will distribute the final results to all configured "result clients". This arg specifies how long to wait for those clients to acknowledge the recipient of the results.
+``final_result_ack_timeout`` - 最終結果を送信した後、クライアントからの応答を受信するまでのタイムアウト。ワークフローの終了時に、最終結果を保持するクライアントは、設定されたすべての"result clients"に最終結果を配布します。この引数は、それらのクライアントが結果の受領を確認するまでどれだけ待つかを指定します。
 
-``allow_busy_task`` - whether to allow a new learning task to be received while still executing the current learning task. If not allowed, the client will report a fatal error to the server to cause the job to be aborted. If allowed, the current learning task is aborted and the newly received task will be executed.
+``allow_busy_task`` - 現在の学習タスクの実行中に新しい学習タスクの受信を許可するかどうか。許可しない場合、クライアントはサーバーに致命的エラーを報告し、ジョブが中断されます。許可する場合、現在の学習タスクは中断され、新しく受信したタスクが実行されます。
 
-ClientSideController processing logic
--------------------------------------
+ClientSideControllerの処理ロジック
+------------------------------------------------------------
 
-When the "config" task is received, all configuration parameters are validated and processed. If any error is encountered, error code will be returned to the
-server, which will cause the job to be aborted.
+"config"タスクを受信すると、すべての設定パラメータが検証・処理されます。エラーが発生した場合、エラーコードがサーバーに返され、
+ジョブが中断されます。
 
-When the "start" task is received, the start_workflow method (to be implemented by the subclass) is called. If any error is encountered, error code will be
-returned to the server, which will cause the job to be aborted.
+"start"タスクを受信すると、start_workflowメソッド(サブクラスが実装)が呼び出されます。エラーが発生した場合、エラーコードが
+サーバーに返され、ジョブが中断されます。
 
-Each time when trying to get a task from the server, the current job status report is attached to the ``GetTask`` request.
+サーバーからタスクを取得しようとするたびに、現在のジョブステータスレポートが ``GetTask`` リクエストに添付されます。
 
-The :class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` base class provides methods for subclass to update job status. However, job status changes
-are not immediately sent to the server. Status changes are only sent with the GetTask requests, which occur periodically. Therefore, it is possible that the
-subclass updated the job status multiple times before reporting to the server. Only the last status change is reported to the server. This is okay since the
-purpose of status reporting is to let the server know that the job is still progressing.
+:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` 基底クラスは、サブクラスがジョブステータスを更新するためのメソッドを提供します。ただし、ジョブステータスの変更は
+すぐにサーバーに送信されるわけではありません。ステータスの変更は、定期的に発生するGetTaskリクエストと共にのみ送信されます。そのため、サーバーに報告する前に
+サブクラスがジョブステータスを複数回更新する可能性があります。最後のステータス変更のみがサーバーに報告されます。ステータス報告の目的は、
+ジョブがまだ進行中であることをサーバーに知らせることなので、これで問題ありません。
 
-When the end-of-workflow message is received from the server, it stops the execution of the current learning task, if any.
+サーバーからワークフロー終了メッセージを受信すると、実行中の学習タスクがあれば、その実行を停止します。
 
 .. _ccwf_cyclic_learning:
 
-***************
-Cyclic Learning
-***************
+******************************************
+サイクリック学習
+******************************************
 
-With Cyclic Learning, the learning process is done in several rounds. In each round, participating clients do training in turns,
-following a predetermined sequential order. Each client trains from the result received from the previous client in the sequence. 
+サイクリック学習(Cyclic Learning)では、学習プロセスは複数のラウンドで行われます。各ラウンドでは、参加クライアントが、
+あらかじめ決められた順序に従って順番にトレーニングを行います。各クライアントは、シーケンスの前のクライアントから受け取った結果を元にトレーニングします。
 
-The starting client is responsible for the initial model, which is loaded by its configured persistor.
+開始クライアントは初期モデルを担当し、初期モデルは設定されたpersistorによってロードされます。
 
-When the model is received from the previous client, the following logic is executed:
+前のクライアントからモデルを受け取ると、次のロジックが実行されます:
 
-    - Call the configured shareable generator to convert the received model weights to a Learnable object. This Learnable is the current global model. This step may seem unnecessary, but it is an important step, especially when the model is not PyTorch based, where the Learnable object may not be a simple weight dict.
-    - Call the learner executor to execute the training task, which will return its training result.
-    - Call the configured shareable generator to apply the training result to the global model learnable object. This will update the global model. Note that this step is necessary in case that the training result only contains weight diff. Weight diff cannot be sent directly to the next client for training.
-    - If the client is the last leg in the sequence for this round, and this round is the last round, then the training is all done: broadcast the global model to all configured result clients.
-    - If the client is the last leg in the sequence for this round, but this round is not the last round, recompute the client sequence for the next round, based on the configured order policy (fixed or random).
-    - Call the shareable generator to convert the global model to shareable model params. This will extract the model params from the Learnable object (which may or may not be a simple weight dict) for the next client's training.
-    - Send the model params to the next client in the sequence.
+    - 設定されたshareable generatorを呼び出して、受け取ったモデル重みをLearnableオブジェクトに変換します。このLearnableが現在のグローバルモデルです。このステップは不要に思えるかもしれませんが、重要なステップです。特にモデルがPyTorchベースでない場合、Learnableオブジェクトは単純な重みの辞書ではない可能性があります。
+    - 学習エグゼキューターを呼び出してトレーニングタスクを実行し、トレーニング結果を返します。
+    - 設定されたshareable generatorを呼び出して、トレーニング結果をグローバルモデルのlearnableオブジェクトに適用します。これによりグローバルモデルが更新されます。このステップは、トレーニング結果が重み差分のみを含む場合に必要です。重み差分は、次のクライアントのトレーニングのために直接送信することはできません。
+    - クライアントがこのラウンドのシーケンスの最後であり、かつこのラウンドが最終ラウンドの場合、トレーニングは完了です。グローバルモデルを設定されたすべての結果クライアント(result clients)にブロードキャストします。
+    - クライアントがこのラウンドのシーケンスの最後であるが、このラウンドが最終ラウンドでない場合、設定された順序ポリシー(固定またはランダム)に基づいて、次のラウンドのクライアントシーケンスを再計算します。
+    - shareable generatorを呼び出して、グローバルモデルをshareableなモデルパラメータに変換します。これにより、次のクライアントのトレーニングのために、Learnableオブジェクト(単純な重みの辞書である場合もそうでない場合もあります)からモデルパラメータが抽出されます。
+    - シーケンスの次のクライアントにモデルパラメータを送信します。
 
-The cyclic learning workflow is implemented with :class:`nvflare.app_common.ccwf.cyclic_server_ctl.CyclicServerController` (as subclass of
-:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController`) and :class:`nvflare.app_common.ccwf.cyclic_client_ctl.CyclicClientController`
-(as subclass of :class:`nvflare.app_common.ccwf.client_ctl.ClientSideController`).
+サイクリック学習ワークフローは、:class:`nvflare.app_common.ccwf.cyclic_server_ctl.CyclicServerController`\ (:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` のサブクラス)と
+:class:`nvflare.app_common.ccwf.cyclic_client_ctl.CyclicClientController`\ (:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` のサブクラス)で実装されています。
 
-Cyclic Learning: Server Side Controller
-=======================================
+サイクリック学習: サーバー側コントローラー
+==================================================================================
 
 .. code-block:: python
 
@@ -240,17 +238,17 @@ Cyclic Learning: Server Side Controller
             cyclic_order: str = CyclicOrder.FIXED,
         ):
 
-The only extra init arg is ``cyclic_order``, which specifies how the cyclic sequence is to be computed for each round: fixed order or random order.
+追加の初期化引数は ``cyclic_order`` のみで、各ラウンドのサイクリックシーケンスをどのように計算するか(固定順序またはランダム順序)を指定します。
 
-Of all the init args, only the ``num_rounds`` must be explicitly specified. All others can take default values:
+すべての初期化引数のうち、明示的に指定する必要があるのは ``num_rounds`` のみです。その他はすべてデフォルト値を使用できます:
 
-    - All clients of the job participate
-    - Starting client is randomly picked
-    - All clients are result clients too - every client will receive the last result
-    - The client sequence is fixed for all rounds
+    - ジョブのすべてのクライアントが参加
+    - 開始クライアントはランダムに選択
+    - すべてのクライアントが結果クライアントでもある - すべてのクライアントが最終結果を受け取る
+    - クライアントシーケンスはすべてのラウンドで固定
 
-Cyclic Learning: Client Side Controller
-=======================================
+サイクリック学習: クライアント側コントローラー
+======================================================================================
 
 .. code-block:: python
 
@@ -267,21 +265,21 @@ Cyclic Learning: Client Side Controller
             final_result_ack_timeout=Constant.FINAL_RESULT_ACK_TIMEOUT,
         ):
 
-There are no extra init args.
+追加の初期化引数はありません。
 
-On the client side, the workflow requires the following three components:
+クライアント側では、このワークフローには次の3つのコンポーネントが必要です:
 
-    - There must be an executor for the specified ``learn_task_name``
-    - There must be a persistor component for the specified ``persistor_id``
-    - There must be a shareable generator component for the specified ``shareable_generator_id``
+    - 指定された ``learn_task_name`` に対応するエグゼキューターが必要です
+    - 指定された ``persistor_id`` に対応するpersistorコンポーネントが必要です
+    - 指定された ``shareable_generator_id`` に対応するshareable generatorコンポーネントが必要です
 
-You may need to adjust the ``final_result_ack_timeout`` properly if the final result is too large for the default timeout.
+最終結果が大きすぎてデフォルトのタイムアウトに収まらない場合は、``final_result_ack_timeout`` を適切に調整する必要があるかもしれません。
 
-Example Cyclic Learning Configuration
-=====================================
+サイクリック学習の設定例
+================================================================
 
-Cyclic Learning: config_fed_server.json
----------------------------------------
+サイクリック学習: config_fed_server.json
+------------------------------------------------------------------------------
 
 .. code-block:: json
 
@@ -301,8 +299,8 @@ Cyclic Learning: config_fed_server.json
       ]
     }
 
-Cyclic Learning: config_fed_client.json
----------------------------------------
+サイクリック学習: config_fed_client.json
+------------------------------------------------------------------------------
 
 .. code-block:: json
 
@@ -348,86 +346,85 @@ Cyclic Learning: config_fed_client.json
 
 .. note::
 
-    - All tasks prefixed with ``cyclic_`` are routed to the CyclicClientController (which is an executor). 
-    - There are two tasks assigned by the CyclicServerController:
+    - ``cyclic_`` プレフィックスの付いたすべてのタスクは、CyclicClientController(エグゼキューターです)にルーティングされます。
+    - CyclicServerControllerによって割り当てられるタスクは2つあります:
         - ``cyclic_config``
         - ``cyclic_start``
-    - There are two tasks assigned by clients during the training process:
-        - ``cyclic_learn``: this is to ask a client to perform training. 
-        - ``cyclic_report_final_learn_result``: this is sent from the client that holds the final result to report the final result to other clients
+    - トレーニングプロセス中にクライアントによって割り当てられるタスクは2つあります:
+        - ``cyclic_learn``: クライアントにトレーニングの実行を依頼するタスクです。
+        - ``cyclic_report_final_learn_result``: 最終結果を保持するクライアントから他のクライアントに最終結果を報告するために送信されます
 
 
 .. note::
 
-    There is no model-related data in the config and start tasks.
+    注記: configタスクとstartタスクには、モデル関連のデータは含まれません。
 
 
 .. note::
 
-    The ``cyclic_learn`` and ``cyclic_rcv_final_learn_result`` contain model data. You can apply ``task_data_filters`` if privacy is a concern (the OUT filter for the sending client, and IN filters for the receiving client).
+    注記: ``cyclic_learn`` と ``cyclic_rcv_final_learn_result`` にはモデルデータが含まれます。プライバシーが懸念される場合は、``task_data_filters`` を適用できます(送信側クライアントにはOUTフィルター、受信側クライアントにはINフィルター)。
 
 .. _ccwf_swarm_learning:
 
-**************
-Swarm Learning
-**************
-Swarm learning is a decentralized form of federated learning, wherein the responsibilities of aggregation and model training
-control are distributed to all peers rather than consolidated in a central server.
+****************************************
+スウォーム学習
+****************************************
+スウォーム学習(Swarm learning)は、連合学習の分散化された形態であり、集約とモデルトレーニング制御の責務を、
+中央サーバーに集約するのではなく、すべてのピアに分散します。
 
-With swarm learning, training is done in multiple rounds. In each round, an aggregator client is randomly chosen from all clients,
-and then all training clients perform the training task on the current global model params. Once completed, all clients send their
-training results to the designated client for aggregation. The aggregated results are then applied to the current global model,
-which will become the base for the next round training. This process repeats until the configured number of rounds are completed.
+スウォーム学習では、トレーニングは複数のラウンドで行われます。各ラウンドでは、すべてのクライアントの中から集約クライアントが
+ランダムに選ばれ、すべてのトレーニングクライアントが現在のグローバルモデルパラメータに対してトレーニングタスクを実行します。完了すると、すべてのクライアントは
+トレーニング結果を、集約用に指定されたクライアントに送信します。集約された結果は現在のグローバルモデルに適用され、
+それが次のラウンドのトレーニングのベースになります。このプロセスは、設定されたラウンド数が完了するまで繰り返されます。
 
-The starting client is responsible for the initial model, which is loaded by its configured persistor.
+開始クライアントは初期モデルを担当し、初期モデルは設定されたpersistorによってロードされます。
 
-At the end of the workflow, the final training result is broadcasted to all clients that are configured to receive final results (the ``result_clients``).
+ワークフローの終了時に、最終的なトレーニング結果は、最終結果を受け取るように設定されたすべてのクライアント(``result_clients``)にブロードキャストされます。
 
-Here is the detailed processing logic of the SwarmClientController:
+以下は、SwarmClientControllerの詳細な処理ロジックです:
 
-    - The workflow is started from the starting_client. It loads the initial model using the persistor, and prepares the initial training params using the shareable generator (learnable_to_shareable). 
-    - Randomly selects a client as the aggregator for the next round from the configured "aggr_clients" list.
-    - Broadcast the "learn" task with training params to all clients configured for training (training_clients) and the aggregation client. The task header contains the aggregation client name, the current round number, among other things.
-    - All training clients do training by invoking the executor configured for the ``train`` task.
-    - Once completed, all training clients send their results to the aggregation client.
-    - When the "learn" task is received, the aggregation client:
-        - Calls the shareable generator to compute the current global model based (``shareable_to_learnable``).
-        - sets up a Gatherer object to wait for results from training clients. Note that the aggregation client could also be a training client.
-    - When a training result is received from another client, the Gatherer object of the aggregation client calls the configured aggregator to accept the result. Events are fired before (``AppEventType.BEFORE_CONTRIBUTION_ACCEPT``) and after (``AppEventType.AFTER_CONTRIBUTION_ACCEPT``) calling the aggregator ``accept`` method. These events are very useful for the implementation of best model selection.
-    - After all results are received (or other exit conditions occur such as timeout), the aggregation client:
-        - calls the ``aggregate`` method of the aggregator to get the aggregation result. Events are fired before (``AppEventType.BEFORE_AGGREGATION``) and after (``AppEventType.AFTER_AGGREGATION``) the call.
-        - Calls the shareable generator to apply the aggregated result to the current global model (``shareable_to_learnable``)
-        - If not all rounds are completed, prepare for next round:
-            - Randomly selects the aggregation client for the next round
-            - Calls the shareable generator to prepare the training params (learnable_to_shareable).
-            - Broadcast the "learn" task to other clients for the new round
-        - If all rounds are completed:
-            - Broadcast the last result to all result_clients
-            - Check which client has the best result, and ask that client to distribute the best model to all result_clients.
+    - ワークフローはstarting_clientから開始されます。persistorを使用して初期モデルをロードし、shareable generator(learnable_to_shareable)を使用して初期トレーニングパラメータを準備します。
+    - 設定された"aggr_clients"リストから、次のラウンドの集約クライアントとなるクライアントをランダムに選択します。
+    - トレーニング用に設定されたすべてのクライアント(training_clients)と集約クライアントに、トレーニングパラメータを含む"learn"タスクをブロードキャストします。タスクヘッダーには、集約クライアント名や現在のラウンド番号などが含まれます。
+    - すべてのトレーニングクライアントは、``train`` タスクに設定されたエグゼキューターを呼び出してトレーニングを行います。
+    - 完了すると、すべてのトレーニングクライアントは結果を集約クライアントに送信します。
+    - "learn"タスクを受信すると、集約クライアントは次を行います:
+        - shareable generatorを呼び出して、現在のグローバルモデルを計算します(``shareable_to_learnable``)。
+        - トレーニングクライアントからの結果を待つためのGathererオブジェクトをセットアップします。集約クライアントがトレーニングクライアントでもある場合があることに注意してください。
+    - 別のクライアントからトレーニング結果を受信すると、集約クライアントのGathererオブジェクトは、設定されたアグリゲーターを呼び出して結果を受け入れます。アグリゲーターの ``accept`` メソッド呼び出しの前(``AppEventType.BEFORE_CONTRIBUTION_ACCEPT``)と後(``AppEventType.AFTER_CONTRIBUTION_ACCEPT``)にイベントが発火されます。これらのイベントは、最良モデル選択の実装に非常に役立ちます。
+    - すべての結果を受信した後(またはタイムアウトなどの他の終了条件が発生した後)、集約クライアントは次を行います:
+        - アグリゲーターの ``aggregate`` メソッドを呼び出して集約結果を取得します。呼び出しの前(``AppEventType.BEFORE_AGGREGATION``)と後(``AppEventType.AFTER_AGGREGATION``)にイベントが発火されます。
+        - shareable generatorを呼び出して、集約結果を現在のグローバルモデルに適用します(``shareable_to_learnable``)
+        - すべてのラウンドが完了していない場合、次のラウンドの準備をします:
+            - 次のラウンドの集約クライアントをランダムに選択します
+            - shareable generatorを呼び出してトレーニングパラメータを準備します(learnable_to_shareable)。
+            - 新しいラウンドのために他のクライアントに"learn"タスクをブロードキャストします
+        - すべてのラウンドが完了した場合:
+            - 最終結果をすべてのresult_clientsにブロードキャストします
+            - どのクライアントが最良の結果を持っているかを確認し、そのクライアントに最良モデルをすべてのresult_clientsに配布するよう依頼します。
 
-The swarm learning workflow is implemented with :class:`nvflare.app_common.ccwf.swarm_server_ctl.SwarmServerController` (as subclass of
-:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController`) and :class:`nvflare.app_common.ccwf.swarm_client_ctl.SwarmClientController`
-(as subclass of :class:`nvflare.app_common.ccwf.client_ctl.ClientSideController`).
+スウォーム学習ワークフローは、:class:`nvflare.app_common.ccwf.swarm_server_ctl.SwarmServerController`\ (:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` のサブクラス)と
+:class:`nvflare.app_common.ccwf.swarm_client_ctl.SwarmClientController`\ (:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` のサブクラス)で実装されています。
 
-Best Model Selection
-====================
-Optionally, a model selection widget can be used to determine the best global model, just as in the server-controlled
-fed-average workflow (SAG). The widget listens to the BEFORE and AFTER events of ``accept`` and ``aggregate`` calls of the
-aggregator to dynamically compute the aggregated validation metrics reported from the training clients. When a better
-metric is achieved, it fires the ``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE`` event with the best metric value. If the
-persistor listens to this event, it can persist the current global model (the current best).
+最良モデルの選択
+================================
+オプションとして、サーバー制御の連合平均ワークフロー(SAG)と同様に、モデル選択ウィジェットを使用して最良のグローバルモデルを
+決定できます。このウィジェットは、アグリゲーターの ``accept`` および ``aggregate`` 呼び出しのBEFOREおよびAFTERイベントをリッスンし、
+トレーニングクライアントから報告された検証メトリクスの集約値を動的に計算します。より良いメトリクスが達成されると、
+最良のメトリクス値と共に ``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE`` イベントを発火します。persistorが
+このイベントをリッスンしていれば、現在のグローバルモデル(現時点の最良)を永続化できます。
 
-However, unlike the server-controlled SAG where the aggregation is always done on the server and hence only a single
-global model is present at any time, many clients could do aggregation during the course of swarm learning. Each aggregation
-client could have its own so-called best global model computed by its model selector. We need to find the best of these best
-global models. This is achieved as follows:
+しかし、集約が常にサーバー上で行われ、常に単一のグローバルモデルしか存在しないサーバー制御のSAGとは異なり、
+スウォーム学習の過程では多くのクライアントが集約を行う可能性があります。各集約クライアントは、
+それぞれのモデルセレクターによって計算された、いわば自分の最良グローバルモデルを持つことができます。これらの最良グローバルモデルの中から
+最良のものを見つける必要があります。これは次のように実現されます:
 
-    - Use the ``learn`` task header to remember the current global best (metric value and name of the client that holds the model). Initially both are None.
-    - The SwarmClientController listens to the ``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE`` event. When this event is fired, compare the metric value against the current best value in the task header (if any). Update the task header if the new value is better. This header info will be carried to the next ``learn`` task.
-    - Eventually only the global best (if available) will be distributed to result clients.
+    - ``learn`` タスクのヘッダーを使用して、現在のグローバル最良(メトリクス値と、そのモデルを保持するクライアントの名前)を記憶します。初期状態ではどちらもNoneです。
+    - SwarmClientControllerは ``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE`` イベントをリッスンします。このイベントが発火されると、タスクヘッダー内の現在の最良値(存在する場合)とメトリクス値を比較します。新しい値の方が良ければタスクヘッダーを更新します。このヘッダー情報は次の ``learn`` タスクに引き継がれます。
+    - 最終的に、グローバル最良(利用可能な場合)のみが結果クライアントに配布されます。
 
-Swarm Learning: Server Side Controller
-======================================
+スウォーム学習: サーバー側コントローラー
+================================================================================
 
 .. code-block:: python
 
@@ -450,15 +447,15 @@ Swarm Learning: Server Side Controller
             train_clients=None,
         ):
 
-The default value of the task name prefix is "swarm".
+タスク名プレフィックスのデフォルト値は"swarm"です。
 
-The additional init args are:
+追加の初期化引数は次のとおりです:
 
-    - ``aggr_clients``: the clients to do aggregation. If not specified, all participating clients are aggregation clients.
-    - ``train_clients``: clients to do training. If not specified, all participating clients are training clients.
+    - ``aggr_clients``: 集約を行うクライアント。指定しない場合、すべての参加クライアントが集約クライアントになります。
+    - ``train_clients``: トレーニングを行うクライアント。指定しない場合、すべての参加クライアントがトレーニングクライアントになります。
 
-Swarm Learning: Client Side Controller
-======================================
+スウォーム学習: クライアント側コントローラー
+====================================================================================
 
 .. code-block:: python
 
@@ -480,29 +477,29 @@ Swarm Learning: Client Side Controller
             wait_time_after_min_resps_received: float = 10.0,
         ):
 
-On the client side, the workflow requires the following three components:
+クライアント側では、このワークフローには次のコンポーネントが必要です:
 
-    - There must be an executor for the specified ``learn_task_name``
-    - There must be a persistor component for the specified ``persistor_id``
-    - There must be a shareable generator component for the specified ``shareable_generator_id`` 
-    - There must be an aggregator component for the specified ``aggregator_id``.
-    - An optional Metric Comparator, if ``metric_comparator_id`` is specified. Since the metric value can be of any type, and the Swarm Learning workflow needs to be able to compare the current best metric against the computed metric values, the Metric Comparator will help with the comparison operation. If this arg is not set, the ``NumberMetricComparator`` will be used, which assumes that the metric value is a simple number.
+    - 指定された ``learn_task_name`` に対応するエグゼキューターが必要です
+    - 指定された ``persistor_id`` に対応するpersistorコンポーネントが必要です
+    - 指定された ``shareable_generator_id`` に対応するshareable generatorコンポーネントが必要です
+    - 指定された ``aggregator_id`` に対応するアグリゲーターコンポーネントが必要です。
+    - ``metric_comparator_id`` が指定されている場合は、オプションのMetric Comparatorが必要です。メトリクス値は任意の型を取り得るため、スウォーム学習ワークフローでは現在の最良メトリクスと計算されたメトリクス値を比較できる必要があり、Metric Comparatorがこの比較操作を助けます。この引数が設定されていない場合は、メトリクス値が単純な数値であることを前提とする ``NumberMetricComparator`` が使用されます。
 
-The aggregation behavior is configured by the following args:
+集約の動作は、次の引数で設定されます:
 
-    - ``min_responses_required`` - the minimum number of responses required before exiting the gathering
-    - ``wait_time_after_min_resps_received`` - how many seconds to wait for potentially more responses after minimum responses are received
-    - ``learn_task_timeout`` - how long to wait for the current learn task before timing out the gathering
+    - ``min_responses_required`` - 収集(gathering)を終了する前に必要な最小応答数
+    - ``wait_time_after_min_resps_received`` - 最小応答数を受信した後、さらなる応答の可能性を待つ秒数
+    - ``learn_task_timeout`` - 収集をタイムアウトさせるまで、現在のlearnタスクをどれだけ待つか
 
-Example Swarm Learning
-======================
+スウォーム学習の例
+====================================
 
-This section shows how to set up swarm learning using recipes (recommended) and the traditional JSON configuration.
+このセクションでは、レシピを使用する方法(推奨)と従来のJSON設定を使用する方法で、スウォーム学習をセットアップする方法を示します。
 
-Using Recipes (Recommended)
----------------------------
+レシピの使用(推奨)
+------------------------------------------------------
 
-Use ``SwarmLearningRecipe`` for a streamlined swarm learning setup:
+効率的なスウォーム学習のセットアップには ``SwarmLearningRecipe`` を使用します:
 
 .. code-block:: python
 
@@ -537,19 +534,16 @@ Use ``SwarmLearningRecipe`` for a streamlined swarm learning setup:
     env = SimEnv(num_clients=3)
     recipe.execute(env)
 
-The named parameters are the preferred API. For less common
-``SwarmServerConfig`` or ``SwarmClientConfig`` fields, pass
-``server_config_overrides`` or ``client_config_overrides``. The dictionaries are
-shallow-merged last, so an overlapping dictionary value intentionally wins over
-the named parameter. ``round_timeout`` remains available as a compatibility
-shortcut for setting both acknowledgment timeouts when their explicit parameters
-are omitted. ``client_config_overrides`` cannot replace the recipe-managed
-executor, aggregator, persistor, shareable generator, or
-``min_responses_required``; use ``BaseSwarmLearningRecipe`` for custom components
-or quorum settings. Set ``min_clients`` only through the named parameter so the
-scheduler, server controller, and client aggregation quorums remain aligned.
+名前付きパラメータが推奨APIです。あまり一般的でない ``SwarmServerConfig`` や ``SwarmClientConfig`` のフィールドについては、
+``server_config_overrides`` または ``client_config_overrides`` を渡してください。これらの辞書は最後に
+浅くマージ(shallow-merge)されるため、重複する辞書の値は意図的に名前付きパラメータより優先されます。
+``round_timeout`` は、明示的なパラメータが省略された場合に両方の確認応答(ACK)タイムアウトを設定する互換ショートカットとして
+引き続き利用できます。``client_config_overrides`` は、レシピが管理するエグゼキューター、アグリゲーター、persistor、
+shareable generator、``min_responses_required`` を置き換えることはできません。カスタムコンポーネントやクォーラム設定には
+``BaseSwarmLearningRecipe`` を使用してください。スケジューラー、サーバーコントローラー、クライアント集約のクォーラムの
+整合性を保つため、``min_clients`` は名前付きパラメータでのみ設定してください。
 
-For advanced customization, use ``BaseSwarmLearningRecipe`` with explicit server and client configurations:
+高度なカスタマイズには、サーバーとクライアントの設定を明示的に指定して ``BaseSwarmLearningRecipe`` を使用します:
 
 .. code-block:: python
 
@@ -576,17 +570,15 @@ For advanced customization, use ``BaseSwarmLearningRecipe`` with explicit server
     )
 
 .. note::
-   When using ``BaseSwarmLearningRecipe`` with explicit ``SwarmClientConfig``, set
-   ``learn_task_ack_timeout`` and ``final_result_ack_timeout`` manually for large
-   models. With ``SwarmLearningRecipe``, prefer the corresponding named parameters;
-   ``round_timeout`` can still set both values as a compatibility shortcut.
+   注記: ``BaseSwarmLearningRecipe`` で明示的な ``SwarmClientConfig`` を使用する場合は、大規模モデルに対して
+   ``learn_task_ack_timeout`` と ``final_result_ack_timeout`` を手動で設定してください。``SwarmLearningRecipe`` では、
+   対応する名前付きパラメータを優先してください。``round_timeout`` は互換ショートカットとして引き続き両方の値を設定できます。
 
-Client Dropout Tolerance (min_clients)
----------------------------------------
+クライアント脱落の許容(min_clients)
+----------------------------------------------------------------------------
 
-Setting ``min_clients`` allows the workflow to proceed if at least that many clients
-configure successfully — missing participants are logged as a warning rather than
-causing a job abort.
+``min_clients`` を設定すると、少なくともその数のクライアントが設定に成功すればワークフローを進行させることができます。
+不足している参加者はジョブの中断を引き起こすのではなく、警告としてログに記録されます。
 
 .. code-block:: python
 
@@ -598,14 +590,13 @@ causing a job abort.
         train_script="train.py",
     )
 
-Setting ``min_clients=0`` means all configured clients are required (backward
-compatible behavior).  This is distinct from the job-scheduler ``min_clients`` parameter
-that controls the deployment phase.
+``min_clients=0`` を設定すると、設定されたすべてのクライアントが必須になります(後方互換の動作)。
+これは、デプロイメントフェーズを制御するジョブスケジューラーの ``min_clients`` パラメータとは別物です。
 
-Using JSON Configuration (Advanced)
------------------------------------
+JSON設定の使用(上級者向け)
+----------------------------------------------------------------------
 
-For users who need fine-grained control, here is the equivalent JSON configuration.
+きめ細かな制御が必要なユーザー向けに、同等のJSON設定を示します。
 
 **config_fed_server.json:**
 
@@ -629,7 +620,7 @@ For users who need fine-grained control, here is the equivalent JSON configurati
 
 .. note::
 
-    The only required arg is ``num_rounds``.
+    注記: 必須の引数は ``num_rounds`` のみです。
 
 **config_fed_client.json:**
 
@@ -693,54 +684,54 @@ For users who need fine-grained control, here is the equivalent JSON configurati
 
 .. note::
 
-    - All tasks prefixed with ``swarm_`` are routed to the :class:`nvflare.app_common.ccwf.swarm_client_ctl.SwarmClientController` (which is an executor). 
-    
+    - ``swarm_`` プレフィックスの付いたすべてのタスクは、:class:`nvflare.app_common.ccwf.swarm_client_ctl.SwarmClientController`\ (エグゼキューターです)にルーティングされます。
+
 .. note::
 
-    - There are two tasks assigned by the :class:`nvflare.app_common.ccwf.swarm_server_ctl.SwarmServerController`:
+    - :class:`nvflare.app_common.ccwf.swarm_server_ctl.SwarmServerController` によって割り当てられるタスクは2つあります:
         - swarm_config
         - swarm_start
-    
-.. note::
-
-    - There are several tasks assigned by clients during the training process:
-        - swarm_learn: this is to ask a client to perform training. 
-        - swarm_report_learn_result: this is sent from a training client to the aggregation client to report its training result.
-        - swarm_report_final_learn_result: this is sent from the client that holds the final results (last and/or best global model) to report final results to other clients
-
 
 .. note::
 
-    There is no model-related data in the swarm_config and swarm_start tasks.
+    - トレーニングプロセス中にクライアントによって割り当てられるタスクがいくつかあります:
+        - swarm_learn: クライアントにトレーニングの実行を依頼するタスクです。
+        - swarm_report_learn_result: トレーニングクライアントから集約クライアントに、トレーニング結果を報告するために送信されます。
+        - swarm_report_final_learn_result: 最終結果(最終および/または最良のグローバルモデル)を保持するクライアントから他のクライアントに、最終結果を報告するために送信されます
 
 
 .. note::
 
-    Client assigned tasks contain model data. You can apply task_data_filters if privacy is a concern (the OUT filter for the sending client, and IN filters for the receiving client).
+    注記: swarm_configタスクとswarm_startタスクには、モデル関連のデータは含まれません。
+
+
+.. note::
+
+    注記: クライアントが割り当てるタスクにはモデルデータが含まれます。プライバシーが懸念される場合は、task_data_filtersを適用できます(送信側クライアントにはOUTフィルター、受信側クライアントにはINフィルター)。
 
 .. _swarm_learning_large_models:
 
-Swarm Learning Parameters for Large Models
-==========================================
+大規模モデル向けのスウォーム学習パラメータ
+====================================================================================
 
-When running Swarm Learning with large models (e.g., LLMs), you may need to tune various timeout and chunking parameters
-to accommodate the larger payloads and longer processing times.
+大規模モデル(例: LLM)でスウォーム学習を実行する場合、より大きなペイロードとより長い処理時間に対応するために、
+さまざまなタイムアウトおよびチャンク化パラメータの調整が必要になることがあります。
 
-Default Timeout Values
-----------------------
+デフォルトのタイムアウト値
+----------------------------------------------------
 
-The following table lists all default timeout values used in Swarm Learning. Understanding these defaults helps you
-determine which parameters need adjustment for your large model workloads.
+次の表は、スウォーム学習で使用されるすべてのデフォルトのタイムアウト値を示しています。これらのデフォルト値を理解することで、
+大規模モデルのワークロードに対してどのパラメータを調整すべきかを判断しやすくなります。
 
-**How to Override These Values:**
+**これらの値を上書きする方法:**
 
-These timeout values can be overridden in your job configuration files:
+これらのタイムアウト値は、ジョブ設定ファイルで上書きできます:
 
-- **Client-side parameters**: Set in ``config_fed_client.conf`` (or ``.json``) under the ``SwarmClientController`` executor args.
-- **Server-side parameters**: Set in ``config_fed_server.conf`` (or ``.json``) under the ``SwarmServerController`` workflow args.
-- **Global streaming parameters**: Set at the top level of your config files (e.g., ``np_download_chunk_size``, ``tensor_download_chunk_size``).
+- **クライアント側パラメータ**: ``config_fed_client.conf``\ (または ``.json``)の ``SwarmClientController`` エグゼキューターのargsに設定します。
+- **サーバー側パラメータ**: ``config_fed_server.conf``\ (または ``.json``)の ``SwarmServerController`` ワークフローのargsに設定します。
+- **グローバルストリーミングパラメータ**: 設定ファイルのトップレベルに設定します(例: ``np_download_chunk_size``\ 、``tensor_download_chunk_size``)。
 
-For **Recipe API users** (recommended), use the ``add_server_config()`` method:
+**Recipe APIユーザー**\ (推奨)は、``add_server_config()`` メソッドを使用します:
 
 .. code-block:: python
 
@@ -751,91 +742,91 @@ For **Recipe API users** (recommended), use the ``add_server_config()`` method:
         "streaming_per_request_timeout": 600
     })
 
-For **Job API users**, use ``job.to_server()`` with a dict:
+**Job APIユーザー**\ は、辞書を渡して ``job.to_server()`` を使用します:
 
 .. code-block:: python
 
     job.to_server({"np_download_chunk_size": 2097152, "streaming_per_request_timeout": 600})
 
-.. list-table:: Swarm Learning Default Timeouts
+.. list-table:: スウォーム学習のデフォルトタイムアウト
    :header-rows: 1
    :widths: 25 10 25 40
 
-   * - Constant Name
-     - Default
-     - Config Parameter
-     - Description
+   * - 定数名
+     - デフォルト
+     - 設定パラメータ
+     - 説明
    * - ``CONFIG_TASK_TIMEOUT``
      - 300
-     - ``config_task_timeout`` (server)
-     - Time allowed for clients to respond to the configuration task at job start.
+     - ``config_task_timeout``\ (サーバー)
+     - ジョブ開始時に、クライアントが設定タスクに応答するために許容される時間。
    * - ``START_TASK_TIMEOUT``
      - 10
-     - ``start_task_timeout`` (server)
-     - Time allowed for the starting client to begin the workflow.
+     - ``start_task_timeout``\ (サーバー)
+     - 開始クライアントがワークフローを開始するために許容される時間。
    * - ``END_WORKFLOW_TIMEOUT``
      - 2.0
-     - ``end_workflow_timeout`` (server)
-     - Time allowed for ending workflow message acknowledgment.
+     - ``end_workflow_timeout``\ (サーバー)
+     - ワークフロー終了メッセージの確認応答に許容される時間。
    * - ``TASK_CHECK_INTERVAL``
      - 0.5
-     - ``task_check_interval`` (client)
-     - Interval between task status checks.
+     - ``task_check_interval``\ (クライアント)
+     - タスクステータスをチェックする間隔。
    * - ``JOB_STATUS_CHECK_INTERVAL``
      - 2.0
-     - ``job_status_check_interval`` (server)
-     - Interval between job status checks by the server.
+     - ``job_status_check_interval``\ (サーバー)
+     - サーバーがジョブステータスをチェックする間隔。
    * - ``PER_CLIENT_STATUS_REPORT_TIMEOUT``
      - 90.0
-     - (internal)
-     - Max time a client can go without reporting status.
+     - (内部)
+     - クライアントがステータスを報告しないまま経過できる最大時間。
    * - ``WORKFLOW_PROGRESS_TIMEOUT``
      - 3600.0
-     - ``progress_timeout`` (server)
-     - Max time allowed without any workflow progress.
+     - ``progress_timeout``\ (サーバー)
+     - ワークフローの進捗が一切ない状態で許容される最大時間。
    * - ``LEARN_TASK_CHECK_INTERVAL``
      - 1.0
-     - ``learn_task_check_interval`` (client)
-     - Interval for checking new learning tasks.
+     - ``learn_task_check_interval``\ (クライアント)
+     - 新しい学習タスクをチェックする間隔。
    * - ``LEARN_TASK_ACK_TIMEOUT``
      - 10
-     - ``learn_task_ack_timeout`` (client)
-     - Time allowed for a client to acknowledge receipt of a learn task.
+     - ``learn_task_ack_timeout``\ (クライアント)
+     - クライアントがlearnタスクの受領を確認応答するために許容される時間。
    * - ``LEARN_TASK_ABORT_TIMEOUT``
      - 5.0
-     - ``learn_task_abort_timeout`` (client)
-     - Time allowed for a learning task to abort when requested.
+     - ``learn_task_abort_timeout``\ (クライアント)
+     - 要求された際に学習タスクが中断するために許容される時間。
    * - ``FINAL_RESULT_ACK_TIMEOUT``
      - 10
-     - ``final_result_ack_timeout`` (client)
-     - Time allowed for clients to acknowledge receipt of final results.
+     - ``final_result_ack_timeout``\ (クライアント)
+     - クライアントが最終結果の受領を確認応答するために許容される時間。
    * - ``GET_MODEL_TIMEOUT``
      - 10
-     - ``get_model_timeout`` (client)
-     - Time allowed for retrieving a model from another client.
+     - ``get_model_timeout``\ (クライアント)
+     - 別のクライアントからモデルを取得するために許容される時間。
    * - ``MAX_TASK_TIMEOUT``
      - 3600
-     - ``learn_task_timeout`` (client)
-     - Maximum time allowed for any single task to complete.
+     - ``learn_task_timeout``\ (クライアント)
+     - 単一のタスクが完了するために許容される最大時間。
 
-Client-Side Parameters
-----------------------
+クライアント側パラメータ
+------------------------------------------------
 
-The following SwarmClientController parameters are particularly important for large models:
+大規模モデルでは、以下のSwarmClientControllerパラメータが特に重要です:
 
-**Timeouts and Flow Control:**
+**タイムアウトとフロー制御:**
 
-- ``learn_task_timeout``: Upper bound for how long the aggregation client waits for a round to finish. **Default: None**. **Suggested: 3600 to 7200** for large models.
-- ``learn_task_ack_timeout``: Timeout for acknowledging learn task dispatch. **Default: 10**. **Suggested: 300 or higher** since large model initialization can be slow.
-- ``final_result_ack_timeout``: Timeout for ACKs after broadcasting final results. **Default: 10**. **Suggested: 300 to 600** as final result distribution is often the largest payload.
-- ``request_to_submit_result_msg_timeout``: Timeout for request-to-submit messages. **Default: 5.0**. **Suggested: 10 to 30**.
-- ``request_to_submit_result_interval``: Retry interval when submit permission is not granted. **Default: 1.0**. **Suggested: 2 to 5**.
-- ``request_to_submit_result_max_wait``: Max total wait time for submit permission. **Default: None**. **Suggested: 600 to 1200** for large models.
-- ``max_concurrent_submissions``: Maximum concurrent submissions. **Default: 1**. **Suggested: 1** to reduce memory pressure.
-- ``min_responses_required``: Minimum client results required to begin aggregation. **Default: 1**. **Suggested: 2** for 3-client runs.
-- ``wait_time_after_min_resps_received``: Extra wait time after minimum responses. **Default: 10.0**. **Suggested: 120 to 300**.
+- ``learn_task_timeout``: 集約クライアントがラウンドの完了を待つ時間の上限。\ **デフォルト: None**\ 。大規模モデルでは\ **推奨: 3600〜7200**\ 。
+- ``learn_task_ack_timeout``: learnタスク送信の確認応答のタイムアウト。\ **デフォルト: 10**\ 。大規模モデルの初期化は遅くなる可能性があるため、\ **推奨: 300以上**\ 。
+- ``final_result_ack_timeout``: 最終結果のブロードキャスト後のACKのタイムアウト。\ **デフォルト: 10**\ 。最終結果の配布は多くの場合最大のペイロードになるため、\ **推奨: 300〜600**\ 。
+- ``request_to_submit_result_msg_timeout``: 結果送信要求メッセージのタイムアウト。\ **デフォルト: 5.0**\ 。\ **推奨: 10〜30**\ 。
+- ``request_to_submit_result_interval``: 送信許可が得られなかった場合のリトライ間隔。\ **デフォルト: 1.0**\ 。\ **推奨: 2〜5**\ 。
+- ``request_to_submit_result_max_wait``: 送信許可を待つ合計時間の上限。\ **デフォルト: None**\ 。大規模モデルでは\ **推奨: 600〜1200**\ 。
+- ``max_concurrent_submissions``: 同時送信の最大数。\ **デフォルト: 1**\ 。メモリ圧迫を軽減するため\ **推奨: 1**\ 。
+- ``min_responses_required``: 集約を開始するために必要な最小クライアント結果数。\ **デフォルト: 1**\ 。3クライアント実行では\ **推奨: 2**\ 。
+- ``wait_time_after_min_resps_received``: 最小応答数受信後の追加待機時間。\ **デフォルト: 10.0**\ 。\ **推奨: 120〜300**\ 。
 
-**Example client config for large models:**
+**大規模モデル向けのクライアント設定例:**
 
 .. code-block::
 
@@ -859,26 +850,26 @@ The following SwarmClientController parameters are particularly important for la
       }
     ]
 
-**Download and Chunking Behavior:**
+**ダウンロードとチャンク化の動作:**
 
-- ``np_download_chunk_size``: Chunk size for numpy array downloads. **Default: 2097152 (2MB)**. Value 0 disables streaming and uses native serialization which can spike memory.
-- ``tensor_download_chunk_size``: Chunk size for PyTorch tensor downloads. **Default: 2097152 (2MB)**. Value 0 disables streaming.
+- ``np_download_chunk_size``: numpy配列のダウンロードのチャンクサイズ。\ **デフォルト: 2097152 (2MB)**\ 。値0はストリーミングを無効化し、ネイティブなシリアライズを使用するためメモリが急増する可能性があります。
+- ``tensor_download_chunk_size``: PyTorchテンソルのダウンロードのチャンクサイズ。\ **デフォルト: 2097152 (2MB)**\ 。値0はストリーミングを無効化します。
 
 .. code-block::
 
     np_download_chunk_size = 2097152
     tensor_download_chunk_size = 2097152
 
-Server-Side Parameters
-----------------------
+サーバー側パラメータ
+--------------------------------------------
 
 **SwarmServerController:**
 
-- ``num_rounds``: Total number of training rounds.
-- ``start_task_timeout``: Timeout for starting the workflow. **Default: 10 (START_TASK_TIMEOUT)**. **Suggested: 300** for large model initialization.
-- ``progress_timeout``: Overall workflow progress timeout. **Default: 3600.0 (WORKFLOW_PROGRESS_TIMEOUT)**. **Suggested: 7200 or higher** for large models.
+- ``num_rounds``: トレーニングラウンドの総数。
+- ``start_task_timeout``: ワークフロー開始のタイムアウト。\ **デフォルト: 10 (START_TASK_TIMEOUT)**\ 。大規模モデルの初期化には\ **推奨: 300**\ 。
+- ``progress_timeout``: ワークフロー全体の進捗タイムアウト。\ **デフォルト: 3600.0 (WORKFLOW_PROGRESS_TIMEOUT)**\ 。大規模モデルでは\ **推奨: 7200以上**\ 。
 
-**Example server config for large models:**
+**大規模モデル向けのサーバー設定例:**
 
 .. code-block::
 
@@ -894,76 +885,75 @@ Server-Side Parameters
       }
     ]
 
-**CrossSiteEvalServerController (if enabled):**
+**CrossSiteEvalServerController(有効化する場合):**
 
-- ``eval_task_timeout``: Timeout for evaluation tasks. **Default: 300 (CONFIG_TASK_TIMEOUT)**. **Suggested: 1200** for large models.
+- ``eval_task_timeout``: 評価タスクのタイムアウト。\ **デフォルト: 300 (CONFIG_TASK_TIMEOUT)**\ 。大規模モデルでは\ **推奨: 1200**\ 。
 
-Optional NVFlare Global Config
-------------------------------
+オプションのNVFlareグローバル設定
+------------------------------------------------------------------
 
-These framework-level settings affect large payload transfers:
+これらのフレームワークレベルの設定は、大きなペイロードの転送に影響します:
 
-- ``streaming_per_request_timeout``: Per-request timeout for streaming downloads. **Default: 600**. **Suggested: 600 or higher** for large models.
+- ``streaming_per_request_timeout``: ストリーミングダウンロードのリクエストごとのタイムアウト。\ **デフォルト: 600**\ 。大規模モデルでは\ **推奨: 600以上**\ 。
 
 .. code-block::
 
     streaming_per_request_timeout: 600
 
-Recommended Minimal Parameter Set
----------------------------------
+推奨される最小限のパラメータセット
+------------------------------------------------------------------
 
-If you only adjust a few parameters for large models, start with:
+大規模モデル向けに少数のパラメータのみ調整する場合は、以下から始めてください:
 
-1. ``learn_task_timeout`` - Ensures rounds have enough time to complete
-2. ``final_result_ack_timeout`` - Allows time for large result distribution
-3. ``request_to_submit_result_max_wait`` - Provides adequate aggregation window
-4. ``progress_timeout`` - Prevents premature workflow termination
-5. ``np_download_chunk_size`` and ``tensor_download_chunk_size`` - Enables memory-efficient streaming
+1. ``learn_task_timeout`` - ラウンドの完了に十分な時間を確保します
+2. ``final_result_ack_timeout`` - 大きな結果の配布に十分な時間を確保します
+3. ``request_to_submit_result_max_wait`` - 適切な集約ウィンドウを確保します
+4. ``progress_timeout`` - ワークフローの早すぎる終了を防ぎます
+5. ``np_download_chunk_size`` と ``tensor_download_chunk_size`` - メモリ効率の良いストリーミングを有効にします
 
 .. _ccwf_cross_site_evaluation:
 
-*********************
-Cross Site Evaluation
-*********************
+**********************************************
+クロスサイト評価
+**********************************************
 
-The purpose of the cross site evaluation (CSE) workflow is to let client sites evaluate each other's models. Optionally, additional global models could also be evaluated by clients.
+クロスサイト評価(Cross Site Evaluation: CSE)ワークフローの目的は、クライアントサイトが互いのモデルを評価できるようにすることです。オプションで、追加のグローバルモデルをクライアントが評価することもできます。
 
-In server-controlled CSE, each site sends its model to the server first, and the server will broadcast the model to other sites to evaluate. The server could also send additional server-owned models to other sites to evaluate. All model evaluation results are sent back to the server so that the user can access the results easily.
+サーバー制御のCSEでは、各サイトは最初に自分のモデルをサーバーに送信し、サーバーがそのモデルを他のサイトにブロードキャストして評価させます。サーバーは、サーバーが所有する追加のモデルを他のサイトに送信して評価させることもできます。すべてのモデル評価結果はサーバーに送り返されるため、ユーザーは結果に容易にアクセスできます。
 
-In client-controlled CSE, client models do not go to the server for distribution. Instead, clients communicate directly with each other to share their models for validation. Model evaluation results are still sent to the server to allow the user easy access to the results.
+クライアント制御のCSEでは、クライアントのモデルは配布のためにサーバーに送られません。代わりに、クライアント同士が直接通信して、検証のためにモデルを共有します。モデル評価結果は引き続きサーバーに送信されるため、ユーザーは結果に容易にアクセスできます。
 
-There are a few concepts in client-controlled CSE:
+クライアント制御のCSEには、いくつかの概念があります:
 
-  - Evaluators - clients that will evaluate models and produce evaluation metrics.
-  - Evaluatees - clients that have local models to be evaluated
-  - Global Model Client - the client that has global model(s) to be evaluated
+  - 評価者(Evaluators) - モデルを評価し、評価メトリクスを生成するクライアント。
+  - 被評価者(Evaluatees) - 評価対象のローカルモデルを持つクライアント
+  - グローバルモデルクライアント - 評価対象のグローバルモデルを持つクライアント
 
-The CSE client controlled workflow can be used for the evaluation of both local and/or global models. 
+CSEクライアント制御ワークフローは、ローカルモデルとグローバルモデルのいずれか、または両方の評価に使用できます。
 
-Here is the detailed control logic:
+以下は詳細な制御ロジックです:
 
-  - Server broadcasts the "config" task to all clients. The config contains information about who are the evaluators and evaluatees, and which client is the global model client.
-  - Each client processes the config info. If the client is configured to be the global model client, it sends global model names to the server. If the client is configured to be an evaluator, it checks to see whether it has the evaluation capability. If not, it reports an error to the server. If the client is configured to be an evaluatee, it checks to see whether it has a local model. If not, it reports an error to the server.
-  - The server processes configuration responses from all clients. If any error is reported, the job is aborted.
-  - The server first tries to evaluate global models if the global model client has reported any model names. For each global model name, the server broadcasts an "eval" request to all evaluators to evaluate the model. The request only contains the name of the model, and the name of the client that has the model.
-  - The server then tries to evaluate clients' local models. For each client configured to be evaluatee, the server broadcasts an "eval" request to all evaluators. The request contains the evaluatee's name.
-  - On the client side, when an "eval" request is received, it wii:
-  - send the "get_model" task to the client that has the model. 
-  - perform the "validate" method on the received model.
-  - Send the result back to the server
-  - One the client side, when the "get_model" task is received, it will locate the model depending on the type of the model:
-  - For global models, it calls the persistor object to locate the model
-  - For the local model, it calls the executor configured for the "submit_model" task.
-  - On the Server side, when an evaluation result is received, it will:
-  - Fire the AppEventType.VALIDATION_RESULT_RECEIVED event type to allow other widgets to process the result
-  - Save it in the job's workspace using the same folder structure as in the Server-controlled CSE.
+  - サーバーはすべてのクライアントに"config"タスクをブロードキャストします。configには、誰が評価者・被評価者であるか、どのクライアントがグローバルモデルクライアントであるかの情報が含まれます。
+  - 各クライアントはconfig情報を処理します。グローバルモデルクライアントとして設定されている場合、グローバルモデル名をサーバーに送信します。評価者として設定されている場合、評価機能を持っているかどうかを確認します。持っていない場合、サーバーにエラーを報告します。被評価者として設定されている場合、ローカルモデルを持っているかどうかを確認します。持っていない場合、サーバーにエラーを報告します。
+  - サーバーはすべてのクライアントからの設定応答を処理します。エラーが報告された場合、ジョブは中断されます。
+  - サーバーはまず、グローバルモデルクライアントがモデル名を報告していれば、グローバルモデルの評価を試みます。各グローバルモデル名について、サーバーはすべての評価者に"eval"リクエストをブロードキャストしてモデルを評価させます。このリクエストには、モデルの名前と、モデルを持つクライアントの名前のみが含まれます。
+  - 次にサーバーは、クライアントのローカルモデルの評価を試みます。被評価者として設定された各クライアントについて、サーバーはすべての評価者に"eval"リクエストをブロードキャストします。このリクエストには被評価者の名前が含まれます。
+  - クライアント側では、"eval"リクエストを受信すると、次を行います:
+  - モデルを持つクライアントに"get_model"タスクを送信します。
+  - 受信したモデルに対して"validate"メソッドを実行します。
+  - 結果をサーバーに送り返します
+  - クライアント側では、"get_model"タスクを受信すると、モデルのタイプに応じてモデルを特定します:
+  - グローバルモデルの場合、persistorオブジェクトを呼び出してモデルを特定します
+  - ローカルモデルの場合、"submit_model"タスクに設定されたエグゼキューターを呼び出します。
+  - サーバー側では、評価結果を受信すると、次を行います:
+  - AppEventType.VALIDATION_RESULT_RECEIVEDイベントタイプを発火し、他のウィジェットが結果を処理できるようにします
+  - サーバー制御のCSEと同じフォルダー構造を使用して、ジョブのワークスペースに保存します。
 
-The CSE workflow is implemented with :class:`nvflare.app_common.ccwf.cse_server_ctl.CrossSiteEvalServerController` (as subclass of
-:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController`) and :class:`nvflare.app_common.ccwf.cse_client_ctl.CrossSiteEvalClientController`
-(as subclass of :class:`nvflare.app_common.ccwf.client_ctl.ClientSideController`).
+CSEワークフローは、:class:`nvflare.app_common.ccwf.cse_server_ctl.CrossSiteEvalServerController`\ (:class:`nvflare.app_common.ccwf.server_ctl.ServerSideController` のサブクラス)と
+:class:`nvflare.app_common.ccwf.cse_client_ctl.CrossSiteEvalClientController`\ (:class:`nvflare.app_common.ccwf.client_ctl.ClientSideController` のサブクラス)で実装されています。
 
-Cross Site Evaluation: Server Side Controller
-=============================================
+クロスサイト評価: サーバー側コントローラー
+==========================================================================================
 
 .. code-block:: python
 
@@ -985,23 +975,23 @@ Cross Site Evaluation: Server Side Controller
             eval_result_dir=AppConstants.CROSS_VAL_DIR,
         ):
 
-The default value of the task name prefix is "cse".
+タスク名プレフィックスのデフォルト値は"cse"です。
 
-The additional init args are:
+追加の初期化引数は次のとおりです:
 
-``eval_task_timeout`` - max time allowed for the evaluation of a model by clients.
+``eval_task_timeout`` - クライアントによるモデル評価に許容される最大時間。
 
-``evaluators`` - clients that will evaluate models. By default all clients are evaluators.
+``evaluators`` - モデルを評価するクライアント。デフォルトでは、すべてのクライアントが評価者です。
 
-``evaluatees`` - clients whose models will be evaluated. By default all clients are evaluatees. If no local models are to be evaluated, you can configure this arg to the special value "@none".
+``evaluatees`` - モデルが評価されるクライアント。デフォルトでは、すべてのクライアントが被評価者です。ローカルモデルを評価しない場合は、この引数に特別な値"@none"を設定できます。
 
-``global_model_client`` - the client that has the global models to be evaluated. By default, a random client is selected from the list of clients. If you don't want to evaluate global models, you can set this arg to the special value "@none".
+``global_model_client`` - 評価対象のグローバルモデルを持つクライアント。デフォルトでは、クライアントのリストからランダムに1つのクライアントが選択されます。グローバルモデルを評価したくない場合は、この引数に特別な値"@none"を設定できます。
 
-You cannot set both ``evaluatees`` and ``global_model_client`` to "@none".
+``evaluatees`` と ``global_model_client`` の両方を"@none"に設定することはできません。
 
 
-Cross Site Evaluation: Client Side Controller
-=============================================
+クロスサイト評価: クライアント側コントローラー
+==============================================================================================
 
 
 .. code-block:: python
@@ -1016,33 +1006,33 @@ Cross Site Evaluation: Client Side Controller
             get_model_timeout=Constant.GET_MODEL_TIMEOUT,
         ):
 
-The default value of the task name prefix is "cse".
+タスク名プレフィックスのデフォルト値は"cse"です。
 
-The additional init args are:
+追加の初期化引数は次のとおりです:
 
-``submit_model_task_name`` - the task name for submitting a model. This must map to a trainer executor that already supports submitting the local best model.
+``submit_model_task_name`` - モデルを提出するタスクの名前。これは、ローカル最良モデルの提出をすでにサポートしているトレーナーエグゼキューターにマッピングされる必要があります。
 
-``validation_task_name`` - the task name for validating a model. This must map to a trainer executor that already supports model validation.
+``validation_task_name`` - モデルを検証するタスクの名前。これは、モデル検証をすでにサポートしているトレーナーエグゼキューターにマッピングされる必要があります。
 
-``get_model_timeout`` - When client X tries to evaluate the model of client Y, client X first sends a request to Y to ask for the model. This arg sets the timeout for this request.
+``get_model_timeout`` - クライアントXがクライアントYのモデルを評価しようとする場合、クライアントXはまずYにモデルを要求するリクエストを送信します。この引数は、このリクエストのタイムアウトを設定します。
 
 Model Persistor
 ---------------
-The CSE workflow requires the global model client to have a Model Persistor that implements the ``get_model_inventory`` method.
-This method is called to return the names of available global models. The persistor must also implement the ``get_model`` method,
-which is called to get the model from the persistor for other clients to evaluate.
+CSEワークフローでは、グローバルモデルクライアントは ``get_model_inventory`` メソッドを実装したModel Persistorを持っている必要があります。
+このメソッドは、利用可能なグローバルモデルの名前を返すために呼び出されます。persistorは ``get_model`` メソッドも実装する必要があります。
+このメソッドは、他のクライアントが評価するために、persistorからモデルを取得する際に呼び出されます。
 
-Example Cross Site Evaluation
-=============================
+クロスサイト評価の例
+==========================================
 
-This section shows how to set up cross-site evaluation using recipes (recommended) and the traditional JSON configuration.
+このセクションでは、レシピを使用する方法(推奨)と従来のJSON設定を使用する方法で、クロスサイト評価をセットアップする方法を示します。
 
-Using Recipes (Recommended)
----------------------------
+レシピの使用(推奨)
+------------------------------------------------------
 
-**Swarm Learning with Cross-Site Evaluation:**
+**クロスサイト評価付きスウォーム学習:**
 
-Use ``SwarmLearningRecipe`` for swarm learning with optional cross-site evaluation:
+クロスサイト評価をオプションで有効にしたスウォーム学習には、``SwarmLearningRecipe`` を使用します:
 
 .. code-block:: python
 
@@ -1076,17 +1066,16 @@ Use ``SwarmLearningRecipe`` for swarm learning with optional cross-site evaluati
 
 .. note::
 
-    This recipe uses the CCWF peer-to-peer cross-site evaluation where clients evaluate each other's
-    models directly. For the traditional server-controlled cross-site evaluation, see
-    :ref:`cross_site_model_evaluation`.
+    注記: このレシピは、クライアントが互いのモデルを直接評価するCCWFのピアツーピアなクロスサイト評価を使用します。
+    従来のサーバー制御によるクロスサイト評価については、:ref:`cross_site_model_evaluation` を参照してください。
 
-Using JSON Configuration (Advanced)
------------------------------------
+JSON設定の使用(上級者向け)
+----------------------------------------------------------------------
 
-For users who need fine-grained control, here is the equivalent JSON configuration.
+きめ細かな制御が必要なユーザー向けに、同等のJSON設定を示します。
 
-Cross Site Evaluation: config_fed_server.json
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+クロスサイト評価: config_fed_server.json
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: json
 
@@ -1121,11 +1110,11 @@ Cross Site Evaluation: config_fed_server.json
 
 .. note::
 
-    The json_generator component is used to also create a JSON file at the end of the job that
-    shows cross-site validation results in human readable format.
+    注記: json_generatorコンポーネントは、ジョブの終了時に、サイト横断検証の結果を人間が読める形式で
+    示すJSONファイルを作成するためにも使用されます。
 
-Cross Site Evaluation: config_fed_client.json
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+クロスサイト評価: config_fed_client.json
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: json
 
@@ -1198,40 +1187,40 @@ Cross Site Evaluation: config_fed_client.json
 
 .. note::
 
-      - All tasks prefixed with ``cse_`` are routed to the :class:`nvflare.app_common.ccwf.cse_client_ctl.CrossSiteEvalClientController` (which is an executor). 
-      - The following tasks are assigned by the :class:`nvflare.app_common.ccwf.cse_server_ctl.CrossSiteEvalServerController`:
+      - ``cse_`` プレフィックスの付いたすべてのタスクは、:class:`nvflare.app_common.ccwf.cse_client_ctl.CrossSiteEvalClientController`\ (エグゼキューターです)にルーティングされます。
+      - 以下のタスクは :class:`nvflare.app_common.ccwf.cse_server_ctl.CrossSiteEvalServerController` によって割り当てられます:
         - ``cse_config``
         - ``cse_eval``
-      - The following task is assigned by clients during the training process:
-        - ``cse_ask_for_model``: this is sent from a client to another client to ask for its model for evaluation.
+      - 以下のタスクは、トレーニングプロセス中にクライアントによって割り当てられます:
+        - ``cse_ask_for_model``: あるクライアントから別のクライアントに、評価のためにモデルを要求するために送信されます。
 
 .. note::
 
-    There is no "start" task in this workflow.
+    注記: このワークフローには"start"タスクはありません。
 
 .. note::
 
-    There is no sensitive model data in the ``cse_config`` and ``cse_eval`` tasks.
+    注記: ``cse_config`` タスクと ``cse_eval`` タスクには機密性の高いモデルデータは含まれません。
 
 .. note::
 
-    The response to the ``ask_for_model`` task contains model data. You can apply ``task_result_filters`` if privacy is a concern (the OUT filter for the responding client, and IN filters for the requesting client).
+    注記: ``ask_for_model`` タスクへの応答にはモデルデータが含まれます。プライバシーが懸念される場合は、``task_result_filters`` を適用できます(応答側クライアントにはOUTフィルター、要求側クライアントにはINフィルター)。
 
-Cross Site Evaluation Parameters for Large Models
-=================================================
+大規模モデル向けのクロスサイト評価パラメータ
+======================================================================================
 
-When running Cross Site Evaluation with large models, you may need to adjust timeout parameters to accommodate larger model transfers and longer evaluation times.
+大規模モデルでクロスサイト評価を実行する場合、より大きなモデル転送とより長い評価時間に対応するために、タイムアウトパラメータの調整が必要になることがあります。
 
-Server-Side Parameters
-----------------------
+サーバー側パラメータ
+--------------------------------------------
 
 **CrossSiteEvalServerController:**
 
-- ``eval_task_timeout``: Max time allowed for the evaluation of a model by clients. **Suggested: 1200 or higher** for large models, as evaluation can be expensive.
-- ``configure_task_timeout``: Timeout for configuration task. **Suggested: 300** for large model initialization.
-- ``progress_timeout``: Overall workflow progress timeout. **Suggested: 7200 or higher** for large models.
+- ``eval_task_timeout``: クライアントによるモデル評価に許容される最大時間。評価は高コストになり得るため、大規模モデルでは\ **推奨: 1200以上**\ 。
+- ``configure_task_timeout``: 設定タスクのタイムアウト。大規模モデルの初期化には\ **推奨: 300**\ 。
+- ``progress_timeout``: ワークフロー全体の進捗タイムアウト。大規模モデルでは\ **推奨: 7200以上**\ 。
 
-**Example server config for large models:**
+**大規模モデル向けのサーバー設定例:**
 
 .. code-block:: json
 
@@ -1245,14 +1234,14 @@ Server-Side Parameters
       }
     }
 
-Client-Side Parameters
-----------------------
+クライアント側パラメータ
+------------------------------------------------
 
 **CrossSiteEvalClientController:**
 
-- ``get_model_timeout``: Timeout for requesting a model from another client. **Suggested: 600 or higher** for large models.
+- ``get_model_timeout``: 別のクライアントにモデルを要求する際のタイムアウト。大規模モデルでは\ **推奨: 600以上**\ 。
 
-**Example client config for large models:**
+**大規模モデル向けのクライアント設定例:**
 
 .. code-block:: json
 
@@ -1269,12 +1258,12 @@ Client-Side Parameters
       }
     }
 
-Download and Chunking Behavior
-------------------------------
+ダウンロードとチャンク化の動作
+------------------------------------------------------------
 
-For large model transfers during cross-site evaluation, ensure chunking is configured:
+クロスサイト評価中の大規模モデル転送では、チャンク化が設定されていることを確認してください:
 
-- ``np_download_chunk_size``: Chunk size for NumPy array downloads. **Suggested: 2097152 (2MB)**
-- ``tensor_download_chunk_size``: Chunk size for PyTorch tensor downloads. **Suggested: 2097152 (2MB)**
+- ``np_download_chunk_size``: NumPy配列のダウンロードのチャンクサイズ。\ **推奨: 2097152 (2MB)**
+- ``tensor_download_chunk_size``: PyTorchテンソルのダウンロードのチャンクサイズ。\ **推奨: 2097152 (2MB)**
 
-See :ref:`swarm_learning_large_models` for more details on chunking configuration.
+チャンク化設定の詳細については、:ref:`swarm_learning_large_models` を参照してください。

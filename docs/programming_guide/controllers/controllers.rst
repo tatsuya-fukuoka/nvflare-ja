@@ -1,41 +1,41 @@
 .. _controllers:
 
-Controllers and Controller API
-==============================
-The :class:`controller API <nvflare.apis.controller_spec.ControllerSpec>` makes it possible to create any client coordination logic
-in an FL workflow that is executed on the FL Server. 
+コントローラーとController API
+==========================================================
+:class:`controller API <nvflare.apis.controller_spec.ControllerSpec>` を使用すると、FLサーバー上で実行される
+FLワークフローにおいて、任意のクライアント調整ロジックを作成できます。
 
-Controller/Worker Interactions
-------------------------------
+Controller/Workerの相互作用
+------------------------------------------------------
 
-NVFlare's collaborative computing is achieved through the Controller/Worker interactions. The following diagram
-shows how the Controller and Worker interact.
+NVFlareの協調コンピューティングは、Controller/Workerの相互作用を通じて実現されます。次の図は、
+ControllerとWorkerがどのように相互作用するかを示しています。
 
 .. image:: ../../resources/Controller.png
     :height: 300px
 
-The Controller is a python object that controls or coordinates the Workers to get a job done. The controller is run on
-the FL server (highlighted on the right).
+Controllerは、ジョブを完了させるためにWorkerを制御または調整するPythonオブジェクトです。コントローラーは
+FLサーバー上で実行されます(右側で強調表示)。
 
-A Worker is capable of performing tasks. Workers run on FL clients.
+Workerはタスクを実行する能力を持ちます。WorkerはFLクライアント上で実行されます。
 
-In its control logic, the Controller assigns tasks to Workers and processes task results from the Workers.
+Controllerはその制御ロジックの中で、Workerにタスクを割り当て、Workerからのタスク結果を処理します。
 
-Workers keep asking for the next task to do, executes the task, and submits results to the Controller, until instructed
-to exit by the Controller (a special END_RUN task).
+Workerは、Controllerから終了を指示される(特別なEND_RUNタスク)まで、次に実行すべきタスクを要求し続け、タスクを実行し、
+結果をControllerに提出します。
 
 Controller API
 --------------
 
-The :mod:`Controller API<nvflare.apis.controller_spec>` provides methods for assigning tasks to the Workers (FL clients)
-in different ways:
+:mod:`Controller API<nvflare.apis.controller_spec>` は、さまざまな方法でWorker(FLクライアント)に
+タスクを割り当てるためのメソッドを提供します:
 
-   - Broadcast a task to multiple clients
-   - Send a task to a single client
-   - Arrange a task to be done by multiple clients in turns
+   - タスクを複数のクライアントにブロードキャストする
+   - タスクを単一のクライアントに送信する
+   - タスクを複数のクライアントが順番に実行するように手配する
 
-See the included :class:`Controller<nvflare.apis.impl.controller.Controller>` implementation and full reference
-implementations of the following controller workflows:
+同梱の :class:`Controller<nvflare.apis.impl.controller.Controller>` 実装と、以下のコントローラーワークフローの
+完全なリファレンス実装を参照してください:
 
 .. toctree::
    :maxdepth: 1
@@ -45,37 +45,37 @@ implementations of the following controller workflows:
    cyclic_workflow.rst
    initialize_global_weights.rst
 
-You can study the source code and use it as a starting point to write your own controller workflows.
+ソースコードを学習し、独自のコントローラーワークフローを作成する際の出発点として使用できます。
 
 .. _tasks:
 
-Task Lifecycle
---------------
+タスクのライフサイクル
+--------------------------------------------
 
-The central concept of the Controller API is :class:`Task<nvflare.apis.controller_spec.Task>`.
+Controller APIの中心的な概念は :class:`Task<nvflare.apis.controller_spec.Task>` です。
 
-A :class:`Task<nvflare.apis.controller_spec.Task>` is a piece of work that is assigned by the Controller to client workers. Depending on how the task is assigned (broadcast, send, or relay), the task will be performed by one or more clients.
+:class:`Task<nvflare.apis.controller_spec.Task>` は、Controllerによってクライアントのワーカーに割り当てられる作業の単位です。タスクの割り当て方法(broadcast、send、relay)に応じて、タスクは1つ以上のクライアントによって実行されます。
 
-The Controller's Task Manager manages the task's lifecycle:
+ControllerのTask Managerは、タスクのライフサイクルを管理します:
 
-    - First, the programmer creates the task, specifying the name and the data of the task.
-    - Then, the programmer calls one of the task methods (e.g. broadcast, send, relay, etc.). All these methods do is simply adding the task to the Task Queue. Now the task is waiting for clients to come to retrieve it. Note that there could be multiple tasks in the queue.
-    - When a client comes to get the next task, the Task Manager decides which task in the queue should be assigned to the client. The general rule is that the tasks will be examined one by one following their orders in the queue. If the client is a candidate of the task and the task has not been performed by the client, AND the task-specific rule allows the client to be assigned, then the task is assigned to the client, and a new ClientTask record is created and added to the task's client_tasks list. If the before_task_sent callback (CB) is provided, it is called before sending the task to the client.
-    - If no task is found for the client, the Task Manager tells the client to try again later.
-    - When the client finishes its assigned task and comes back to submit its result, the client_task is found for this client, and then the result_received CB (if provided) is called. The result is recorded into the client_task record, and the client_task is marked as "result received".
-    - Eventually the task is completed when one of the following conditions is met:
-        - The task itself is timed out (if the task timeout is specified)
-        - All assigned tasks received results from clients
-        - Task specific exit rule is met (e.g. for broadcast, the minimal-responses are received and waited for enough time after that)
-        - The task is cancelled explicitly
-        - Fatal error occurred (task data filtering error) and the task is cancelled by the system
-    - Once the task is completed, it's completion_status is set based on the condition the task is completed, and the task is removed from the task queue. If the task_done CB is provided, it is called. This is the end of the task's lifecycle.
+    - まず、プログラマがタスクを作成し、タスクの名前とデータを指定します。
+    - 次に、プログラマがタスクメソッドのいずれか(例: broadcast、send、relayなど)を呼び出します。これらのメソッドが行うのは、タスクをタスクキューに追加することだけです。これでタスクは、クライアントが取得しに来るのを待つ状態になります。キューには複数のタスクが存在し得ることに注意してください。
+    - クライアントが次のタスクを取得しに来ると、Task Managerはキュー内のどのタスクをそのクライアントに割り当てるべきかを決定します。一般的なルールとして、タスクはキュー内の順序に従って1つずつ検査されます。クライアントがタスクの候補であり、そのタスクをまだ実行しておらず、かつタスク固有のルールがそのクライアントへの割り当てを許可する場合、タスクはクライアントに割り当てられ、新しいClientTaskレコードが作成されてタスクのclient_tasksリストに追加されます。before_task_sentコールバック(CB)が提供されている場合、タスクをクライアントに送信する前に呼び出されます。
+    - クライアントに対するタスクが見つからない場合、Task Managerはクライアントに後で再試行するように伝えます。
+    - クライアントが割り当てられたタスクを完了して結果を提出しに戻ってくると、そのクライアントに対応するclient_taskが見つけられ、result_received CB(提供されている場合)が呼び出されます。結果はclient_taskレコードに記録され、client_taskは"result received"としてマークされます。
+    - 最終的に、次のいずれかの条件が満たされるとタスクは完了します:
+        - タスク自体がタイムアウトした(タスクのタイムアウトが指定されている場合)
+        - 割り当てられたすべてのタスクがクライアントから結果を受信した
+        - タスク固有の終了ルールが満たされた(例: broadcastの場合、最小応答数を受信し、その後十分な時間待機した)
+        - タスクが明示的にキャンセルされた
+        - 致命的エラーが発生し(タスクデータのフィルタリングエラー)、システムによってタスクがキャンセルされた
+    - タスクが完了すると、タスクが完了した条件に基づいてcompletion_statusが設定され、タスクはタスクキューから削除されます。task_done CBが提供されている場合は呼び出されます。これがタスクのライフサイクルの終わりです。
 
 .. note::
 
-    In NVIDIA FLARE, the underlying communication is facilitated through gRPC:
-    the client always initiates communication by sending a request to the server and receiving a response.
-    When referring to the scenario where the "server sends a task to the client,"
-    it is important to note that this is a conceptual representation.
-    In reality, with gRPC, the client initiates the interaction by sending a "request for the next task" to the server,
-    and the server responds by providing the task data.
+    注記: NVIDIA FLAREでは、基盤となる通信はgRPCを通じて行われます。
+    クライアントが常にサーバーへリクエストを送信して応答を受け取るという形で通信を開始します。
+    「サーバーがクライアントにタスクを送信する」というシナリオに言及する場合、
+    これは概念的な表現であることに注意してください。
+    実際には、gRPCではクライアントが「次のタスクの要求」をサーバーに送信することでやり取りを開始し、
+    サーバーがタスクデータを提供することで応答します。

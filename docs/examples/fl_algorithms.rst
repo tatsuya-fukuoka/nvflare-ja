@@ -1,57 +1,56 @@
 .. _fl_algorithms:
 
 ********************
-FL Algorithms
+FLアルゴリズム
 ********************
 
-Federated Averaging
--------------------
-In NVIDIA FLARE, FedAvg is implemented through the :ref:`scatter_and_gather_workflow`. In the federated averaging workflow,
-a set of initial weights is distributed to client workers who perform local training.  After local training, clients
-return their local weights as a Shareables that are aggregated (averaged).  This new set of global average weights is
-redistributed to clients and the process repeats for the specified number of rounds. 
+連合平均化(Federated Averaging)
+------------------------------------
+NVIDIA FLARE では、FedAvg は :ref:`scatter_and_gather_workflow` を通じて実装されています。連合平均化ワークフローでは、
+初期重みのセットがクライアントワーカーに配布され、クライアントワーカーがローカルトレーニングを実行します。ローカルトレーニングの後、クライアントは
+ローカルの重みを Shareable として返し、それらが集約(平均化)されます。この新しいグローバル平均重みのセットが
+再びクライアントに配布され、指定されたラウンド数だけこのプロセスが繰り返されます。
 
 FedProx
 -------
-`FedProx <https://arxiv.org/abs/1812.06127>`_ implements a :class:`Loss function <nvflare.app_common.pt.pt_fedproxloss.PTFedProxLoss>`
-to penalize a client's local weights based on deviation from the global model. An example configuration can be found in
-cifar10_fedprox of the :github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>`.
+`FedProx <https://arxiv.org/abs/1812.06127>`_ は、グローバルモデルからの乖離に基づいてクライアントのローカル重みにペナルティを課す
+:class:`Loss function <nvflare.app_common.pt.pt_fedproxloss.PTFedProxLoss>` を実装しています。設定例は
+:github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>` の cifar10_fedprox にあります。
 
 FedOpt
 ------
-`FedOpt <https://arxiv.org/abs/2003.00295>`_ implements a :class:`ShareableGenerator <nvflare.app_common.pt.pt_fedopt.PTFedOptModelShareableGenerator>`
-that can use a specified Optimizer and Learning Rate Scheduler when updating the global model. An example configuration
-can be found in cifar10_fedopt of :github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>`.
+`FedOpt <https://arxiv.org/abs/2003.00295>`_ は、グローバルモデルの更新時に指定した Optimizer と Learning Rate Scheduler を使用できる
+:class:`ShareableGenerator <nvflare.app_common.pt.pt_fedopt.PTFedOptModelShareableGenerator>` を実装しています。設定例は
+:github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>` の cifar10_fedopt にあります。
 
 SCAFFOLD
 --------
-`SCAFFOLD <https://arxiv.org/abs/1910.06378>`_ uses a slightly modified version of the CIFAR-10 Learner implementation,
-namely the `CIFAR10ScaffoldLearner`, which adds a correction term during local training following the `implementation <https://github.com/Xtra-Computing/NIID-Bench>`_
-as described in `Li et al. <https://arxiv.org/abs/2102.02079>`_. An example configuration can be found in cifar10_scaffold of :github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>`.
+`SCAFFOLD <https://arxiv.org/abs/1910.06378>`_ は、CIFAR-10 Learner 実装をわずかに変更したバージョン、
+すなわち `CIFAR10ScaffoldLearner` を使用します。これは、`Li et al. <https://arxiv.org/abs/2102.02079>`_ に記載されている
+`implementation <https://github.com/Xtra-Computing/NIID-Bench>`_ に従い、ローカルトレーニング中に補正項を追加するものです。設定例は :github_nvflare_link:`CIFAR-10 example <examples/advanced/cifar10>` の cifar10_scaffold にあります。
 
-Federated XGBoost
+連合XGBoost
 -----------------
 
-NVFlare supports federated learning using popular gradient boosting library XGBoost.
-It uses XGBoost library with federated plugin (xgboost version >= 1.7.0rc1) to perform the learning.
+NVFlare は、人気のある勾配ブースティングライブラリ XGBoost を使用した連合学習をサポートしています。
+学習には、federated プラグイン付きの XGBoost ライブラリ(xgboost バージョン >= 1.7.0rc1)を使用します。
 
-Using XGBoost with NVFlare has following benefits compared with running federated XGBoost directly,
+連合XGBoost を直接実行する場合と比較して、NVFlare で XGBoost を使用すると次の利点があります。
 
-* XGBoost instance's life-cycle is managed by NVFlare. Both XGBoost client and server
-  are started/stopped automatically by NVFlare workflow.
-* For histogram-based XGBoost federated server can be configured automatically with auto-assigned port number.
-* When mutual TLS is used, the certificates are managed by NVFlare using existing
-  provisioning process.
-* No need to manually configure each instance. Instance specific parameters
-  like code:`rank` are assigned automatically by the NVFlare controller.
+* XGBoost インスタンスのライフサイクルが NVFlare によって管理されます。XGBoost のクライアントとサーバーの両方が
+  NVFlare のワークフローによって自動的に起動/停止されます。
+* ヒストグラムベースの XGBoost では、federated サーバーを自動割り当てのポート番号で自動的に設定できます。
+* 相互 TLS を使用する場合、証明書は既存のプロビジョニングプロセスを使用して NVFlare によって
+  管理されます。
+* 各インスタンスを手動で設定する必要はありません。code:`rank` のようなインスタンス固有のパラメータは、
+  NVFlare のコントローラーによって自動的に割り当てられます。
 
-* :github_nvflare_link:`Federated Horizontal XGBoost (GitHub) <examples/advanced/xgboost>` - Includes examples of histogram-based and tree-based algorithms. Tree-based algorithms also includes bagging and cyclic approaches
-* :github_nvflare_link:`Federated Vertical XGBoost (GitHub) <examples/advanced/vertical_xgboost>` - Example using Private Set Intersection and XGBoost on vertically split HIGGS data.
+* :github_nvflare_link:`Federated Horizontal XGBoost (GitHub) <examples/advanced/xgboost>` - ヒストグラムベースおよびツリーベースのアルゴリズムの例が含まれます。ツリーベースのアルゴリズムには、バギングとサイクリックのアプローチも含まれます。
+* :github_nvflare_link:`Federated Vertical XGBoost (GitHub) <examples/advanced/vertical_xgboost>` - Private Set Intersection と XGBoost を垂直分割された HIGGS データに使用する例です。
 
-Federated Analytics
+連合分析
 -------------------
 
-* :github_nvflare_link:`Federated Statistics for medical imaging (Github) <examples/advanced/federated-statistics/image_stats/README.md>` - Example of gathering local image histogram to compute the global dataset histograms.
-* :github_nvflare_link:`Federated Statistics for tabular data with DataFrame (Github) <examples/advanced/federated-statistics/df_stats/README.md>` - Example of gathering local statistics summary from Pandas DataFrame to compute the global dataset statistics.
-* :github_nvflare_link:`Federated Statistics with Monai Statistics integration for Spleen CT Image (Github) <integration/monai/examples/spleen_ct_segmentation_local/README.md>` - Example demonstrated Monai statistics integration and few other features in federated statistics
-
+* :github_nvflare_link:`Federated Statistics for medical imaging (Github) <examples/advanced/federated-statistics/image_stats/README.md>` - ローカル画像ヒストグラムを収集してグローバルデータセットのヒストグラムを計算する例です。
+* :github_nvflare_link:`Federated Statistics for tabular data with DataFrame (Github) <examples/advanced/federated-statistics/df_stats/README.md>` - Pandas DataFrame からローカル統計サマリーを収集してグローバルデータセットの統計を計算する例です。
+* :github_nvflare_link:`Federated Statistics with Monai Statistics integration for Spleen CT Image (Github) <integration/monai/examples/spleen_ct_segmentation_local/README.md>` - Monai 統計インテグレーションと、連合統計のその他いくつかの機能を示す例です。

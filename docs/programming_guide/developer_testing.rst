@@ -1,35 +1,35 @@
 .. _developer_testing:
 
-##################
-Developer Testing
-##################
+########################
+開発者向けテスト
+########################
 
-This guide covers the ``runtest.sh`` script used for running tests during NVIDIA FLARE development.
+このガイドでは、NVIDIA FLARE 開発時にテストを実行するための ``runtest.sh`` スクリプトについて説明します。
 
-.. contents:: Table of Contents
+.. contents:: 目次
    :local:
    :depth: 2
 
-Quick Start
-===========
+クイックスタート
+================
 
-Run the full test suite:
+テストスイート全体を実行します:
 
 .. code:: bash
 
    ./runtest.sh
 
-**Default behavior** (no arguments): Runs the complete CI-equivalent test suite:
+**デフォルトの動作**\ (引数なし): CI と同等の完全なテストスイートを実行します:
 
-1. License header check
-2. Code style check (black, isort, flake8)
-3. Auto-fix formatting
-4. Unit tests with coverage reporting
+1. ライセンスヘッダーのチェック
+2. コードスタイルのチェック(black、isort、flake8)
+3. フォーマットの自動修正
+4. カバレッジレポート付きのユニットテスト
 
-Individual Commands
--------------------
+個別コマンド
+------------
 
-Run specific tests individually:
+特定のテストを個別に実行します:
 
 .. code:: bash
 
@@ -41,59 +41,59 @@ Run specific tests individually:
 
 .. note::
 
-   ``./runtest.sh`` runs the **full suite** (license + style + unit tests).
-   Use ``./runtest.sh -u`` for **faster iteration** when you only need unit tests.
+   注記: ``./runtest.sh`` は\ **完全なスイート**\ (ライセンス + スタイル + ユニットテスト)を実行します。
+   ユニットテストだけが必要な場合は、\ **より速いイテレーション**\ のために ``./runtest.sh -u`` を使用してください。
 
-Available Commands
+利用可能なコマンド
 ==================
 
 .. list-table::
    :widths: 20 80
    :header-rows: 1
 
-   * - Option
-     - Description
+   * - オプション
+     - 説明
    * - ``-u`` / ``--unit-tests``
-     - Run unit tests with pytest
+     - pytest でユニットテストを実行します
    * - ``-s`` / ``--check-format``
-     - Check code formatting (black, isort, flake8)
+     - コードフォーマットをチェックします(black、isort、flake8)
    * - ``-f`` / ``--fix-format``
-     - Auto-fix code formatting issues
+     - コードフォーマットの問題を自動修正します
    * - ``-n`` / ``--notebook``
-     - Run notebook tests using nbmake (see :ref:`notebook_testing`)
+     - nbmake を使ってノートブックテストを実行します(:ref:`notebook_testing` を参照)
    * - ``-l`` / ``--check-license``
-     - Check license headers in source files
+     - ソースファイルのライセンスヘッダーをチェックします
    * - ``-c`` / ``--coverage``
-     - Enable coverage reporting (use with ``-u``)
+     - カバレッジレポートを有効にします(``-u`` と併用)
    * - ``-r`` / ``--test-report``
-     - Generate JUnit XML test report (use with ``-u``)
+     - JUnit XML テストレポートを生成します(``-u`` と併用)
    * - ``--clean``
-     - Clean build artifacts
+     - ビルド成果物をクリーンアップします
 
-Common Options
+共通オプション
 ==============
 
-These options can be used with any test command:
+これらのオプションは、どのテストコマンドとも組み合わせて使用できます:
 
 .. list-table::
    :widths: 25 15 60
    :header-rows: 1
 
-   * - Option
-     - Default
-     - Description
+   * - オプション
+     - デフォルト
+     - 説明
    * - ``--numprocesses=<N|auto>``
      - 8
-     - Number of parallel pytest workers (default: 8). Use ``auto`` to match available CPU cores.
+     - 並列 pytest ワーカーの数(デフォルト: 8)。利用可能な CPU コア数に合わせるには ``auto`` を使用します。
    * - ``-d`` / ``--dry-run``
-     - off
-     - Print commands without executing
+     - オフ
+     - 実行せずにコマンドを表示します
 
-Examples
-========
+例
+==
 
-Unit Tests
-----------
+ユニットテスト
+--------------
 
 .. code:: bash
 
@@ -112,8 +112,8 @@ Unit Tests
    # Limit parallelism (e.g. for CI)
    ./runtest.sh -u --numprocesses=4
 
-Code Quality
-------------
+コード品質
+----------
 
 .. code:: bash
 
@@ -126,10 +126,10 @@ Code Quality
    # Check specific directory
    ./runtest.sh -s nvflare/apis/
 
-Notebook Tests
---------------
+ノートブックテスト
+------------------
 
-See :ref:`notebook_testing` for detailed notebook testing options.
+ノートブックテストの詳細なオプションについては :ref:`notebook_testing` を参照してください。
 
 .. code:: bash
 
@@ -139,13 +139,13 @@ See :ref:`notebook_testing` for detailed notebook testing options.
    # Test specific notebook with verbose output
    ./runtest.sh -n -v examples/tutorials/flare_simulator.ipynb
 
-Troubleshooting
-===============
+トラブルシューティング
+======================
 
-Force Clean State
------------------
+クリーンな状態に戻す
+--------------------
 
-To start fresh:
+まっさらな状態から始めるには:
 
 .. code:: bash
 

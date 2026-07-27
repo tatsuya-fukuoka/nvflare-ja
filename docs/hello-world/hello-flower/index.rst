@@ -1,34 +1,34 @@
 Hello Flower (PyTorch)
 ========================
 
-This example demonstrates how to use NVIDIA FLARE with Flower to train an image classifier using federated averaging (FedAvg).
-The complete example code can be found in the `hello-flower directory <https://github.com/NVIDIA/NVFlare/tree/main/examples/hello-world/hello-flower>`_.
-It is recommended to create a virtual environment and run everything within a virtualenv.
+この例では、NVIDIA FLARE と Flower を組み合わせて、連合平均(FedAvg)を用いて画像分類器をトレーニングする方法を示します。
+完全なサンプルコードは `hello-flower ディレクトリ <https://github.com/NVIDIA/NVFlare/tree/main/examples/hello-world/hello-flower>`_ にあります。
+仮想環境を作成し、すべてを virtualenv 内で実行することを推奨します。
 
-NVIDIA FLARE Installation
--------------------------
+NVIDIA FLAREのインストール
+------------------------------------------------
 
-For the complete installation instructions, see `Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_.
+完全なインストール手順については、`Installation <https://nvflare.readthedocs.io/en/main/installation.html>`_ を参照してください。
 
 .. code-block:: bash
 
    pip install nvflare
 
 
-Get the example code from GitHub:
+GitHubからサンプルコードを取得します:
 
 .. code-block:: bash
 
    git clone https://github.com/NVIDIA/NVFlare.git
 
-Then navigate to the ``hello-flower`` directory:
+次に ``hello-flower`` ディレクトリに移動します:
 
 .. code-block:: bash
 
    git switch <release branch>
    cd examples/hello-world/hello-flower
 
-Install the dependencies:
+依存関係をインストールします:
 
 .. code-block:: bash
 
@@ -36,17 +36,18 @@ Install the dependencies:
 
 .. warning::
 
-   This ``main`` branch example uses Flower 1.26+ and the newer Flower SuperLink
-   configuration flow. Use the NVFlare 2.8 release candidate line
-   (``nvflare~=2.8.0rc``), or install NVFlare from this repository if that
-   package is not available from PyPI yet.
+   この ``main`` ブランチの例では、Flower 1.26以降と新しい Flower SuperLink
+   設定フローを使用します。NVFlare 2.8 リリース候補系列
+   (``nvflare~=2.8.0rc``)を使用するか、そのパッケージがまだ PyPI から
+   入手できない場合は、このリポジトリから NVFlare をインストールしてください。
 
-   If you are using released NVFlare 2.7.x, switch to the 2.7 branch or tag of
-   this example and use ``flwr>=1.16,<1.26``. NVFlare 2.7.x still uses Flower's
-   legacy ``--federation-config`` CLI option, which Flower 1.26+ ignores.
+   リリース済みの NVFlare 2.7.x を使用している場合は、この例の 2.7 ブランチまたは
+   タグに切り替え、``flwr>=1.16,<1.26`` を使用してください。NVFlare 2.7.x は
+   Flower のレガシーな ``--federation-config`` CLI オプションを引き続き使用しますが、
+   このオプションは Flower 1.26以降では無視されます。
 
-Code Structure
---------------
+コード構造
+--------------------
 
 .. code-block:: bash
 
@@ -69,40 +70,40 @@ Code Structure
    ||-- job.py             # job recipe that defines client and server configurations
    ||-- requirements.txt   # dependencies
 
-Data
-----
+データ
+------------
 
-This example uses the `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ dataset.
+この例では `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ データセットを使用します。
 
-In a real FL experiment, each client would have their own dataset used for local training. 
-You can download the CIFAR-10 dataset from the Internet via torchvision's ``datasets`` module. 
-You can split the datasets for different clients so that each client has its own dataset. 
-For simplicity, the same dataset will be used on each client in this example.
+実際のFL実験では、各クライアントはローカルトレーニングに使用する独自のデータセットを持ちます。
+CIFAR-10 データセットは、torchvision の ``datasets`` モジュールを介してインターネットからダウンロードできます。
+各クライアントが独自のデータセットを持つように、データセットをクライアントごとに分割することもできます。
+簡単のため、この例では各クライアントで同じデータセットを使用します。
 
-Model
------
+モデル
+------------
 
-In PyTorch, neural networks are implemented by defining a class that extends ``nn.Module``. 
-The network's architecture is set up in the ``__init__`` method, while the ``forward`` method determines how input data flows through the layers. For faster computations, the model is transferred to a hardware accelerator (such as CUDA GPUs) if available; otherwise, it runs on the CPU. The implementation of this model can be found in the ``task.py`` files within the Flower app directories and is based on a simple CNN adapted from "PyTorch: A 60 Minute Blitz".
+PyTorch では、ニューラルネットワークは ``nn.Module`` を拡張するクラスを定義することで実装されます。
+ネットワークのアーキテクチャは ``__init__`` メソッドで設定され、``forward`` メソッドは入力データがレイヤーをどのように流れるかを決定します。計算を高速化するため、利用可能であればモデルはハードウェアアクセラレーター(CUDA GPUなど)に転送され、利用できない場合はCPU上で実行されます。このモデルの実装は、Flower アプリディレクトリ内の ``task.py`` ファイルにあり、「PyTorch: A 60 Minute Blitz」を基にしたシンプルなCNNです。
 
-Client Code
------------
+クライアントコード
+------------------------------------
 
-The client code in ``client.py`` is responsible for local training and contains the **Flower Client App**.
+``client.py`` のクライアントコードはローカルトレーニングを担当し、**Flower Client App**\ を含みます。
 
-Server Code
------------
+サーバーコード
+----------------------------
 
-In this example, we use Flower's built-in federated averaging **Strategy**. 
-The server code is defined in ``server.py`` within each Flower app directory.
-There is no need to define customized server code for this example, as Flower provides the FedAvg implementation.
+この例では、Flower 組み込みの連合平均\ **Strategy**\ を使用します。
+サーバーコードは、各 Flower アプリディレクトリ内の ``server.py`` で定義されています。
+Flower が FedAvg の実装を提供しているため、この例ではカスタマイズしたサーバーコードを定義する必要はありません。
 
-Job Recipe Code
----------------
+ジョブレシピコード
+------------------------------------
 
-The Job Recipe contains the Flower app configuration and deploys it within NVFlare.
+ジョブレシピには Flower アプリの設定が含まれており、それを NVFlare 内にデプロイします。
 
-**BYOC Mode** (package Flower app in job ZIP):
+**BYOCモード**\ (Flower アプリをジョブのZIPにパッケージする場合):
 
 .. code-block:: python
 
@@ -117,7 +118,7 @@ The Job Recipe contains the Flower app configuration and deploys it within NVFla
     env = SimEnv(num_clients=n_clients, num_threads=n_clients)
     recipe.execute(env=env)
 
-**Pre-deployed Mode** (Flower app already on the server):
+**事前デプロイモード**\ (Flower アプリがすでにサーバー上にある場合):
 
 .. code-block:: python
 
@@ -132,40 +133,40 @@ The Job Recipe contains the Flower app configuration and deploys it within NVFla
     env = SimEnv(num_clients=n_clients, num_threads=n_clients)
     recipe.execute(env=env)
 
-Run Job
--------
+ジョブの実行
+------------------------
 
-From the terminal, run the code:
+ターミナルからコードを実行します:
 
-Run ``flwr-pt`` with NVFlare Simulation (BYOC Mode)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NVFlareシミュレーションで ``flwr-pt`` を実行する(BYOCモード)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This runs 2 Flower clients and a Flower server in parallel using NVFlare's simulator.
+これは、NVFlare のシミュレーターを使用して、2つの Flower クライアントと1つの Flower サーバーを並列で実行します。
 
 .. code-block:: bash
 
    python job.py --job_name "flwr-pt" --content_dir "./flwr-pt"
 
-Run ``flwr-pt`` with NVFlare Simulation (Pre-deployed Mode)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NVFlareシミュレーションで ``flwr-pt`` を実行する(事前デプロイモード)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the Flower app is pre-deployed on the server (clients receive it via Flower's FAB distribution):
+Flower アプリがサーバー上に事前デプロイされている場合(クライアントは Flower の FAB 配布経由でアプリを受け取ります):
 
 .. code-block:: bash
 
    python job.py --job_name "flwr-pt" --flower_app_path "local/custom/flwr-pt"
 
-Run ``flwr-pt`` with NVFlare Simulation and TensorBoard Streaming
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NVFlareシミュレーションとTensorBoardストリーミングで ``flwr-pt`` を実行する
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This runs 2 Flower clients and a Flower server in parallel using NVFlare while streaming 
-TensorBoard metrics to the server at each iteration using NVFlare's metric streaming.
+これは、NVFlare を使用して2つの Flower クライアントと1つの Flower サーバーを並列で実行しながら、
+NVFlare のメトリクスストリーミングを使用して、各イテレーションで TensorBoard メトリクスをサーバーにストリーミングします。
 
 .. code-block:: bash
 
    python job.py --job_name "flwr-pt-tb" --content_dir "./flwr-pt-tb" --stream_metrics
 
-You can visualize the metrics streamed to the server using TensorBoard.
+サーバーにストリーミングされたメトリクスは、TensorBoard を使用して可視化できます。
 
 .. code-block:: bash
 
@@ -174,56 +175,56 @@ You can visualize the metrics streamed to the server using TensorBoard.
 .. image:: ../../resources/hello-flower-tensorboard-training.png
    :alt: tensorboard training curve
 
-Run with Real Deployment
-~~~~~~~~~~~~~~~~~~~~~~~~
+実際のデプロイメントでの実行
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, check the deployment guide: :ref:`deployment_overview`.
+まず、デプロイメントガイド :ref:`deployment_overview` を確認してください。
 
-You can run the job in a production environment by changing from ``SimEnv`` to ``ProdEnv`` in the ``job.py`` script.
+``job.py`` スクリプト内の ``SimEnv`` を ``ProdEnv`` に変更することで、本番環境でジョブを実行できます。
 
-Output Summary
---------------
+出力の概要
+--------------------
 
-Initialization
-~~~~~~~~~~~~~~
+初期化
+~~~~~~~~~~~~
 
-* **TensorBoard**: Logs available at ``/tmp/nvflare/hello-flower``.
-* **Workflow**: ``FlowerRecipe`` for NVFlare integration.
-* **Global Model Initialization**: Using initial global parameters provided by the strategy.
+* **TensorBoard**: ログは ``/tmp/nvflare/hello-flower`` にあります。
+* **ワークフロー**: NVFlare 統合のための ``FlowerRecipe``。
+* **グローバルモデルの初期化**: Strategy から提供された初期グローバルパラメータを使用します。
 
-Round 1
-~~~~~~~
+ラウンド1
+~~~~~~~~~~~~
 
-* **Model Loading**: Initial model loaded from the Flower app.
-* **Clients Sampled**: ``site-1``, ``site-2``.
-* **Training**:
+* **モデルの読み込み**: 初期モデルを Flower アプリから読み込みます。
+* **サンプリングされたクライアント**: ``site-1``、``site-2``。
+* **トレーニング**:
 
-  * Global model parameters sent to both sites.
-  * Flower clients perform local training with specified epochs.
+  * グローバルモデルのパラメータが両サイトに送信されます。
+  * Flower クライアントが指定されたエポック数でローカルトレーニングを実行します。
 
-* **Aggregation**: Models aggregated and global model updated on the server.
+* **集約**: モデルが集約され、サーバー上でグローバルモデルが更新されます。
 
-Round 2
-~~~~~~~
+ラウンド2
+~~~~~~~~~~~~
 
 ...
 
-Round 3
-~~~~~~~
+ラウンド3
+~~~~~~~~~~~~
 
-* **Clients Sampled**: ``site-1``, ``site-2``.
-* **Training**:
+* **サンプリングされたクライアント**: ``site-1``、``site-2``。
+* **トレーニング**:
 
-  * Similar process as Round 1.
+  * ラウンド1と同様のプロセス。
 
-* **Aggregation**: Models aggregated and global model updated on the server.
+* **集約**: モデルが集約され、サーバー上でグローバルモデルが更新されます。
 
-Completion
-~~~~~~~~~~
+完了
+~~~~~~~~
 
-* **FedAvg Process**: Successfully finished.
-* **Flower Integration**: Seamless integration between Flower and NVFlare completed.
-* **Print Summary**:
+* **FedAvgプロセス**: 正常に終了しました。
+* **Flower統合**: Flower と NVFlare のシームレスな統合が完了しました。
+* **サマリーの出力**:
 
 .. code-block:: text
 

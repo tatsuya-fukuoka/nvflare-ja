@@ -1,143 +1,142 @@
 .. _flare_hierarchical_architecture:
 
-Hierarchical FLARE
-==================
+階層型FLARE
+====================
 
-As discussed in :ref:`hierarchical_communication`, FLARE can scale to support a large number of FL clients through communication hierarchy and client hierarchy. When properly configured, FLARE achieves highly efficient communication and hierarchical aggregation computation.
+:ref:`hierarchical_communication` で説明したように、FLAREは通信階層とクライアント階層によって、多数のFLクライアントをサポートするようにスケールできます。適切に設定されていれば、FLAREは非常に効率的な通信と階層的な集約計算を実現します。
 
-The following diagram shows a hierarchical FLARE system that uses two levels of relays (the R nodes) for communication. A client hierarchy (CP nodes) is also defined and connected to the relays.
+以下の図は、通信のために2レベルのリレー(Rノード)を使用する階層型FLAREシステムを示しています。クライアント階層(CPノード)も定義されており、リレーに接続されています。
 
 .. image:: ../resources/flare_hierarchical_architecture.png
     :height: 350px
 
-Note that the client hierarchy follows the relay hierarchy closely for optimal performance. For example, CP1_1 and CP1_2 are children of CP1; the LCPs connected to R1_1 are children of CP1_1; the LCPs connected to R1_2 are children of CP1_2; and so on.
+最適なパフォーマンスのために、クライアント階層はリレー階層に忠実に従っていることに注意してください。例えば、CP1_1とCP1_2はCP1の子であり、R1_1に接続されたLCPはCP1_1の子、R1_2に接続されたLCPはCP1_2の子、という具合です。
 
-This client hierarchy is used to implement hierarchical aggregation algorithms for device training.
+このクライアント階層は、デバイストレーニングのための階層的集約アルゴリズムを実装するために使用されます。
 
 Leaf Client Process (LCP)
 -------------------------
 
-LCPs are the terminal nodes in the client hierarchy. They serve a special role in supporting edge applications.
+LCPはクライアント階層の末端ノードです。エッジアプリケーションをサポートする特別な役割を担います。
 
-Interface for Edge Communication
+エッジ通信のインターフェース
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-LCPs serve as the entry point for messages from edge devices. However, these messages are not sent directly to LCPs. Instead, they pass through an intermediary component called a web node.
+LCPは、エッジデバイスからのメッセージのエントリポイントとして機能します。ただし、これらのメッセージはLCPに直接送信されるわけではありません。代わりに、Webノードと呼ばれる中間コンポーネントを経由します。
 
-What are web nodes?
+Webノードとは?
 ~~~~~~~~~~~~~~~~~~~
 
-Web nodes are routing components that receive messages from edge devices and forward them to the appropriate LCPs. They manage load distribution and ensure consistent message routing.
+Webノードは、エッジデバイスからメッセージを受信し、適切なLCPに転送するルーティングコンポーネントです。負荷分散を管理し、一貫したメッセージルーティングを保証します。
 
-Multiple web nodes can be deployed in different regions based on the estimated number of edge devices and their geographical distribution. A web node can connect to all or a subset of LCPs, depending on the routing configuration.
+エッジデバイスの推定数と地理的分布に基づいて、複数のWebノードを異なるリージョンにデプロイできます。Webノードは、ルーティング設定に応じて、すべてのLCPまたはその一部に接続できます。
 
-Web nodes typically aim to:
+Webノードは通常、以下を目指します:
 
-1. Route messages from the same device to the same LCP based on its device ID
-2. Distribute devices evenly across all connected LCPs
+1. デバイスIDに基づき、同じデバイスからのメッセージを同じLCPにルーティングする
+2. 接続されているすべてのLCPにデバイスを均等に分散させる
 
 .. note::
-   For privacy protection, the "device ID" only needs to be a globally unique number and does not need to be the actual device identifier. Once generated, this ID must remain constant at least for the duration of a training session.
+   プライバシー保護のため、「デバイスID」はグローバルに一意な番号であればよく、実際のデバイス識別子である必要はありません。一度生成されたら、このIDは少なくともトレーニングセッションの間は一定に保たれなければなりません。
 
-The following diagram shows this architecture.
+以下の図は、このアーキテクチャを示しています。
 
 .. image:: ../resources/web_to_flare_hierarchical_architecture_lcp.png
     :height: 350px
 
-Routing to Client Job Processes (CJs)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Client Job Process (CJ)へのルーティング
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-LCPs route received edge messages to the appropriate client job processes (CJs), which implement application processing logic.
+LCPは、受信したエッジメッセージを適切なClient Job Process (CJ)にルーティングします。CJはアプリケーションの処理ロジックを実装します。
 
-Note that unlike CJs, which come and go, LCPs are permanent. Multiple jobs can run simultaneously, with one CJ attached to the LCP for each running job. The LCP routes each received edge message to the appropriate CJ.
+生成と消滅を繰り返すCJとは異なり、LCPは永続的であることに注意してください。複数のジョブを同時に実行でき、実行中のジョブごとに1つのCJがLCPに接続されます。LCPは、受信した各エッジメッセージを適切なCJにルーティングします。
 
-The following diagram shows the system with a job deployed.
+以下の図は、ジョブがデプロイされたシステムを示しています。
 
 .. image:: ../resources/lcp_to_cj_flare_hierarchical_architecture.png
     :height: 350px
 
 
-CJ Hierarchy
+CJ階層
 ------------
 
-Once a job is deployed, there is one SJ (Server Job) process and one dedicated CJ process for the job on each CP. The CJ hierarchy mirrors the hierarchy of their CPs. Device messages are received and processed by the CJs associated with LCPs.
+ジョブがデプロイされると、そのジョブに対して1つのSJ (Server Job)プロセスと、各CP上に1つの専用CJプロセスが存在します。CJ階層は、それぞれのCPの階層を反映します。デバイスメッセージは、LCPに関連付けられたCJによって受信・処理されます。
 
-The following diagram shows the CJ hierarchy corresponding to the example above.
+以下の図は、上記の例に対応するCJ階層を示しています。
 
 .. image:: ../resources/cj_hierarchy_flare_hierarchical_architecture.png
     :height: 350px
 
 
-Leaf CJs are associated with LCPs. They interact with edge devices indirectly following the Edge Device Interaction Protocol (EDIP). They also serve as the first-line aggregator, aggregating training results from their devices and reporting the aggregation result to their parent CJs. All intermediate CJs aggregate results from their children and report aggregation results to their parents, continuing up to the SJ, which generates the final aggregation result.
+リーフCJはLCPに関連付けられています。リーフCJは、Edge Device Interaction Protocol (EDIP)に従ってエッジデバイスと間接的にやり取りします。また、第一線のアグリゲーターとしても機能し、担当デバイスからのトレーニング結果を集約して、その集約結果を親のCJに報告します。すべての中間CJは、子からの結果を集約して集約結果を親に報告し、これがSJまで続きます。SJが最終的な集約結果を生成します。
 
-Routing Proxy (Web Node Implementation)
+Routing Proxy (Webノードの実装)
 ---------------------------------------
 
-In the current implementation, the web node is realized as a component called the Routing Proxy.
+現在の実装では、WebノードはRouting Proxyと呼ばれるコンポーネントとして実現されています。
 
-Routing Logic
-~~~~~~~~~~~~~
+ルーティングロジック
+~~~~~~~~~~~~~~~~~~~~~~
 
-The Routing Proxy uses a hash-based routing strategy based on each device's unique identifier:
+Routing Proxyは、各デバイスの一意な識別子に基づくハッシュベースのルーティング戦略を使用します:
 
-- The device ID is passed in the request
-- A consistent hash function maps the device ID to a specific LCP
-- This ensures that all messages from the same device are routed to the same LCP, which is important for session consistency
-- It also ensures even distribution of devices across available LCPs
+- デバイスIDはリクエストで渡されます
+- コンシステントハッシュ関数がデバイスIDを特定のLCPにマッピングします
+- これにより、同じデバイスからのすべてのメッセージが同じLCPにルーティングされることが保証されます。これはセッションの一貫性のために重要です
+- また、利用可能なLCP間でデバイスが均等に分散されることも保証されます
 
-Provision
----------
+プロビジョニング
+------------------
 
-The communication hierarchy and client hierarchy must be properly created using the provisioning tool. This can be done with the ``listening_host``, ``connect_to``, and FQSN properties, as discussed in :ref:`hierarchical_communication`, but this approach can be tedious and error-prone, especially when the number of nodes is large.
+通信階層とクライアント階層は、プロビジョニングツールを使用して適切に作成する必要があります。これは、:ref:`hierarchical_communication` で説明した ``listening_host``、``connect_to``、FQSNの各プロパティで行えますが、このアプローチは、特にノード数が多い場合、手間がかかりミスも起きやすくなります。
 
-FLARE 2.7 offers a CLI tool called ``tree_prov`` to simplify this process. With this tool, you only need to specify the shape of the communication hierarchy, and the tool handles the rest (i.e., creating a client hierarchy that follows the topology of the communication hierarchy).
+FLARE 2.7では、このプロセスを簡素化する ``tree_prov`` というCLIツールを提供しています。このツールでは、通信階層の形状を指定するだけでよく、残り(すなわち、通信階層のトポロジーに従ったクライアント階層の作成)はツールが処理します。
 
 .. note::
-   This tool is intended for simple prototyping on a single machine: all nodes are assumed to be on localhost. Tools for production environments will be available in future versions of FLARE.
+   このツールは、単一マシン上での簡単なプロトタイピングを目的としています。すべてのノードはlocalhost上にあると想定されます。本番環境向けのツールは、FLAREの将来のバージョンで提供される予定です。
 
-To run ``tree_prov``:
+``tree_prov`` を実行するには:
 
 .. code-block:: bash
 
    python -m nvflare.lighter.tree_prov options
 
-Available options:
+利用可能なオプション:
 
-- ``--root_dir, -r``: The directory for the provisioning result. Required.
-- ``--project_name, -p``: Project name. Required.
-- ``--depth, -d``: Depth of the relay tree (i.e., the number of relay tiers). Required.
-- ``--width, -w``: Width of the tree (i.e., the number of child relay nodes for each parent relay). Note that this only applies to relay nodes. If not specified, defaults to 2.
-- ``--clients, -c``: Number of clients (LCPs) for each leaf relay node. This only applies to leaf relay nodes.
-- ``--max_sites, -m``: The maximum number of sites, including relays and FL clients. Note that the number of sites increases exponentially with depth; this limit prevents the tool from generating too many sites when a large depth value is entered accidentally. The default value is 100.
-- ``--lcp_only, -l``: Only generate provisioning results for LCPs. This is occasionally useful when new LCPs are added after the project has already been provisioned.
-- ``--analyze, -a``: If specified, only perform topology analysis without generating provisioning results. The analysis shows the number of relay and client nodes in the hierarchy.
-- ``--rp``: The port number of the Routing Proxy, which implements the web nodes.
+- ``--root_dir, -r``: プロビジョニング結果を出力するディレクトリ。必須。
+- ``--project_name, -p``: プロジェクト名。必須。
+- ``--depth, -d``: リレーツリーの深さ(すなわち、リレー層の数)。必須。
+- ``--width, -w``: ツリーの幅(すなわち、各親リレーに対する子リレーノードの数)。これはリレーノードにのみ適用されることに注意してください。指定しない場合、デフォルトは2です。
+- ``--clients, -c``: 各リーフリレーノードに対するクライアント(LCP)の数。これはリーフリレーノードにのみ適用されます。
+- ``--max_sites, -m``: リレーとFLクライアントを含むサイトの最大数。サイト数は深さに対して指数関数的に増加することに注意してください。この制限は、誤って大きな深さの値が入力された場合に、ツールが過剰な数のサイトを生成するのを防ぎます。デフォルト値は100です。
+- ``--lcp_only, -l``: LCPのプロビジョニング結果のみを生成します。プロジェクトのプロビジョニング後に新しいLCPを追加する場合に、ときどき役立ちます。
+- ``--analyze, -a``: 指定した場合、プロビジョニング結果を生成せず、トポロジー分析のみを実行します。分析では、階層内のリレーノードとクライアントノードの数が表示されます。
+- ``--rp``: Webノードを実装するRouting Proxyのポート番号。
 
-Here is an example of topology analysis:
+トポロジー分析の例を示します:
 
 .. code-block:: bash
 
    python -m nvflare.lighter.tree_prov -d 2 -w 2 -a -c 3 -r . -p x
 
-The result is:
+結果は次のとおりです:
 
 - Relays:  leaf=4; non-leaf=2; total=6
 - Clients: leaf=12; non-leaf=6; total=18
 - Total Sites: 25
 
-There are 6 relay nodes in total: 2 non-leaf nodes and 4 leaf nodes (since each non-leaf node has 2 leaf nodes for a width value of 2).
+リレーノードは合計6つあります: 非リーフノードが2つ、リーフノードが4つです(幅の値が2のため、各非リーフノードは2つのリーフノードを持ちます)。
 
 .. image:: ../resources/tree_prov_flare_hierarchical_architecture.png
     :height: 350px
 
 
-There are 18 client nodes in total. In the client hierarchy, there are 6 non-leaf clients (one for each relay node) and 12 leaf clients (3 for each leaf relay node).
+クライアントノードは合計18個あります。クライアント階層には、6つの非リーフクライアント(各リレーノードに1つ)と12個のリーフクライアント(各リーフリレーノードに3つ)があります。
 
-The total number of sites is the sum of the total number of relays (6), the total number of clients (18), and the server (1), which equals 25.
+サイトの合計数は、リレーの総数(6)、クライアントの総数(18)、サーバー(1)の合計で、25になります。
 
-In addition to the provisioning results, the ``tree_prov`` tool generates additional files for deploying web nodes and convenience scripts. These files are placed in the ``scripts`` folder of the provisioned result. The following files are particularly important:
+プロビジョニング結果に加えて、``tree_prov`` ツールはWebノードをデプロイするための追加ファイルと便利なスクリプトを生成します。これらのファイルは、プロビジョニング結果の ``scripts`` フォルダに配置されます。特に重要なファイルは以下のとおりです:
 
-- ``lcp_map.json``: Contains port numbers that will be used by the web nodes to connect to LCPs
-- ``start_rp.sh``: Shell script used to start a web node (routing proxy)
-- ``rootCA.pem``: Contains the root certificate of the project, used by the web node to make secure connections to LCPs
-
+- ``lcp_map.json``: WebノードがLCPに接続する際に使用するポート番号を含みます
+- ``start_rp.sh``: Webノード(Routing Proxy)を起動するためのシェルスクリプト
+- ``rootCA.pem``: プロジェクトのルート証明書を含み、WebノードがLCPへのセキュアな接続を確立するために使用します

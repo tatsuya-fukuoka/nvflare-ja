@@ -1,43 +1,43 @@
 .. _api_evolution:
 
 ########################
-Evolution of FLARE APIs
+FLARE APIの進化
 ########################
 
-Which APIs Should I Use?
+どのAPIを使うべきか?
 ========================
 
 .. list-table::
    :header-rows: 1
    :widths: 30 25 25 20
 
-   * - Role
-     - Client-side
-     - Server-side
-     - Job Wiring
-   * - **Data Scientists** — applying FL to ML workflows
+   * - ロール
+     - クライアント側
+     - サーバー側
+     - ジョブの結線(Wiring)
+   * - **データサイエンティスト** — MLワークフローにFLを適用する
      - Client API
-     - Built-in algorithms (FedAvg, FedProx, etc.)
+     - 組み込みアルゴリズム(FedAvg、FedProxなど)
      - Job Recipe
-   * - **FL Researchers** — developing new FL algorithms
-     - Collab API, Client API
+   * - **FL研究者** — 新しいFLアルゴリズムを開発する
+     - Collab API、Client API
      - Collab API
      - Job Recipe
-   * - **System Integrators** — building platforms or custom integrations
-     - Collab API, Executor API
-     - Collab API, Controller API
+   * - **システムインテグレーター** — プラットフォームやカスタム統合を構築する
+     - Collab API、Executor API
+     - Collab API、Controller API
      - Job Recipe
 
 .. tip::
 
-   The newer APIs — **Client API**, **Job Recipe API**, and **Collab API** — are designed for simplicity and cover most use cases.
-   The lower-level Controller/Executor APIs are for advanced customization and system integration.
+   新しいAPIである **Client API**\ 、\ **Job Recipe API**\ 、\ **Collab API** は、シンプルさを重視して設計されており、ほとんどのユースケースをカバーします。
+   低レベルのController/Executor APIは、高度なカスタマイズやシステム統合のためのものです。
 
-   Deprecated APIs to avoid in new projects: LearnerExecutor/Learner (use Client API), ModelController (use Collab API), Job Template CLI (use Job Recipe).
+   新規プロジェクトで避けるべき非推奨API: LearnerExecutor/Learner(Client APIを使用)、ModelController(Collab APIを使用)、Job Template CLI(Job Recipeを使用)。
 
-For details on each API layer, see the evolution history below.
+各APIレイヤーの詳細については、以下の進化の歴史を参照してください。
 
-Evolution of FLARE Server Side API
+FLAREサーバー側APIの進化
 ==================================
 
 .. image:: ../resources/server_side_apis.jpg
@@ -47,38 +47,30 @@ Evolution of FLARE Server Side API
 Controller
 ----------
 
-In NVIDIA FLARE, the Controller is the server-side component that orchestrates federated learning workflows. It defines
-the server logic of the FL algorithm, assigns tasks to clients, and processes returned results to drive the overall
-training or evaluation process. Clients pull tasks from the Controller and push results back using a task-based interaction model.
+NVIDIA FLAREにおいて、Controllerは連合学習ワークフローをオーケストレーションするサーバー側コンポーネントです。FLアルゴリズムのサーバーロジックを定義し、クライアントにタスクを割り当て、返された結果を処理して、トレーニングや評価のプロセス全体を推進します。クライアントは、タスクベースの対話モデルを用いて、Controllerからタスクを取得(pull)し、結果を送信(push)します。
 
 **Controller API**
 
-The Controller API provides the abstractions for implementing federated workflows on the server. It is built around a task abstraction,
-where each task represents a unit of client work with an associated payload. Clients periodically request tasks, execute them locally,
-and return results to the Controller, enabling flexible and programmable coordination of federated computation.
+Controller APIは、サーバー上で連合ワークフローを実装するための抽象化を提供します。これはタスクの抽象化を中心に構築されており、各タスクは、関連するペイロードを伴うクライアント作業の単位を表します。クライアントは定期的にタスクを要求し、ローカルで実行して、結果をControllerに返します。これにより、連合計算の柔軟でプログラマブルな調整が可能になります。
 
 Model Controller
 ----------------
 
-In NVIDIA FLARE, the ModelController is a specialized Controller that manages model-centric federated learning workflows.
+NVIDIA FLAREにおいて、ModelControllerは、モデル中心の連合学習ワークフローを管理する特化型のControllerです。
 
-It uses the FLModel data structure, which wraps the model state, parameters, and metadata. By providing a structured
-interface instead of a general dictionary, FLModel makes it easier for data scientists to work with models, reducing errors
-and simplifying workflow implementation while still supporting necessary flexibility for federated learning.
+これは、モデルの状態、パラメータ、メタデータをラップするFLModelデータ構造を使用します。汎用的な辞書の代わりに構造化されたインターフェースを提供することで、FLModelはデータサイエンティストがモデルを扱いやすくし、エラーを減らしてワークフローの実装を簡素化しつつ、連合学習に必要な柔軟性も維持します。
 
-This API design reflects an earlier effort to separate FL algorithm logic from underlying communication handling, making it
-easier for users to focus on modeling and analytics without worrying about low-level message passing or orchestration details.
+このAPI設計は、FLアルゴリズムのロジックを基盤の通信処理から分離しようとする初期の取り組みを反映しており、ユーザーが低レベルのメッセージパッシングやオーケストレーションの詳細を気にすることなく、モデリングと分析に集中しやすくなっています。
 
 
 Collaborative API (Collab API)
 ------------------------------
 
-The Collaborative API achieves a complete separation between communication handling and federated learning algorithms.
-This design gives users greater freedom from framework constraints, allowing them to implement algorithms and analytics logic without
-having to learn FLARE framework concepts. In the Collab API, users decide what kind of message or data structure to pass around.
+Collaborative APIは、通信処理と連合学習アルゴリズムの完全な分離を実現します。
+この設計により、ユーザーはフレームワークの制約からより自由になり、FLAREフレームワークの概念を学ぶことなくアルゴリズムや分析ロジックを実装できます。Collab APIでは、どのような種類のメッセージやデータ構造をやり取りするかをユーザーが決定します。
 
 
-Evolution of Client Side APIs
+クライアント側APIの進化
 =============================
 
 .. image:: ../resources/client_side_apis.jpg
@@ -87,74 +79,51 @@ Evolution of Client Side APIs
 
 Executor
 --------
-The FLARE Executor API is a low-level integration interface that allows users to directly participate in federated workflows
-while retaining full control over client-side execution. It is responsible for receiving tasks from the server,
-interacting with the FLARE runtime, and returning results. This API offers maximum flexibility and extensibility,
-making it suitable for system integration, custom protocols, non-standard workflows, or tight coupling with external systems.
-However, it also requires a deep understanding of FLARE-specific concepts such as Executors, task lifecycle, Shareable,
-and FLContext, and requires users to structure their logic around FLARE’s execution model.
+FLARE Executor APIは、クライアント側の実行を完全に制御しながら連合ワークフローに直接参加できる低レベルの統合インターフェースです。サーバーからのタスクの受信、FLAREランタイムとのやり取り、結果の返却を担います。このAPIは最大限の柔軟性と拡張性を提供し、システム統合、カスタムプロトコル、非標準のワークフロー、外部システムとの密結合に適しています。
+ただし、Executor、タスクのライフサイクル、Shareable、FLContextといったFLARE固有の概念に対する深い理解が必要であり、FLAREの実行モデルに沿ってロジックを構成することが求められます。
 
-As a result, the Client-side API Executor is most appropriate for advanced users who need fine-grained control and are
-willing to trade simplicity for customization.
+そのため、クライアント側APIのExecutorは、きめ細かな制御を必要とし、カスタマイズのためにシンプルさを犠牲にしてもよいと考える上級ユーザーに最も適しています。
 
 
 Learner Executor & Learner
 --------------------------
-The LearnerExecutor and Learner pattern is a mid-level client-side abstraction in NVIDIA FLARE that separates federated
-orchestration from machine learning logic while preserving FLARE’s Trainer-style execution model. The LearnerExecutor
-manages FLARE-specific concerns—task dispatch, execution context, and runtime communication—while delegating all ML
-computation to a Learner, which encapsulates framework-specific logic such as training, evaluation, and update handling.
-However, this pattern still requires users to learn FLARE-specific concepts such as Shareable and FLContext, and to place
-their code within predefined method structures dictated by the Executor lifecycle. As a result, while cleaner than raw
-executor implementations, it retains framework constraints and learning overhead compared to higher-level APIs that fully
-abstract the execution model.
+LearnerExecutorとLearnerのパターンは、NVIDIA FLAREにおける中レベルのクライアント側抽象化で、FLAREのTrainerスタイルの実行モデルを維持しながら、連合オーケストレーションを機械学習ロジックから分離します。LearnerExecutorは、タスクのディスパッチ、実行コンテキスト、ランタイム通信といったFLARE固有の関心事を管理し、すべてのML計算をLearnerに委譲します。Learnerは、トレーニング、評価、更新処理といったフレームワーク固有のロジックをカプセル化します。
+ただし、このパターンでもユーザーはShareableやFLContextといったFLARE固有の概念を学び、Executorのライフサイクルによって規定された所定のメソッド構造の中にコードを配置する必要があります。その結果、生のExecutor実装よりはすっきりしているものの、実行モデルを完全に抽象化する高レベルAPIと比べると、フレームワークの制約と学習のオーバーヘッドが残ります。
 
 
 FLARE Client API
 ----------------
 
-The Client API is a high-level API built on top of the FLModel abstraction, where all federated communication is performed
-through a single, constrained data structure. The FLModel contains only model weights, optimizer parameters, metrics,
-and lightweight metadata, and does not expose any low-level communication or execution details. This design makes it easy
-for data scientists to understand exactly what information is being passed between client and server.
+Client APIは、FLModel抽象化の上に構築された高レベルAPIで、すべての連合通信が単一の制約されたデータ構造を通じて行われます。FLModelには、モデル重み、オプティマイザーのパラメータ、メトリクス、軽量なメタデータのみが含まれ、低レベルの通信や実行の詳細は一切公開されません。この設計により、データサイエンティストはクライアントとサーバーの間でどのような情報が受け渡されるのかを正確に理解しやすくなります。
 
-The Client API is designed to simplify the conversion of existing ML/DL code into federated workloads with minimal code changes.
-Unlike the Learner API, users adapt their existing training or analytics code in place, without restructuring it.
+Client APIは、既存のML/DLコードを最小限のコード変更で連合ワークロードへ変換することを簡単にするよう設計されています。Learner APIとは異なり、ユーザーは既存のトレーニングコードや分析コードを再構成することなく、その場で適応させます。
 
-As a result, users do not need to learn FLARE-specific framework concepts such as Executors, Controllers, Shareable, or FLContext.
-Aside from understanding the FLModel data structure itself, the Client API allows users to focus on ML logic while FLARE
-transparently handles federated communication and orchestration.
+その結果、ユーザーはExecutor、Controller、Shareable、FLContextといったFLARE固有のフレームワーク概念を学ぶ必要がありません。FLModelデータ構造そのものの理解を除けば、Client APIによりユーザーはMLロジックに集中でき、FLAREが連合通信とオーケストレーションを透過的に処理します。
 
 
 
 Client API + Collaborative API (Collab API)
 -------------------------------------------
 
-The Collaborative API achieves a complete separation between communication handling and federated learning algorithms,
-eliminating the need to use the FLModel structure, which limits some FL algorithm implementations. This design gives
-users greater freedom from framework constraints, allowing them to implement algorithms and analytics logic without
-having to learn many FLARE framework concepts.
+Collaborative APIは、通信処理と連合学習アルゴリズムの完全な分離を実現し、一部のFLアルゴリズム実装を制限するFLModel構造を使用する必要性をなくします。この設計により、ユーザーはフレームワークの制約からより自由になり、FLAREフレームワークの多くの概念を学ぶことなくアルゴリズムや分析ロジックを実装できます。
 
-With Client API + Collab API, users are free to continue passing FLModel around or choose any other data structure.
+Client API + Collab APIでは、ユーザーは引き続きFLModelをやり取りすることも、他の任意のデータ構造を選ぶことも自由にできます。
 
 
-Evolution of Client Server Wiring APIs
+クライアント・サーバー結線APIの進化
 ======================================
 
-For a federated learning system to function, the client-side Executor and server-side Controller must be properly
-connected. In FLARE, this wiring is handled through system- and job-level configurations, which works well for custom
-component plugins and system integration developers. However, this approach can be cumbersome for data scientists.
-To address this, FLARE has introduced several higher-level APIs and approaches designed to simplify client-server
-integration and reduce the setup effort for typical federated learning and analytics tasks.
+連合学習システムが機能するためには、クライアント側のExecutorとサーバー側のControllerが適切に接続されていなければなりません。FLAREでは、この結線はシステムレベルおよびジョブレベルの設定によって処理されます。これはカスタムコンポーネントのプラグインやシステム統合の開発者にとってはうまく機能しますが、データサイエンティストにとっては煩雑になり得ます。
+これに対処するため、FLAREは、クライアント・サーバー統合を簡素化し、典型的な連合学習・分析タスクのセットアップ労力を減らすために設計された、いくつかの高レベルAPIとアプローチを導入してきました。
 
 .. image:: ../resources/client_server_wiring_apis.jpg
     :height: 400
 
 
-Json Configurations
+JSON設定
 --------------------
 
-The FLARE Job is defined by three configuration files:
+FLAREのジョブは、3つの設定ファイルによって定義されます:
 
 .. code-block:: text
 
@@ -162,49 +131,38 @@ The FLARE Job is defined by three configuration files:
     config_fed_client.json
     meta.json
 
-There is no need to dive deep into the specific content of the JSON files.
-The JSON file format gives the system a way to define dynamic plugin custom components.
+JSONファイルの具体的な内容について深く掘り下げる必要はありません。
+JSONファイル形式は、動的なプラグインカスタムコンポーネントを定義する手段をシステムに与えます。
 
 
-Alternative Configurations support: YAML (OmegaConf), pyhocon
+代替設定形式のサポート: YAML (OmegaConf)、pyhocon
 -------------------------------------------------------------
-We support both YAML and Pyhocon (Python HOCON) configuration formats, each allowing comments and variable substitution:
-**Pyhocon** – A JSON variant and HOCON (Human-Optimized Config Object Notation) parser for Python, supporting comments, variable substitution, and inheritance.
-**OmegaConf** – A YAML-based hierarchical configuration system, also supporting comments and variable substitution.
-Users can work with a single format or combine multiple formats—for example, config_fed_client.conf and config_fed_server.json.
+YAMLとPyhocon (Python HOCON)の両方の設定形式をサポートしており、いずれもコメントと変数置換が可能です:
+**Pyhocon** – JSONの派生形式であり、Python向けのHOCON (Human-Optimized Config Object Notation)パーサーです。コメント、変数置換、継承をサポートします。
+**OmegaConf** – YAMLベースの階層的設定システムで、こちらもコメントと変数置換をサポートします。
+ユーザーは単一の形式で作業することも、複数の形式を組み合わせることもできます。例えば、config_fed_client.confとconfig_fed_server.jsonの組み合わせです。
 
 
 Job Template & Job CLI
 ----------------------
-A FLARE Job Template is a predefined set of job configurations in NVIDIA FLARE. It defines the model, training strategy,
-and client/server settings, enabling new federated learning jobs to be copied and modified without rewriting them from scratch.
-To simplify working with these templates, we also provide the FLARE Job CLI, which allows users to list available templates,
-create jobs from templates, inspect template variables, and submit a job.
-This approach represents an early step toward automating job scripting.
+FLARE Job Templateは、NVIDIA FLAREにおける事前定義済みのジョブ設定一式です。モデル、トレーニング戦略、クライアント/サーバー設定を定義しており、新しい連合学習ジョブをゼロから書き直すことなく、コピーして変更できるようにします。
+これらのテンプレートを使った作業を簡素化するために、FLARE Job CLIも提供しています。これにより、利用可能なテンプレートの一覧表示、テンプレートからのジョブ作成、テンプレート変数の確認、ジョブの投入が行えます。
+このアプローチは、ジョブスクリプト作成の自動化に向けた初期のステップを表しています。
 
 
 Job API
 --------
 
-The FLARE Job API is a Python interface that allows users to define components, wire client-server connections, and specify
-federated learning workflows, typically expressed in JSON configurations. Users can generate job configurations directly
-from the Job API by exporting the workflow definitions to JSON. This provides a precise and programmatic way to describe
-and define FL workflows using Python.
+FLARE Job APIは、コンポーネントの定義、クライアント・サーバー接続の結線、連合学習ワークフローの指定(通常はJSON設定として表現される)を行えるPythonインターフェースです。ユーザーは、ワークフロー定義をJSONにエクスポートすることで、Job APIから直接ジョブ設定を生成できます。これにより、Pythonを使ってFLワークフローを正確かつプログラマティックに記述・定義できます。
 
 
-Job Recipe & Runtime Environments
+Job Recipeとランタイム環境
 ---------------------------------
 
 **Job Recipe**
 
-A Job Recipe in NVIDIA FLARE defines the runtime logic and workflow for a federated learning job. It specifies how components such as models, trainers, and aggregators interact, the sequence of operations during training and evaluation, and any special procedures (e.g., validation, early stopping). Essentially, it encodes the behavior of a job, separate from its configuration, so that the same recipe can be reused with different datasets or clients.
+NVIDIA FLAREにおけるJob Recipeは、連合学習ジョブのランタイムロジックとワークフローを定義します。モデル、トレーナー、アグリゲーターなどのコンポーネントがどのように相互作用するか、トレーニングおよび評価中の操作の順序、特別な手順(検証、早期終了など)を指定します。本質的には、ジョブの挙動を設定とは切り離してエンコードするものであり、同じレシピを異なるデータセットやクライアントで再利用できます。
 
-**Runtime Environment**
+**ランタイム環境**
 
-The Runtime Environment describes the execution context for a FLARE job. It includes system-level settings, software dependencies, Python packages, hardware requirements, and communication protocols needed to run the job on clients and servers. By defining a runtime environment, FLARE ensures consistency and reproducibility across heterogeneous devices and platforms.
-
-
-
-
-
-
+ランタイム環境は、FLAREジョブの実行コンテキストを記述します。これには、システムレベルの設定、ソフトウェア依存関係、Pythonパッケージ、ハードウェア要件、クライアントとサーバーでジョブを実行するために必要な通信プロトコルが含まれます。ランタイム環境を定義することで、FLAREは異種のデバイスやプラットフォーム間での一貫性と再現性を確保します。

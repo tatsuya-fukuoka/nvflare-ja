@@ -5,54 +5,49 @@ Client API
 ##########
 
 .. note::
-   **For Data Scientists:** If you want a practical guide with less technical detail, see :ref:`client_api_usage` in the User Guide.
-   This page provides comprehensive technical documentation for researchers and developers.
+   **データサイエンティストの方へ:** 技術的な詳細を抑えた実践的なガイドが必要な場合は、ユーザーガイドの :ref:`client_api_usage` を参照してください。
+   このページでは、研究者および開発者向けの包括的な技術ドキュメントを提供します。
 
-   **New to FLARE?** Start with the :ref:`quickstart` guide.
+   **FLAREが初めてですか?** まずは :ref:`quickstart` ガイドから始めてください。
 
-The FLARE Client API provides an easy way for users to convert their centralized,
-local training code into federated learning code with the following benefits:
+FLARE Client API は、集中型のローカルトレーニングコードを連合学習(Federated Learning)コードへ簡単に変換する手段を提供し、以下の利点があります:
 
-* Only requires a few lines of code changes, without the need to restructure the code or implement a new class
-* Reduces the number of new FLARE specific concepts exposed to users
-* Easy adaptation from existing local training code using different frameworks
-  (PyTorch, PyTorch Lightning, HuggingFace)
+* 数行のコード変更のみで済み、コードの再構成や新しいクラスの実装が不要
+* ユーザーに公開されるFLARE固有の新しい概念を削減
+* 異なるフレームワーク(PyTorch、PyTorch Lightning、HuggingFace)を使用した既存のローカルトレーニングコードから容易に適応可能
 
-Core concept
-============
+コアコンセプト
+==============
 
-The general structure of the popular federated learning (FL) workflow, "FedAvg" is as follows:
+広く使われている連合学習(FL)ワークフロー「FedAvg」の一般的な構造は以下のとおりです:
 
-#. FL server initializes an initial model
-#. For each round (global iteration):
+#. FLサーバーが初期モデルを初期化する
+#. 各ラウンド(グローバルイテレーション)で:
 
-   #. FL server sends the global model to clients
-   #. Each FL client starts with this global model and trains on their own data
-   #. Each FL client sends back their trained model
-   #. FL server aggregates all the models and produces a new global model
+   #. FLサーバーがグローバルモデルをクライアントに送信する
+   #. 各FLクライアントはこのグローバルモデルを起点として、自身のデータでトレーニングする
+   #. 各FLクライアントはトレーニング済みモデルを送り返す
+   #. FLサーバーがすべてのモデルを集約し、新しいグローバルモデルを生成する
 
-On the client side, the training workflow is as follows:
+クライアント側のトレーニングワークフローは以下のとおりです:
 
-#. Receive the model from the FL server
-#. Perform local training on the received global model and/or evaluate the
-   received global model for model selection
-#. Send the new model back to the FL server
+#. FLサーバーからモデルを受け取る
+#. 受け取ったグローバルモデルに対してローカルトレーニングを実行する、および/またはモデル選択のために受け取ったグローバルモデルを評価する
+#. 新しいモデルをFLサーバーに送り返す
 
-To convert a centralized training code to federated learning, we need to
-adapt the code to do the following steps:
+集中型トレーニングコードを連合学習に変換するには、以下のステップを行うようにコードを適応させる必要があります:
 
-#. Obtain the required information from received :ref:`fl_model`
-#. Run local training
-#. Put the results in a new :ref:`fl_model` to be sent back
+#. 受信した :ref:`fl_model` から必要な情報を取得する
+#. ローカルトレーニングを実行する
+#. 結果を送り返すために新しい :ref:`fl_model` に格納する
 
-For a general use case, there are three essential methods for the Client API:
+一般的なユースケースでは、Client API には3つの必須メソッドがあります:
 
-* ``init()``: Initializes NVFlare Client API environment.
-* ``receive()``: Receives model from NVFlare side.
-* ``send()``: Sends the model to NVFlare side.
+* ``init()``: NVFlare Client API 環境を初期化します。
+* ``receive()``: NVFlare 側からモデルを受信します。
+* ``send()``: NVFlare 側へモデルを送信します。
 
-Users can use the Client API to change their centralized training code to
-federated learning, for example:
+ユーザーは Client API を使用して、集中型トレーニングコードを連合学習に変更できます。例:
 
 .. code-block:: python
 
@@ -69,36 +64,35 @@ federated learning, for example:
     output_model = flare.FLModel(params=new_params) # 4. Put the results in a new FLModel
     flare.send(output_model) # 5. Sends the model to NVFlare side.
 
-With 5 lines of code changes, we convert the centralized training code to
-a federated learning setting.
+5行のコード変更で、集中型トレーニングコードを連合学習の設定に変換できました。
 
-After this, we can utilize the Job Recipe to define and run the federated learning job. See :ref:`job_recipe` for details.
+この後、ジョブレシピを利用して連合学習ジョブを定義・実行できます。詳細は :ref:`job_recipe` を参照してください。
 
-Understanding the Client API and Job Recipe Relationship
+Client API とジョブレシピの関係を理解する
 =========================================================
 
-The Client API and Job Recipe API serve different purposes in the federated learning workflow:
+Client API とジョブレシピ(Job Recipe)API は、連合学習ワークフローの中で異なる役割を担います:
 
-* **Client API** (``nvflare.client``) - Used in your training script (``client.py``) to:
+* **Client API** (``nvflare.client``) - トレーニングスクリプト (``client.py``) で以下の用途に使用します:
 
-  * Receive models from the FL server
-  * Send updated models back to the server
-  * Access FL system information (job ID, site name, etc.)
-  * Determine task types (training, evaluation, etc.)
+  * FLサーバーからモデルを受信する
+  * 更新したモデルをサーバーへ送り返す
+  * FLシステム情報(ジョブID、サイト名など)にアクセスする
+  * タスク種別(トレーニング、評価など)を判定する
 
-* **Job Recipe API** (``nvflare.recipe``) - Used in your job definition (``job.py``) to:
+* **ジョブレシピAPI** (``nvflare.recipe``) - ジョブ定義 (``job.py``) で以下の用途に使用します:
 
-  * Define the FL workflow (e.g., FedAvg, Cyclic, Swarm Learning)
-  * Specify job parameters (number of clients, rounds, model, etc.)
-  * Configure execution environment (Simulation, POC, Production)
-  * Add features like experiment tracking, cross-site evaluation, etc.
+  * FLワークフロー(例: FedAvg、Cyclic、Swarm Learning)を定義する
+  * ジョブパラメータ(クライアント数、ラウンド数、モデルなど)を指定する
+  * 実行環境(シミュレーション、POC、本番環境)を設定する
+  * 実験トラッキング、サイト横断評価などの機能を追加する
 
-Complete Working Example
+完全な動作例
 =========================
 
-Here's a complete example showing how Client API and Job Recipe work together:
+Client API とジョブレシピがどのように連携するかを示す完全な例を示します:
 
-**Project Structure:**
+**プロジェクト構成:**
 
 .. code-block:: none
 
@@ -108,7 +102,7 @@ Here's a complete example showing how Client API and Job Recipe work together:
     ├── model.py            # Model definition (optional)
     └── requirements.txt    # Dependencies
 
-**Step 1: Define your training script using Client API** (``client.py``):
+**ステップ1: Client API を使用してトレーニングスクリプトを定義する** (``client.py``):
 
 .. code-block:: python
 
@@ -179,7 +173,7 @@ Here's a complete example showing how Client API and Job Recipe work together:
     if __name__ == "__main__":
         main()
 
-**Step 2: Define your FL job using Job Recipe** (``job.py``):
+**ステップ2: ジョブレシピを使用してFLジョブを定義する** (``job.py``):
 
 .. code-block:: python
 
@@ -220,7 +214,7 @@ Here's a complete example showing how Client API and Job Recipe work together:
     if __name__ == "__main__":
         main()
 
-**Step 3: Run your FL job:**
+**ステップ3: FLジョブを実行する:**
 
 .. code-block:: bash
 
@@ -230,7 +224,7 @@ Here's a complete example showing how Client API and Job Recipe work together:
     # Run with custom parameters
     python job.py --n_clients 5 --num_rounds 10 --batch_size 64
 
-The same job can run in different environments by changing the environment:
+同じジョブは、環境を変更するだけで異なる環境で実行できます:
 
 .. code-block:: python
 
@@ -246,56 +240,56 @@ The same job can run in different environments by changing the environment:
     from nvflare.recipe import ProdEnv
     env = ProdEnv(startup_kit_location="/path/to/admin/startup")
 
-Key Benefits of This Approach
+このアプローチの主な利点
 ==============================
 
-1. **Separation of Concerns**: Training logic (Client API) is separate from job configuration (Job Recipe)
-2. **Minimal Code Changes**: Convert centralized training to FL with just a few lines
-3. **Environment Flexibility**: Same code works in simulation, POC, and production
-4. **Easy Experimentation**: Change FL parameters without modifying training code
-5. **Built-in Features**: Add tracking, cross-site evaluation, etc. with single function calls
+1. **関心の分離**: トレーニングロジック(Client API)とジョブ設定(ジョブレシピ)が分離されています
+2. **最小限のコード変更**: わずか数行の変更で集中型トレーニングをFLに変換できます
+3. **環境の柔軟性**: 同じコードがシミュレーション、POC、本番環境で動作します
+4. **容易な実験**: トレーニングコードを変更せずにFLパラメータを変更できます
+5. **組み込み機能**: トラッキングやサイト横断評価などを関数呼び出し1つで追加できます
 
-Client API Reference
-====================
+Client API リファレンス
+=======================
 
-Below is a table overview of key Client APIs.
+以下は主要な Client API の一覧表です。
 
 .. list-table:: Client API
    :widths: 25 25 50
    :header-rows: 1
 
    * - API
-     - Description
-     - API Doc Link
+     - 説明
+     - APIドキュメントへのリンク
    * - init
-     - Initializes NVFlare Client API environment.
+     - NVFlare Client API 環境を初期化します。
      - :func:`init<nvflare.client.api.init>`
    * - receive
-     - Receives model from NVFlare side.
+     - NVFlare 側からモデルを受信します。
      - :func:`receive<nvflare.client.api.receive>`
    * - send
-     - Sends the model to NVFlare side.
+     - NVFlare 側へモデルを送信します。
      - :func:`send<nvflare.client.api.send>`
    * - system_info
-     - Gets NVFlare system information.
+     - NVFlare のシステム情報を取得します。
      - :func:`system_info<nvflare.client.api.system_info>`
    * - get_job_id
-     - Gets job id.
+     - ジョブIDを取得します。
      - :func:`get_job_id<nvflare.client.api.get_job_id>`
    * - get_site_name
-     - Gets site name.
+     - サイト名を取得します。
      - :func:`get_site_name<nvflare.client.api.get_site_name>`
    * - is_running
-     - Returns whether the NVFlare system is up and running.
+     - NVFlare システムが稼働中かどうかを返します。
      - :func:`is_running<nvflare.client.api.is_running>`
    * - is_train
-     - Returns whether the current task is a training task.
+     - 現在のタスクがトレーニングタスクかどうかを返します。
      - :func:`is_train<nvflare.client.api.is_train>`
    * - is_evaluate
-     - Returns whether the current task is an evaluate task.
+     - 現在のタスクが評価(evaluate)タスクかどうかを返します。
      - :func:`is_evaluate<nvflare.client.api.is_evaluate>`
    * - is_submit_model
-     - Returns whether the current task is a submit_model task.
+     - 現在のタスクが submit_model タスクかどうかを返します。
      - :func:`is_submit_model<nvflare.client.api.is_submit_model>`
 
 .. list-table:: Lightning APIs
@@ -303,10 +297,10 @@ Below is a table overview of key Client APIs.
    :header-rows: 1
 
    * - API
-     - Description
-     - API Doc Link
+     - 説明
+     - APIドキュメントへのリンク
    * - patch
-     - Patches the PyTorch Lightning Trainer for usage with FLARE.
+     - PyTorch Lightning の Trainer に FLARE で使用するためのパッチを適用します。
      - :func:`patch<nvflare.app_opt.lightning.api.patch>`
 
 .. list-table:: HuggingFace APIs
@@ -314,13 +308,13 @@ Below is a table overview of key Client APIs.
    :header-rows: 1
 
    * - API
-     - Description
-     - API Doc Link
+     - 説明
+     - APIドキュメントへのリンク
    * - patch
-     - Patches a HuggingFace ``Trainer`` or TRL ``SFTTrainer`` for usage with FLARE.
+     - HuggingFace の ``Trainer`` または TRL の ``SFTTrainer`` に FLARE で使用するためのパッチを適用します。
      - :func:`patch<nvflare.app_opt.hf.api.patch>`
    * - is_running
-     - Coordinates the FL loop for a patched HuggingFace trainer.
+     - パッチ適用済みの HuggingFace トレーナーのFLループを調整します。
      - :func:`is_running<nvflare.client.hf.is_running>`
 
 .. list-table:: Metrics Logger
@@ -328,123 +322,114 @@ Below is a table overview of key Client APIs.
    :header-rows: 1
 
    * - API
-     - Description
-     - API Doc Link
+     - 説明
+     - APIドキュメントへのリンク
    * - SummaryWriter
-     - SummaryWriter mimics the usage of Tensorboard's SummaryWriter.
+     - SummaryWriter は Tensorboard の SummaryWriter の使い方を模倣します。
      - :class:`SummaryWriter<nvflare.client.tracking.SummaryWriter>`
    * - WandBWriter
-     - WandBWriter mimics the usage of weights and biases.
+     - WandBWriter は Weights & Biases の使い方を模倣します。
      - :class:`WandBWriter<nvflare.client.tracking.WandBWriter>`
    * - MLflowWriter
-     - MLflowWriter mimics the usage of MLflow.
+     - MLflowWriter は MLflow の使い方を模倣します。
      - :class:`MLflowWriter<nvflare.client.tracking.MLflowWriter>`
 
-When to Use Client API
-======================
+Client API を使用すべきとき
+===========================
 
-The Client API is the **recommended starting point** for most users, especially when:
+Client API はほとんどのユーザーにとって\ **推奨される出発点**\ であり、特に以下の場合に適しています:
 
-* You have existing centralized training code
-* You want minimal code changes to enable FL
-* You're using common frameworks (PyTorch, TensorFlow, NumPy, etc.)
-* You need quick experimentation and prototyping
-* You prefer a simple, intuitive API
+* 既存の集中型トレーニングコードがある場合
+* 最小限のコード変更でFLを有効にしたい場合
+* 一般的なフレームワーク(PyTorch、TensorFlow、NumPy など)を使用している場合
+* 素早い実験やプロトタイピングが必要な場合
+* シンプルで直感的なAPIを好む場合
 
-For information on other execution APIs, see :ref:`execution_api_type`.
+その他の実行APIについては、:ref:`execution_api_type` を参照してください。
 
-Additional Resources
+追加リソース
 ====================
 
-**API Documentation:**
+**APIドキュメント:**
 
-* Client API Module: :mod:`nvflare.client.api` - Complete API reference
-* PyTorch Lightning API: :mod:`nvflare.app_opt.lightning.api` - Lightning-specific integration
-* HuggingFace Client API: :ref:`hf_client_api` - HuggingFace Trainer integration guide
-* Job Recipe Guide: :ref:`job_recipe` - How to define and run FL jobs
+* Client API モジュール: :mod:`nvflare.client.api` - 完全なAPIリファレンス
+* PyTorch Lightning API: :mod:`nvflare.app_opt.lightning.api` - Lightning 固有の連携
+* HuggingFace Client API: :ref:`hf_client_api` - HuggingFace Trainer 連携ガイド
+* ジョブレシピガイド: :ref:`job_recipe` - FLジョブの定義と実行方法
 
-**Guides:**
+**ガイド:**
 
-* :ref:`client_api_usage` - User guide with more examples
-* :ref:`job_recipe` - Job Recipe tutorial
-* :ref:`fl_simulator` - Simulation environment details
+* :ref:`client_api_usage` - より多くの例を含むユーザーガイド
+* :ref:`job_recipe` - ジョブレシピのチュートリアル
+* :ref:`fl_simulator` - シミュレーション環境の詳細
 
-Client API communication patterns
+Client API の通信パターン
 =================================
 
 .. image:: ../../resources/client_api.png
     :height: 300px
 
-We offer various implementations of Client APIs tailored to different scenarios, each linked with distinct communication patterns.
+さまざまなシナリオに合わせた Client API の実装を複数提供しており、それぞれが異なる通信パターンと結び付いています。
 
-In-process Client API
----------------------
+インプロセス Client API
+-----------------------
 
-The in-process executor entails both the training script and client executor operating within the same process.
-The training script will be launched once at the event of START_RUN and will keep on running till the END_RUN event.
-Communication between them occurs through an efficient in-memory databus.
+インプロセスエグゼキューターでは、トレーニングスクリプトとクライアントエグゼキューターの両方が同一プロセス内で動作します。
+トレーニングスクリプトは START_RUN イベントの発生時に一度だけ起動され、END_RUN イベントまで実行し続けます。
+両者の間の通信は、効率的なインメモリのデータバスを介して行われます。
 
-When the training process involves either a single GPU or no GPUs, and the training script doesn't integrate third-party
-training systems, the in-process executor is preferable (when available).
+トレーニングプロセスが単一GPUまたはGPUなしで行われ、トレーニングスクリプトがサードパーティのトレーニングシステムと統合していない場合は、(利用可能であれば)インプロセスエグゼキューターが望ましい選択です。
 
-Sub-process Client API
-----------------------
+サブプロセス Client API
+-----------------------
 
-On the other hand, the LauncherExecutor employs the SubprocessLauncher to use a sub-process to execute the training script. This results in the client executor
-and training script residing in separate processes. The "launch_once" option is provided to the SubprocessLauncher to control
-whether to launch the external script every time when getting the task from server, or just launch the script once at the event
-of START_RUN and keeps running till the END_RUN event. Communication between them is facilitated by either CellPipe
-(default) or FilePipe.
+一方、LauncherExecutor は SubprocessLauncher を用いてサブプロセスでトレーニングスクリプトを実行します。その結果、クライアントエグゼキューターとトレーニングスクリプトは別々のプロセスに存在します。SubprocessLauncher には "launch_once" オプションが用意されており、サーバーからタスクを受け取るたびに外部スクリプトを起動するか、START_RUN イベントで一度だけスクリプトを起動して END_RUN イベントまで実行し続けるかを制御できます。両者の間の通信は、CellPipe(デフォルト)または FilePipe によって行われます。
 
-For scenarios involving multi-GPU training or the utilization of external training infrastructure, opting for the Launcher executor might be more suitable.
+マルチGPUトレーニングや外部トレーニングインフラを利用するシナリオでは、Launcher エグゼキューターを選択する方が適している場合があります。
 
 
-Choice of different Pipes
+さまざまな Pipe の選択
 =========================
-In the 2.5.x release, for most users, we recommend utilizing the default setting with the in-process executor
-(defaulting to memory-based data exchanges).
-Conversely, in the 2.4.x release, we suggest using the default setting with CellPipe for most users.
 
-CellPipe facilitates TCP-based cell-to-cell connections between the Executor and training script processes on
-the local host. The term cell represents logical endpoints. This communication enables the exchange of models, metrics,
-and metadata between the two processes.
+2.5.x リリースでは、ほとんどのユーザーに対して、インプロセスエグゼキューターのデフォルト設定(メモリベースのデータ交換がデフォルト)の利用を推奨します。
+一方、2.4.x リリースでは、ほとんどのユーザーに CellPipe を用いたデフォルト設定の利用を推奨します。
 
-In contrast, FilePipe offers file-based communication between the Executor and training script processes,
-utilizing a job-specific file directory for exchanging models and metadata via files. While FilePipe is easier to set up
-than CellPipe, it's not suitable for high-frequency metrics exchange.
+CellPipe は、ローカルホスト上の Executor プロセスとトレーニングスクリプトプロセスの間で、TCPベースのセル間(cell-to-cell)接続を実現します。セル(cell)という用語は論理的なエンドポイントを表します。この通信により、2つのプロセス間でモデル、メトリクス、メタデータの交換が可能になります。
 
-Examples
+これに対して FilePipe は、Executor プロセスとトレーニングスクリプトプロセスの間でファイルベースの通信を提供し、ジョブ固有のファイルディレクトリを利用してファイル経由でモデルとメタデータを交換します。FilePipe は CellPipe よりもセットアップが容易ですが、高頻度のメトリクス交換には適していません。
+
+例
 ========
 
-For complete working examples of using Client API with Job Recipes across different frameworks:
+さまざまなフレームワークで Client API とジョブレシピを使用した完全な動作例:
 
-**Hello World Examples** (Recommended for beginners):
+**Hello World の例**\ (初心者に推奨):
 
-- PyTorch: :ref:`hello_pt_job_api` - CIFAR-10 image classification
-- NumPy: :github_nvflare_link:`hello-numpy <examples/hello-world/hello-numpy>` - Basic FL concepts
-- PyTorch Lightning: :github_nvflare_link:`hello-lightning <examples/hello-world/hello-lightning>` - Lightning integration
-- TensorFlow: :ref:`hello_tf_job_api` - MNIST classification
-- HuggingFace Trainer: :github_nvflare_link:`hello-huggingface <examples/hello-world/hello-huggingface>` - Qwen SFT/PEFT with HuggingFace Client API
-- Flower: :github_nvflare_link:`hello-flower <examples/hello-world/hello-flower>` - Flower on FLARE
+- PyTorch: :ref:`hello_pt_job_api` - CIFAR-10 画像分類
+- NumPy: :github_nvflare_link:`hello-numpy <examples/hello-world/hello-numpy>` - FLの基本概念
+- PyTorch Lightning: :github_nvflare_link:`hello-lightning <examples/hello-world/hello-lightning>` - Lightning 連携
+- TensorFlow: :ref:`hello_tf_job_api` - MNIST 分類
+- HuggingFace Trainer: :github_nvflare_link:`hello-huggingface <examples/hello-world/hello-huggingface>` - HuggingFace Client API による Qwen SFT/PEFT
+- Flower: :github_nvflare_link:`hello-flower <examples/hello-world/hello-flower>` - FLARE 上の Flower
 
-**Advanced Examples:**
+**高度な例:**
 
-- HuggingFace LLM tuning: :github_nvflare_link:`llm_hf <examples/advanced/llm_hf>` - Large-model SFT/PEFT, quantization, and multi-GPU patterns
-- XGBoost: :github_nvflare_link:`xgboost examples <examples/advanced/xgboost>` - Tree-based federated learning
-- Scikit-learn: :github_nvflare_link:`sklearn-linear <examples/advanced/sklearn-linear>`, :github_nvflare_link:`sklearn-kmeans <examples/advanced/sklearn-kmeans>`, :github_nvflare_link:`sklearn-svm <examples/advanced/sklearn-svm>` - Traditional ML algorithms
+- HuggingFace LLM チューニング: :github_nvflare_link:`llm_hf <examples/advanced/llm_hf>` - 大規模モデルの SFT/PEFT、量子化、マルチGPUパターン
+- XGBoost: :github_nvflare_link:`xgboost examples <examples/advanced/xgboost>` - ツリーベースの連合学習
+- Scikit-learn: :github_nvflare_link:`sklearn-linear <examples/advanced/sklearn-linear>`、:github_nvflare_link:`sklearn-kmeans <examples/advanced/sklearn-kmeans>`、:github_nvflare_link:`sklearn-svm <examples/advanced/sklearn-svm>` - 従来型の機械学習アルゴリズム
 
-**Self-Paced Learning:**
+**自己学習教材:**
 
-For progressive learning, explore the :ref:`self_paced_training` materials,
-which cover different FL algorithms (FedAvg, Cyclic, Swarm Learning, etc.) with comprehensive tutorials and examples.
+段階的に学習するには、:ref:`self_paced_training` の教材を参照してください。
+さまざまなFLアルゴリズム(FedAvg、Cyclic、Swarm Learning など)を、充実したチュートリアルと例とともに扱っています。
 
 
-Custom Data Class Serialization/Deserialization
-===============================================
+カスタムデータクラスのシリアライズ/デシリアライズ
+===============================================================
 
-To pass data in the form of a custom class, you can leverage the serialization tool inside NVFlare.
+カスタムクラスの形式でデータを渡すには、NVFlare 内のシリアライズツールを活用できます。
 
-For example:
+例:
 
 .. code-block:: python
 
@@ -453,10 +438,9 @@ For example:
             self.x = 1
             self.y = 2
 
-If your code uses classes derived from ``Enum`` or dataclasses, they will be handled by the default decomposers.
-For other custom classes, you will need to write a dedicated custom decomposer and ensure it is registered
-using fobs.register on both the server side and client side, as well as in train.py.
+コードで ``Enum`` から派生したクラスやデータクラス(dataclass)を使用している場合、それらはデフォルトのデコンポーザーで処理されます。
+その他のカスタムクラスについては、専用のカスタムデコンポーザーを作成し、サーバー側とクライアント側の両方、および train.py 内で fobs.register を使用して登録されていることを確認する必要があります。
 
-Please note that for the custom data class to work, it must be placed in a separate file from train.py.
+なお、カスタムデータクラスを機能させるには、train.py とは別のファイルに配置する必要があります。
 
-For more details on serialization, please refer to :ref:`serialization`.
+シリアライズの詳細については、:ref:`serialization` を参照してください。

@@ -2,28 +2,28 @@
 Hello Pytorch Lightning
 =======================
 
-This example demonstrates how to use NVIDIA FLARE with PyTorch Lightning to train an image classifier using
-federated averaging (FedAvg) or SCAFFOLD. The complete example code can be found in the
-:github_nvflare_link:`hello-lightning directory <examples/hello-world/hello-lightning>`.
+この例では、NVIDIA FLARE と PyTorch Lightning を組み合わせて、連合平均(FedAvg)または SCAFFOLD を用いて
+画像分類器をトレーニングする方法を示します。完全なサンプルコードは
+:github_nvflare_link:`hello-lightning ディレクトリ <examples/hello-world/hello-lightning>` にあります。
 
 .. note::
 
-   Automatic Lightning SCAFFOLD support is introduced for NVFlare 2.9.0. Until that package is published,
-   install NVFlare from this repository and install the remaining example dependencies separately.
+   Lightning の自動 SCAFFOLD サポートは NVFlare 2.9.0 で導入されます。そのパッケージが公開されるまでは、
+   このリポジトリから NVFlare をインストールし、残りの例の依存関係を個別にインストールしてください。
 
-It is recommended to create a virtual environment and run everything within a virtualenv.
+仮想環境を作成し、すべてを virtualenv 内で実行することを推奨します。
 
 
-NVIDIA FLARE Installation
--------------------------
+NVIDIA FLAREのインストール
+------------------------------------------------
 
-For the complete installation instructions, see :doc:`Installation </installation>`. On a released branch:
+完全なインストール手順については、:doc:`Installation </installation>` を参照してください。リリース済みブランチの場合:
 
 .. code-block:: text
 
     pip install nvflare
 
-For the current ``main`` branch, install from the repository root so the automatic SCAFFOLD support is available:
+現在の ``main`` ブランチの場合は、自動 SCAFFOLD サポートを利用できるように、リポジトリのルートからインストールしてください:
 
 .. code-block:: text
 
@@ -31,28 +31,28 @@ For the current ``main`` branch, install from the repository root so the automat
     python -m pip install torch torchvision "jsonargparse[signatures]>=4.17.0" pytorch_lightning tensorboard
 
 
-The ``nvflare~=2.9.0rc`` entry in ``requirements.txt`` intentionally records the first compatible release.
-After NVFlare 2.9.0 is published, install the complete environment with:
+``requirements.txt`` の ``nvflare~=2.9.0rc`` エントリは、最初の互換リリースを意図的に記録しています。
+NVFlare 2.9.0 の公開後は、次のコマンドで完全な環境をインストールできます:
 
 .. code-block:: bash
 
    python -m pip install -r requirements.txt
 
-get the example code from github:
+GitHubからサンプルコードを取得します:
 
 .. code-block:: text
 
    git clone https://github.com/NVIDIA/NVFlare.git
 
-then navigate to the hello-lightning directory:
+次に hello-lightning ディレクトリに移動します:
 
 .. code-block:: text
 
     git switch <release branch>
     cd examples/hello-world/hello-lightning
 
-Code Structure
---------------
+コード構造
+--------------------
 
 .. code-block:: text
 
@@ -64,18 +64,18 @@ Code Structure
     |-- job.py              # job recipe that defines client and server configurations
     |-- requirements.txt    # dependencies
 
-Data
------------------
-This example uses the `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ dataset
+データ
+------------
+この例では `CIFAR-10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ データセットを使用します。
 
-In a real FL experiment, each client would have their own dataset used for their local training.
-You can download the CIFAR10 dataset from the Internet via torchvision's datasets module,
-You can split the datasets for different clients, so that each client has its own dataset.
-Here for simplicity's sake, the same dataset we will be using on each client.
+実際のFL実験では、各クライアントはローカルトレーニングに使用する独自のデータセットを持ちます。
+CIFAR-10 データセットは、torchvision の datasets モジュールを介してインターネットからダウンロードできます。
+各クライアントが独自のデータセットを持つように、データセットをクライアントごとに分割することもできます。
+ここでは簡単のため、各クライアントで同じデータセットを使用します。
 
-The pytorch data module can download the datasets directly. since we have every site to download the same dataset,
-there are case, the training happens before the data is ready, which could lead to error. We can pre-download the data
-before we start the training by running from command line in a terminal
+PyTorch のデータモジュールはデータセットを直接ダウンロードできます。すべてのサイトが同じデータセットを
+ダウンロードするため、データの準備が完了する前にトレーニングが始まってしまい、エラーにつながるケースがあります。
+トレーニングを開始する前に、ターミナルのコマンドラインから以下を実行して、事前にデータをダウンロードしておくことができます
 
 .. code-block:: text
 
@@ -87,34 +87,34 @@ before we start the training by running from command line in a terminal
     :linenos:
     :caption: prepare_data.sh
 
-In PyTorch Lightning, a `LightningDataModule` is a standardized way to handle data loading and processing. It encapsulates all the steps required to prepare data for training, validation, and testing, making it easier to manage datasets and data loaders in a clean and organized manner. This abstraction helps separate data-related logic from the model and training code, promoting better code organization and reusability.
+PyTorch Lightning において、`LightningDataModule` はデータの読み込みと処理を扱うための標準化された方法です。トレーニング、検証、テスト用のデータを準備するために必要なすべての手順をカプセル化し、データセットとデータローダーをクリーンで整理された形で管理しやすくします。この抽象化により、データ関連のロジックがモデルやトレーニングコードから分離され、コードの構成と再利用性が向上します。
 
 `LightningDataModule`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- **Purpose:** The `LightningDataModule` is designed to encapsulate all data-related operations, including downloading, transforming, and splitting datasets, as well as providing data loaders for training, validation, testing, and prediction.
+- **目的:** `LightningDataModule` は、データセットのダウンロード、変換、分割や、トレーニング・検証・テスト・予測用のデータローダーの提供など、データ関連のすべての操作をカプセル化するように設計されています。
 
-- **Key Methods:**
-  - `prepare_data()`: Used for downloading and preparing data. This method is called only once and is not distributed across multiple GPUs or nodes.
-  - `setup(stage)`: Used to set up datasets for different stages (e.g., 'fit', 'validate', 'test', 'predict'). This method is called on every GPU or node.
-  - `train_dataloader()`, `val_dataloader()`, `test_dataloader()`, `predict_dataloader()`: These methods return the respective data loaders for each stage.
+- **主要メソッド:**
+  - `prepare_data()`: データのダウンロードと準備に使用されます。このメソッドは一度だけ呼び出され、複数のGPUやノードに分散されません。
+  - `setup(stage)`: さまざまなステージ('fit'、'validate'、'test'、'predict' など)用のデータセットをセットアップするために使用されます。このメソッドはすべてのGPUまたはノードで呼び出されます。
+  - `train_dataloader()`、`val_dataloader()`、`test_dataloader()`、`predict_dataloader()`: これらのメソッドは、各ステージに対応するデータローダーを返します。
 
-Setup of `DataModule`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`DataModule` のセットアップ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the `CIFAR10DataModule`, we have implemented the following:
+`CIFAR10DataModule` では、以下を実装しています:
 
-- **Initialization (`__init__`):** The constructor initializes the data directory and batch size, which are used throughout the data module.
+- **初期化 (`__init__`):** コンストラクタは、データモジュール全体で使用されるデータディレクトリとバッチサイズを初期化します。
 
-- **Data Preparation (`prepare_data`):** This method downloads the CIFAR-10 dataset if it is not already available in the specified directory. It prepares both the training and test datasets.
+- **データ準備 (`prepare_data`):** このメソッドは、指定されたディレクトリに CIFAR-10 データセットがまだ存在しない場合にダウンロードします。トレーニングデータセットとテストデータセットの両方を準備します。
 
-- **Setup (`setup`):** This method assigns datasets for different stages:
-  - For the 'fit' and 'validate' stages, it splits the CIFAR-10 training dataset into training and validation sets.
-  - For the 'test' and 'predict' stages, it assigns the test dataset.
+- **セットアップ (`setup`):** このメソッドは、ステージごとにデータセットを割り当てます:
+  - 'fit' および 'validate' ステージでは、CIFAR-10 トレーニングデータセットをトレーニングセットと検証セットに分割します。
+  - 'test' および 'predict' ステージでは、テストデータセットを割り当てます。
 
-- **Data Loaders:** The module provides data loaders for training, validation, testing, and prediction, each configured with the specified batch size.
+- **データローダー:** このモジュールは、トレーニング、検証、テスト、予測用のデータローダーを提供し、それぞれ指定されたバッチサイズで構成されます。
 
-By using a `LightningDataModule`, the data handling logic is neatly encapsulated, making it easier to manage and modify data-related operations without affecting the rest of the training code.
+`LightningDataModule` を使用することで、データ処理ロジックがきれいにカプセル化され、トレーニングコードの他の部分に影響を与えることなく、データ関連の操作を管理・変更しやすくなります。
 
 .. literalinclude:: ../../../examples/hello-world/hello-lightning/client.py
     :language: python
@@ -123,44 +123,41 @@ By using a `LightningDataModule`, the data handling logic is neatly encapsulated
     :lines: 14-70
 
 
-Model
-------------------
-In PyTorch Lightning, a `LightningModule` is a high-level abstraction built
-on top of PyTorch that streamlines the process of training models. It
-encapsulates the model architecture, training, validation, and testing logic,
-allowing developers to focus on the core components of their models without
-getting bogged down by the boilerplate code typically associated with PyTorch.
+モデル
+------------
+PyTorch Lightning において、`LightningModule` は PyTorch の上に構築された
+高レベルの抽象化であり、モデルのトレーニングプロセスを効率化します。
+モデルアーキテクチャ、トレーニング、検証、テストのロジックをカプセル化し、
+PyTorch に通常付随するボイラープレートコードに煩わされることなく、
+開発者がモデルの中核部分に集中できるようにします。
 
-General Summary of a `LightningModule`
+`LightningModule` の概要
 
-- **Model Definition:** The `LightningModule` is initialized with the model
-  architecture, which is defined using PyTorch's `nn.Module`. This includes
-  layers, activation functions, and any other components necessary for the
-  model.
+- **モデル定義:** `LightningModule` は、PyTorch の `nn.Module` を使用して
+  定義されたモデルアーキテクチャで初期化されます。これには、レイヤー、
+  活性化関数、およびモデルに必要なその他のコンポーネントが含まれます。
 
-- **Forward Pass:** The `forward` method specifies how the input data flows
-  through the model. This is where the core computation of the model is
-  defined.
+- **順伝播(フォワードパス):** `forward` メソッドは、入力データがモデルを
+  どのように流れるかを指定します。ここでモデルの中核となる計算が定義されます。
 
-- **Training Logic:** The `training_step` method contains the logic for a
-  single training iteration. It computes the loss and any metrics you wish to
-  track, such as accuracy. This method is called automatically during the
-  training loop.
+- **トレーニングロジック:** `training_step` メソッドは、1回のトレーニング
+  イテレーションのロジックを含みます。損失や、精度など追跡したいメトリクスを
+  計算します。このメソッドはトレーニングループ中に自動的に呼び出されます。
 
-- **Validation and Testing:** Similar to the training step, the
-  `validation_step` and `test_step` methods define how the model is evaluated
-  on validation and test datasets, respectively. These methods help in
-  monitoring the model's performance and generalization.
+- **検証とテスト:** トレーニングステップと同様に、`validation_step` および
+  `test_step` メソッドは、モデルがそれぞれ検証データセットとテストデータセットで
+  どのように評価されるかを定義します。これらのメソッドは、モデルの性能と
+  汎化性能のモニタリングに役立ちます。
 
-- **Optimizer Configuration:** The `configure_optimizers` method specifies the
-  optimizer(s) and learning rate scheduler(s) used during training. This
-  allows for flexible and customizable training strategies.
+- **オプティマイザーの構成:** `configure_optimizers` メソッドは、トレーニング中に
+  使用されるオプティマイザーと学習率スケジューラーを指定します。これにより、
+  柔軟でカスタマイズ可能なトレーニング戦略が可能になります。
 
-By using a `LightningModule`, developers can leverage PyTorch Lightning's
-features like distributed training, automatic checkpointing, and logging,
-making it easier to scale experiments and manage complex training workflows.
-This abstraction promotes cleaner code, better organization, and easier
-debugging, ultimately accelerating the model development process.
+`LightningModule` を使用することで、開発者は分散トレーニング、自動
+チェックポイント、ロギングといった PyTorch Lightning の機能を活用でき、
+実験のスケールや複雑なトレーニングワークフローの管理が容易になります。
+この抽象化により、よりクリーンなコード、より良い構成、より容易なデバッグが
+促進され、最終的にモデル開発プロセスが加速されます。
 
 .. literalinclude:: ../../../examples/hello-world/hello-lightning/model.py
     :language: python
@@ -171,12 +168,12 @@ debugging, ultimately accelerating the model development process.
 --------------
 
 
-Client Code
-------------------
+クライアントコード
+------------------------------------
 
-Notice the training code is almost identical to the pytorch lightning standard training code.
-The only difference is that we added a few lines to receive and send data to the server.
-We mark all the changed code with number 0 to 4 to make it easier to understand.
+トレーニングコードが PyTorch Lightning の標準的なトレーニングコードとほぼ同一であることに注目してください。
+唯一の違いは、サーバーとデータを送受信するための数行を追加した点です。
+理解しやすいように、変更したコードにはすべて0から4の番号を付けています。
 
 
 .. literalinclude:: ../../../examples/hello-world/hello-lightning/client.py
@@ -186,62 +183,62 @@ We mark all the changed code with number 0 to 4 to make it easier to understand.
     :lines: 71-
 
 
-The main flow of the code logic in the `client.py` file involves running a federated learning (FL) training logics locally on each client using PyTorch Lightning and NVFlare. 
-Here's a breakdown of the key steps:
+`client.py` ファイルのコードロジックの主な流れは、PyTorch Lightning と NVFlare を使用して、各クライアント上でローカルに連合学習(FL)トレーニングロジックを実行することです。
+主要なステップの内訳は次のとおりです:
 
-1. **Argument Parsing:**
+1. **引数の解析:**
 
-   - The `define_parser()` function is used to parse command-line arguments, specifically the `--batch_size` argument, which sets the batch size for data loading.
+   - `define_parser()` 関数は、コマンドライン引数、特にデータ読み込みのバッチサイズを設定する `--batch_size` 引数を解析するために使用されます。
 
-2. **Initialization:**
+2. **初期化:**
 
-   - The `main()` function begins by parsing the command-line arguments to get the batch size.
-   - The `flare.init()` function is called to initialize the NVFlare client, which is necessary for using certain NVFlare functions like `flare.get_site_name()`.
+   - `main()` 関数は、まずコマンドライン引数を解析してバッチサイズを取得します。
+   - `flare.init()` 関数が呼び出されて NVFlare クライアントが初期化されます。これは `flare.get_site_name()` などの特定の NVFlare 関数を使用するために必要です。
 
-3. **Model and Data Module Setup:**
+3. **モデルとデータモジュールのセットアップ:**
 
-   - An instance of `LitNet`, a PyTorch Lightning model, is created.
-   - An instance of `CIFAR10DataModule` is created with the specified batch size to handle data loading and processing.
+   - PyTorch Lightning モデルである `LitNet` のインスタンスが作成されます。
+   - データの読み込みと処理を扱うために、指定されたバッチサイズで `CIFAR10DataModule` のインスタンスが作成されます。
 
-4. **Trainer Configuration:**
+4. **Trainerの構成:**
 
-   - A PyTorch Lightning `Trainer` is configured. If a GPU is available, it is set to use it; otherwise, it defaults to CPU.
+   - PyTorch Lightning の `Trainer` が構成されます。GPUが利用可能な場合はGPUを使用するように設定され、そうでない場合はCPUがデフォルトになります。
 
-5. **NVFlare Integration:**
+5. **NVFlare統合:**
 
-   - The `flare.patch(trainer)` function is called to integrate NVFlare with the PyTorch Lightning trainer. This allows the trainer to handle federated learning tasks.
-   - When ``ScaffoldRecipe`` sends SCAFFOLD controls, the patch automatically applies the required
-     ``PTScaffoldHelper`` updates and returns the control difference. This path requires Lightning automatic
-     optimization with one optimizer.
+   - `flare.patch(trainer)` 関数が呼び出され、NVFlare が PyTorch Lightning のトレーナーと統合されます。これにより、トレーナーは連合学習のタスクを処理できるようになります。
+   - ``ScaffoldRecipe`` が SCAFFOLD コントロールを送信すると、このパッチは必要な
+     ``PTScaffoldHelper`` の更新を自動的に適用し、コントロールの差分を返します。このパスには、
+     1つのオプティマイザーによる Lightning の自動最適化が必要です。
 
-6. **Federated Learning Loop:**
+6. **連合学習ループ:**
 
-   - A loop runs while `flare.is_running()` returns `True`, indicating that the federated learning job is active.
-   - Within the loop:
-      - The global model is received from the NVFlare server using `flare.receive()`.
-      - The current round and site name are printed for logging purposes.
-      - The global model is validated using `trainer.validate()`.
-      - Local training is performed using `trainer.fit()`, starting with the received global model.
-      - The local model is tested using `trainer.test()`.
-      - Predictions are made using `trainer.predict()`.
+   - `flare.is_running()` が `True` を返す間、つまり連合学習ジョブがアクティブな間、ループが実行されます。
+   - ループ内では:
+      - `flare.receive()` を使用して、NVFlare サーバーからグローバルモデルを受信します。
+      - ログ出力のために、現在のラウンドとサイト名が出力されます。
+      - `trainer.validate()` を使用して、グローバルモデルを検証します。
+      - 受信したグローバルモデルを起点として、`trainer.fit()` を使用してローカルトレーニングを実行します。
+      - `trainer.test()` を使用して、ローカルモデルをテストします。
+      - `trainer.predict()` を使用して、予測を行います。
 
-7. **Execution:**
+7. **実行:**
 
-   - The `main()` function is executed if the script is run as the main module, starting the entire process.
-
-
-Server Code
-------------------
-In federated averaging, the server code is responsible for
-aggregating model updates from clients, the workflow pattern is similar to scatter-gather.
-In this example, we will directly use the default federated averaging algorithm provided by NVFlare.
-The FedAvg class is defined in `nvflare.app_common.workflows.fedavg.FedAvg`
-There is no need to defined a customized server code for this example.
+   - スクリプトがメインモジュールとして実行された場合に `main()` 関数が実行され、プロセス全体が開始されます。
 
 
-Job Recipe Code
-------------------
-The job recipe code is used to define the client and server configurations.
+サーバーコード
+----------------------------
+連合平均では、サーバーコードはクライアントからのモデル更新の集約を担当し、
+そのワークフローパターンは scatter-gather に似ています。
+この例では、NVFlare が提供するデフォルトの連合平均アルゴリズムを直接使用します。
+FedAvg クラスは `nvflare.app_common.workflows.fedavg.FedAvg` で定義されています。
+この例では、カスタマイズしたサーバーコードを定義する必要はありません。
+
+
+ジョブレシピコード
+------------------------------------
+ジョブレシピコードは、クライアントとサーバーの構成を定義するために使用されます。
 
 .. literalinclude:: ../../../examples/hello-world/hello-lightning/job.py
     :language: python
@@ -249,15 +246,15 @@ The job recipe code is used to define the client and server configurations.
     :caption: Job Recipe (job.py)
     :lines: 14-
 
-Model Input Options
-^^^^^^^^^^^^^^^^^^^
+モデル入力オプション
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``model`` parameter accepts two formats:
+``model`` パラメータは2つの形式を受け付けます:
 
-1. **Class instance**: ``model=LitNet()`` - Convenient and Pythonic
-2. **Dict config**: ``model={"class_path": "model.LitNet", "args": {}}`` - Better for large models
+1. **クラスインスタンス**: ``model=LitNet()`` - 便利でPythonic
+2. **辞書設定**: ``model={"class_path": "model.LitNet", "args": {}}`` - 大規模モデルに適しています
 
-To resume from pre-trained weights:
+事前学習済みの重みから再開するには:
 
 .. code-block:: python
 
@@ -268,46 +265,46 @@ To resume from pre-trained weights:
    )
 
 
-Run FL Job
-------------------
+FLジョブの実行
+----------------------------
 
-This section provides the command to execute the federated learning job
-using the job recipe defined above. Run this command in your terminal.
-First, run the following command to download the data:
+このセクションでは、上で定義したジョブレシピを使用して連合学習ジョブを
+実行するためのコマンドを示します。ターミナルでこのコマンドを実行してください。
+まず、次のコマンドを実行してデータをダウンロードします:
 
 .. code-block:: text
 
   ./prepare_data.sh
 
 
-**Command to execute the FL job**
+**FLジョブを実行するコマンド**
 
-Use the following command in your terminal to start the job with the specified
-number of rounds, batch size, and number of clients.
+指定したラウンド数、バッチサイズ、クライアント数でジョブを開始するには、
+ターミナルで次のコマンドを使用します。
 
 
 .. code-block:: text
 
   python job.py --num_rounds 2 --batch_size 16
 
-FedAvg is the default. The same client can run SCAFFOLD without changing its training loop:
+FedAvg がデフォルトです。同じクライアントは、トレーニングループを変更することなく SCAFFOLD を実行できます:
 
 .. code-block:: text
 
   python job.py --algorithm scaffold --num_rounds 2 --batch_size 16
 
-For manual Lightning optimization, use an explicit receive/train/send loop without ``flare.patch(trainer)``
-and integrate ``PTScaffoldHelper`` directly.
+Lightning の手動最適化を使用する場合は、``flare.patch(trainer)`` を使わずに明示的な receive/train/send ループを使用し、
+``PTScaffoldHelper`` を直接統合してください。
 
-The automatic path supports one optimizer with ``precision="32-true"`` or ``precision="bf16-mixed"`` and
-equal finite, non-negative learning rates across parameter groups at every step. Starting with NVFlare 2.9.0,
-PyTorch SCAFFOLD control differences contain trainable parameters only; buffers such as BatchNorm running
-statistics remain ordinary model state. Custom SCAFFOLD aggregators must accept sparse control dictionaries.
-Trainability may change between rounds, which resets newly trainable local controls to zero, but
-``requires_grad`` must not change during a round.
+自動パスは、``precision="32-true"`` または ``precision="bf16-mixed"`` を指定した1つのオプティマイザーと、
+すべてのステップにおいてパラメータグループ間で等しい有限かつ非負の学習率をサポートします。NVFlare 2.9.0 以降、
+PyTorch の SCAFFOLD コントロール差分にはトレーニング可能なパラメータのみが含まれ、BatchNorm の移動統計量などの
+バッファは通常のモデル状態のままです。カスタムの SCAFFOLD アグリゲーターは、疎なコントロール辞書を受け付ける
+必要があります。トレーニング可能性はラウンド間で変化する可能性があり、その場合、新たにトレーニング可能になった
+ローカルコントロールはゼロにリセットされますが、``requires_grad`` はラウンド中に変化してはなりません。
 
 
-output
+出力
 
 .. code-block:: text
 

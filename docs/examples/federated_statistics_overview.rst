@@ -1,157 +1,157 @@
 .. _federated_statistics:
 
-Federated Statistics Overview
+連合統計の概要
 *****************************
 
-Objective
+目的
 =========
-NVIDIA FLARE will provide built-in federated statistics operators (controllers and executors) that can generate global statistics based on local client side statistics.
+NVIDIA FLARE は、ローカルのクライアント側統計に基づいてグローバル統計を生成できる、組み込みの連合統計オペレーター(コントローラーとエグゼキューター)を提供します。
 
-At each client site, we could have one or more datasets (such as "train" and "test" datasets); each dataset may have many features. For each feature in the dataset, we will calculate the statistics and then combine them to produce global statistics for all the numeric features. The output would be complete statistics for all datasets in clients and global.
+各クライアントサイトには、1つ以上のデータセット("train" や "test" データセットなど)が存在し得ます。各データセットは多数の特徴量を持つことがあります。データセット内の各特徴量について統計を計算し、それらを結合してすべての数値特徴量のグローバル統計を生成します。出力は、各クライアントおよびグローバルの、すべてのデータセットに対する完全な統計となります。
 
-The statistics here are commonly used statistics: count, sum, mean, std_dev and histogram for the numerical features. The max, min are not included as it might violate the client's data privacy. Median is not included due to the complexity of the algorithms. If the statistics sum and count are selected, the mean will be calculated with count and sum.
+ここでの統計とは、一般的に使われる統計量です: 数値特徴量に対する count、sum、mean、std_dev、histogram です。max と min は、クライアントのデータプライバシーを侵害する可能性があるため含まれていません。median はアルゴリズムが複雑なため含まれていません。統計量として sum と count が選択されている場合、mean は count と sum から計算されます。
 
-A client will only need to implement the selected methods of the :class:`Statistics<nvflare.app_common.abstract.statistic_spec.Statistics>` class from statistics_spec.
+クライアントは、statistics_spec の :class:`Statistics<nvflare.app_common.abstract.statistic_spec.Statistics>` クラスのうち、選択したメソッドのみを実装すれば済みます。
 
-The result will be statistics for all features of all datasets at all sites as well as global aggregates. The result should be visualized via the visualization utility in the notebook.
+結果は、すべてのサイトのすべてのデータセットのすべての特徴量に対する統計と、グローバルな集約値になります。結果は、ノートブックの可視化ユーティリティで可視化できます。
 
-Assumptions
+前提
 -----------
 
-Assume that clients will provide the following:
+クライアントは次のものを提供すると想定します。
 
-* target statistics such as count, histogram only
-* local statistics for the target statistics (by implementing the `statistic_spec`)
-* data sets and dataset features (feature name, data type)
+* 対象とする統計量(count、histogram のみ、など)
+* 対象統計量に対するローカル統計(`statistic_spec` を実装することによる)
+* データセットとデータセットの特徴量(特徴量名、データ型)
 
 .. note::
 
-    Count is always required as we use count to enforce data privacy policy. We only support numerical features, not categorical features. The client can return all types of features but the non-numerical features will be removed.
+    注記: count は常に必須です。count はデータプライバシーポリシーの適用に使用されるためです。数値特徴量のみをサポートし、カテゴリカル特徴量はサポートしません。クライアントはすべての型の特徴量を返すことができますが、数値以外の特徴量は除去されます。
 
-Examples
+例
 --------
 
-We provide several examples to demonstrate how should the operators be used.
+オペレーターをどのように使用すべきかを示すために、いくつかの例を提供しています。
 
-Tabular Examples
-~~~~~~~~~~~~~~~~
+表形式データの例
+~~~~~~~~~~~~~~~~~~~~
 
-The first example is to calculate the statistics for tabular data. The data can be loaded into Pandas DataFrames, the data can be cached in memory, and we can leverage DataFrame and Numpy to calculate the local statistics.
+最初の例は、表形式データの統計を計算するものです。データは Pandas DataFrame に読み込むことができ、メモリにキャッシュ可能で、DataFrame と Numpy を活用してローカル統計を計算できます。
 
 **Data frame statistics**
 
-The result will be saved to the job workspace in json format, which can be loaded in a Pandas DataFrame. In the jupyter notebook, you can visualize the results with the provided visualization utility. For an example, this table shows the statistics for a particular feature "Age" on each site and each dataset.
+結果は json 形式でジョブのワークスペースに保存され、Pandas DataFrame に読み込むことができます。jupyter ノートブックでは、提供されている可視化ユーティリティで結果を可視化できます。例として、この表は特定の特徴量 "Age" の統計を、各サイトおよび各データセットについて示しています。
 
 .. image:: ../resources/stats_df.png
     :height: 300px
 
-You can compare global features and clients' feature statistics side-by-side for each dataset for all features.
+各データセットのすべての特徴量について、グローバルの特徴量統計とクライアントの特徴量統計を並べて比較できます。
 
-Here is an example for histogram plots:
+ヒストグラムプロットの例を次に示します。
 
 .. image:: ../resources/hist_plot.png
     :height: 300px
 
-The main steps are:
+主な手順は次のとおりです。
 
-    * provide server side configuration to specify target statistics and their configurations and output location
-    * implement the local statistics generator (statistics_spec)
-    * provide client side configuration to specify data input location
-    * The detailed example instructions can be found in :github_nvflare_link:`Data frame statistics <examples/advanced/federated-statistics/df_stats/README.md>`
+    * 対象統計量とその設定、および出力先を指定するサーバー側設定を提供する
+    * ローカル統計ジェネレーター(statistics_spec)を実装する
+    * データ入力先を指定するクライアント側設定を提供する
+    * 詳細な例の手順は :github_nvflare_link:`Data frame statistics <examples/advanced/federated-statistics/df_stats/README.md>` を参照してください
 
-COVID 19 Radiology Image Examples
+COVID-19 放射線画像の例
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The second example provided is an image histogram example. Different from the tabular data example, the image example show the following:
+2つ目の例は、画像ヒストグラムの例です。表形式データの例とは異なり、画像の例では次の点を示しています。
 
-* The :github_nvflare_link:`client.py <examples/advanced/federated-statistics/image_stats/client.py>` only needs to calculate the count and histogram target statistics, then user only needs to provide the calculation count, failure_count and histogram functions. There is no need to implement other metrics functions (sum, mean,std_dev etc.) ( get_failure_count by default return 0 )
-* For each site's dataset, there are several thousands of images, the local histogram is aggregate histogram of all the image histograms.
-* The image files are large, we can't load everything in memory, then calculate the statistics. We will need to iterate through files for each calculation. For single feature, such as example. This is ok. If there are multiple features, such as multiple channels, reload image to memory for each channel to do histogram calculation is really wasteful.
-* Unlike :github_nvflare_link:`Data frame statistics <examples/advanced/federated-statistics/df_stats/README.md>`, the histogram bin's global range is pre-defined by user [0, 256] where in Data frame statistics, besides "Age", all other features histogram global bin range is dynamically estimated based on local min/max values
+* :github_nvflare_link:`client.py <examples/advanced/federated-statistics/image_stats/client.py>` は count と histogram の対象統計量のみを計算すればよいため、ユーザーは count、failure_count、histogram の計算関数を提供するだけで済みます。他のメトリクス関数(sum、mean、std_dev など)を実装する必要はありません(get_failure_count はデフォルトで 0 を返します)。
+* 各サイトのデータセットには数千枚の画像があり、ローカルヒストグラムは、すべての画像ヒストグラムを集約したヒストグラムです。
+* 画像ファイルは大きいため、すべてをメモリに読み込んでから統計を計算することはできません。計算のたびにファイルを順に処理する必要があります。この例のように特徴量が1つであれば問題ありません。複数チャネルなど複数の特徴量がある場合、チャネルごとにヒストグラム計算のために画像をメモリに再読み込みするのは非常に無駄が多くなります。
+* :github_nvflare_link:`Data frame statistics <examples/advanced/federated-statistics/df_stats/README.md>` とは異なり、ヒストグラムビンのグローバル範囲はユーザーによって [0, 256] と事前定義されています。Data frame statistics では、"Age" を除き、他のすべての特徴量のヒストグラムのグローバルビン範囲は、ローカルの min/max 値に基づいて動的に推定されます。
 
-Here some of the image histogram ( the underline image files have only 1 channel)
+画像ヒストグラムの一部を次に示します(対象の画像ファイルは1チャネルのみです)。
 
 .. image:: ../resources/image_histogram.png
     :height: 300px
 
-Monai Stats with Spleen CT Image example
+脾臓CT画像を用いた Monai 統計の例
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This example :github_nvflare_link:`Spleen CT Image Statistics <integration/monai/examples/spleen_ct_segmentation_local>` demonstrated few more details in federated statistics.
+この例 :github_nvflare_link:`Spleen CT Image Statistics <integration/monai/examples/spleen_ct_segmentation_local>` は、連合統計についてさらにいくつかの詳細を示しています。
 
-* instead of locally calculate the histogram on each image, this example shows how to get the local statistics from monai via the MONAI FLARE integration.
-* to avoid the reloading the same image into memory for each feature. This example shows the one can use pre_run() method to load and cache the externally calculated statistics. The server side controller will pass the target metrics to pre_run method so it can be used to load the statistics.
+* 各画像に対してローカルでヒストグラムを計算する代わりに、この例では MONAI FLARE インテグレーションを介して monai からローカル統計を取得する方法を示します。
+* 特徴量ごとに同じ画像をメモリに再読み込みするのを避けるため、この例では pre_run() メソッドを使用して、外部で計算された統計を読み込んでキャッシュできることを示します。サーバー側のコントローラーは対象メトリクスを pre_run メソッドに渡すため、これを統計の読み込みに利用できます。
 
-Privacy Policy and Privacy Filters
-----------------------------------
+プライバシーポリシーとプライバシーフィルター
+----------------------------------------------------
 
-NVFLARE provide data privacy protection through privacy filters :ref:`privacy-management <site_policy_management>` Each site can have its own privacy policy.
+NVFLARE はプライバシーフィルター :ref:`privacy-management <site_policy_management>` を通じてデータプライバシー保護を提供します。各サイトは独自のプライバシーポリシーを持つことができます。
 
-Local privacy policy
-~~~~~~~~~~~~~~~~~~~~
-
-privacy.json provides local site specific privacy policy. The policy is likely setup by the company and implemented by organization admin for the project. For different type of scope or categories, there are might be type of policy.
-
-Privacy configuration
-~~~~~~~~~~~~~~~~~~~~~
-
-The NVFLARE privacy configuration is consists of set of task data filters and task result filters:
-
-* The task data filter applies before client executor executes
-* The task results filter applies after client executor before it sends to server
-* For both data filter and result filter, they are groups via scope
-
-Each job will need to have privacy scope. If not specified, the default scope will be used. If default scope is not defined and job doesn't specify the privacy scope, the job deployment will fail, and job will not executed
-
-Privacy Policy Instrumentation
+ローカルプライバシーポリシー
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are different ways to set privacy filter depending the use cases
+privacy.json は、ローカルサイト固有のプライバシーポリシーを提供します。このポリシーは通常、企業によって策定され、プロジェクトの組織管理者によって実装されます。スコープやカテゴリの種類によって、異なる種類のポリシーが存在し得ます。
 
-Set Privacy Policy as researcher
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-You can specify the "task_result_filters" in config_fed_client.json to specify the privacy control. This is useful when you develop these filters.
+プライバシー設定
+~~~~~~~~~~~~~~~~~~~~~
 
-Setup site privacy policy as org admin
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Once the company decides to instrument certain privacy policy independent of individual job, one can copy the local directory privacy.json content to clients' local privacy.json (merge not overwrite). In this example, since there is only one app, we can simply copy the private.json from local directory to ``site-1/local/privacy.json`` and ``site-2/local/privacy.json``.
+NVFLARE のプライバシー設定は、タスクデータフィルターとタスク結果フィルターのセットで構成されます。
 
-We need to remove the same filters from the job definition in config_fed_client.json by simply set the "task_result_filters" to empty list to avoid **double filtering**
+* タスクデータフィルターは、クライアントのエグゼキューターが実行される前に適用されます
+* タスク結果フィルターは、クライアントのエグゼキューターの実行後、サーバーに送信される前に適用されます
+* データフィルターと結果フィルターのどちらも、スコープを介してグループ化されます
+
+各ジョブはプライバシースコープを持つ必要があります。指定されていない場合は、デフォルトスコープが使用されます。デフォルトスコープが定義されておらず、ジョブがプライバシースコープを指定していない場合、ジョブのデプロイメントは失敗し、ジョブは実行されません。
+
+プライバシーポリシーの適用方法
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ユースケースに応じて、プライバシーフィルターを設定するにはいくつかの方法があります。
+
+研究者としてプライバシーポリシーを設定する
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+config_fed_client.json で "task_result_filters" を指定して、プライバシー制御を指定できます。これは、これらのフィルターを開発する際に便利です。
+
+組織管理者としてサイトのプライバシーポリシーを設定する
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+企業が個々のジョブとは独立に特定のプライバシーポリシーを適用すると決めた場合、local ディレクトリの privacy.json の内容をクライアントのローカルの privacy.json にコピー(上書きではなくマージ)できます。この例では、アプリが1つしかないため、local ディレクトリの private.json を ``site-1/local/privacy.json`` と ``site-2/local/privacy.json`` に単純にコピーするだけで済みます。
+
+**二重フィルタリング**\ を避けるため、config_fed_client.json のジョブ定義から同じフィルターを削除する必要があります。これは "task_result_filters" を空のリストに設定するだけです。
 
 .. code-block::
 
     "task_result_filters": []
 
-Job filter vs. filters in private.json
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ジョブのフィルターと private.json のフィルター
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Privacy filters are defined within a privacy scope. If a job's privacy scope is defined or has default scope, then the scope's filters (if any) are applied before the job-specified filters (if any). This rule is enforced during task execution time.
+プライバシーフィルターは、プライバシースコープ内で定義されます。ジョブのプライバシースコープが定義されているか、デフォルトスコープを持つ場合、スコープのフィルター(あれば)がジョブで指定されたフィルター(あれば)より先に適用されます。このルールは、タスク実行時に適用されます。
 
-With such rules, if we have both task result filters and privacy scoped filters, we need to understand that the privacy filters will be applied first, then job filters.
+このルールにより、タスク結果フィルターとプライバシースコープのフィルターの両方がある場合、プライバシーフィルターが先に適用され、次にジョブのフィルターが適用されることを理解しておく必要があります。
 
-Statistics Privacy Filters
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+統計プライバシーフィルター
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Statistics privacy filters are task result filters. We already built one for Statistics.
+統計プライバシーフィルターはタスク結果フィルターです。統計用のフィルターはすでに用意されています。
 
-The :class:`StatisticsPrivacyFilter<nvflare.app_common.filters.statistics_privacy_filter.StatisticsPrivacyFilter>` consists of several ``StatisticsPrivacyCleansers`` focused on the statistics sent from client to server.
+:class:`StatisticsPrivacyFilter<nvflare.app_common.filters.statistics_privacy_filter.StatisticsPrivacyFilter>` は、クライアントからサーバーへ送信される統計に焦点を当てた、複数の ``StatisticsPrivacyCleansers`` で構成されます。
 
-:class:`StatisticsPrivacyCleanser<nvflare.app_common.statistics.statistics_privacy_cleanser.StatisticsPrivacyCleanser>` can be considered as an interceptor before the results delivered to server. Currently, we use three ``StatisticsPrivacyCleansers`` to guard the data privacy. The reason we built ``StatisticsPrivacyCleanser`` instead of separate filters is to avoid repeated data de-serialization.
+:class:`StatisticsPrivacyCleanser<nvflare.app_common.statistics.statistics_privacy_cleanser.StatisticsPrivacyCleanser>` は、結果がサーバーに届く前のインターセプターと考えることができます。現在、データプライバシーを守るために3つの ``StatisticsPrivacyCleansers`` を使用しています。個別のフィルターではなく ``StatisticsPrivacyCleanser`` を構築した理由は、データの逆シリアル化が繰り返されるのを避けるためです。
 
 **MinCountCleanser**
 
-Check against the number of count returned from client for each dataset and each feature.
+各データセット・各特徴量について、クライアントから返された count の数をチェックします。
 
-If the min_count is not satisfied, there is potential risk of reveal client's real data. Then remove that feature's statistics from the result for this client.
+min_count が満たされない場合、クライアントの実データが漏えいする潜在的リスクがあります。その場合、このクライアントの結果からその特徴量の統計を除去します。
 
 **HistogramBinsCleanser**
 
-For histogram calculations, number of bins can't be too large compare to count. if the bins = count, then we also reveal the real data. This check to make sure that the number of bins be less than X percent of the count. X = max_bins_percent in percentage, for 10 is for 10% if the number of bins for the histogram is not satisfy this specified condition, the resulting histogram will be removed from statistics before sending to server.
+ヒストグラム計算では、count に比べてビン数が大きすぎてはいけません。ビン数 = count の場合、実データが漏えいすることになります。このチェックは、ビン数が count の X パーセント未満であることを確認します。X = max_bins_percent はパーセント値で、10 は 10% を意味します。ヒストグラムのビン数がこの指定条件を満たさない場合、サーバーに送信する前に、結果のヒストグラムは統計から除去されます。
 
 **AddNoiseToMinMax**
 
-For histogram calculations, if the feature's histogram bin's range is not specified, we will need to use local data's min and max values to calculate the global min/max values, then use the global min, max values as the bin ragen for histogram calculation. But send the server the local min, max values will reveal client's real data. To protect data privacy, we add noise to the local min/max values.
+ヒストグラム計算において、特徴量のヒストグラムビンの範囲が指定されていない場合、ローカルデータの min と max の値を使ってグローバルの min/max 値を計算し、そのグローバル min/max 値をヒストグラム計算のビン範囲として使用する必要があります。しかし、ローカルの min/max 値をサーバーに送ると、クライアントの実データが漏えいします。データプライバシーを守るため、ローカルの min/max 値にノイズを加えます。
 
-Min/max random is used to generate random noise between (min_noise_level and max_noise_level). for example, the random noise is to be within (0.1 and 0.3),i.e. 10% to 30% level. These noise will make local min values smaller than the true local min values, and max values larger than the true local max values. As result, the estimate global max and min values (i.e. with noise) are still bound the true global min/max values, in such that
+min/max のランダム化は、(min_noise_level と max_noise_level)の間のランダムノイズを生成するために使用されます。たとえば、ランダムノイズを(0.1 と 0.3)の範囲、すなわち 10% から 30% のレベルとします。このノイズにより、ローカルの min 値は真のローカル min 値より小さくなり、max 値は真のローカル max 値より大きくなります。その結果、推定されるグローバルの max/min 値(すなわちノイズ付き)は、依然として真のグローバル min/max 値を包含する境界となり、次の関係が成り立ちます。
 
 .. code-block::
 
@@ -163,19 +163,19 @@ Min/max random is used to generate random noise between (min_noise_level and max
                             est. global max value
 
 
-How it works
-------------
+動作の仕組み
+------------------
 
-Some of the local statistics (such as count, failure count, sum etc.) can be calculated with one round; while others statistics such as stddev, histogram ( if the global bin range is not specified) will need to two round of calculations. We design a workflow to essentially issue three round of trip to client
+ローカル統計の一部(count、failure count、sum など)は1ラウンドで計算できますが、stddev やヒストグラム(グローバルビン範囲が指定されていない場合)などの統計は2ラウンドの計算が必要です。私たちは、クライアントへ実質的に3回のやり取りを行うワークフローを設計しました。
 
-* pre_run() -- controller send clients the target metrics information
-* 1st statistics task -- controller send clients 1st set of target metrics as well as local max/min if the global min/max estimation is needed
-* 2nd statistics task -- based on the aggregated global statistics, we do the 2nd round, we calculate the VAR (with global mean) and histogram based on the global rnage (or estimated global range)
+* pre_run() -- コントローラーがクライアントに対象メトリクスの情報を送信します
+* 1回目の統計タスク -- コントローラーがクライアントに1回目の対象メトリクスのセットを送信し、グローバル min/max の推定が必要な場合はローカルの max/min も送信します
+* 2回目の統計タスク -- 集約されたグローバル統計に基づいて2回目を実行し、(グローバル平均を用いた)VAR と、グローバル範囲(または推定グローバル範囲)に基づくヒストグラムを計算します
 
-Statistics
+統計量
 ----------
 
-Federated statistics includes numerical statistics measures for:
+連合統計には、次の数値統計量が含まれます。
 
 * count
 * mean
@@ -184,57 +184,56 @@ Federated statistics includes numerical statistics measures for:
 * histogram
 * quantile
 
-We did not include min, max value to avoid data privacy concerns.
+データプライバシー上の懸念を避けるため、min、max の値は含めていません。
 
-Quantiles
+分位数
 ~~~~~~~~~
 
-Quantile statistics refers to statistical measures that divide a probability distribution or dataset into intervals with equal probabilities or proportions. Quantiles help summarize the distribution of data by providing key points that indicate how values are spread.
+分位数統計とは、確率分布またはデータセットを等しい確率または割合の区間に分割する統計的尺度を指します。分位数は、値がどのように分布しているかを示す代表的な点を提供することで、データの分布を要約するのに役立ちます。
 
-Key Quantiles:
+主な分位数:
 
-* Median (50th percentile): The middle value of a dataset, dividing it into two equal halves
-* Quartiles (25th, 50th, 75th percentiles): Divide the data into four equal parts
-* Deciles (10th, 20th, ..., 90th percentiles): Divide the data into ten equal parts
-* Percentiles (1st, 2nd, ..., 99th): Divide the data into 100 equal parts
+* 中央値(50パーセンタイル): データセットを2等分する中央の値
+* 四分位数(25、50、75パーセンタイル): データを4等分する
+* 十分位数(10、20、...、90パーセンタイル): データを10等分する
+* パーセンタイル(1、2、...、99): データを100等分する
 
-Usage of Quantiles:
+分位数の用途:
 
-* Descriptive Statistics: Summarizes the spread of data
-* Outlier Detection: Helps identify extreme values
-* Machine Learning: Used in feature engineering, normalization, and decision tree algorithms
-* Risk Analysis: Used in finance (e.g., Value at Risk, VaR)
+* 記述統計: データの広がりを要約する
+* 外れ値検出: 極端な値の特定に役立つ
+* 機械学習: 特徴量エンジニアリング、正規化、決定木アルゴリズムで使用される
+* リスク分析: 金融で使用される(例: バリュー・アット・リスク、VaR)
 
-Implementation Details:
+実装の詳細:
 
-To calculate federated quantiles, we use the fastdigest package, which satisfies the following constraints:
+連合分位数を計算するために、次の制約を満たす fastdigest パッケージを使用します。
 
-* Works in distributed systems
-* Does not copy the original data (avoiding privacy leaks)
-* Avoids transmitting large amounts of data
-* No system-level dependency
+* 分散システムで動作する
+* 元のデータをコピーしない(プライバシー漏えいを回避)
+* 大量のデータの送信を回避する
+* システムレベルの依存関係がない
 
-Pin ``fastdigest`` to ``0.4.0``:
+``fastdigest`` は ``0.4.0`` に固定してください。
 
 .. code-block:: text
 
     pip install fastdigest==0.4.0
 
-Newer ``fastdigest`` releases changed the TDigest API and are planned to be adopted in a later branch.
+新しい ``fastdigest`` リリースでは TDigest API が変更されており、後のブランチで採用される予定です。
 
-The tdigest algorithm only carries the cluster coordinates, initially each data point is in its own cluster. By default, we compress with max_bin = sqrt(datasize) to compress the coordinates, so the data won't leak. You can always override max_bins if you prefer more or less compression.
+tdigest アルゴリズムはクラスタ座標のみを保持し、初期状態では各データポイントがそれぞれ独自のクラスタに属します。デフォルトでは、max_bin = sqrt(datasize) で座標を圧縮するため、データが漏えいすることはありません。圧縮の度合いを増減したい場合は、いつでも max_bins をオーバーライドできます。
 
-For detailed implementation instructions and configuration examples, please refer to the :github_nvflare_link:`Federated Statistics README <examples/advanced/federated-statistics/README.md>`.
+詳細な実装手順と設定例については、:github_nvflare_link:`Federated Statistics README <examples/advanced/federated-statistics/README.md>` を参照してください。
 
-Privacy Considerations:
+プライバシーに関する考慮事項:
 
-* The quantile calculation uses the tdigest algorithm which only carries cluster coordinates
-* Data compression is applied by default (max_bin = sqrt(datasize))
-* The original data is never transmitted or exposed
-* The implementation works within the existing privacy filter framework
+* 分位数の計算には、クラスタ座標のみを保持する tdigest アルゴリズムを使用します
+* データ圧縮はデフォルトで適用されます(max_bin = sqrt(datasize))
+* 元のデータが送信されたり公開されたりすることはありません
+* 実装は既存のプライバシーフィルターの枠組みの中で動作します
 
-Summary
+まとめ
 -------
-We provided federated statistics operators that can easily aggregate and visualize the local statistics for different data site and features.
-We hope this feature will make it easier to perform federated data analysis. For more details, please look at :github_nvflare_link:`Federated Statistics (Github) <examples/advanced/federated-statistics/README.md>`
-
+異なるデータサイトと特徴量に対するローカル統計を簡単に集約・可視化できる連合統計オペレーターを提供しました。
+この機能により、連合データ分析がより容易になることを願っています。詳細については、:github_nvflare_link:`Federated Statistics (Github) <examples/advanced/federated-statistics/README.md>` を参照してください。

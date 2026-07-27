@@ -3,144 +3,143 @@
 .. _hierarchy_unification_bridge:
 
 .. deprecated:: 2.7
-   The Hierarchy Unification Bridge (HUB) is deprecated. See :ref:`Hierarchical Architecture <flare_hierarchical_architecture>` for the current hierarchical FL approach.
+   Hierarchy Unification Bridge(HUB)は非推奨です。現在の階層型FLアプローチについては :ref:`Hierarchical Architecture <flare_hierarchical_architecture>` を参照してください。
 
 ############################
 Hierarchy Unification Bridge
 ############################
 
 .. notes::
-    Depreciated, Recommend to use new hierarchical Federated Learning
+    非推奨です。新しい階層型連合学習の使用を推奨します。
 
 **************************
-Background and Motivations
+背景と動機
 **************************
-Users have been working on the idea of making multiple FL systems work together to train a common model. Each FL system has its own server(s) and clients,
-implemented with the same or different FL frameworks. All these FL systems are managed by a central server, called FL Hub, which is responsible for
-coordinating the FL systems to work together in an orderly fashion.
+ユーザーの間では、複数のFLシステムを連携させて共通のモデルをトレーニングするというアイデアが検討されてきました。各FLシステムは独自のサーバーとクライアントを持ち、
+同一または異なるFLフレームワークで実装されています。これらすべてのFLシステムは、FL Hub と呼ばれる中央サーバーによって管理され、FL Hub は
+各FLシステムが秩序立って連携して動作するよう調整する責任を持ちます。
 
-This proposal requires all FL frameworks to follow a common interaction protocol, which is not yet defined. Hence as a first step, the scope is
-reduced to make all FLARE-based FL systems work together.
+この構想では、すべてのFLフレームワークが共通の相互作用プロトコルに従う必要がありますが、そのプロトコルはまだ定義されていません。そのため最初のステップとして、
+スコープを FLARE ベースのFLシステム同士を連携させることに絞ります。
 
-FLARE is designed to support institution-based collaboration. This means that the number of clients per system is limited (< 100). Hierarchy Unification Bridge (HUB) is a
-solution that can support systems that exceed this limit by making multiple FLARE systems work together in a hierarchical manner. At the top of the hierarchy is the Root System,
-which is just a regular FLARE system that has an FL Server and multiple FL Clients. Each client site can be a simple site that runs regular training, or it can be an independent
-FLARE system that has its own server and clients. This scheme can repeat many times to form a hierarchy as deep as needed.
+FLARE は組織単位のコラボレーションをサポートするように設計されています。これは、システムあたりのクライアント数に上限(100未満)があることを意味します。Hierarchy Unification Bridge(HUB)は、
+複数の FLARE システムを階層的に連携させることで、この上限を超えるシステムをサポートできるソリューションです。階層の最上位にはルートシステムがあり、
+これはFLサーバーと複数のFLクライアントを持つ通常の FLARE システムにすぎません。各クライアントサイトは、通常のトレーニングを実行する単純なサイトでもよいし、独自のサーバーと
+クライアントを持つ独立した FLARE システムでもかまいません。この方式を何度も繰り返すことで、必要なだけ深い階層を形成できます。
 
 ******
-Design
+設計
 ******
-The key to implementing this logical hierarchy is making the lower tier system (Tier 2 or T2) a client of the upper tier system (Tier 1 or T1).
+この論理的な階層を実装する鍵は、下位ティアのシステム(Tier 2 または T2)を上位ティアのシステム(Tier 1 または T1)のクライアントにすることです。
 
-The following diagram shows how this is done:
+次の図は、これがどのように行われるかを示しています。
 
 .. image:: ../resources/hub_site.png
 
-In this diagram, green blocks represent components of the T1 system, and the blue blocks represent components of the T2 system.  Though T1 and T2
-systems are independent of each other, they belong to the same organization. Though they do not have to be on the same VM, they must be able to access
-shared file systems.
+この図では、緑のブロックが T1 システムのコンポーネントを、青のブロックが T2 システムのコンポーネントを表しています。T1 と T2 の
+システムは互いに独立していますが、同じ組織に属しています。同じVM上にある必要はありませんが、共有ファイルシステムにアクセスできる必要が
+あります。
 
-Here is the general process flow:
+一般的な処理の流れは次のとおりです。
 
-    - T1 Server tries to schedule and deploy a job to T1 Client, as usual
-    - T1 Client Root receives the job and tries to deploy it
-    - The Deployer creates a job for T2 system based on T1 job and the preconfigured information
-    - The Deployer writes the created job to T2's job store
-    - T2 Server Root schedules and deploys the T2 job as usual
-    - T1 Server starts the T1 job, which causes the T1 job to be started on T1 Client Job cell
-    - Similarly, T2 Server starts the T2 job and creates T2 Server Job cell
-    - Now the job is running
-    - T1 Client Job cell and T2 Server Job cell communicate with each other via a File Pipe to exchange task data and task result
-    - T1 Client Job cell and T1 Server Job cell exchange task data/result as usual
+    - T1 サーバーは、通常どおり T1 クライアントへジョブのスケジュールとデプロイを試みます
+    - T1 Client Root がジョブを受け取り、デプロイを試みます
+    - Deployer は、T1 のジョブと事前設定された情報に基づいて T2 システム用のジョブを作成します
+    - Deployer は、作成したジョブを T2 のジョブストアに書き込みます
+    - T2 Server Root は、通常どおり T2 のジョブをスケジュールしデプロイします
+    - T1 サーバーが T1 のジョブを開始すると、T1 Client Job セル上で T1 のジョブが開始されます
+    - 同様に、T2 サーバーが T2 のジョブを開始し、T2 Server Job セルを作成します
+    - これでジョブが実行中になります
+    - T1 Client Job セルと T2 Server Job セルは、File Pipe を介して互いに通信し、タスクデータとタスク結果を交換します
+    - T1 Client Job セルと T1 Server Job セルは、通常どおりタスクデータ/結果を交換します
 
 **********
-Challenges
+課題
 **********
 
-There are two main challenges to this design:
+この設計には主に2つの課題があります。
 
-    - How to turn a job from the T1 system into a job in the T2 system?
-    - What is the workflow controller of the T2 system to ensure the semantics of the T1 system's control logic?
+    - T1 システムのジョブを、どのように T2 システムのジョブに変換するか?
+    - T1 システムの制御ロジックのセマンティクスを保証するための T2 システムのワークフローコントローラーは何か?
 
-These two questions are closely related. The job's control logic is ultimately determined by the workflow running in T1's server.
-The control logic could be fairly complex. For example, the SAG controller determines the tasks to be performed for the clients,
-the aggregator to be used, as well as the number of rounds to be executed. All systems must work together on a round-by-round basis,
-meaning that all system clients must participate in the training for each round, and aggregation must happen at the T1 Server at the
-end of each round. It is not that all systems perform their own SAG for the whole job and then aggregate their final results at the T1 server.
+この2つの問いは密接に関連しています。ジョブの制御ロジックは、最終的には T1 のサーバーで実行されるワークフローによって決まります。
+制御ロジックはかなり複雑になり得ます。たとえば、SAG コントローラーは、クライアントが実行すべきタスク、使用するアグリゲーター、
+実行するラウンド数を決定します。すべてのシステムはラウンド単位で連携しなければなりません。
+つまり、すべてのシステムのクライアントが各ラウンドのトレーニングに参加し、各ラウンドの終わりに T1 サーバーで集約が行われる必要が
+あります。各システムがジョブ全体に対して独自の SAG を実行し、その最終結果を T1 サーバーで集約するというものではありません。
 
-As we know, a FL Client has no control logic - it merely executes tasks assigned by the server and submits task results. Since the
-T2 system is like a client of the T1 system, its whole goal is to execute assigned tasks properly by its own clients. Now the question
-is how does the T2 server know how to assign the task to its own clients? For example, the task assigned by the T1 server is simply "train",
-how does the T2 Server know whether it should broadcast the "train" task to its own clients, or it should be done in a relay fashion? In case
-of broadcast, what should be done to the submitted results from its clients? Should they be aggregated locally before sending back to the
-T1 system; or should they be simply collected and then sent back to the T1 system?
+ご存じのとおり、FLクライアントには制御ロジックがありません。サーバーから割り当てられたタスクを実行し、タスク結果を提出するだけです。
+T2 システムは T1 システムのクライアントのようなものなので、その目的は、割り当てられたタスクを自身のクライアントで適切に実行することに尽きます。ここで問題になるのは、
+T2 サーバーはタスクを自身のクライアントにどう割り当てればよいかを、どうやって知るのかということです。たとえば、T1 サーバーが割り当てたタスクが単なる "train" である場合、
+T2 サーバーは "train" タスクを自身のクライアントにブロードキャストすべきか、それともリレー方式で実行すべきかをどう判断するのでしょうか。ブロードキャストの場合、
+クライアントから提出された結果はどう扱うべきでしょうか。ローカルで集約してから T1 システムに送り返すべきか、それとも単に収集して T1 システムに送り返すべきでしょうか。
 
-*************************
-Operation Driven Workflow
-*************************
+**********************************
+オペレーション駆動ワークフロー
+**********************************
 
-First some terminologies:
+まず、いくつかの用語を定義します。
 
-FL Operation
-============
-An FL Operation describes how an FL task is to be done. FLARE supports two types of operations: *broadcast* (bcast) and *relay*.
+FLオペレーション
+================
+FLオペレーションは、FLタスクをどのように実行するかを記述します。FLARE は2種類のオペレーションをサポートしています: *broadcast*\ (bcast)と *relay* です。
 
-The *broadcast* operation specifies all the attributes of the Controller's ``broadcast_and_wait`` method: min_targets, wait_time_after_min_received,
-timeout, etc,. In addition, it also specifies how the aggregation is to be done (an aggregator component ID).
+*broadcast* オペレーションは、Controller の ``broadcast_and_wait`` メソッドのすべての属性(min_targets、wait_time_after_min_received、
+timeout など)を指定します。さらに、集約をどのように行うか(アグリゲーターコンポーネントID)も指定します。
 
-Similarly, the *relay* operation specifies all the attributes of the Controller's ``relay_and_wait`` method. In addition, it could also specify the
-shareable generator and persistor component ID.
+同様に、*relay* オペレーションは Controller の ``relay_and_wait`` メソッドのすべての属性を指定します。加えて、shareable generator と
+persistor のコンポーネントIDを指定することもできます。
 
-FL Operator
-===========
-An Operator is just a Python class that implements an operation. For each supported operation, there is an Operator that implements its semantics,
-implemented with Controller API.
+FLオペレーター
+===============
+オペレーターは、オペレーションを実装した単なる Python クラスです。サポートされる各オペレーションに対して、そのセマンティクスを Controller API を
+用いて実装したオペレーターが存在します。
 
 HUB Controller
 --------------
-The HUB Controller runs in T2's Server Job cell to control the workflow. It is a general-purpose operation-based controller that has a simple control logic:
+HUB Controller は T2 の Server Job セルで実行され、ワークフローを制御します。これは汎用のオペレーションベースのコントローラーで、シンプルな制御ロジックを持ちます。
 
-    - Receives task data from the T1 system (HubExecutor)
-    - Determines the operation to be performed based on task data headers and/or job config
-    - Finds the Operator for the requested operation
-    - Invokes the operator to execute the operation
-    - Send the result back to the requester
+    - T1 システム(HubExecutor)からタスクデータを受信する
+    - タスクデータのヘッダーおよび/またはジョブ設定に基づいて、実行すべきオペレーションを決定する
+    - 要求されたオペレーションに対応するオペレーターを見つける
+    - オペレーターを呼び出してオペレーションを実行する
+    - 結果を要求元に送り返す
 
 HUB Executor
 ------------
-The HUB executor runs in T1's Client Job cell. It works with the HUB Controller to get the assigned task done and return the result back to the T1 server. 
+HUB Executor は T1 の Client Job セルで実行されます。HUB Controller と連携して、割り当てられたタスクを完了させ、結果を T1 サーバーに返します。
 
-HUB Executor/Controller Interaction
+HUB Executor/Controller の相互作用
 -----------------------------------
-The HUB Executor and the HUB Controller use a file-based mechanism (called File Pipe) to interact with each other:
+HUB Executor と HUB Controller は、File Pipe と呼ばれるファイルベースのメカニズムを使用して相互にやり取りします。
 
-    - The Executor waits to receive a task from the T1 server.
-    - The Executor creates a file for the received Task Data, and waits for the Task Result file from the T2 system.
-    - The Controller reads the task data file, which contains a Shareable object.
-    - From the headers of the task data object and the preconfigured operation information,, the Controller determines the FL operation to perform and finds the Operator for it.
-    - The Controller invokes the Operator to get the task performed by its own clients.
-    - The Controller waits for the results from the Operator and creates the Task Result file.
-    - The Executor reads the Task Result and sends it back to the T1 server.
+    - Executor は T1 サーバーからタスクを受信するのを待ちます。
+    - Executor は受信したタスクデータのファイルを作成し、T2 システムからのタスク結果ファイルを待ちます。
+    - Controller は、Shareable オブジェクトを含むタスクデータファイルを読み取ります。
+    - タスクデータオブジェクトのヘッダーと事前設定されたオペレーション情報から、Controller は実行すべきFLオペレーションを決定し、対応するオペレーターを見つけます。
+    - Controller はオペレーターを呼び出し、自身のクライアントにタスクを実行させます。
+    - Controller はオペレーターからの結果を待ち、タスク結果ファイルを作成します。
+    - Executor はタスク結果を読み取り、T1 サーバーに送り返します。
 
-Essentially, this Operation-based controller makes the T2 system an FL Operation Process Engine (FLOPE). It simply executes an operation requested by another system.
-This allows the actual FL control logic to be run anywhere. For example, a researcher could run the training loop on her own machine, and only send training operations to the T2 system for execution. 
+本質的に、このオペレーションベースのコントローラーは、T2 システムをFLオペレーション処理エンジン(FLOPE)にします。T2 システムは、別のシステムから要求されたオペレーションを実行するだけです。
+これにより、実際のFL制御ロジックをどこでも実行できるようになります。たとえば、研究者が自分のマシン上でトレーニングループを実行し、トレーニングのオペレーションだけを T2 システムに送って実行させる、といったことが可能です。
 
 
-Job Modifications
+ジョブの変更
 -----------------
-For the HUB to work, the T1's client must be running the HUB Executor (instead of the regular client trainer), and the T2's server must be running the
-HUB Controller (instead of the regular workflow as configured in the T1's server). This requires modification to the T1 Job for the T1 client, and creation of the T2 job for the T2 system:
+HUB を機能させるためには、T1 のクライアントは(通常のクライアントトレーナーの代わりに)HUB Executor を実行し、T2 のサーバーは(T1 のサーバーで設定された通常のワークフローの代わりに)
+HUB Controller を実行する必要があります。そのためには、T1 クライアント用に T1 ジョブを変更し、T2 システム用に T2 ジョブを作成する必要があります。
 
-    - T1's config_fed_client.json is replaced with the template that uses HUB Executor for all tasks (hub_client.json). This template also defines the File Pipe to be used for communication with the HUB Controller on T2.
-    - T2's config_fed_client.json is the same as the original T1's config_fed_client.json.
-    - T2's config_fed_server.json is based on the template that defines the HUB Controller (hub_server.json). This template also defines the File Pipe to be used for communication with the HUB Executor on T1.
-    - T1's config_fed_server.json may need to contain operation descriptions for all tasks. This information is added to T2's config_fed_server.json, and is used by the HUB Controller to determine and invoke operators.
+    - T1 の config_fed_client.json は、すべてのタスクに HUB Executor を使用するテンプレート(hub_client.json)で置き換えられます。このテンプレートは、T2 上の HUB Controller との通信に使用する File Pipe も定義します。
+    - T2 の config_fed_client.json は、元の T1 の config_fed_client.json と同じです。
+    - T2 の config_fed_server.json は、HUB Controller を定義するテンプレート(hub_server.json)に基づきます。このテンプレートは、T1 上の HUB Executor との通信に使用する File Pipe も定義します。
+    - T1 の config_fed_server.json には、すべてのタスクのオペレーション記述を含める必要がある場合があります。この情報は T2 の config_fed_server.json に追加され、HUB Controller がオペレーターを決定し呼び出すために使用されます。
 
-The following diagram shows how the T2 Job (in green color) is created based on the T1's original job (in blue color) and augmented with hub_server.json.
+次の図は、T1 の元のジョブ(青色)に基づき、hub_server.json で拡張して T2 ジョブ(緑色)が作成される様子を示しています。
 
 .. image:: ../resources/t2_job_creation.png
 
-The following are the examples of these templates:
+これらのテンプレートの例を次に示します。
 
 hub_client.json
 ^^^^^^^^^^^^^^^
@@ -206,15 +205,15 @@ hub_server.json
         ]
     }
 
-As shown in the templates, the File Pipe for both sides must be configured to use the same root path.
+テンプレートに示されているように、両側の File Pipe は同じルートパスを使用するように設定されていなければなりません。
 
-T1 App Deployer and T2 Job Store
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-T1's app deployer must be replaced with the HubAppDeployer, which does the job modification and creation, as described in above. 
+T1 App Deployer と T2 ジョブストア
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+T1 のアプリデプロイヤーは、上で説明したジョブの変更と作成を行う HubAppDeployer に置き換える必要があります。
 
-Once the App Deployer creates the T2 job, it must write the job into T2's job store. This requires the T1 client to have access to T2's job store. 
+App Deployer が T2 ジョブを作成したら、それを T2 のジョブストアに書き込む必要があります。そのためには、T1 クライアントが T2 のジョブストアにアクセスできる必要があります。
 
-Both of these are achieved by modifications to T1's local resources:
+これらはどちらも、T1 のローカルリソースを変更することで実現します。
 
 .. code-block:: json
 
@@ -258,14 +257,13 @@ Both of these are achieved by modifications to T1's local resources:
         ]
     }
 
-In this example, the App Deployer configuration is at the bottom, and the job store access configuration consists of the two components above that.
+この例では、App Deployer の設定が末尾にあり、ジョブストアへのアクセス設定は、その上にある2つのコンポーネントで構成されています。
 
-Job Submission
+ジョブの提出
 ^^^^^^^^^^^^^^
-The user is just submitting a regular job to the T1 system and is not concerned about how the job is executed with multiple
-systems. The T2 systems are just clients of the job. Since T2 systems use operation-based controllers, they need to be able to determine operations for
-received tasks. This is where the user will need to provide additional information about what operation is to be used for each task. This is achieved by
-defining operators in the config_fed_server.json of the job config:
+ユーザーは T1 システムに通常のジョブを提出するだけで、そのジョブが複数のシステムでどのように実行されるかを意識する必要はありません。T2 システムは、そのジョブの単なるクライアントです。T2 システムはオペレーションベースのコントローラーを使用するため、
+受信したタスクに対するオペレーションを決定できる必要があります。そこで、ユーザーは各タスクにどのオペレーションを使用するかについての追加情報を提供する必要があります。これは、ジョブ設定の
+config_fed_server.json でオペレーターを定義することで実現します。
 
 .. code-block:: json
 
@@ -312,26 +310,26 @@ defining operators in the config_fed_server.json of the job config:
         ]
     }
 
-This example shows how to configure operators for the tasks of ``train``, ``submit_model``, and ``validate``. Note that they all use the ``bcast`` method, but use different aggregation techniques.
+この例は、``train``、``submit_model``、``validate`` の各タスクに対してオペレーターを設定する方法を示しています。いずれも ``bcast`` メソッドを使用していますが、異なる集約手法を使用している点に注意してください。
 
 .. note::
 
-    Jobs for all HUB systems use the same job ID created by the root system. This makes it easier to correlate the jobs across all systems.
+    注記: すべての HUB システムのジョブは、ルートシステムが作成した同一のジョブIDを使用します。これにより、すべてのシステム間でジョブを対応付けることが容易になります。
 
-***********************
-How to Set Up HUB Sites
-***********************
+********************************
+HUB サイトのセットアップ方法
+********************************
 
-As shown in the above, a HUB site has two entities running: a FL Client for the T1 system and a FL Server for the T2 system. The two entities must be able to access a shared file system, though they don't have to be on the same VM.
+上に示したように、HUB サイトでは2つのエンティティが動作します: T1 システム用のFLクライアントと、T2 システム用のFLサーバーです。この2つのエンティティは共有ファイルシステムにアクセスできる必要がありますが、同じVM上にある必要はありません。
 
-You don't need to do anything special to T2's FL Server - it's just a normal FLARE system. All the setup effort is on the T1's FL Client.
+T2 のFLサーバーに対して特別なことをする必要はありません。それは単なる通常の FLARE システムです。セットアップ作業はすべて T1 のFLクライアント側にあります。
 
-Step 1: create a client for the T1 system 
-=========================================
-This is the normal provision and setup process of the T1 system. Once completed, you should have the client configuration (workspace, startup kit, local folder, etc.) created.
+ステップ1: T1 システムのクライアントを作成する
+====================================================
+これは T1 システムの通常のプロビジョニングとセットアップのプロセスです。完了すると、クライアントの構成(ワークスペース、スタートアップキット、local フォルダなど)が作成されているはずです。
 
-Step 2: Modify "<workspace>/local/resources.json"
-=================================================
+ステップ2: "<workspace>/local/resources.json" を変更する
+=================================================================
 
 .. code-block:: json
 
@@ -375,15 +373,15 @@ Step 2: Modify "<workspace>/local/resources.json"
         ]
     }
 
-You need to add three components:
+次の3つのコンポーネントを追加する必要があります。
 
-    - ``job_manager`` - make sure that its "uri_root" is set to the correct path that is used by the T2's Server Configuration. 
-    - ``job_store`` - make sure it is configured exactly the same as in T2 system
-    - ``app_deployer`` - you don't need to change anything
+    - ``job_manager`` - "uri_root" が、T2 のサーバー設定で使用されている正しいパスに設定されていることを確認してください。
+    - ``job_store`` - T2 システムとまったく同じ設定になっていることを確認してください。
+    - ``app_deployer`` - 何も変更する必要はありません。
 
 
-Step 3: Create hub_client.json in the clients "<workspace>/local" folder
-========================================================================
+ステップ3: クライアントの "<workspace>/local" フォルダに hub_client.json を作成する
+=========================================================================================
 
 .. code-block:: json
 
@@ -414,19 +412,19 @@ Step 3: Create hub_client.json in the clients "<workspace>/local" folder
         ]
     }
 
-You can and should adjust the ``root_path`` parameter in the component above:
+上記コンポーネントの ``root_path`` パラメータは調整することができ、また調整すべきです。
 
-    - ``root_path`` - this is the root path to be used for the T1 system to exchange data with the T2 system. Make sure that this path is accessible to both T1 and T2 systems, and it is set to the same value as in Step 4.
+    - ``root_path`` - T1 システムが T2 システムとデータを交換するために使用するルートパスです。このパスが T1 と T2 の両方のシステムからアクセス可能であること、およびステップ4と同じ値に設定されていることを確認してください。
 
-Configuring HubExecutor
+HubExecutor の設定
 -----------------------
-You can further configure the HubExecutor with the following arguments:
+HubExecutor は、次の引数でさらに設定できます。
 
-    - ``task_wait_time`` - if specified, how long (seconds) the HubExecutor will wait for a task result from the T2 system. Make sure you allow enough time for the T2 system to complete the task; otherwise T1 may abort the job prematurely. You don't have to specify a value. By default, the HubExecutor will keep waiting until either the result is received or the peer is disconnected.
-    - ``result_poll_interval`` - how often does the HubExecutor try to read task results from the pipe. It's default to 0.1 seconds. You shouldn't need to change this value.
-    - ``task_read_wait_time`` - after sending a task to the peer, how long to wait for the peer to read task data. If the task is not read by the peer before this time, the job will be aborted. This is usually because the T2 system is not running, or the job couldn't be scheduled or deployed. The default value of this arg is 10 seconds. If you want to change it, make sure that you give enough time for T2 to get the job scheduled and started. This is especially important if the T2 system itself is also multi-tier.
+    - ``task_wait_time`` - 指定した場合、HubExecutor が T2 システムからのタスク結果を待つ時間(秒)です。T2 システムがタスクを完了するのに十分な時間を確保してください。そうしないと、T1 がジョブを途中で中断してしまう可能性があります。値を指定する必要はありません。デフォルトでは、HubExecutor は結果を受信するかピアが切断されるまで待ち続けます。
+    - ``result_poll_interval`` - HubExecutor がパイプからタスク結果の読み取りを試みる頻度です。デフォルトは0.1秒です。この値を変更する必要はないはずです。
+    - ``task_read_wait_time`` - ピアにタスクを送信した後、ピアがタスクデータを読み取るのを待つ時間です。この時間内にピアがタスクを読み取らなかった場合、ジョブは中断されます。これは通常、T2 システムが稼働していないか、ジョブのスケジュールまたはデプロイができなかったことが原因です。この引数のデフォルト値は10秒です。変更する場合は、T2 がジョブをスケジュールして開始するのに十分な時間を確保してください。T2 システム自体もマルチティアである場合、これは特に重要です。
 
-Step 4: Create hub_server.json in the clients "<workspace>/local" folder
+ステップ4: クライアントの "<workspace>/local" フォルダに hub_server.json を作成する
 
 .. code-block:: json
 
@@ -452,34 +450,34 @@ Step 4: Create hub_server.json in the clients "<workspace>/local" folder
         ]
     }
 
-You can and should adjust the ``root_path`` parameter in the component above:
+上記コンポーネントの ``root_path`` パラメータは調整することができ、また調整すべきです。
 
-    - root_path - this is the root path to be used for the T2 system to exchange data with the T1 system. Make sure that this path is accessible to both T1 and T2 systems, and it is set to the same value as in Step 3. 
+    - root_path - T2 システムが T1 システムとデータを交換するために使用するルートパスです。このパスが T1 と T2 の両方のシステムからアクセス可能であること、およびステップ3と同じ値に設定されていることを確認してください。
 
-Configuring HubController
+HubController の設定
 
-You can further configure the HubController with the following arguments:
+HubController は、次の引数でさらに設定できます。
 
-    - ``task_wait_time`` - how long (seconds) the T2's HubController will wait for task assignment from the T1 system. If you want to specify this value, make sure you allow enough time for the T1 to get the task data; otherwise T2 may abort the job prematurely. You don't have to specify a value. By default, the HubController will keep waiting until either a task is received or the peer is disconnected.
-    - ``task_data_poll_interval`` - how often to try to read task data from the pipe. It's default to 0.1 seconds. You shouldn't need to change this value.
+    - ``task_wait_time`` - T2 の HubController が T1 システムからのタスク割り当てを待つ時間(秒)です。この値を指定する場合は、T1 がタスクデータを取得するのに十分な時間を確保してください。そうしないと、T2 がジョブを途中で中断してしまう可能性があります。値を指定する必要はありません。デフォルトでは、HubController はタスクを受信するかピアが切断されるまで待ち続けます。
+    - ``task_data_poll_interval`` - パイプからタスクデータの読み取りを試みる頻度です。デフォルトは0.1秒です。この値を変更する必要はないはずです。
 
 ********************
-Multiple Hierarchies
+複数の階層
 ********************
-This design allows a FLARE system to be part of multiple hierarchies, as shown here:
+この設計では、次に示すように、1つの FLARE システムが複数の階層に属することができます。
 
 .. image:: ../resources/systems_multiple_hierarchies.png
 
-In this example, System A and C are in two hierarchies: R1 and R2.
+この例では、システム A と C は R1 と R2 の2つの階層に属しています。
 
-To implement this, the HUB site just needs to have one T1 configuration for each hierarchy. For instance, site A will have two T1 configurations: one for R1 and one for R2.
-Both configurations must share the same setup for job_manager, job_store, and pipe path.
+これを実装するには、HUB サイトが階層ごとに1つの T1 設定を持つだけで済みます。たとえば、サイト A は2つの T1 設定を持ちます: R1 用と R2 用です。
+両方の設定は、job_manager、job_store、パイプパスについて同じセットアップを共有しなければなりません。
 
-Potentials
+可能性
 ==========
-The key to make all systems work together is the Operation-Driven workflow (the HubController). It essentially makes the FLARE system an operation executor. Currently,
-operations can only be called by the HubExecutor through File Pipe, but it is easily doable to make it callable through messaging. For example, the FLARE API could be
-enhanced to invoke operations, something like this:
+すべてのシステムを連携させる鍵は、オペレーション駆動ワークフロー(HubController)です。これは本質的に、FLARE システムをオペレーションのエグゼキューターにします。現在、
+オペレーションは File Pipe を通じて HubExecutor からのみ呼び出せますが、メッセージング経由で呼び出せるようにすることも容易に実現可能です。たとえば、FLARE API を
+拡張してオペレーションを呼び出せるようにすると、次のようになります。
 
 .. code-block:: python
 
@@ -498,18 +496,18 @@ enhanced to invoke operations, something like this:
         # process result...
         task_data = result
 
-Limitations
+制限事項
 ===========
 
-Deploy Map cannot be supported at lower levels
+下位レベルでは Deploy Map をサポートできない
 ----------------------------------------------
-The job is submitted at the root system level. FL clients in lower level systems are unavailable to the researcher to configure the deploy map. As a result, lower level systems will deploy tasks to all of its clients.
+ジョブはルートシステムのレベルで提出されます。下位レベルのシステムのFLクライアントは、研究者がデプロイマップを設定するために利用できません。その結果、下位レベルのシステムは、そのすべてのクライアントにタスクをデプロイします。
 
-Operators can only be configured once unless prefixes are used
---------------------------------------------------------------
-You can configure different operators for different levels, provided that different levels are provisioned with different project names!
+プレフィックスを使わない限り、オペレーターは一度しか設定できない
+------------------------------------------------------------------------
+異なるレベルが異なるプロジェクト名でプロビジョニングされていれば、レベルごとに異なるオペレーターを設定できます!
 
-To configure operators for a specific level, simply add its project name as a prefix to the task name in config_fed_server.json of the job:
+特定のレベルにオペレーターを設定するには、ジョブの config_fed_server.json でタスク名のプレフィックスとしてそのプロジェクト名を追加するだけです。
 
 .. code-block:: json
 
@@ -526,29 +524,29 @@ To configure operators for a specific level, simply add its project name as a pr
         }
     }
 
-In this example, the project "BC" is configured to use the "relay" method for task "train", whereas all other levels (projects) use the default "bcast" method.
+この例では、プロジェクト "BC" はタスク "train" に対して "relay" メソッドを使用するように設定されており、他のすべてのレベル(プロジェクト)はデフォルトの "bcast" メソッドを使用します。
 
-Job Signature cannot be validated at lower level systems
+下位レベルのシステムではジョブ署名を検証できない
 --------------------------------------------------------
-This is because the job submitted to the lower level system is modified from the original job. Hence the job signatures (which are based on the original job definition) can no longer be validated against the modified job definitions.
+これは、下位レベルのシステムに提出されるジョブが元のジョブから変更されているためです。そのため、(元のジョブ定義に基づく)ジョブ署名は、変更後のジョブ定義に対してはもはや検証できません。
 
-Job signature validation is disabled for HUB-created jobs.
+HUB が作成したジョブでは、ジョブ署名の検証は無効化されます。
 
-Invisibility into lower levels
+下位レベルの不可視性
 ------------------------------
-Each system is provisioned independently and has its own admin servers. The user can access these systems independently, but cannot view the details of lower
-level systems through the root system. The only commands that have impact on all levels are ``submit_job`` and ``abort_job``.
+各システムは独立してプロビジョニングされ、独自の管理サーバーを持ちます。ユーザーはこれらのシステムに個別にアクセスできますが、ルートシステムを通じて下位レベルの
+システムの詳細を見ることはできません。すべてのレベルに影響を与えるコマンドは ``submit_job`` と ``abort_job`` のみです。
 
-The ``submit_job`` command issued at a level only affects this level and its lower level systems. Therefore, to execute a job at all levels, the command must be issued at the root level.
+あるレベルで発行された ``submit_job`` コマンドは、そのレベルとその下位レベルのシステムにのみ影響します。したがって、すべてのレベルでジョブを実行するには、コマンドをルートレベルで発行する必要があります。
 
-The ``abort_job`` command issued at a level only affects this level and its lower level systems. Therefore, to abort the job at all levels, the command must be issued at the root level. 
+あるレベルで発行された ``abort_job`` コマンドは、そのレベルとその下位レベルのシステムにのみ影響します。したがって、すべてのレベルでジョブを中止するには、コマンドをルートレベルで発行する必要があります。
 
-Timing not guaranteed
----------------------
-Once a job is submitted, it is up to lower level systems to schedule it. It is not guaranteed that all systems will be able to start the job at the same time, or the job
-may not be even scheduled by the lower level system. In these cases, the job may be aborted when a lower level system couldn't get the job scheduled in time.
+タイミングは保証されない
+---------------------------
+ジョブが提出された後、それをスケジュールするかどうかは下位レベルのシステム次第です。すべてのシステムが同時にジョブを開始できるとは保証されず、下位レベルのシステムで
+ジョブがスケジュールすらされない可能性もあります。そのような場合、下位レベルのシステムが時間内にジョブをスケジュールできないと、ジョブが中止されることがあります。
 
 .. note::
 
-    T1 client (HubExecutor) waits for a response from T2. It will cancel the job if T2 fails to respond for a configurable amount of time. Similarly, once started,
-    T2 controller (HubController) waits for task data from T1. It  will cancel the job if T1 fails to create the task for a configurable amount of time.
+    注記: T1 クライアント(HubExecutor)は T2 からの応答を待ちます。設定された時間内に T2 が応答しない場合、ジョブをキャンセルします。同様に、開始後、
+    T2 のコントローラー(HubController)は T1 からのタスクデータを待ちます。設定された時間内に T1 がタスクを作成しない場合、ジョブをキャンセルします。

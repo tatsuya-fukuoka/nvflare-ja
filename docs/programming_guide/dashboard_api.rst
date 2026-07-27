@@ -1,69 +1,69 @@
 .. _dashboard_api:
 
-#########################
-Dashboard in NVIDIA FLARE
-#########################
+#####################################
+NVIDIA FLARE のダッシュボード
+#####################################
 
-As mentioned in :ref:`provisioning`, the NVIDIA FLARE system requires a set of startup kits
-that include private keys and certificates (signed by the root CA) for secure communication between components.
-The :ref:`nvflare_dashboard_ui` in NVIDIA FLARE provides a streamlined way to collect information about clients and users from different organizations,
-and to generate startup kits for users to download.
+:ref:`provisioning` で述べたように、NVIDIA FLARE システムでは、コンポーネント間の安全な通信のために、
+秘密鍵と証明書(ルート CA によって署名されたもの)を含む一連のスタートアップキットが必要です。
+NVIDIA FLARE の :ref:`nvflare_dashboard_ui` は、さまざまな組織のクライアントやユーザーに関する情報を効率的に収集し、
+ユーザーがダウンロードできるスタートアップキットを生成する手段を提供します。
 
-For detailed information about provisioning, refer to :ref:`provisioning`. This section focuses on user interaction with the Dashboard and its backend APIs.
+プロビジョニングの詳細については、:ref:`provisioning` を参照してください。このセクションでは、ダッシュボードとのユーザーの対話と、そのバックエンド API に焦点を当てます。
 
 .. include:: nvflare_cli/dashboard_command.rst
 
-***********************************
-NVIDIA FLARE Dashboard Backend APIs
-***********************************
+*******************************************
+NVIDIA FLARE ダッシュボードバックエンド API
+*******************************************
 
-Architecture
-============
+アーキテクチャ
+==============
 
-The Dashboard backend APIs follow RESTful principles and define four main resources: Project, Organizations, Client, and User. There is exactly one Project per deployment,
-which includes information about the server. Clients represent NVIDIA FLARE client instances, while Users represent NVIDIA FLARE admin console users.
-The Organizations endpoint is a read-only operation that returns a list of currently registered organizations.
+ダッシュボードのバックエンド API は RESTful の原則に従い、Project、Organizations、Client、User という4つの主要リソースを定義します。デプロイメントごとに Project はちょうど1つ存在し、
+サーバーに関する情報を含みます。Client は NVIDIA FLARE クライアントインスタンスを表し、User は NVIDIA FLARE 管理コンソールのユーザーを表します。
+Organizations エンドポイントは読み取り専用の操作で、現在登録されている組織のリストを返します。
 
-Details
-=======
+詳細
+====
 
-APIs
+API
 ----
 
-The following is the complete definition of the backend APIs, written in OpenAPI 3.0 syntax. Developers can implement these APIs in different programming languages or
-create custom UIs while maintaining compatibility with the same API endpoints.
+以下は、OpenAPI 3.0 構文で記述されたバックエンド API の完全な定義です。開発者は、同じ API エンドポイントとの互換性を維持しながら、
+これらの API を別のプログラミング言語で実装したり、カスタム UI を作成したりできます。
 
-In NVIDIA FLARE 2.6, all API endpoints are prefixed with ``/nvflare-dashboard/api/v1/``. For example,
-the login endpoint is ``/nvflare-dashboard/api/v1/login``.
+NVIDIA FLARE 2.6 では、すべての API エンドポイントに ``/nvflare-dashboard/api/v1/`` というプレフィックスが付きます。たとえば、
+ログインエンドポイントは ``/nvflare-dashboard/api/v1/login`` です。
 
 .. literalinclude:: ../../nvflare/dashboard/dashboard.yaml
   :language: yaml
 
-Authentication and Authorization
---------------------------------
+認証と認可
+----------
 
-Most backend APIs require user authentication to obtain a JWT for authorization. The JWT includes claims about the user's organization and role, and always
-contains the user's email address (which serves as the user ID for login).
+ほとんどのバックエンド API では、認可のための JWT を取得するためにユーザー認証が必要です。JWT にはユーザーの組織とロールに関するクレームが含まれ、
+常にユーザーのメールアドレス(ログイン用のユーザー ID として機能します)が含まれます。
 
-As shown in the previous section, only the following endpoints can be accessed without login credentials:
+前のセクションで示したように、ログイン資格情報なしでアクセスできるのは以下のエンドポイントのみです:
 
    - ``GET /project``
    - ``GET /users``
    - ``GET /organizations``
 
-Users with the project_admin role have full access to all resources.
+project_admin ロールを持つユーザーは、すべてのリソースへのフルアクセス権を持ちます。
 
-Project Freezing
-----------------
+プロジェクトの凍結
+------------------
 
-Since the project configuration contains information required by clients and users, modifying project information after clients and users are created
-can cause dependency issues. The project_admin must freeze the project after finalizing all project-related information to enable user sign-up.
-Once frozen, the project cannot be unfrozen through the Dashboard web interface.
+プロジェクト設定にはクライアントとユーザーが必要とする情報が含まれるため、クライアントやユーザーの作成後にプロジェクト情報を変更すると、
+依存関係の問題が発生する可能性があります。project_admin は、プロジェクト関連のすべての情報を確定した後にプロジェクトを凍結して、ユーザーのサインアップを可能にする必要があります。
+一度凍結されると、ダッシュボードの Web インターフェースからプロジェクトの凍結を解除することはできません。
 
-Database Schema
----------------
+データベーススキーマ
+--------------------
 
-The following diagram illustrates the schema of the underlying database used by the backend APIs:
+次の図は、バックエンド API が使用する基盤データベースのスキーマを示しています:
 
 .. image:: ../resources/dashboard_schema.png
     :height: 800px

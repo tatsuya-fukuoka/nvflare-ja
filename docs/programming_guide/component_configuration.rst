@@ -1,29 +1,29 @@
 .. _component_configuration:
 
-**************************************************
-NVFLARE Component Configuration and Event Handling
-**************************************************
+**************************************************************************
+NVFLAREのコンポーネント設定とイベント処理
+**************************************************************************
 
-NVFLARE has a powerful configuration mechanism that can dynamically construct any components defined in the configurations.
-In this section, we will discuss how NVFLARE configuration works, how to develop a new component and have that component be
-recognized by NVFLARE and auto-registered with NVFLARE events. 
+NVFLAREには、設定に定義された任意のコンポーネントを動的に構築できる強力な設定メカニズムがあります。
+このセクションでは、NVFLAREの設定がどのように機能するか、新しいコンポーネントをどのように開発し、
+そのコンポーネントをNVFLAREに認識させ、NVFLAREのイベントに自動登録させるかについて説明します。
 
-Background
+背景
 ==========
-When a job is submitted, the system will deploy the job to the FL server and FL clients based on the deploy-map configuration.
-The FL server and clients will parse the job configurations (fed_server_config.json and fed_client_config.json) respectively.  While the
-configuration is parsed, the system will also dynamically construct the python objects based on the configuration. For each FLComponent
-instantiated, it will also register the FLComponent into FLARE's event loop. 
+ジョブが送信されると、システムはdeploy-mapの設定に基づいてジョブをFLサーバーとFLクライアントにデプロイします。
+FLサーバーとクライアントは、それぞれジョブ設定(fed_server_config.jsonとfed_client_config.json)を解析します。
+設定の解析中に、システムは設定に基づいてPythonオブジェクトも動的に構築します。インスタンス化された各FLComponentは、
+FLAREのイベントループにも登録されます。
 
-This mechanism is very powerful; you can define a custom class extending FLComponent and then register the FLComponent in
-the configuration file (fed_server_config.json or fed_client_config.json) and expect the component to be loaded into the FLARE system.  
+このメカニズムは非常に強力です。FLComponentを拡張したカスタムクラスを定義し、そのFLComponentを
+設定ファイル(fed_server_config.jsonまたはfed_client_config.json)に登録すれば、そのコンポーネントがFLAREシステムにロードされることが期待できます。
 
-Once the component is loaded, you can find it by ``component_id``, which is specified by you in the configuration file. 
+コンポーネントがロードされると、設定ファイルで指定した ``component_id`` によってコンポーネントを見つけることができます。
 
-Component configuration and lookup
-----------------------------------
-To understand component configuration, we can look at the job configuration and see how the components are defined and
-used. Below is the server side configuration for :ref:`hello_pt_job_api`.
+コンポーネントの設定と検索
+------------------------------------------------------------
+コンポーネント設定を理解するために、ジョブ設定を見て、コンポーネントがどのように定義され使用されるかを
+確認しましょう。以下は :ref:`hello_pt_job_api` のサーバー側設定です。
 
 .. code-block:: json
 
@@ -87,11 +87,11 @@ used. Below is the server side configuration for :ref:`hello_pt_job_api`.
         ]
     }
 
-Note the two sections for components and workflows.
+componentsとworkflowsの2つのセクションに注目してください。
 
-Component Configuration
-~~~~~~~~~~~~~~~~~~~~~~~
-A FLARE job configuration defines a list of components. Here, we skip many other components so we can focus on just one component:
+コンポーネント設定
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FLAREのジョブ設定はコンポーネントのリストを定義します。ここでは、1つのコンポーネントに焦点を当てるため、他の多くのコンポーネントを省略しています:
 
 .. code-block:: json
 
@@ -103,12 +103,12 @@ A FLARE job configuration defines a list of components. Here, we skip many other
         }
     },
 
-The component configuration consists of three parts:
-    - component id: for example ``"id": "aggregator"``
-    - component path: the fully qualified class path, specified as ``"path"``. Example: ``"path": "nvflare.app_common.aggregators.intime_accumulate_model_aggregator.InTimeAccumulateWeightedAggregator"``
-    - Component arguments, for example: ``"args": {"expected_data_kind": "WEIGHTS"}``
+コンポーネント設定は3つの部分で構成されます:
+    - コンポーネントid: 例えば ``"id": "aggregator"``
+    - コンポーネントパス: 完全修飾クラスパスで、``"path"`` として指定します。例: ``"path": "nvflare.app_common.aggregators.intime_accumulate_model_aggregator.InTimeAccumulateWeightedAggregator"``
+    - コンポーネント引数。例: ``"args": {"expected_data_kind": "WEIGHTS"}``
 
-If we look at this class definition, we will find that this configuration is actually mapped to the class constructor:
+このクラス定義を見ると、この設定が実際にはクラスのコンストラクタにマッピングされていることがわかります:
 
 .. code-block:: python
 
@@ -121,19 +121,19 @@ If we look at this class definition, we will find that this configuration is act
             expected_data_kind: Union[DataKind, Dict[str, DataKind]] = DataKind.WEIGHT_DIFF,
         ):
 
-Notice the class takes 3 arguments: exclude_vars, aggregation_weights, and expected_data_kind. All of them have default values.
+このクラスはexclude_vars、aggregation_weights、expected_data_kindという3つの引数を取ることに注意してください。いずれもデフォルト値を持っています。
 
-The above configuration essentially asks the system to instantiate the class using one argument, the other two arguments will use default values.
+上記の設定は、要するに1つの引数を使ってクラスをインスタンス化するようシステムに求めるもので、残りの2つの引数はデフォルト値が使われます。
 
 .. code-block:: python
 
     a = InTimeAccumulateWeightedAggregator(expected_data_kind = "WEIGHTS")
 
-``config_type`` for Component
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In some cases, you need to pass the arguments to the component as a dictionary, not as arguments of the constructor. The config_type to helps to specify the type. 
+コンポーネントの ``config_type``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+場合によっては、コンストラクタの引数としてではなく、辞書としてコンポーネントに引数を渡す必要があります。config_typeはその型を指定するのに役立ちます。
 
-For example:
+例:
 
 .. code-block:: json
 
@@ -162,7 +162,7 @@ For example:
         }
     },
 
-Notice the config:
+次の設定に注目してください:
 
 .. code-block:: json
 
@@ -175,87 +175,87 @@ Notice the config:
         "config_type": "dict"
     },
 
-We need to pass a run-time argument to "torch.optim.SGD" with a dictionary. To help the configuration parser to know that here we intend to pass a single dictionary
-argument, not as two arguments to the constructor, we specify:
+実行時引数を辞書として"torch.optim.SGD"に渡す必要があります。ここではコンストラクタへの2つの引数としてではなく、
+1つの辞書引数として渡すことを意図していると設定パーサーに知らせるために、次のように指定します:
 
 .. code-block:: json
 
     "config_type": "dict"
 
-By default ``config_type`` is "Component" if not specified.
+``config_type`` を指定しない場合、デフォルトは"Component"です。
 
-Name, Path, and class_path
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-The standard job configuration parser runs built-in component path authorization. In protected job configs, specify components
-with ``"path"`` or ``"class_path"``. ``"class_path"`` is an alias for ``"path"``. If both are present, ``"path"`` takes
-precedence and is validated as written. Component configs that use ``"name"`` are rejected by this policy. The lower-level
-component builder can still resolve ``"name"`` in contexts outside the protected job configuration flow, but job configuration
-examples should use ``"path"`` or ``"class_path"``.
+Name、Path、class_path
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+標準のジョブ設定パーサーは、組み込みのコンポーネントパス認可を実行します。保護されたジョブ設定では、
+コンポーネントを ``"path"`` または ``"class_path"`` で指定します。``"class_path"`` は ``"path"`` のエイリアスです。
+両方が存在する場合は ``"path"`` が優先され、記述されたとおりに検証されます。``"name"`` を使用するコンポーネント設定は、
+このポリシーにより拒否されます。下位レベルのコンポーネントビルダーは、保護されたジョブ設定フロー以外のコンテキストでは
+引き続き ``"name"`` を解決できますが、ジョブ設定の例では ``"path"`` または ``"class_path"`` を使用してください。
 
-The configuration::
+設定は次のとおりです::
 
     "path": "nvflare.app_common.aggregators.intime_accumulate_model_aggregator.InTimeAccumulateWeightedAggregator"
 
 .. note::
 
-    Recipe APIs may still accept ``class_path`` and normalize it when exporting job configuration. Runtime job configuration
-    can use ``path`` or its ``class_path`` alias for component configs.
+    注記: Recipe APIは引き続き ``class_path`` を受け付け、ジョブ設定のエクスポート時に正規化する場合があります。
+    実行時のジョブ設定では、コンポーネント設定に ``path`` またはそのエイリアスである ``class_path`` を使用できます。
 
-Looking up the component
-^^^^^^^^^^^^^^^^^^^^^^^^
-Once a component is registered, it can be accessed through the component_id, in the case of the example above: "id": "aggregator". 
+コンポーネントの検索
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+コンポーネントが登録されると、component_idを通じてアクセスできます。上記の例では"id": "aggregator"です。
 
-To find the component, the runtime engine can be used. Assuming fl_ctx is the FL_Context object, you can get the component with the following:
+コンポーネントを見つけるには、ランタイムエンジンを使用できます。fl_ctxがFL_Contextオブジェクトであるとすると、次のようにしてコンポーネントを取得できます:
 
 .. code-block:: python
 
     engine = fl_ctx.get_engine()
     component = engine.get_component(component_id)
 
-Failure Scenarios
-^^^^^^^^^^^^^^^^^
-Since the system dynamically instantiates the class based on configuration, there are cases where the class instantiation could fail, for example,
-if args are required but not provided or if the constructor throws an exception.
+失敗のシナリオ
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+システムは設定に基づいてクラスを動的にインスタンス化するため、クラスのインスタンス化が失敗する場合があります。
+例えば、必須のargsが提供されていない場合や、コンストラクタが例外をスローする場合です。
 
-When such a case happens, although the failure is class instantiation, FLARE may report the error as a configuration error since the class instantiation
-failure originated from configuration parsing. You will need to look at the traceback and find the root cause of the failure.
+このような場合、失敗の原因はクラスのインスタンス化ですが、クラスのインスタンス化の失敗が設定の解析に起因しているため、
+FLAREはこのエラーを設定エラーとして報告することがあります。トレースバックを確認して、失敗の根本原因を見つける必要があります。
 
-Workflow Configuration
-~~~~~~~~~~~~~~~~~~~~~~
-The second part of the Job configuration is the workflow configuration with the key ``workflows``.
+ワークフロー設定
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ジョブ設定の2番目の部分は、``workflows`` キーによるワークフロー設定です。
 
-Workflows define a list of workflows. In the example above, three workflows are defined:
+workflowsはワークフローのリストを定義します。上記の例では、3つのワークフローが定義されています:
 
-    - InitializeGlobalWeights for pre_train
-    - ScatterAndGather for training with scatter_and_gatter 
-    - CrossSiteModelEval for validation with cross_site_validate
+    - pre_trainのためのInitializeGlobalWeights
+    - scatter_and_gatterによるトレーニングのためのScatterAndGather
+    - cross_site_validateによる検証のためのCrossSiteModelEval
 
-Each workflow corresponds to a special type of FLComponent (known as a :ref:`Controller <controllers>`), which has the same
-component structure with an ``id``, ``path``, and arguments that match the class definitions.
+各ワークフローは、特別なタイプのFLComponent(:ref:`Controller <controllers>` と呼ばれます)に対応しており、
+``id``\ 、``path``\ 、およびクラス定義に一致する引数という同じコンポーネント構造を持ちます。
 
-The controller arguments can be primitive types (int, str, etc.), or another component id.
+コントローラーの引数には、プリミティブ型(int、strなど)、または別のコンポーネントのidを指定できます。
 
-Looking at the validation workflow, CrossSiteModelEval requires "model_locator_id". The value of "model_locator_id" is "model_locator", which is specified as
-the id of one of the components defined in the configuration.  
+検証ワークフローを見ると、CrossSiteModelEvalには"model_locator_id"が必要です。"model_locator_id"の値は"model_locator"で、
+これは設定に定義されているコンポーネントの1つのidとして指定されています。
 
-Filters Configuration
-^^^^^^^^^^^^^^^^^^^^^
-There are additional optional filters such as ``task_data_filters`` or ``task_result_filters``. These correspond to the :ref:`filters` mechanism.
+フィルター設定
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``task_data_filters`` や ``task_result_filters`` などの追加のオプションフィルターがあります。これらは :ref:`filters` メカニズムに対応しています。
 
-Component events
-----------------
-After understanding that components are instantiated dynamically based on the component configuration, another important aspect of
-components is event handling.
+コンポーネントイベント
+--------------------------------------------
+コンポーネントがコンポーネント設定に基づいて動的にインスタンス化されることを理解した上で、コンポーネントのもう1つの重要な側面が
+イベント処理です。
 
-NVIDIA FLARE comes with a powerful event mechanism that allows dynamic notifications to be sent to all objects that are of a subclass of
-:ref:`fl_component`. To better understand the NVFLARE event system, see :ref:`event_system`. 
+NVIDIA FLAREには強力なイベントメカニズムが備わっており、:ref:`fl_component` のサブクラスであるすべてのオブジェクトに
+動的な通知を送信できます。NVFLAREのイベントシステムをより深く理解するには、:ref:`event_system` を参照してください。
 
-Examples of system events include::
+システムイベントの例は次のとおりです::
 
-    SYSTEM_START, 
-    SYSTEM_END, 
-    ABOUT_TO_START_RUN, 
-    START_RUN, 
+    SYSTEM_START,
+    SYSTEM_END,
+    ABOUT_TO_START_RUN,
+    START_RUN,
     ABOUT_TO_END_RUN
     END_RUN
     START_WORKFLOW
@@ -269,9 +269,9 @@ Examples of system events include::
 
 .. note::
 
-    This is not an exhaustive list of all events.
+    注記: これはすべてのイベントを網羅したリストではありません。
 
-For federated learning applications, there are many application level events defined and fired. Here are some examples: 
+連合学習(Federated Learning)アプリケーションでは、多くのアプリケーションレベルのイベントが定義され発火されます。以下はその例です::
 
     BEFORE_AGGREGATION
     END_AGGREGATION
@@ -280,50 +280,50 @@ For federated learning applications, there are many application level events def
     AFTER_INITIALIZE
     BEFORE_TRAIN
     BEFORE_TRAIN_TASK
-    AFTER_TRAIN 
+    AFTER_TRAIN
     TRAINING_STARTED
     TRAINING_FINISHED
     TRAIN_DONE
 
-    LOCAL_BEST_MODEL_AVAILABLE 
+    LOCAL_BEST_MODEL_AVAILABLE
     GLOBAL_BEST_MODEL_AVAILABLE
 
-    BEFORE_VALIDATE_MODEL 
-    AFTER_VALIDATE_MODEL 
+    BEFORE_VALIDATE_MODEL
+    AFTER_VALIDATE_MODEL
 
     ROUND_STARTED
-    ROUND_DONE 
+    ROUND_DONE
 
     INITIAL_MODEL_LOADED
 
-    AFTER_AGGREGATION 
+    AFTER_AGGREGATION
     GLOBAL_WEIGHTS_UPDATED
 
-    CROSS_VAL_INIT 
+    CROSS_VAL_INIT
     RECEIVE_BEST_MODEL
 
 
-Each FLComponent will receive certain system events and application events, depending on if the component is a
-Server or Client component. The FLComponent class can decide to handle or ignore the events.
+各FLComponentは、そのコンポーネントがサーバーコンポーネントかクライアントコンポーネントかに応じて、特定のシステムイベントと
+アプリケーションイベントを受け取ります。FLComponentクラスは、イベントを処理するか無視するかを決定できます。
 
-Component configuration and event handling
-------------------------------------------
-The second approach in component configuration: register components to handle events. 
+コンポーネント設定とイベント処理
+------------------------------------------------------------------
+コンポーネント設定の2番目のアプローチは、イベントを処理するためにコンポーネントを登録することです。
 
-Unlike the previous approach of component configuration, where we define a component in the job configuration,
-then use the engine to lookup the component using component_id.  In this new approach,  the component Id is actually not
-important, and most likely not used. 
+これまでのコンポーネント設定のアプローチでは、ジョブ設定にコンポーネントを定義し、エンジンを使用してcomponent_idで
+コンポーネントを検索していました。この新しいアプローチでは、コンポーネントのidは実際には重要ではなく、
+おそらく使用されません。
 
-All we need is to define an FLComponent, which will handle the specified event. There is no direct lookup of the
-component. FLComponent will do its job in the event handle as long as the component is loaded into the system.
+必要なのは、指定されたイベントを処理するFLComponentを定義することだけです。コンポーネントの直接検索はありません。
+コンポーネントがシステムにロードされてさえいれば、FLComponentはイベントハンドラ内でその役割を果たします。
 
-As we know from the previous section, loading components into the system can be accomplished by simply adding the
-components configuration in the job configuration file.
+前のセクションで学んだように、コンポーネントをシステムにロードするには、ジョブ設定ファイルにコンポーネントの設定を
+追加するだけで済みます。
 
-The only decision you have to make is to decide where the component should be placed: on server side ( fed_server_config.json)
-or client side (fed_client_config.json).
+決めなければならないのは、コンポーネントをどこに配置するかだけです。サーバー側(fed_server_config.json)か
+クライアント側(fed_client_config.json)かです。
 
-Here is one concrete example of such a mechanism. In many of NVFLARE examples, you might have noticed that the job components has::
+このメカニズムの具体的な例を1つ示します。NVFLAREの多くの例では、ジョブのコンポーネントに次の記述があることに気づいたかもしれません::
 
     {
         "id": "model_selector",
@@ -331,18 +331,18 @@ Here is one concrete example of such a mechanism. In many of NVFLARE examples, y
         "args": {}
     }
 
-:class:`nvflare.app_common.widgets.intime_model_selector.IntimeModelSelector` is an FLComponent designed for selecting
-the best global model to save, usually associated
-with a "validate" task. IntimeModelSelector handles application events and selects the best model based on validation
-scores sent back from the clients. If you want to leverage this model selection mechanism, all you needs to do is add
-this component to the server job component configuration (config code shown above).
+:class:`nvflare.app_common.widgets.intime_model_selector.IntimeModelSelector` は、保存すべき最良のグローバルモデルを
+選択するために設計されたFLComponentで、通常は"validate"タスクに関連付けられています。IntimeModelSelectorは
+アプリケーションイベントを処理し、クライアントから送り返された検証スコアに基づいて最良のモデルを選択します。
+このモデル選択メカニズムを活用したい場合は、このコンポーネントをサーバーのジョブコンポーネント設定に追加するだけで済みます
+(上記に示した設定コード)。
 
 .. code-block:: python
 
     class IntimeModelSelector(Widget):
-    
+
         ...
-    
+
         def handle_event(self, event_type: str, fl_ctx: FLContext):
             if event_type == EventType.START_RUN:
                 self._startup()
@@ -352,29 +352,28 @@ this component to the server job component configuration (config code shown abov
                 self._before_accept(fl_ctx)
             elif event_type == AppEventType.BEFORE_AGGREGATION:
                 self._before_aggregate(fl_ctx)
-    
+
         ...
-    
+
         def _before_aggregate(self, fl_ctx):
-    
+
         ...
-    
+
             if self.val_metric > self.best_val_metric:
                 self.best_val_metric = self.val_metric
-        
+
             ...
-            
+
                 # Fire event to notify that the current global model is a new best
                 self.fire_event(AppEventType.GLOBAL_BEST_MODEL_AVAILABLE, fl_ctx)
-    
+
     ...
 
-Notice that when IntimeModelSelector handles ``BEFORE_AGGREGATION`` event, once it found the best model, it will simply
-fire another application event: ``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE``. 
+IntimeModelSelectorが ``BEFORE_AGGREGATION`` イベントを処理する際、最良のモデルを見つけると、単に別のアプリケーションイベント
+``AppEventType.GLOBAL_BEST_MODEL_AVAILABLE`` を発火することに注目してください。
 
-Another FLComponent responsible for performing persistence (persistor) will listen to the event ``GLOBAL_BEST_MODEL_AVAILABLE``,
-then can retrieve and save the model to a storage location. 
+永続化を担当する別のFLComponent(persistor)は ``GLOBAL_BEST_MODEL_AVAILABLE`` イベントをリッスンし、
+モデルを取得してストレージの場所に保存できます。
 
-If you decided to write a different model selector based on different criteria or different event, all you need to do
-is write a new FLComponent (subclass IntimeModelSelector or simply write one from scratch), then add your component to
-the job configuration.
+異なる基準や異なるイベントに基づく別のモデルセレクターを作成することにした場合は、新しいFLComponentを作成し
+(IntimeModelSelectorをサブクラス化するか、単純にゼロから作成)、そのコンポーネントをジョブ設定に追加するだけで済みます。

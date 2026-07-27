@@ -3,32 +3,32 @@
 .. _docker_compose:
 
 .. deprecated:: 2.7
-   Docker Compose deployment is deprecated. See :ref:`containerized_deployment` for current container deployment options.
+   Docker Compose によるデプロイメントは非推奨です。現在のコンテナデプロイメントの選択肢については :ref:`containerized_deployment` を参照してください。
 
 ######################################################
-Launching NVIDIA FLARE with docker compose
+docker compose による NVIDIA FLARE の起動
 ######################################################
 
 .. note::
-    Deprecated. This is an alternative way to simulate a deployment in a local
-    environment. This should not be used for production.
+    注記: 非推奨です。これはローカル環境でデプロイメントをシミュレートする
+    ための代替手段です。本番環境では使用しないでください。
 
-For users who would like to get NVIDIA FLARE up and running as easy as possible,
-such as first-time NVIDIA FLARE users or people who need to demonstrate it upon request,
-they can use this docker compose feature.  All they need is a working docker 
-environment.
+初めて NVIDIA FLARE を使うユーザーや、求めに応じてデモを行う必要がある
+ユーザーなど、できるだけ簡単に NVIDIA FLARE を起動して動かしたい場合は、
+この docker compose 機能を利用できます。必要なのは動作する docker 環境
+だけです。
 
-The provisioning tool of NVIDIA FLARE includes the ``DockerBuilder`` that can
-create ``compose.yaml`` and other information.
-After provisioning, users can enter the result folder, normally in 
-workspace/example_project/prod_NN, and type ``docker compose build`` 
-and ``docker compose up`` to start the server and clients in the docker compose
-manner.
+NVIDIA FLARE のプロビジョニングツールには ``DockerBuilder`` が含まれて
+おり、``compose.yaml`` などの情報を作成できます。
+プロビジョニング後、ユーザーは結果フォルダ(通常は
+workspace/example_project/prod_NN)に移動し、``docker compose build``
+と ``docker compose up`` を入力することで、docker compose 方式でサーバーと
+クライアントを起動できます。
 
 
-Provisioning stage
-==================
-First check if your project.yml file contains the following section.
+プロビジョニング段階
+========================
+まず、project.yml ファイルに次のセクションが含まれているか確認してください。
 
 .. code-block:: yaml
 
@@ -38,22 +38,24 @@ First check if your project.yml file contains the following section.
       requirements_file: docker_compose_requirements.txt
 
 
-This builder will generate the necessary information during provisioning time.
+このビルダーは、プロビジョニング時に必要な情報を生成します。
 
-The ``base_image`` argument is the base docker image name that will be used to create
-the runtime docker image for NVIDIA FLARE in docker compose setting.
+``base_image`` 引数は、docker compose 構成における NVIDIA FLARE のランタイム
+docker イメージを作成する際に使用されるベース docker イメージ名です。
 
-The ``requirements_file`` can contain additional python packages that will be installed
-after nvflare package is installed in the runtime docker image.  If you don't need to install
-any additional python package, you can provide an empty file.
+``requirements_file`` には、ランタイム docker イメージに nvflare パッケージが
+インストールされた後にインストールされる追加の python パッケージを記述できます。
+追加の python パッケージをインストールする必要がなければ、空のファイルを指定
+できます。
 
 
-Post-provisioning stage
-=======================
+プロビジョニング後の段階
+================================
 
-Running provision command as usual, either in the new format ``nvflare provision`` or just ``provision``.
+通常どおり、新しい形式の ``nvflare provision`` または単に ``provision`` で
+provision コマンドを実行します。
 
-After the command, there should a folder with structure similar to the following:
+コマンドの実行後、次のような構造のフォルダが作成されているはずです。
 
 .. code-block:: shell
 
@@ -70,22 +72,26 @@ After the command, there should a folder with structure similar to the following
     6 directories, 1 file
 
 
-The ``compose.yaml`` is the key file for docker compose command and the folder ``nvflare_compose`` 
-is the compose context folder for generating runtime docker image during ``docker compose build`` stage.
+``compose.yaml`` は docker compose コマンドの中核となるファイルで、
+``nvflare_compose`` フォルダは ``docker compose build`` 段階でランタイム
+docker イメージを生成するための compose コンテキストフォルダです。
 
-The content inside ``nvflare_compose`` consists of two files only, ``Dockerfile`` and ``requirements.txt``.
-You can modify them if necessary.  For example, if you need to install additional binary packages with ``apt-get install``,
-you can add them in the Dockerfile.
+``nvflare_compose`` の中身は ``Dockerfile`` と ``requirements.txt`` の
+2ファイルのみです。必要に応じて変更できます。たとえば、``apt-get install``
+で追加のバイナリパッケージをインストールする必要がある場合は、Dockerfile に
+追記できます。
 
-The ``requirements.txt`` is a copy of the requirements_file you provided in the project.yml file.
+``requirements.txt`` は、project.yml ファイルで指定した requirements_file の
+コピーです。
 
 
-Running docker compose
+docker compose の実行
 =======================
 
-Inside the prod_NN folder, if this is the very first time you start the docker compose for NVIDIA FLARE, please
-run ``docker compose build`` to build the runtime docker image.  If nothing is changed in Dockerfile and requirements.txt,
-you don't have to run that command again.
+prod_NN フォルダ内で、NVIDIA FLARE の docker compose を初めて起動する場合は、
+``docker compose build`` を実行してランタイム docker イメージをビルドして
+ください。Dockerfile と requirements.txt に変更がなければ、このコマンドを
+再度実行する必要はありません。
 
 .. code-block:: shell
 
@@ -108,9 +114,10 @@ you don't have to run that command again.
     => => writing image sha256:53a1463bd170b8bc213899037bbe4403f2d6f0d553cdd470805855f3968d19d4                                                                                                                                        0.0s
     => => naming to docker.io/library/nvflare-service                                                                                                                                                                                  0.0s
 
-After the runtime docker image is ready, you can run ``docker compose up`` to get one server and two sites
-running together.  The ports for the server are also opened.  The server and client folders in the current
-prod_NN folder are mounted to different running docker instances.
+ランタイム docker イメージの準備ができたら、``docker compose up`` を実行する
+ことで、1つのサーバーと2つのサイトを一緒に稼働させることができます。サーバー用の
+ポートも開かれます。現在の prod_NN フォルダ内のサーバーおよびクライアントの
+フォルダは、それぞれ異なる稼働中の docker インスタンスにマウントされます。
 
 .. code-block:: shell
 
@@ -131,26 +138,30 @@ prod_NN folder are mounted to different running docker instances.
     server1 | 2022-09-23 16:01:00,439 - ClientManager - INFO - Client: New client site-1@172.18.0.3 joined. Sent token: 5e0b1012-77e6-41a3-8af0-9fa86df8ef2e.  Total clients: 2
     site-1  | 2022-09-23 16:01:00,440 - FederatedClient - INFO - Successfully registered client:site-1 for project example_project. Token:5e0b1012-77e6-41a3-8af0-9fa86df8ef2e SSID:9ba168f0-6cf5-446b-bfd5-a1243dd195f8
 
-Login with admin console
-========================
-You can use admin console to login to this newly created NVIDIA FLARE system after your machine can resolve the IP
-address of the server.  For example, if you are running the docker compose at machine ``desktop1`` with ip
-192.168.1.101 and would like to run your admin console at machine ``desktop2``, you will need to edit the
-/etc/hosts file on desktop2 to include this line:
+管理コンソールでのログイン
+================================
+使用しているマシンがサーバーの IP アドレスを解決できるようになれば、管理
+コンソールを使って、新しく作成されたこの NVIDIA FLARE システムにログイン
+できます。たとえば、IP アドレス 192.168.1.101 のマシン ``desktop1`` で
+docker compose を実行しており、マシン ``desktop2`` で管理コンソールを実行
+したい場合は、desktop2 の /etc/hosts ファイルを編集して次の行を追加する
+必要があります。
 
 .. code-block::
 
     192.168.1.101 server1
 
-After this update, the admin console can find server1.  If in your project.yml file,
-you name the server differently, for example myserver, please change that line to
+この更新後、管理コンソールは server1 を見つけられるようになります。
+project.yml ファイルでサーバーに別の名前(たとえば myserver)を付けている
+場合は、その行を次のように変更してください。
 
 .. code-block::
 
     192.168.1.101 myserver
 
 
-Login with admin console will be as usual.  Just run fl_admin.sh in the startup folder of admin console startup.
+管理コンソールでのログインは通常どおりです。管理コンソールの startup
+フォルダ内の fl_admin.sh を実行するだけです。
 
 .. code-block:: shell
     
@@ -176,7 +187,7 @@ Login with admin console will be as usual.  Just run fl_admin.sh in the startup 
     ----------------------------------------------------------------------------
     Done [9729 usecs] 2022-09-23 09:15:12.137237
 
-Ending docker compose
-=====================
+docker compose の終了
+==========================
 
-You can press ``CTRL-C`` to stop the docker compose.
+``CTRL-C`` を押すと docker compose を停止できます。

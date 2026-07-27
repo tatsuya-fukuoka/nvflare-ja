@@ -4,165 +4,141 @@ FLContext
 =========
 .. currentmodule:: nvflare.apis.fl_context.FLContext
 
-One of the most important features of NVIDIA FLARE is :mod:`nvflare.apis.fl_context` to pass data between the FL
-components. ``FLContext`` is available to every method of all FLComponent types (Controller, Aggregator, Filter,
-Executor, Widget).
+NVIDIA FLAREの最も重要な機能の1つが、FLコンポーネント間でデータを受け渡すための :mod:`nvflare.apis.fl_context` です。``FLContext`` は、すべてのFLComponentタイプ(Controller、Aggregator、Filter、Executor、Widget)のすべてのメソッドで利用できます。
 
-Through the FL Context, the component developer can:
-    - Get services provided by the underlying infrastructure
-    - Share data with other components of the FL system, even including components in the peer endpoints (between
-      server and clients)
+FLコンテキストを通じて、コンポーネント開発者は次のことができます:
+    - 基盤となるインフラストラクチャが提供するサービスを取得する
+    - FLシステムの他のコンポーネントとデータを共有する。相手側エンドポイント(サーバーとクライアント間)のコンポーネントも含まれます
 
-``FLContext`` can be thought of as a Python dictionary that stores key/value pairs. Data items stored in ``FLContext``
-are called properties, or props for short. Props have two attributes: visibility and stickiness.
+``FLContext`` は、キー/値のペアを格納するPythonの辞書のようなものと考えることができます。``FLContext`` に格納されるデータ項目はプロパティ(略してprop)と呼ばれます。propには2つの属性があります: 可視性(visibility)と永続性(stickiness)です。
 
-Visibility
-----------
-Determines whether the prop is only visible to local components that reside in the same process or remote components
-that reside in the peer endpoint:
+可視性(Visibility)
+--------------------------
+propが同じプロセス内に存在するローカルコンポーネントからのみ見えるのか、相手側エンドポイントに存在するリモートコンポーネントからも見えるのかを決定します:
 
-    - Props only visible to local components are *private*
-    - Props that are also visible to remote components are *public*.
+    - ローカルコンポーネントからのみ見えるpropは\ *private*\ です
+    - リモートコンポーネントからも見えるpropは\ *public*\ です。
 
-Stickiness
-----------
-Determines whether the prop is only to be scoped in the current FL Context or if it is to be made
-available to all future FL Contexts:
+永続性(Stickiness)
+--------------------------
+propが現在のFLコンテキストのみをスコープとするのか、それとも将来のすべてのFLコンテキストで利用可能になるのかを決定します:
 
-    - Props that will become available in all future FL Contexts are *sticky*. This is useful to share objects dynamically created by a component to other components.
-    - Props that are only to be scoped in the current FL Context are *non-sticky*.
+    - 将来のすべてのFLコンテキストで利用可能になるpropは\ *sticky*\ です。これは、あるコンポーネントが動的に作成したオブジェクトを他のコンポーネントと共有するのに便利です。
+    - 現在のFLコンテキストのみをスコープとするpropは\ *non-sticky*\ です。
 
 .. attention::
 
-    Since public props will be shared with peer endpoints, be very careful about them - they must not be sensitive to
-    privacy! Also since the prop will be sent to the peers through messages, the prop must be serializable.
+    publicなpropは相手側エンドポイントと共有されるため、十分に注意してください。プライバシーに関わる機密情報を含めてはいけません! また、propはメッセージを通じて相手側に送信されるため、シリアライズ可能でなければなりません。
 
-Accessing Props in FLContext
-----------------------------
-
-To set a prop into the FL Context, use the :meth:`set_prop()<set_prop>` method of FLContext::
+FLContextにおけるpropへのアクセス
+------------------------------------
+FLコンテキストにpropを設定するには、FLContextの :meth:`set_prop()<set_prop>` メソッドを使用します::
 
     def set_prop(self, key: str, value, private=True, sticky=False)
 
-If the prop already exists in the context, its value is updated with the new value.
-If the prop is not in the context, it is added to the context.
+propがコンテキスト内にすでに存在する場合、その値は新しい値で更新されます。
+propがコンテキスト内に存在しない場合、コンテキストに追加されます。
 
 .. note::
 
-    All props have unique names, which must be strings. Once a prop is placed into the FL Context, its attributes can
-    never be changed.
+    すべてのpropは一意の名前を持ち、名前は文字列でなければなりません。一度propがFLコンテキストに配置されると、その属性を変更することはできません。
 
-To retrieve a prop, use the get_prop() method::
+propを取得するには、get_prop()メソッドを使用します::
 
     def get_prop(self, key, default=None)
 
-To remove a prop from the FL Context, use remove_prop() method::
+FLコンテキストからpropを削除するには、remove_prop()メソッドを使用します::
 
     def remove_prop(self, key: str)
 
-.. note:: The prop is only removed from the FL Context the remove_prop method is called on.
+.. note:: propは、remove_propメソッドが呼び出されたFLコンテキストからのみ削除されます。
 
-There are many other useful methods for FL Context. Please see fl_context.py for detail.
+FLコンテキストには他にも多くの便利なメソッドがあります。詳細はfl_context.pyを参照してください。
 
 .. note::
 
-    Prop names must be strings. Stay away from prop names starting with double underscores "__". These are reserved for
-    the framework. You cannot remove such props from FL context.
+    propの名前は文字列でなければなりません。ダブルアンダースコア「__」で始まるprop名は使用しないでください。これらはフレームワーク用に予約されています。そのようなpropはFLコンテキストから削除できません。
 
-Permanent Props in FL Contexts
-------------------------------
-Some props are always added to the FL Context by the framework.
+FLコンテキストにおける永続的なprop
+------------------------------------
+一部のpropは、フレームワークによって常にFLコンテキストに追加されます。
 
 Engine (fl_ctx.get_engine())
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The engine represents the underlying services that can be used by the application. See ServerEngineSpec and/or
-ClientEngineSpec for services they provide.
+engineは、アプリケーションが利用できる基盤サービスを表します。提供されるサービスについては、ServerEngineSpecやClientEngineSpecを参照してください。
 
 Job ID (fl_ctx.get_job_id())
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FL application is always running within a RUN, which has a unique ID number. From NVIDIA FLARE version 2.1.0, job ID is
-used as the run number, and it no longer has to be an integer.
+FLアプリケーションは常にRUNの中で実行され、RUNは一意のID番号を持ちます。NVIDIA FLAREバージョン2.1.0以降、ジョブIDがrun numberとして使用され、整数である必要はなくなりました。
 
 Identity Name (fl_ctx.get_identity_name())
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Each running endpoint has a unique identity name. You can get the identity name of the endpoint your application is
-running in.
+実行中の各エンドポイントは一意のアイデンティティ名を持ちます。アプリケーションが実行されているエンドポイントのアイデンティティ名を取得できます。
 
 .. _peer_context:
 
 Peer Context (fl_ctx.get_peer_context())
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When processing a message from another party, the FLContext object passed to your callback functions contains the Peer
-Context, which contains the public props from the peer endpoint. Note that not all FL Contexts have peer contexts -
-only those passed to your callback functions (before_task_sent, after_task_sent, and result_received on the Server
-side, and the executor's execute() method on the Client side) have peer contexts. Since filters are invoked to process
-data between the peers, the FLContext passed to filters also contains a peer context.
+他の当事者からのメッセージを処理する際、コールバック関数に渡されるFLContextオブジェクトにはピアコンテキスト(Peer Context)が含まれており、そこには相手側エンドポイントのpublicなpropが含まれます。すべてのFLコンテキストがピアコンテキストを持つわけではないことに注意してください。コールバック関数に渡されるもの(サーバー側のbefore_task_sent、after_task_sent、result_received、およびクライアント側のエグゼキューターのexecute()メソッド)のみがピアコンテキストを持ちます。フィルターはピア間のデータを処理するために呼び出されるため、フィルターに渡されるFLContextにもピアコンテキストが含まれます。
 
 App Root (fl_ctx.get_prop(FLContextKey.APP_ROOT))
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The name of the current RUN's app folder.
+現在のRUNのappフォルダの名前。
 
 Runtime args (fl_ctx.get_prop(FLContextKey.ARGS))
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Runtime args used to start the server/client process. This is a dict.
+サーバー/クライアントプロセスの起動に使用されたランタイム引数。これはdictです。
 
 Workspace Root (fl_ctx.get_prop(FLContextKey.WORKSPACE_ROOT))
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The name of the workspace root folder.
+ワークスペースのルートフォルダの名前。
 
 Workspace Object (fl_ctx.get_prop(FLContextKey.WORKSPACE_OBJECT))
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The workspace object (of :class:`nvflare.apis.workspace.Workspace` type).
+ワークスペースオブジェクト(:class:`nvflare.apis.workspace.Workspace` 型)。
 
 Secure Mode (fl_ctx.get_prop(FLContextKey.SECURE_MODE, True))
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Whether NVIDIA FLARE is running in secure mode or not.
+NVIDIA FLAREがセキュアモードで実行されているかどうか。
 
 
-FL Context Lifecycle
---------------------
-The NVIDIA FLARE system is a multi-threaded messaging environment. A new FLContext instance is created when processing a new
-message (in the messaging thread). At any time, there could be multiple instances of FL Contexts.
+FLコンテキストのライフサイクル
+--------------------------------
+NVIDIA FLAREシステムはマルチスレッドのメッセージング環境です。新しいメッセージを処理する際に(メッセージングスレッド内で)新しいFLContextインスタンスが作成されます。任意の時点で、FLコンテキストのインスタンスが複数存在し得ます。
 
-The following is the general lifecycle of a FL Context:
+以下は、FLコンテキストの一般的なライフサイクルです:
 
-    - **Created**: Never create a new FL Context directly with FLContext()! Always call engine.new_context(). Engine
-      creates a new FL Context with the FL Context Manager :class:`nvflare.api.fl_context.FLContext` (FLCM) associated with the engine. The FLCM keeps the
-      permanent props and all sticky props created by components. When creating a new FL Context, the FLCM copies
-      these props to the created FL Context.
-    - **Used**: The FL Context is used by system and/or application logic - props are read and placed into the context.
-      The FL Context is usually passed to multiple components, and these components can share data thru the FL context
-      passed thru them (one component creates a prop and is used by others).
-    - **Finalized**: Sticky props created/updated during the use of the context are synched back to the FLCM, so that FL
-      contexts created afterwards will contain these props.
+    - **作成(Created)**: FLContext()で直接新しいFLコンテキストを作成しないでください! 必ずengine.new_context()を呼び出してください。engineは、engineに関連付けられたFLコンテキストマネージャー :class:`nvflare.api.fl_context.FLContext` (FLCM)を使って新しいFLコンテキストを作成します。FLCMは、永続的なpropと、コンポーネントによって作成されたすべてのstickyなpropを保持します。新しいFLコンテキストを作成する際、FLCMはこれらのpropを作成されたFLコンテキストにコピーします。
+    - **使用(Used)**: FLコンテキストはシステムやアプリケーションのロジックによって使用されます。propが読み取られ、コンテキストに配置されます。FLコンテキストは通常複数のコンポーネントに渡され、これらのコンポーネントは渡されたFLコンテキストを通じてデータを共有できます(あるコンポーネントがpropを作成し、他のコンポーネントがそれを使用します)。
+    - **確定(Finalized)**: コンテキストの使用中に作成/更新されたstickyなpropはFLCMに同期され、以降に作成されるFLコンテキストにこれらのpropが含まれるようになります。
 
-Keep in mind that sticky props syncing only happens when the context is finalized, not at the moment that the prop is created.
+stickyなpropの同期は、コンテキストが確定されたときにのみ行われ、propが作成された瞬間には行われないことに注意してください。
 
-Data available in the shared FLContext
---------------------------------------
-The public ``FLContext`` data is sent to other parties along with the ``Shareable`` object.
-It contains the following content:
+共有FLContextで利用可能なデータ
+--------------------------------
+publicな ``FLContext`` データは、``Shareable`` オブジェクトとともに他の当事者に送信されます。
+これには以下の内容が含まれます:
 
 .. csv-table::
-    :header: Key, Value, Notes
+    :header: キー, 値, 注記
 
-    FLContextKey.PEER_CONTEXT, A dictionary, Its peer's ``FLContext``
+    FLContextKey.PEER_CONTEXT, 辞書, 相手側の ``FLContext``
 
 .. note::
 
-    For an FL server, its peer is an FL client.
-    For an FL client, its peer is an FL server.
+    FLサーバーにとって、そのピアはFLクライアントです。
+    FLクライアントにとって、そのピアはFLサーバーです。
 
-If the role is FL server, the peer context contains the following content:
+ロールがFLサーバーの場合、ピアコンテキストには以下の内容が含まれます:
 
 .. csv-table::
-    :header: Key, Notes
+    :header: キー, 注記
 
-    FLContextKey.CLIENT_NAME, FL client's name
-    AppConstants.CURRENT_ROUND, current training round
-    AppConstants.NUM_STEPS_CURRENT_ROUND, number of steps advanced in the current round
+    FLContextKey.CLIENT_NAME, FLクライアントの名前
+    AppConstants.CURRENT_ROUND, 現在のトレーニングラウンド
+    AppConstants.NUM_STEPS_CURRENT_ROUND, 現在のラウンドで進んだステップ数
 
-To retrieve the shared ``FLContext`` data:
+共有された ``FLContext`` データを取得するには:
 
 .. code-block:: python
 
@@ -171,153 +147,127 @@ To retrieve the shared ``FLContext`` data:
     current_round = shared_context.get_prop(AppConstants.CURRENT_ROUND)
     number_steps = shared_context.get_prop(AppConstants.NUM_STEPS_CURRENT_ROUND)
 
-Client Side FL Context
-----------------------
+クライアント側のFLコンテキスト
+--------------------------------
 
-The client-side workflow is a simple loop of:
-    - Ask for the next task to do
-    - Do the task
-    - Submit task result
+クライアント側のワークフローは、次の単純なループです:
+    - 次に実行するタスクを要求する
+    - タスクを実行する
+    - タスク結果を送信する
 
-In each iteration:
-    - A new FLContext instance is created to request the next task from the server.
-    - When a new task assignment is received, the FL context is augmented with the "peer context" received from the server
-    - Task related data is added to the FL context:
-        - Task Name (FLContextKey.TASK_NAME)
-        - Task ID (FLContextKey.TASK_ID)
-        - Task Data (FLContextKey.TASK_DATA)
-    - If any task data filters are configured for this task, the filters are called with this context. Additional props
-      could be added by the filters.
-    - The FL context is then used for the task execution, during which additional props may be added.
-    - The task result (FLContextKey.TASK_RESULT) is added to the FL context.
-    - If any task result filters are configured for this task, the filters are called with this context. Additional
-      props could be added by the filters.
-    - This FL context is used to send task results to the Server. Public props in the context will be sent to the Server.
-    - Finally, this context is finalized - sticky props (if any) are synced with the FLCM.
+各イテレーションでは:
+    - サーバーに次のタスクを要求するために、新しいFLContextインスタンスが作成されます。
+    - 新しいタスク割り当てを受信すると、サーバーから受信した「ピアコンテキスト」がFLコンテキストに追加されます
+    - タスク関連データがFLコンテキストに追加されます:
+        - タスク名 (FLContextKey.TASK_NAME)
+        - タスクID (FLContextKey.TASK_ID)
+        - タスクデータ (FLContextKey.TASK_DATA)
+    - このタスクにタスクデータフィルターが設定されている場合、このコンテキストとともにフィルターが呼び出されます。フィルターによって追加のpropが追加されることがあります。
+    - その後、FLコンテキストはタスク実行に使用され、その間に追加のpropが追加されることがあります。
+    - タスク結果(FLContextKey.TASK_RESULT)がFLコンテキストに追加されます。
+    - このタスクにタスク結果フィルターが設定されている場合、このコンテキストとともにフィルターが呼び出されます。フィルターによって追加のpropが追加されることがあります。
+    - このFLコンテキストは、タスク結果をサーバーに送信するために使用されます。コンテキスト内のpublicなpropはサーバーに送信されます。
+    - 最後に、このコンテキストは確定されます。stickyなprop(存在する場合)がFLCMと同期されます。
 
 .. note::
 
-    If any event is fired during the processing, this FLContext instance is also passed to all event handlers, which
-    could create additional props.
+    処理中に何らかのイベントが発火された場合、このFLContextインスタンスはすべてのイベントハンドラーにも渡され、それらが追加のpropを作成することがあります。
 
-The following diagram shows the lifecycle of the FL context for each iteration.
+以下の図は、各イテレーションにおけるFLコンテキストのライフサイクルを示しています。
 
 .. image:: ../resources/FL_Context.png
     :height: 600px
 
-In the Peer Context, following props from the Server are available (job ID is used as the run number in version 2.1.0+):
+ピアコンテキストでは、サーバーからの以下のpropが利用できます(バージョン2.1.0以降ではジョブIDがrun numberとして使用されます):
     - Run Number: peer_ctx.get_job_id())
 
-Server Side FL Context
-----------------------
+サーバー側のFLコンテキスト
+----------------------------
 
-Task Request Processing
-^^^^^^^^^^^^^^^^^^^^^^^
-When processing the "ask for next task" request from the client, the Server creates a new FL Context. This context is
-used for the task's before_task_sent and after_task_sent callbacks, task data filters (if any), and any event handling
-fired during the task request processing.
+タスク要求の処理
+^^^^^^^^^^^^^^^^^^
+クライアントからの「次のタスクを要求する」リクエストを処理する際、サーバーは新しいFLコンテキストを作成します。このコンテキストは、タスクのbefore_task_sentおよびafter_task_sentコールバック、タスクデータフィルター(存在する場合)、およびタスク要求処理中に発火されるイベント処理に使用されます。
 
-Note that this context contains the "peer context" of the client.
+このコンテキストには、クライアントの「ピアコンテキスト」が含まれることに注意してください。
 
-In the Peer Context, following props from the Client are available:
-    - Job ID: peer_ctx.get_job_id()
-    - Client Name: peer_ctx.get_identity_name()
-    - May have additional public props
+ピアコンテキストでは、クライアントからの以下のpropが利用できます:
+    - ジョブID: peer_ctx.get_job_id()
+    - クライアント名: peer_ctx.get_identity_name()
+    - 追加のpublicなpropが含まれる場合があります
 
-Task Result Processing
-^^^^^^^^^^^^^^^^^^^^^^
-When processing the "submit task result" request from the client, the Server creates a new FL Context. This context is
-used for the task's result_received callback, task result filters (if any), and any event handling fired during the
-task result processing.
+タスク結果の処理
+^^^^^^^^^^^^^^^^^^
+クライアントからの「タスク結果を送信する」リクエストを処理する際、サーバーは新しいFLコンテキストを作成します。このコンテキストは、タスクのresult_receivedコールバック、タスク結果フィルター(存在する場合)、およびタスク結果処理中に発火されるイベント処理に使用されます。
 
-Note that this context contains the "peer context" of the client.
+このコンテキストには、クライアントの「ピアコンテキスト」が含まれることに注意してください。
 
-In the Peer Context, following props from the Client are available:
-    - Job ID: peer_ctx.get_job_id()
-    - Client Name: peer_ctx.get_identity_name()
-    - Task ID: peer_ctx.get_prop(FLContextKey.TASK_ID)
-    - Task Name: peer_ctx.get_prop(FLContextKey.TASK_NAME)
-    - May have additional public props
+ピアコンテキストでは、クライアントからの以下のpropが利用できます:
+    - ジョブID: peer_ctx.get_job_id()
+    - クライアント名: peer_ctx.get_identity_name()
+    - タスクID: peer_ctx.get_prop(FLContextKey.TASK_ID)
+    - タスク名: peer_ctx.get_prop(FLContextKey.TASK_NAME)
+    - 追加のpublicなpropが含まれる場合があります
 
-Task Done Processing
-^^^^^^^^^^^^^^^^^^^^
-When a task is completed (done normally or timed out), the task's task_done callback (if specified) is called. A new
-FL Context is created at the task completion. This context is used for the task's task_done callback, and any event
-handling fired during the task completion processing.
+タスク完了の処理
+^^^^^^^^^^^^^^^^^^
+タスクが完了すると(正常終了またはタイムアウト)、タスクのtask_doneコールバック(指定されている場合)が呼び出されます。タスク完了時に新しいFLコンテキストが作成されます。このコンテキストは、タスクのtask_doneコールバック、およびタスク完了処理中に発火されるイベント処理に使用されます。
 
-Note that this context does not contain a peer context.
+このコンテキストにはピアコンテキストが含まれないことに注意してください。
 
-Controller's Control Flow
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The controller's control_flow method is called at the beginning of the RUN. When the control_flow returns, the RUN is
-completed.
+コントローラーの制御フロー
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+コントローラーのcontrol_flowメソッドは、RUNの開始時に呼び出されます。control_flowが戻ると、RUNは完了します。
 
-At the beginning of the RUN, a new FL Context is created, and is used to call the control_flow method of the controller.
-This context "lives" until the end of the control loop. This is a long-lived context. This context does not contain a
-peer context.
+RUNの開始時に新しいFLコンテキストが作成され、コントローラーのcontrol_flowメソッドの呼び出しに使用されます。このコンテキストは制御ループの終了まで「生存」します。これは長寿命のコンテキストです。このコンテキストにはピアコンテキストが含まれません。
 
-Peer Context
-------------
-As discussed above, any components can access a FLContext and get/set props from/into it. This allows components running
-within the same process to share data.
+ピアコンテキスト
+------------------
+上で説明したように、あらゆるコンポーネントはFLContextにアクセスし、propの取得/設定を行うことができます。これにより、同じプロセス内で動作するコンポーネント同士がデータを共有できます。
 
-The data sharing is not limited to components within the same process (Server or Client). Data props can be shared
-between communicating peers! This is done through what is called "peer context":
+データ共有は、同じプロセス(サーバーまたはクライアント)内のコンポーネントに限定されません。データのpropは、通信するピア間でも共有できるのです! これは「ピアコンテキスト」と呼ばれる仕組みを通じて行われます:
 
-    - When the client sends the "ask for next task" request, public props in the client's FLContext are also sent to the
-      Server.
-    - When the Server receives the request and the props from the client, the Server first prepares a new FLContext
-      object X for the request processing, creates another FLContext object to hold the props from the client and sets
-      this FLContext object into X.
-    - All the processing logic has access to X, and can therefore access the peer context via x.get_peer_context() call.
-    - Similarly, during the processing, any involved component can add public props to X, and all such props will be
-      sent back to the Client, which will become content of the "peer context" on the Client side.
+    - クライアントが「次のタスクを要求する」リクエストを送信すると、クライアントのFLContext内のpublicなpropもサーバーに送信されます。
+    - サーバーがリクエストとクライアントからのpropを受信すると、サーバーはまずリクエスト処理用の新しいFLContextオブジェクトXを準備し、クライアントからのpropを保持する別のFLContextオブジェクトを作成して、そのFLContextオブジェクトをXに設定します。
+    - すべての処理ロジックはXにアクセスでき、したがってx.get_peer_context()の呼び出しを通じてピアコンテキストにアクセスできます。
+    - 同様に、処理中に、関与するあらゆるコンポーネントはXにpublicなpropを追加でき、そのようなpropはすべてクライアントに送り返され、クライアント側の「ピアコンテキスト」の内容になります。
 
-What is in the peer context? It depends on what public props are in the FLContext before being sent to the peer. But in
-general, the following props are always available:
+ピアコンテキストには何が含まれているのでしょうか? それは、相手側に送信される前のFLContextにどのようなpublicなpropが含まれているかに依存します。ただし一般的には、以下のpropが常に利用できます:
 
-    - Job ID (fl_ctx.get_job_id()). This is the ID number of the RUN on the peer site.
-    - Identity Name (fl_ctx.get_identity_name()). This is the unique name of the peer site (client name or server name).
+    - ジョブID (fl_ctx.get_job_id())。これは相手サイトにおけるRUNのID番号です。
+    - アイデンティティ名 (fl_ctx.get_identity_name())。これは相手サイトの一意の名前(クライアント名またはサーバー名)です。
 
-Additional props are available from the peer context, depending on the communication scenarios.
+通信のシナリオに応じて、ピアコンテキストから追加のpropが利用できます。
 
-.. note:: Peer context should be treated as read-only.
+.. note:: ピアコンテキストは読み取り専用として扱うべきです。
 
-Create ad-hoc FL Context
-------------------------
-All the contexts discussed above are created and managed by the NVIDIA FLARE framework. They should meet most of your
-needs. However, you can create ad-hoc contexts in your program if necessary. To be thread safe, you should create a new
-FLContext instance for each thread - threads should not share the same FLContext object. To create a FLContext object,
-do this::
+アドホックなFLコンテキストの作成
+----------------------------------
+上で説明したコンテキストはすべて、NVIDIA FLAREフレームワークによって作成・管理されます。ほとんどのニーズはこれらで満たせるはずです。ただし、必要に応じてプログラム内でアドホックなコンテキストを作成できます。スレッドセーフにするため、スレッドごとに新しいFLContextインスタンスを作成すべきです。スレッド間で同じFLContextオブジェクトを共有してはいけません。FLContextオブジェクトを作成するには、次のようにします::
 
     ctx = engine.new_context()
 
-As a best practice, when using the context you created, you should use a "with" block so that any sticky props created
-in your processing logic will be synced back to the FLCM when the "with" block exits::
+ベストプラクティスとして、作成したコンテキストを使用する際は「with」ブロックを使用してください。これにより、処理ロジック内で作成されたstickyなpropが、「with」ブロックの終了時にFLCMに同期されます::
 
     with ctx:
         processing logic
 
-API Specification
------------------
+API仕様
+------------
 
-Property access
-^^^^^^^^^^^^^^^
+プロパティアクセス
+^^^^^^^^^^^^^^^^^^^^
 .. code-block:: python
 
     def set_prop(self, key: str, value, private=True, sticky=True)
 
     def get_prop(self, key, default=None)
 
-With ``set_prop``, you can set any object to the context by providing a key and the value of the object.
+``set_prop`` では、キーとオブジェクトの値を指定することで、任意のオブジェクトをコンテキストに設定できます。
 
-When ``private`` is set to True, this property can only be used locally.
+``private`` をTrueに設定すると、このプロパティはローカルでのみ使用できます。
 
-When ``private`` is set to False, this property can be shared to its peer during the FL communication.
+``private`` をFalseに設定すると、このプロパティはFL通信中にピアと共有できます。
 
-In other words, when an FL client is communicating with other clients, the non-private properties in the FLContext
-will be sent to those clients.
+言い換えると、FLクライアントが他のクライアントと通信するとき、FLContext内のprivateでないプロパティがそれらのクライアントに送信されます。
 
-There are many predefined keys used by different ``FLComponent`` functions. If you want to use the components that
-NVIDIA FLARE provide, please refer to `Data available in the shared FLContext`_ and :mod:`nvflare.apis.fl_constant` for
-details. Otherwise, you can write your own components by extending ``FLComponent``.
+さまざまな ``FLComponent`` 関数で使用される多くの事前定義済みキーがあります。NVIDIA FLAREが提供するコンポーネントを使用したい場合は、詳細について `共有FLContextで利用可能なデータ`_ と :mod:`nvflare.apis.fl_constant` を参照してください。そうでない場合は、``FLComponent`` を拡張して独自のコンポーネントを書くことができます。

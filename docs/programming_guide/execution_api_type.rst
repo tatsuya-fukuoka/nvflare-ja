@@ -1,97 +1,97 @@
 .. _execution_api_type:
 
-#######################
-From Local to Federated
-#######################
+##################################
+ローカルから連合学習へ
+##################################
 
-In the FLARE system, a federated learning algorithm is defined in a Job format
-(for details, please refer to :ref:`job`).
+FLARE システムでは、連合学習(Federated Learning)アルゴリズムはジョブの形式で定義されます
+(詳細は :ref:`job` を参照してください)。
 
-A Job consists of multiple "workflows" and "executors."
+ジョブは、複数の「ワークフロー」と「エグゼキューター」で構成されます。
 
-The simplified job execution flow is as follows:
+簡略化したジョブの実行フローは次のとおりです:
 
-- The workflow schedules a task for the FL clients.
-- Each FL client performs the received task and sends the result back.
-- The workflow receives the results and determines if it is done.
-- If it is not done, it schedules a new task
-- If it is done, it proceeds to the next workflow in the Job.
+- ワークフローが FL クライアントに対してタスクをスケジュールする。
+- 各 FL クライアントは受信したタスクを実行し、結果を送り返す。
+- ワークフローは結果を受信し、完了したかどうかを判断する。
+- 完了していなければ、新しいタスクをスケジュールする
+- 完了していれば、ジョブ内の次のワークフローに進む。
 
-Users need to adapt their local training or computing logic into FLARE's task
-execution abstractions to make their training or computing federated.
+トレーニングや計算を連合化するには、ローカルのトレーニングまたは計算ロジックを
+FLARE のタスク実行の抽象化に適合させる必要があります。
 
-We offer various levels of abstraction for writing task execution code,
-catering to use cases that span from complete customizability to easy user adaptation.
+タスク実行コードの記述には、完全なカスタマイズ性から容易なユーザー適応まで、
+さまざまなユースケースに対応する複数の抽象化レベルを提供しています。
 
-Execution API Type
+実行 API の種類
 ==================
 
-Below is a general overview of the key ideas and use cases for each type:
+以下は、各種類の主要な考え方とユースケースの概要です:
 
 Client API
 ----------
 
-The :ref:`client_api` provides the most straightforward way to write FL code,
-and can easily be used to convert centralized code with minimal code changes.
-The Client API uses the :class:`FLModel<nvflare.app_common.abstract.fl_model.FLModel>`
-object for data transfer and supports common tasks such as train, validate, and submit_model.
-Option for using PyTorch Lightning is also available.
-For Client API executors, the in-process and external-process executors are provided for different use cases.
+:ref:`client_api` は、FL コードを書く最も簡単な方法を提供し、
+最小限のコード変更で集中型のコードを容易に変換できます。
+Client API は、データ転送に :class:`FLModel<nvflare.app_common.abstract.fl_model.FLModel>`
+オブジェクトを使用し、train、validate、submit_model といった一般的なタスクをサポートします。
+PyTorch Lightning を使用するオプションも利用できます。
+Client API のエグゼキューターとしては、ユースケースに応じてインプロセスと外部プロセスのエグゼキューターが提供されています。
 
-We recommend users start with the Client API, and to consider the other types
-for more specific cases as required.
+ユーザーにはまず Client API から始め、必要に応じてより特定のケース向けに
+他の種類を検討することを推奨します。
 
 ModelLearner
 ------------
 
-The ModelLearner API is deprecated and remains available for backward compatibility.
-For new projects, use the :ref:`job_recipe` with :ref:`client_api`.
+ModelLearner API は非推奨であり、後方互換性のために残されています。
+新規プロジェクトでは、:ref:`job_recipe` と :ref:`client_api` を使用してください。
 
-The :ref:`model_learner` is designed to simplify writing learning logic by
-minimizing FLARE-specific concepts.
-The :class:`ModelLearner<nvflare.app_common.abstract.model_learner.ModelLearner>`
-defines familiar learning functions for training and validation,
-and uses the :class:`FLModel<nvflare.app_common.abstract.fl_model.FLModel>`
-object for transferring learning information.
-The ModelLearner also contains several convenient capabilities,
-such as lifecycle and logging information.
+:ref:`model_learner` は、FLARE 固有の概念を最小限に抑えることで、
+学習ロジックの記述を簡単にするように設計されています。
+:class:`ModelLearner<nvflare.app_common.abstract.model_learner.ModelLearner>` は、
+トレーニングと検証のための馴染みのある学習関数を定義し、
+学習情報の転送に :class:`FLModel<nvflare.app_common.abstract.fl_model.FLModel>`
+オブジェクトを使用します。
+ModelLearner には、ライフサイクルやロギング情報など、
+いくつかの便利な機能も含まれています。
 
-The ModelLearner is best used when working with standard machine learning code
-that can fit well into the train and validate methods and can be easily adapted
-to the ModelLearner subclass and method structure.
+ModelLearner は、train および validate メソッドにうまく収まり、ModelLearner の
+サブクラスとメソッドの構造に容易に適応できる標準的な機械学習コードを扱う場合に
+最適です。
 
 Executor
 --------
 
-:ref:`executor` is the most flexible for defining custom logic and tasks,
-as with a custom executor and controller, any form of computation can be performed.
-However, Executors must deal directly with FLARE-specific communication concepts
-such as :class:`Shareable<nvflare.apis.shareable.Shareable>`, :class:`DXO<nvflare.apis.dxo.DXO>`,
-and :class:`FLContext<nvflare.apis.fl_context.FLContext>`.
-As a result, many higher-level APIs are built on top of Executors in order to
-abstract these concepts away for easier user adaptation.
+:ref:`executor` は、カスタムのロジックとタスクを定義するうえで最も柔軟であり、
+カスタムのエグゼキューターとコントローラーがあれば、あらゆる形の計算を実行できます。
+ただし、Executor は :class:`Shareable<nvflare.apis.shareable.Shareable>`、:class:`DXO<nvflare.apis.dxo.DXO>`、
+:class:`FLContext<nvflare.apis.fl_context.FLContext>` といった FLARE 固有の通信概念を
+直接扱わなければなりません。
+そのため、これらの概念を抽象化してユーザーが適応しやすくするために、
+多くの高レベル API が Executor の上に構築されています。
 
-Overall, writing an Executor is most useful when implementing tasks and logic
-that do not fit within the structure of higher-level APIs or other predefined Executors.
+総じて、Executor を書くことが最も役立つのは、高レベル API や他の定義済み Executor の
+構造に収まらないタスクやロジックを実装する場合です。
 
-3rd-Party System Integration
-----------------------------
+サードパーティシステムとの統合
+------------------------------
 
-There are cases where users have a pre-existing ML/DL training system
-infrastructure that cannot be easily adapted to the FLARE client.
+FLARE クライアントに容易に適応させることができない既存の ML/DL トレーニングシステム
+インフラをユーザーが持っている場合があります。
 
-The :ref:`3rd_party_integration` pattern allows for a seamless integration
-between the FLARE system and a third-party external training system.
+:ref:`3rd_party_integration` パターンにより、FLARE システムとサードパーティの
+外部トレーニングシステムをシームレスに統合できます。
 
-With the use of the :mod:`FlareAgent <nvflare.client.flare_agent>` and
-:mod:`TaskExchanger <nvflare.app_common.executors.task_exchanger>`,
-users can easily enable any 3rd-party system to receive tasks and submit results back to the server.
+:mod:`FlareAgent <nvflare.client.flare_agent>` と
+:mod:`TaskExchanger <nvflare.app_common.executors.task_exchanger>` を使用することで、
+任意のサードパーティシステムがタスクを受信し、結果をサーバーに提出できるように簡単にできます。
 
-Please use the following chart to decide which abstraction to use:
+どの抽象化を使うべきかは、以下のチャートを参考に判断してください:
 
 .. image:: ../resources/task_execution_decision_chart.png
 
-For more details about each type, refer to each page below.
+各種類の詳細については、以下の各ページを参照してください。
 
 .. toctree::
    :maxdepth: 1

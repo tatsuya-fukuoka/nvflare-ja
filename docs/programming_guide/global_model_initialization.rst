@@ -1,31 +1,22 @@
-Global Model Initialization Approaches
-======================================
-Unlike non-federated machine learning, there are multiple approaches to initialize a global model. In previous NVFLARE releases,
-the model is always initialized at the FL server-side and then broadcast to all the FL clients. Clients will take this initial model and start training.
-With the FLARE 2.3.0 release, we introduce a new model initialization approach: client-side model initialization.
-Users can decide to use either approach depending on their use cases and requirements. 
+グローバルモデル初期化のアプローチ
+====================================================
+連合学習でない機械学習とは異なり、グローバルモデルの初期化には複数のアプローチがあります。以前のNVFLAREリリースでは、モデルは常にFLサーバー側で初期化され、その後すべてのFLクライアントにブロードキャストされていました。クライアントはこの初期モデルを受け取ってトレーニングを開始します。
+FLARE 2.3.0リリースでは、新しいモデル初期化アプローチとして、クライアント側モデル初期化を導入しました。
+ユーザーは、ユースケースや要件に応じてどちらのアプローチを使用するかを決められます。
 
-The benefits of the server-side model initialization allows the model to only initialize once in one place (server) and then be distributed to all clients,
-so all clients have the same initial model. The potential issue with server-side model initialization might involve security concerns. For example, in order
-to initialize a CNN model, we need to train the initial CNN model to generate the model. Running user-defined python code raises alarms to certain users. 
+サーバー側モデル初期化の利点は、モデルを1か所(サーバー)で一度だけ初期化してからすべてのクライアントに配布できるため、すべてのクライアントが同じ初期モデルを持つことです。サーバー側モデル初期化の潜在的な問題としては、セキュリティ上の懸念が挙げられます。例えば、CNNモデルを初期化するには、初期のCNNモデルをトレーニングしてモデルを生成する必要があります。ユーザー定義のPythonコードを実行することは、一部のユーザーにとって警戒の対象になります。
 
-An alternative server-side model initialization without running python code is to have a predefined model file ready. This means users need to generate
-a model outside and then manually upload the model file to a location that is accessible to the FL Server. This approach works but requires extra manual
-steps outside of the training process. 
+Pythonコードを実行しないサーバー側モデル初期化の代替手段として、事前定義されたモデルファイルを用意しておく方法があります。これは、ユーザーが外部でモデルを生成し、FLサーバーがアクセスできる場所にモデルファイルを手動でアップロードする必要があることを意味します。このアプローチは機能しますが、トレーニングプロセスの外で追加の手動手順が必要になります。
 
-Client-side model initialization is an alternative approach that avoids server-side custom code as well as extra setup. Unlike the
-server-side initialization approach, client-side initialization asks every client to send the initialized model as a pre-task in the workflow before
-the training starts.  On the server side, once the server receives the initial models from the clients, the server can choose different strategies to leverage
-the models from different clients: 
+クライアント側モデル初期化は、サーバー側のカスタムコードも追加のセットアップも回避できる代替アプローチです。サーバー側初期化アプローチとは異なり、クライアント側初期化では、トレーニング開始前のワークフローの事前タスクとして、すべてのクライアントに初期化済みモデルの送信を求めます。サーバー側では、クライアントから初期モデルを受信すると、サーバーは各クライアントからのモデルを活用するためのさまざまな戦略を選択できます:
 
-    - Select one model randomly from all clients' models, then use it as the global initial model
-    - Apply some aggregation function to generate the global initial model 
+    - すべてのクライアントのモデルからランダムに1つを選択し、それをグローバル初期モデルとして使用する
+    - 何らかの集約関数を適用してグローバル初期モデルを生成する
 
-In 2.3.0 release, a new InitializeGlobalWeights controller (:class:`nvflare.app_common.workflows.initialize_global_weights.InitializeGlobalWeights`) was implemented
-to handle client-side model initialization. For details, see :ref:`initialize_global_weights_workflow`.
+2.3.0リリースでは、クライアント側モデル初期化を処理するために、新しいInitializeGlobalWeightsコントローラー(:class:`nvflare.app_common.workflows.initialize_global_weights.InitializeGlobalWeights`)が実装されました。詳細は :ref:`initialize_global_weights_workflow` を参照してください。
 
-Here we have implemented the following strategies (specified with the "weight_method" argument):
-    - If weight_method = "first", then use the weights reported from the first client;
-    - If weight_method is "client", then only use the weights reported from the specified client.
+ここでは、以下の戦略を実装しています(「weight_method」引数で指定します):
+    - weight_method = "first" の場合、最初のクライアントから報告された重みを使用します。
+    - weight_method が "client" の場合、指定されたクライアントから報告された重みのみを使用します。
 
-If your use case demands a different strategy, then you can implement a new controller. 
+ユースケースで別の戦略が必要な場合は、新しいコントローラーを実装できます。

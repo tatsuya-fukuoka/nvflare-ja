@@ -1,65 +1,65 @@
 .. _3rd_party_integration:
 
-############################
-3rd-Party System Integration
-############################
+##################################################
+サードパーティシステムとの統合
+##################################################
 
-NVFLARE supports a seamless integration between the FLARE system and a
-third-party external training system.
-This is especially useful with pre-existing ML/DL training system
-infrastructure that cannot be easily adapted to the FLARE client.
+NVFLARE は、FLARE システムとサードパーティの外部トレーニングシステムとの
+シームレスな統合をサポートしています。
+これは、FLARE クライアントに容易に適応させることができない既存の ML/DL
+トレーニングシステムインフラがある場合に特に役立ちます。
 
-The FL Client uses the :class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>`
-executor to receive tasks, and submit results to the FLARE server.
-The 3rd-party system uses the :class:`FlareAgent<nvflare.client.flare_agent>` to
-interact with the TaskExchanger to get tasks and submit results.
+FL クライアントは、:class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>`
+エグゼキューターを使ってタスクを受信し、結果を FLARE サーバーに提出します。
+サードパーティシステムは、:class:`FlareAgent<nvflare.client.flare_agent>` を使って
+TaskExchanger とやり取りし、タスクの取得と結果の提出を行います。
 
-This integration pattern is illustrated in the diagram below:
+この統合パターンを以下の図に示します:
 
 .. image:: ../../resources/3rd_party_integration_diagram.png
     :height: 400px
 
-Requirements
-============
+要件
+====
 
-- The key to enabling this integration is the "agent_id" that must be made known to both systems.
-  The FL client gets this information from the job's config_fed_client, and the
-  3rd-party trainer gets this from its own launch process.
-- It is assumed that the customer already has a way to dynamically generate the
-  "agent_id" for each job, and start its trainer process with this information.
-- Each FL client must be able to open an address (host:port) to allow the trainer to connect to.
-  Depending on where the trainer is running, the connection may or may not need to be in secure mode (TLS).
-- We will need to modify the "project.yml" for NVFlare provision system
-  and generate new package folders for each participating sites
-- The trainer must be a Python program that can integrate with the NVFlare library.
-- The trainer must be able to connect to the server, as well as the address that
-  is dynamically opened by the FL client.
+- この統合を実現する鍵は "agent_id" であり、両方のシステムに知らせておく必要があります。
+  FL クライアントはこの情報をジョブの config_fed_client から取得し、
+  サードパーティのトレーナーは自身の起動プロセスから取得します。
+- ジョブごとに "agent_id" を動的に生成し、その情報を使ってトレーナープロセスを
+  起動する手段を顧客がすでに持っていることを前提とします。
+- 各 FL クライアントは、トレーナーが接続できるようにアドレス(host:port)を開けられなければなりません。
+  トレーナーがどこで動作しているかに応じて、接続をセキュアモード(TLS)にする必要がある場合とない場合があります。
+- NVFlare のプロビジョニングシステム用に "project.yml" を修正し、
+  参加する各サイト用に新しいパッケージフォルダーを生成する必要があります
+- トレーナーは、NVFlare ライブラリと統合できる Python プログラムでなければなりません。
+- トレーナーは、サーバーに加えて、FL クライアントが動的に開くアドレスにも
+  接続できなければなりません。
 
-Prepare the Trainer
-===================
+トレーナーの準備
+================
 
-Let's prepare the trainer code first, we will modify the "project.yml" in the
-next section for project setup.
+まずトレーナーのコードを準備しましょう。プロジェクトのセットアップのための
+"project.yml" の修正は次のセクションで行います。
 
-You can integrate a trainer either with low-level pipe control
-(:class:`FlareAgent<nvflare.client.flare_agent>`) or with the higher-level
-Client API (``nvflare.client``). The Client API path uses
+トレーナーの統合には、低レベルのパイプ制御
+(:class:`FlareAgent<nvflare.client.flare_agent>`)を使う方法と、より高レベルの
+Client API(``nvflare.client``)を使う方法があります。Client API の方式では、FLModel の変換に
 :class:`FlareAgentWithFLModel<nvflare.client.flare_agent_with_fl_model.FlareAgentWithFLModel>`
-internally for FLModel conversion.
+を内部的に使用します。
 
-We will go through the steps one by one:
+手順を1つずつ見ていきます:
 
-1. Create Agent
----------------
+1. エージェントの作成
+---------------------
 
-The :class:`FlareAgent<nvflare.client.flare_agent.FlareAgent>` is responsible
-for interacting with the FL client to exchange task data.
+:class:`FlareAgent<nvflare.client.flare_agent.FlareAgent>` は、FL クライアントと
+やり取りしてタスクデータを交換する役割を担います。
 
-Please refer to their API page for detailed explanations of each argument:
+各引数の詳細な説明については、API ページを参照してください:
 
   - :class:`FlareAgent<nvflare.client.flare_agent.FlareAgent>`
 
-You can create a FlareAgent with an explicit CellPipe as follows:
+次のように、明示的な CellPipe を使って FlareAgent を作成できます:
 
 .. code-block:: python
 
@@ -81,41 +81,41 @@ You can create a FlareAgent with an explicit CellPipe as follows:
         heartbeat_timeout=120.0,
     )
 
-2. Start Agent
---------------
+2. エージェントの開始
+---------------------
 
-After we create the agent, we need to start it.
-We can call ``agent.start()`` to start the agent.
-This call must be made before trying to get tasks.
+エージェントを作成したら、それを開始する必要があります。
+``agent.start()`` を呼び出してエージェントを開始できます。
+この呼び出しは、タスクを取得しようとする前に行わなければなりません。
 
-For example:
+例:
 
 .. code-block:: python
 
     agent.start()
 
-3. Process Tasks
+3. タスクの処理
 ----------------
 
-The training is a continuous process of getting a task, executing the task,
-and submitting the task result.
+トレーニングは、タスクの取得、タスクの実行、タスク結果の提出という
+連続的なプロセスです。
 
-Call ``agent.get_task()`` to get a Task object from the FL client.
-This is a blocking call and returns only when a task is available.
-If there are no more tasks available (i.e. end of the job), ``AgentClosed``
-exception will be raised, and signaling to end the training.
+``agent.get_task()`` を呼び出して、FL クライアントから Task オブジェクトを取得します。
+これはブロッキング呼び出しであり、タスクが利用可能になったときにのみ戻ります。
+利用可能なタスクがもうない場合(すなわちジョブの終了時)は ``AgentClosed``
+例外が発生し、トレーニングの終了を知らせます。
 
-The :class:`Task<nvflare.client.flare_agent.Task>` object contains 3 pieces of
-information: task_name, task_id, and data.
-The task_name tells you what the task is (e.g. train).
-The task_id is a UUID of the task instance.
-The data contains model data to be trained on.
+:class:`Task<nvflare.client.flare_agent.Task>` オブジェクトには、task_name、task_id、data の
+3つの情報が含まれます。
+task_name は、そのタスクが何であるか(例: train)を示します。
+task_id は、タスクインスタンスの UUID です。
+data には、トレーニング対象のモデルデータが含まれます。
 
-Once the task is completed, the result can be submitted to the FL client by calling ``agent.submit_result()``.
-A return code (``rc``) must be provided to indicate whether the task was executed successfully.
-If the ``rc`` is not RC.OK, then the job will be aborted.
+タスクが完了したら、``agent.submit_result()`` を呼び出して結果を FL クライアントに提出できます。
+タスクが正常に実行されたかどうかを示すために、リターンコード(``rc``)を提供しなければなりません。
+``rc`` が RC.OK でない場合、ジョブは中止されます。
 
-For example:
+例:
 
 .. code-block:: python
 
@@ -132,36 +132,36 @@ For example:
         submitted = agent.submit_result(TaskResult(data=result, meta=meta, return_code=rc))
         print(f"result submitted: {submitted}")
 
-4. Stop Agent
--------------
+4. エージェントの停止
+---------------------
 
-At the end of the training, ``agent.stop()`` must be called to end the program gracefully.
-If this call is missed, the program may not exit properly.
+トレーニングの最後には、プログラムを適切に終了させるために ``agent.stop()`` を呼び出さなければなりません。
+この呼び出しを忘れると、プログラムが正しく終了しない可能性があります。
 
 .. code-block:: python
 
     agent.stop()
 
 
-5. Putting Together
+5. 全体の組み立て
 -------------------
 
-Now we learn all the necessary steps, we can put together into the following
-example code of this usage pattern:
+必要な手順をすべて学んだので、この使用パターンの以下のサンプルコードとして
+まとめることができます:
 
 .. literalinclude:: ../../resources/3rd_party_trainer.py
     :language: python
 
 
-Client API Pattern (FLModel)
-----------------------------
+Client API パターン(FLModel)
+------------------------------
 
-If your trainer already works with FLModel semantics, you can use Client API
-directly instead of manually creating a CellPipe-based agent.
+トレーナーがすでに FLModel のセマンティクスで動作している場合は、CellPipe ベースの
+エージェントを手動で作成する代わりに、Client API を直接使用できます。
 
-In this pattern, ``nvflare.client`` handles the underlying agent wiring, and
-uses :class:`FlareAgentWithFLModel<nvflare.client.flare_agent_with_fl_model.FlareAgentWithFLModel>`
-internally.
+このパターンでは、``nvflare.client`` が基盤となるエージェントの配線を処理し、
+:class:`FlareAgentWithFLModel<nvflare.client.flare_agent_with_fl_model.FlareAgentWithFLModel>`
+を内部的に使用します。
 
 .. code-block:: python
 
@@ -180,34 +180,34 @@ internally.
     flare.shutdown()
 
 
-Notes:
+注記:
 
-- This pattern of (``start``, ``get_task``, ``submit_result``, and ``stop``) is strictly enforced.
-  If the pattern is not followed (e.g. ``get_task``, then ``get_task`` again without ``submit_result``),
-  you will get a ``CallStateError`` exception.
-- The only way to know that the job is ended is the ``AgentClosed`` exception from the ``get_task`` call.
-  This exception is raised when the FL client tells the agent that the job is done;
-  or when the FL client is considered dead (missing heartbeats for the configured period of time).
-- If your training algorithm runs into an unrecoverable error and wants to end the job,
-  you should use a proper return code (e.g. ``RC.EXECUTION_EXCEPTION``).
+- この(``start``、``get_task``、``submit_result``、``stop``)のパターンは厳密に強制されます。
+  パターンに従わない場合(例: ``submit_result`` を呼ばずに ``get_task`` の後に再度 ``get_task`` を呼ぶ)、
+  ``CallStateError`` 例外が発生します。
+- ジョブが終了したことを知る唯一の方法は、``get_task`` 呼び出しからの ``AgentClosed`` 例外です。
+  この例外は、FL クライアントがエージェントにジョブの完了を伝えたとき、
+  または FL クライアントが停止したと見なされたとき(設定された期間ハートビートが欠落したとき)に発生します。
+- トレーニングアルゴリズムが回復不能なエラーに陥り、ジョブを終了させたい場合は、
+  適切なリターンコード(例: ``RC.EXECUTION_EXCEPTION``)を使用すべきです。
 
-Project Setup
-=============
+プロジェクトのセットアップ
+==========================
 
-After we prepare the trainer code we can follow the steps below to properly
-set up the project and jobs.
+トレーナーのコードを準備したら、以下の手順に従ってプロジェクトとジョブを
+適切にセットアップします。
 
-Step One - Provision
---------------------
+ステップ 1 - プロビジョニング
+------------------------------
 
-The FL client site will behave like both client and server for connecting from the perspective of the trainer.
-This requires the client site to have two sets of TLS credentials.
-Make sure to specify the "listening_host" for the client in the project.yml when provisioning the project.
+FL クライアントサイトは、トレーナーから見ると、接続に関してクライアントとサーバーの両方のように振る舞います。
+このため、クライアントサイトには2組の TLS 資格情報が必要です。
+プロジェクトをプロビジョニングする際には、project.yml でクライアントの "listening_host" を必ず指定してください。
 
 .. note::
-    We assume you understand NVFlare provision, if not please read :ref:`provisioning`.
+    注記: NVFlare のプロビジョニングを理解していることを前提としています。そうでない場合は :ref:`provisioning` をお読みください。
 
-An example looks like:
+例は次のようになります:
 
 .. code-block:: yaml
 
@@ -227,19 +227,19 @@ An example looks like:
     org: nvidia
     listening_host: localhost
 
-Once the project is provisioned, check the "startup" kit generated for the clients.
-You should see the following files, among others:
+プロジェクトがプロビジョニングされたら、クライアント用に生成された "startup" キットを確認してください。
+他のファイルとともに、以下のファイルが見つかるはずです:
 
 client.crt, client.key, server.crt, server.key, rootCA.pem
 
-Note that the specified listening_host of a site must be a hostname that
-the external trainer can reach via network.
+サイトに指定する listening_host は、外部のトレーナーがネットワーク経由で到達できる
+ホスト名でなければならない点に注意してください。
 
-Step Two - Prepare Job Configuration
-------------------------------------
+ステップ 2 - ジョブ設定の準備
+------------------------------
 
-For each job, configure the config_fed_client.json to use
-:class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>` as the executor.
+各ジョブについて、config_fed_client.json でエグゼキューターとして
+:class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>` を使用するように設定します。
 
 .. code-block::
 
@@ -278,53 +278,53 @@ For each job, configure the config_fed_client.json to use
     ]
   }
 
-Make sure the parameters of the :class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>`
-are configured properly, and change the default values as needed.
+:class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>` のパラメーターが
+適切に設定されていることを確認し、必要に応じてデフォルト値を変更してください。
 
-Please refer to the API page for a detailed explanation of each argument:
+各引数の詳細な説明については、API ページを参照してください:
 :class:`TaskExchanger<nvflare.app_common.executors.task_exchanger>`
 
-Step Three - Trainer Setup
---------------------------
+ステップ 3 - トレーナーのセットアップ
+--------------------------------------
 
-For each client site, you will have an FL client and a trainer process.
+各クライアントサイトには、FL クライアントとトレーナープロセスが存在します。
 
-To make our integration work, please follow the following steps to
-setup the trainer process on each client site:
+統合を機能させるために、各クライアントサイトで以下の手順に従って
+トレーナープロセスをセットアップしてください:
 
-    - Make sure the trainer process has access to a local file system.
-    - Create a "workspace" folder that is going to be used by this trainer process
-      This workspace will be used for all jobs.
-    - Copy the "startup" folder of the client site to this "workspace" folder
-      If needed, any additional config files required by the trainer can also
-      be placed in this "workspace" folder.
-    - For low-level FlareAgent usage, create your trainer script following
-      the steps above and set CellPipe ``workspace_dir`` to this "workspace"
-      folder. Also make sure the trainer ``agent_id`` matches the ``token``
-      value in the pipe component config.
-    - For the Client API pattern, point ``flare.init()`` to the generated client
-      API config in the job workspace and use ``receive/send`` in your trainer loop.
+    - トレーナープロセスがローカルファイルシステムにアクセスできることを確認します。
+    - このトレーナープロセスが使用する "workspace" フォルダーを作成します。
+      このワークスペースはすべてのジョブで使用されます。
+    - クライアントサイトの "startup" フォルダーをこの "workspace" フォルダーにコピーします。
+      必要であれば、トレーナーが必要とする追加の設定ファイルも
+      この "workspace" フォルダーに配置できます。
+    - 低レベルの FlareAgent を使用する場合は、上記の手順に従ってトレーナースクリプトを作成し、
+      CellPipe の ``workspace_dir`` をこの "workspace" フォルダーに設定します。
+      また、トレーナーの ``agent_id`` が、パイプコンポーネント設定の ``token``
+      の値と一致していることを確認してください。
+    - Client API パターンの場合は、``flare.init()`` にジョブワークスペース内の生成された
+      クライアント API 設定を指定し、トレーナーループで ``receive/send`` を使用します。
 
     .. note::
-       The generated client API config carries live authentication material and,
-       on POSIX systems, is written owner-only (mode ``0600``). An externally
-       started trainer must therefore run as the **same OS user** as the FL client
-       process, or the operator must explicitly re-permission the file for the
-       trainer's account. On Windows the file mode does not restrict NTFS ACLs;
-       protect the workspace directory via ACLs instead.
+       注記: 生成されたクライアント API 設定には有効な認証情報が含まれており、
+       POSIX システムでは所有者のみアクセス可能(モード ``0600``)で書き込まれます。
+       そのため、外部から起動されるトレーナーは、FL クライアントプロセスと\ **同じ OS ユーザー**\ として
+       実行するか、オペレーターがトレーナーのアカウント用にファイルの権限を明示的に
+       再設定する必要があります。Windows ではファイルモードは NTFS ACL を制限しないため、
+       代わりに ACL でワークスペースディレクトリを保護してください。
 
-Verification
-============
+検証
+====
 
-For low-level TaskExchanger integration, the FL client and trainer process
-do not have to be started at exactly the same time.
+低レベルの TaskExchanger 統合では、FL クライアントとトレーナープロセスを
+まったく同時に起動する必要はありません。
 
-Whichever is started first will wait for the other for ``heartbeat_timeout`` seconds.
-Once they both are started and connected, you can verify they are directly
-connected using the Admin console's ``cells`` commands.
+先に起動した方が、``heartbeat_timeout`` 秒の間、もう一方を待ちます。
+両方が起動して接続されたら、Admin コンソールの ``cells`` コマンドを使って
+直接接続されていることを検証できます。
 
-The following example shows two clients (site-1, site-2) connected to their
-external trainers via the agent_id/token "ext_trainer":
+以下の例は、2つのクライアント(site-1、site-2)が agent_id/token "ext_trainer" を介して
+外部トレーナーに接続されている様子を示しています:
 
 .. code-block:: shell
 
@@ -342,23 +342,23 @@ external trainers via the agent_id/token "ext_trainer":
   Total Cells: 10
 
 
-The ``cells`` command lists all cells.
+``cells`` コマンドはすべてのセルを一覧表示します。
 
-Notice that the job ``10d1d3b7-fb50-4c83-9575-e510f32c5d21`` is running on both
-"site-1" and "site-2" clients.
+ジョブ ``10d1d3b7-fb50-4c83-9575-e510f32c5d21`` が "site-1" と "site-2" の両方の
+クライアントで実行されていることに注目してください。
 
-Also notice that there are two pairs of corresponding cells
-(site-1_ext_trainer_active, site-1_ext_trainer_passive)
-and ((site-2_ext_trainer_active, site-2_ext_trainer_passive)).
+また、対応するセルのペアが2組
+(site-1_ext_trainer_active、site-1_ext_trainer_passive)
+と((site-2_ext_trainer_active、site-2_ext_trainer_passive))あることにも注目してください。
 
 
-Optional - Setup for Adhoc Direct Connection between FL Client and Trainer
-==========================================================================
+オプション - FL クライアントとトレーナー間のアドホック直接接続のセットアップ
+================================================================================
 
-FL client and the trainer can always talk to each other via the server,
-but it could be slow, especially if the server is located far away.
-The enable adhoc direct connections between the FL client and the trainer,
-configure the comm_config.json on the client site as follows:
+FL クライアントとトレーナーは常にサーバー経由で通信できますが、
+特にサーバーが遠くにある場合、通信が遅くなる可能性があります。
+FL クライアントとトレーナー間のアドホック直接接続を有効にするには、
+クライアントサイトで comm_config.json を次のように設定します:
 
 .. code-block:: json
 
@@ -374,16 +374,16 @@ configure the comm_config.json on the client site as follows:
     }
   }
 
-This file must be placed into the site's "local" folder within its workspace.
+このファイルは、サイトのワークスペース内の "local" フォルダーに配置しなければなりません。
 
-For ad-hoc direct connection limitations and behavior, see :ref:`communication_configuration`.
+アドホック直接接続の制限と動作については、:ref:`communication_configuration` を参照してください。
 
-Pay attention to the following:
+以下の点に注意してください:
 
-- For most cases, the "scheme" should be set to "tcp" to get the best performance.
-  If "tcp" cannot be used, you can use "grpc".
-- In "resources":
+- ほとんどの場合、最良のパフォーマンスを得るために "scheme" は "tcp" に設定すべきです。
+  "tcp" が使えない場合は、"grpc" を使用できます。
+- "resources" 内について:
 
-  - If FL client and the trainer are within the same trusted network,
-    you can set "secure" to false; otherwise set it to true.
-  - The value of the "host" must match the "listening_host" value of the site used in provision.
+  - FL クライアントとトレーナーが同じ信頼できるネットワーク内にある場合は、
+    "secure" を false に設定できます。そうでない場合は true に設定してください。
+  - "host" の値は、プロビジョニングで使用したサイトの "listening_host" の値と一致しなければなりません。

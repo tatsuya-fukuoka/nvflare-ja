@@ -1,73 +1,73 @@
 .. _hello_pt_job_api:
 
-Hello PyTorch with Job API
-==========================
+Job APIを使ったHello PyTorch
+========================================
 
-This example demonstrates how to use NVIDIA FLARE with PyTorch to train an image classifier using federated averaging (FedAvg).
-The complete example code can be found in the :github_nvflare_link:`hello-pt directory <examples/hello-world/hello-pt/>`.
+この例では、NVIDIA FLAREとPyTorchを使用し、連合平均(FedAvg)によって画像分類器をトレーニングする方法を示します。
+完全なサンプルコードは :github_nvflare_link:`hello-ptディレクトリ <examples/hello-world/hello-pt/>` にあります。
 
-Before You Start
+はじめる前に
+------------------------
+
+`NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ の詳細について学ぶには、
+いつでも :doc:`詳細ドキュメント <../developer_guide>` を参照してください。
+
+まず :doc:`Hello NumPy <hello_numpy>` の演習を終えることをお勧めします。この演習では
+`NVIDIA FLARE <https://pypi.org/project/nvflare/>`_ の連合学習(Federated Learning)の概念を紹介しています。
+
+NVIDIA FLAREがインストールされた環境があることを確認してください。
+
+Python仮想環境(推奨環境)のセットアップの一般的な考え方とNVIDIA FLAREのインストール方法については、
+:ref:`getting_started` を参照してください。
+
+はじめに
 ----------------
 
-Feel free to refer to the :doc:`detailed documentation <../developer_guide>` at any point
-to learn more about the specifics of `NVIDIA FLARE <https://pypi.org/project/nvflare/>`_.
+この演習では、NVIDIA FLAREを人気のディープラーニングフレームワークである
+`PyTorch <https://pytorch.org/>`_ と統合し、組み込みの :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` ワークフローを使用して、
+CIFAR10データセットで畳み込みネットワークをトレーニングする方法を学びます。
 
-We recommend you first finish the :doc:`Hello NumPy <hello_numpy>` exercise since it introduces the
-federated learning concepts of `NVIDIA FLARE <https://pypi.org/project/nvflare/>`_.
+この演習のセットアップは、1つの\ **サーバー**\ と2つの\ **クライアント**\ で構成されます。
 
-Make sure you have an environment with NVIDIA FLARE installed.
+以下のステップが、\ **ラウンド**\ と呼ばれる重み更新の1サイクルを構成します:
 
-You can follow :ref:`getting_started` on the general concept of setting up a
-Python virtual environment (the recommended environment) and how to install NVIDIA FLARE.
+ #. クライアントは、自身のCIFAR10データセットを使用して、モデルの個別の重み更新を生成する役割を担います。
+ #. これらの更新はサーバーに送信され、サーバーはそれらを集約して新しい重みを持つモデルを生成します。
+ #. 最後に、サーバーはこの更新されたモデルを各クライアントに送り返します。
 
-Introduction
--------------
+サンプルの実行
+------------------------
+このサンプルを実行するには:
 
-Through this exercise, you will integrate NVIDIA FLARE with the popular
-deep learning framework `PyTorch <https://pytorch.org/>`_ and learn how to use NVIDIA FLARE to train a convolutional
-network with the CIFAR10 dataset using the included :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` workflow.
-
-The setup of this exercise consists of one **server** and two **clients**.
-
-The following steps compose one cycle of weight updates, called a **round**:
-
- #. Clients are responsible for generating individual weight-updates for the model using their own CIFAR10 dataset. 
- #. These updates are then sent to the server which will aggregate them to produce a model with new weights. 
- #. Finally, the server sends this updated version of the model back to each client.
-
-Running the Example
--------------------
-To run this example:
-
-1. Clone the repository and navigate to the example directory:
+1. リポジトリをクローンし、サンプルディレクトリに移動します:
 
 .. code-block:: shell
 
    $ git clone https://github.com/NVIDIA/NVFlare.git
    $ cd NVFlare/examples/hello-world/hello-pt
 
-2. Install the required dependencies:
+2. 必要な依存関係をインストールします:
 
 .. code-block:: shell
 
    $ pip install -r requirements.txt
 
-3. Run the example:
+3. サンプルを実行します:
 
 .. code-block:: shell
 
    $ python job.py
 
-The script creates an NVFlare job recipe and runs it using the FL Simulator.
+このスクリプトは、NVFlareのジョブレシピを作成し、FLシミュレーターを使用して実行します。
 
-To export the job folder for submission to a running FL system, use the standard Recipe API export flags:
+実行中のFLシステムに提出するためにジョブフォルダをエクスポートするには、標準のRecipe APIエクスポートフラグを使用します:
 
 .. code-block:: shell
 
    $ python job.py --export --export-dir /tmp/nvflare/jobs/job_config
 
-The exported job is written to ``/tmp/nvflare/jobs/job_config/hello-pt``.
-You can combine the export flags with example-specific options, for example:
+エクスポートされたジョブは ``/tmp/nvflare/jobs/job_config/hello-pt`` に書き出されます。
+エクスポートフラグは、サンプル固有のオプションと組み合わせることができます。例:
 
 .. code-block:: shell
 
@@ -78,8 +78,8 @@ You can combine the export flags with example-specific options, for example:
 NVIDIA FLARE Job API
 --------------------
 
-The ``job.py`` script for this hello-pt example defines a :class:`FedAvgRecipe<nvflare.app_opt.pt.recipes.fedavg.FedAvgRecipe>`.
-The recipe combines the PyTorch model, client training script, and simulator/export behavior:
+このhello-ptサンプルの ``job.py`` スクリプトは、:class:`FedAvgRecipe<nvflare.app_opt.pt.recipes.fedavg.FedAvgRecipe>` を定義します。
+このレシピは、PyTorchモデル、クライアントトレーニングスクリプト、およびシミュレーター/エクスポートの動作を組み合わせます:
 
 .. code-block:: python
 
@@ -93,39 +93,39 @@ The recipe combines the PyTorch model, client training script, and simulator/exp
    )
 
 
-NVIDIA FLARE Client Training Script
-------------------------------------
-The training script for this example, ``client.py``, is the main script that will be run on the clients. It contains the PyTorch specific
-logic for training.
+NVIDIA FLAREクライアントトレーニングスクリプト
+------------------------------------------------------------
+このサンプルのトレーニングスクリプト ``client.py`` は、クライアント上で実行されるメインのスクリプトです。
+トレーニングのためのPyTorch固有のロジックが含まれています。
 
-Neural Network
-^^^^^^^^^^^^^^^
+ニューラルネットワーク
+--------------------------------
 
-The training procedure and network architecture are modified from 
-`Training a Classifier <https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html>`_.
+トレーニング手順とネットワークアーキテクチャは、
+`Training a Classifier <https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html>`_ を基に変更したものです。
 
-Let's see the simplified CIFAR10 model used in this example:
+このサンプルで使用される簡略化されたCIFAR10モデルを見てみましょう:
 
 - :github_nvflare_link:`model.py <examples/hello-world/hello-pt/model.py>`
 
-This ``SimpleNetwork`` class is your convolutional neural network to train with the CIFAR10 dataset.
-This is not related to NVIDIA FLARE, so we implement it in a file called ``model.py``.
+この ``SimpleNetwork`` クラスが、CIFAR10データセットでトレーニングする畳み込みニューラルネットワークです。
+これはNVIDIA FLAREとは関係がないため、``model.py`` というファイルに実装しています。
 
-Dataset & Setup
-^^^^^^^^^^^^^^^^
+データセットとセットアップ
+--------------------------------------
 
-In a real FL experiment, each client would have their own dataset used for their local training.
-You can download the CIFAR10 dataset from the Internet via torchvision's datasets module, so for simplicity's sake, this is
-the dataset we will be using on each client.
-Additionally, you need to set up the optimizer, loss function and transform to process the data.
-You can think of all of this code as part of your local training loop, as every deep learning training has a similar setup.
+実際のFL実験では、各クライアントはローカルトレーニングに使用する独自のデータセットを持ちます。
+CIFAR10データセットはtorchvisionのdatasetsモジュールを介してインターネットからダウンロードできるため、
+簡単のために、各クライアントでこのデータセットを使用します。
+さらに、オプティマイザー、損失関数、およびデータを処理するための変換をセットアップする必要があります。
+すべてのディープラーニングトレーニングには同様のセットアップがあるため、これらのコードはすべてローカルトレーニングループの一部と考えることができます。
 
-In the ``client.py`` script, we take care of all of this setup before the ``flare.init()``.
+``client.py`` スクリプトでは、``flare.init()`` の前にこれらすべてのセットアップを行います。
 
-Local Train
-^^^^^^^^^^^
+ローカルトレーニング
+--------------------------------
 
-Now with the network and dataset setup, let's also implement the local training loop with the NVFlare's Client API:
+ネットワークとデータセットのセットアップができたので、NVFlareのClient APIを使ってローカルトレーニングループも実装しましょう:
 
 .. code-block:: python
 
@@ -152,24 +152,24 @@ Now with the network and dataset setup, let's also implement the local training 
                running_loss += cost.cpu().detach().numpy() / images.size()[0]
 
       output_model = flare.FLModel(params=model.cpu().state_dict(), meta={"NUM_STEPS_CURRENT_ROUND": steps})
-      
+
       flare.send(output_model)
 
 
-The code above is simplified from the ``client.py`` script to focus on the three essential methods of the NVFlare's Client API to
-achieve the training workflow:
+上記のコードは、トレーニングワークフローを実現するためのNVFlareのClient APIの3つの重要なメソッドに焦点を当てるため、
+``client.py`` スクリプトを簡略化したものです:
 
-   - `init()`: Initializes NVFlare Client API environment.
-   - `receive()`: Receives model from the FL server.
-   - `send()`: Sends the model to the FL server.
+   - `init()`: NVFlare Client API環境を初期化します。
+   - `receive()`: FLサーバーからモデルを受信します。
+   - `send()`: FLサーバーにモデルを送信します。
 
-NVIDIA FLARE Server & Application
----------------------------------
-In this example, the server runs :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` with the default settings.
+NVIDIA FLAREサーバーとアプリケーション
+----------------------------------------------------
+このサンプルでは、サーバーはデフォルト設定で :class:`FedAvg<nvflare.app_common.workflows.fedavg.FedAvg>` を実行します。
 
-If you export the job with ``python job.py --export --export-dir <job_folder>``, you will see the
-configurations for the server and each client. The server configuration is ``config_fed_server.json`` in the config folder
-in the exported app folder:
+``python job.py --export --export-dir <job_folder>`` でジョブをエクスポートすると、
+サーバーと各クライアントの構成を確認できます。サーバー構成は、エクスポートされたappフォルダ内の
+configフォルダにある ``config_fed_server.json`` です:
 
 .. code-block:: json
 
@@ -232,18 +232,18 @@ in the exported app folder:
       "task_result_filters": []
    }
 
-This is automatically created by the Job API. The server application configuration leverages NVIDIA FLARE built-in components.
+これはJob APIによって自動的に作成されます。サーバーアプリケーション構成は、NVIDIA FLAREの組み込みコンポーネントを活用しています。
 
-Note that ``persistor`` points to ``PTFileModelPersistor``. This is automatically configured from the
-``SimpleNetwork`` model supplied to the recipe. The Job API detects that the model is a PyTorch model
-and automatically configures :class:`PTFileModelPersistor<nvflare.app_opt.pt.file_model_persistor.PTFileModelPersistor>`
-and :class:`PTFileModelLocator<nvflare.app_opt.pt.file_model_locator.PTFileModelLocator>`.
+``persistor`` が ``PTFileModelPersistor`` を指していることに注意してください。これは、レシピに渡された
+``SimpleNetwork`` モデルから自動的に構成されます。Job APIはモデルがPyTorchモデルであることを検出し、
+:class:`PTFileModelPersistor<nvflare.app_opt.pt.file_model_persistor.PTFileModelPersistor>` と
+:class:`PTFileModelLocator<nvflare.app_opt.pt.file_model_locator.PTFileModelLocator>` を自動的に構成します。
 
 
-Client Configuration
-^^^^^^^^^^^^^^^^^^^^
+クライアント構成
+--------------------------------
 
-The client configuration is ``config_fed_client.json`` in the config folder of each client app folder:
+クライアント構成は、各クライアントのappフォルダ内のconfigフォルダにある ``config_fed_client.json`` です:
 
 .. code-block:: json
 
@@ -278,13 +278,13 @@ The client configuration is ``config_fed_client.json`` in the config folder of e
       "task_result_filters": []
    }
 
-The ``task_script_path`` is set to the path of the client training script.
+``task_script_path`` には、クライアントトレーニングスクリプトのパスが設定されます。
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/hello-world/hello-pt <examples/hello-world/hello-pt/>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/hello-world/hello-pt <examples/hello-world/hello-pt/>` にあります。
 
-Previous Versions of Hello PyTorch
-----------------------------------
+Hello PyTorchの以前のバージョン
+------------------------------------------------
 
    - `hello-pt for 2.0 <https://github.com/NVIDIA/NVFlare/tree/2.0/examples/hello-pt>`_
    - `hello-pt for 2.1 <https://github.com/NVIDIA/NVFlare/tree/2.1/examples/hello-pt>`_

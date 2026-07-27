@@ -1,7 +1,7 @@
-Accessing the results
-^^^^^^^^^^^^^^^^^^^^^
+結果へのアクセス
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The results of each job will usually be stored inside the server side workspace.
+各ジョブの結果は、通常サーバー側のワークスペース内に保存されます。
 
-Please refer to :ref:`access server-side workspace <access_server_workspace>`
-for accessing the server side workspace.
+サーバー側ワークスペースへのアクセス方法については、
+:ref:`サーバー側ワークスペースへのアクセス <access_server_workspace>` を参照してください。

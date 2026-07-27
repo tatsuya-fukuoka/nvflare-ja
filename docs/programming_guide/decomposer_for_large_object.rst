@@ -1,126 +1,126 @@
 .. _decomposer_for_large_object:
 
-############################
-Decomposer for Large Objects
-############################
+################################################
+大きなオブジェクトのためのデコンポーザー
+################################################
 
-The payload of a message can be any simple or complex object. However, before the message can be sent, the object must be serialized to bytes. Similarly, on the receiving side, the received bytes are deserialized back to the correct object type for the application to process.
+メッセージのペイロードは、単純なオブジェクトでも複雑なオブジェクトでも構いません。ただし、メッセージを送信する前に、オブジェクトをバイト列にシリアライズする必要があります。同様に、受信側では、受信したバイト列を正しいオブジェクト型にデシリアライズして、アプリケーションが処理できるようにします。
 
-These are done with the FOBS (Flare OBject Serialization) system.
+これらは FOBS(Flare OBject Serialization)システムによって行われます。
 
-FOBS Introduction
-=================
+FOBS の概要
+===========
 
-The object to be sent could be arbitrarily complex - composed of nested sub-objects of any type. FOBS is implemented with the open-source msgpack, which traverses the object tree recursively to turn each object into primitive types that it knows how to handle (e.g., bytes, str, numbers, list, dict, etc.). The process of turning an object into primitive types is called decomposition. The reverse process of turning primitive types into the original object type is called recomposition.
+送信されるオブジェクトは、任意の型のサブオブジェクトが入れ子になった、いくらでも複雑なものになり得ます。FOBS はオープンソースの msgpack を使って実装されており、オブジェクトツリーを再帰的に走査して、各オブジェクトを msgpack が扱えるプリミティブ型(bytes、str、数値、list、dict など)に変換します。オブジェクトをプリミティブ型に変換する処理をデコンポジション(decomposition)と呼びます。プリミティブ型を元のオブジェクト型に戻す逆の処理をリコンポジション(recomposition)と呼びます。
 
-The object that does decomposition and recomposition for a target object type is called a decomposer. Flare provides decomposer implementations for many commonly used object types (all built-in Flare structures like DXO, Tensor, Numpy Array, Shareable, etc.).
+対象のオブジェクト型に対してデコンポジションとリコンポジションを行うオブジェクトをデコンポーザー(decomposer)と呼びます。Flare は、よく使われる多くのオブジェクト型(DXO、Tensor、Numpy Array、Shareable など、Flare 組み込みのすべての構造体)に対するデコンポーザー実装を提供しています。
 
-Applications can build additional decomposers for any app-specific object types.
+アプリケーションは、アプリ固有の任意のオブジェクト型に対して追加のデコンポーザーを構築できます。
 
 .. note::
-    you can refer to :ref:`serialization` for more details on FOBS.
+    注記: FOBS の詳細については :ref:`serialization` を参照してください。
 
-Serialization
-=============
-
-The general serialization process is like this:
-- **Decomposition**: the object is traversed to turn each sub-object into primitive types. Appropriate decomposers are invoked to process objects unknown to msgpack.
-- **Post Processing**: during the decomposition process, some decomposers may register post-process callbacks. Such callbacks, if any, are invoked one by one. A post-processing callback can register additional post-processing callbacks! The post-processing is finished after all such callbacks are called. A callback could add additional sections (called Datums) to the final message.
-- **Message Assembly**: put all data sections (datums) together to form one message.
-
-Externalization and Datums
-==========================
-
-The msgpack has a limitation of 4G for its serialization size. This can easily be exceeded if the object contains a large model. FOBS introduces a mechanism called externalization that moves large data (bytes or text) out of the msgpack serialization.
-
-Firstly, the large data is moved into an object called datum, which has a unique ID and keeps the large data.
-
-Secondly, the large data is replaced with a reference to the datum. Hence only the datum ref is included in the msgpack generated message body. Since externalization removes large data from msgpack processing (which generates the main body of the message), it assures that msgpack’s 4G limit won’t be exceeded.
-
-Note: the final assembled message size can be arbitrarily large, even though the main body cannot exceed the 4G limit!
-
-FOBS performs the externalization after invoking a decomposer.
-
-Post Processing and DOT
-=======================
-
-If post-process callbacks are registered during the decomposition process (by decomposers), such callbacks are called. New datums could be added by the callbacks. Such datums usually need to be processed with special logic during deserialization. To facilitate this, such special datums need to be tagged with a Datum Object Type (DOT), and decomposers must be available to process each DOT.
-
-DOT values must be globally unique.
-
-Deserialization
-===============
-
-On the receiving side, received bytes are deserialized back to original object types:
-- **Message dissection**: the bytes are parsed to extract the main body and datums (if any).
-- **Pre-processing**: special datums that have non-zero DOT values are processed by registered decomposers. If no decomposer can be found for the datum, a RuntimeError exception will be raised.
-- **Recomposition**: the main body is processed by the msgpack, which calls the “recompose” methods of appropriate decomposers. This will result in the final object of the original type.
-
-Internalization
-===============
-
-If a sub-object’s recomposition results in a “datum ref”, it will be internalized by looking for the datum based on the unique datum ref ID. The large data held by the datum will replace the datum ref as the new value of the recomposed sub-object.
-
-Issues with Large Objects
-=========================
-
-Though FOBS can handle objects of any size, a large object will be serialized to a message of large size. For very large objects, this could cause issues to the overall application process:
-
-- The biggest concern is CPU memory usage. Large objects (e.g., large language models) already take a lot of memory, serializing them into bytes will take even more memory space.
-- Network bandwidth could be saturated when trying to send such large messages.
-
-The problem is multiplied when the large object needs to be sent to multiple recipients in the same period of time. This is the case in a typical FedAvg training, where multiple clients retrieve the same model at almost the same time. When memory space is saturated, the application won’t be able to perform normally.
-
-File Based Decomposer
-=====================
-
-To address the issues with large objects, we developed a mechanism to reduce the message size by leveraging the FileDownloader. The general idea is that instead of serializing the large objects into a large number of bytes in memory, we write them into a file, and then make recipients download the file and reconstruct the objects.
-
-Here are the details of this idea:
-- Objects of target object types (e.g., Tensor, NP Array) contained in one message are collected into one single dict, and written to a file using the target object type specific file creation like savetensors.save_file, or np.save.
-- Objects in the payload are replaced with simple references to the objects written to file. Hence the serialized message size is hugely reduced.
-- The message is sent to recipients. Note that the message only contains references to the large objects, not the objects themselves.
-- Each recipient downloads the referenced file from the sender, using FileDownloader. The recipient then loads the downloaded file back to original objects, using target object type specific file loading function.
-- Once objects are recovered, the payload is recomposed and the object refs are replaced with the recovered objects.
-
-With this approach, since the file is downloaded with small chunks, the memory space needed is small (no need to hold and transfer the huge objects via memory).
-
-Message Root
+シリアライズ
 ============
 
-When an object needs to be sent to multiple recipients, the object will go through the serialization process multiple times. Even if the resultant message is smaller, the serialization process itself could be time-consuming, since it has to generate a large file. The idea of message root is introduced to make the additional serialization more efficient.
+一般的なシリアライズ処理は次のとおりです:
+- **デコンポジション**\ : オブジェクトを走査して、各サブオブジェクトをプリミティブ型に変換します。msgpack が扱えないオブジェクトの処理には、適切なデコンポーザーが呼び出されます。
+- **後処理**\ : デコンポジション処理の間に、一部のデコンポーザーは後処理コールバックを登録することがあります。そのようなコールバックがあれば、1つずつ呼び出されます。後処理コールバックがさらに追加の後処理コールバックを登録することも可能です。そのようなコールバックがすべて呼び出された時点で後処理は完了です。コールバックは、最終的なメッセージに追加のセクション(Datum と呼ばれます)を追加できます。
+- **メッセージの組み立て**\ : すべてのデータセクション(datum)をまとめて1つのメッセージを構成します。
 
-Since all messages are for the same target object, this object is called the message root, and is assigned a unique UUID called message root ID.
+外部化と Datum
+==============
 
-When this object needs to be sent to multiple recipients, only the very first message (called the primary message) needs to go through the heavy process of file generation. All other messages are called secondary messages.
+msgpack にはシリアライズサイズ 4G という制限があります。オブジェクトに大きなモデルが含まれている場合、この制限は簡単に超えてしまいます。FOBS は、大きなデータ(バイト列またはテキスト)を msgpack のシリアライズの外に移動する、外部化(externalization)と呼ばれる仕組みを導入しています。
 
-While the primary message goes through the serialization process, it generates file(s) and saves object reference information in a cache called the FOBSCache under the key of message root ID. All secondary messages will wait until the primary message is done.
+まず、大きなデータは datum と呼ばれるオブジェクトに移されます。datum は一意の ID を持ち、大きなデータを保持します。
 
-When a secondary message goes through the serialization process, it no longer needs to create any files. Instead, it simply looks up the FOBSCache with the message root ID to find references for the objects.
+次に、大きなデータは datum への参照に置き換えられます。したがって、msgpack が生成するメッセージ本体には datum への参照のみが含まれます。外部化により大きなデータが msgpack の処理(メッセージの本体を生成する処理)から取り除かれるため、msgpack の 4G 制限を超えないことが保証されます。
 
-Managing Generated Files
+注記: 本体は 4G 制限を超えられませんが、最終的に組み立てられたメッセージのサイズはいくらでも大きくなり得ます。
+
+FOBS は、デコンポーザーを呼び出した後に外部化を実行します。
+
+後処理と DOT
+============
+
+デコンポジション処理の間に(デコンポーザーによって)後処理コールバックが登録されている場合、それらのコールバックが呼び出されます。コールバックによって新しい datum が追加されることがあります。そのような datum は通常、デシリアライズの際に特別なロジックで処理する必要があります。これを容易にするため、そのような特別な datum には Datum Object Type(DOT)のタグを付ける必要があり、各 DOT を処理できるデコンポーザーが利用可能でなければなりません。
+
+DOT の値はグローバルに一意でなければなりません。
+
+デシリアライズ
+==============
+
+受信側では、受信したバイト列が元のオブジェクト型にデシリアライズされます:
+- **メッセージの分解**\ : バイト列を解析して、本体と datum(あれば)を抽出します。
+- **前処理**\ : ゼロ以外の DOT 値を持つ特別な datum は、登録されたデコンポーザーによって処理されます。その datum に対応するデコンポーザーが見つからない場合、RuntimeError 例外が発生します。
+- **リコンポジション**\ : 本体は msgpack によって処理され、適切なデコンポーザーの "recompose" メソッドが呼び出されます。これにより、元の型の最終的なオブジェクトが得られます。
+
+内部化
+======
+
+サブオブジェクトのリコンポジションの結果が "datum ref" だった場合、一意の datum ref ID に基づいて datum を探すことで内部化(internalization)が行われます。datum が保持する大きなデータが datum ref を置き換え、リコンポジションされたサブオブジェクトの新しい値になります。
+
+大きなオブジェクトに関する問題
+==============================
+
+FOBS は任意のサイズのオブジェクトを扱えますが、大きなオブジェクトは大きなサイズのメッセージにシリアライズされます。非常に大きなオブジェクトの場合、これはアプリケーションプロセス全体に問題を引き起こす可能性があります:
+
+- 最大の懸念は CPU メモリ使用量です。大きなオブジェクト(例: 大規模言語モデル)はすでに多くのメモリを消費しており、それらをバイト列にシリアライズするとさらに多くのメモリ領域を必要とします。
+- そのような大きなメッセージを送信しようとすると、ネットワーク帯域が飽和する可能性があります。
+
+大きなオブジェクトを同じ期間に複数の受信者へ送信する必要がある場合、この問題は倍増します。これは典型的な FedAvg トレーニングに当てはまるケースで、複数のクライアントがほぼ同時に同じモデルを取得します。メモリ領域が飽和すると、アプリケーションは正常に動作できなくなります。
+
+ファイルベースのデコンポーザー
+==============================
+
+大きなオブジェクトに関する問題に対処するため、FileDownloader を活用してメッセージサイズを削減する仕組みを開発しました。基本的な考え方は、大きなオブジェクトをメモリ上で大量のバイト列にシリアライズする代わりに、ファイルに書き出し、受信者にそのファイルをダウンロードさせてオブジェクトを再構築させるというものです。
+
+この考え方の詳細は次のとおりです:
+- 1つのメッセージに含まれる対象オブジェクト型(例: Tensor、NP Array)のオブジェクトを1つの dict に集め、savetensors.save_file や np.save のような対象オブジェクト型固有のファイル作成機能を使ってファイルに書き出します。
+- ペイロード内のオブジェクトは、ファイルに書き出されたオブジェクトへの単純な参照に置き換えられます。これにより、シリアライズされたメッセージのサイズが大幅に削減されます。
+- メッセージが受信者に送信されます。メッセージには大きなオブジェクトそのものではなく、それらへの参照のみが含まれる点に注意してください。
+- 各受信者は、FileDownloader を使って参照されているファイルを送信者からダウンロードします。受信者は、対象オブジェクト型固有のファイル読み込み関数を使って、ダウンロードしたファイルを元のオブジェクトに読み戻します。
+- オブジェクトが復元されると、ペイロードがリコンポジションされ、オブジェクト参照が復元されたオブジェクトに置き換えられます。
+
+このアプローチでは、ファイルは小さなチャンク単位でダウンロードされるため、必要なメモリ領域は小さくて済みます(巨大なオブジェクトをメモリ経由で保持・転送する必要がありません)。
+
+メッセージルート
+================
+
+オブジェクトを複数の受信者に送信する必要がある場合、そのオブジェクトはシリアライズ処理を複数回通過します。結果のメッセージが小さくても、大きなファイルを生成しなければならないため、シリアライズ処理自体に時間がかかる可能性があります。追加のシリアライズをより効率的にするために、メッセージルート(message root)という考え方が導入されています。
+
+すべてのメッセージが同じ対象オブジェクトのためのものであるため、このオブジェクトはメッセージルートと呼ばれ、メッセージルート ID と呼ばれる一意の UUID が割り当てられます。
+
+このオブジェクトを複数の受信者に送信する必要がある場合、最初のメッセージ(プライマリメッセージと呼ばれます)だけがファイル生成という重い処理を通過します。それ以外のすべてのメッセージはセカンダリメッセージと呼ばれます。
+
+プライマリメッセージがシリアライズ処理を通過する間に、ファイルが生成され、オブジェクト参照情報がメッセージルート ID をキーとして FOBSCache と呼ばれるキャッシュに保存されます。すべてのセカンダリメッセージは、プライマリメッセージが完了するまで待機します。
+
+セカンダリメッセージがシリアライズ処理を通過する際には、ファイルを作成する必要はもうありません。代わりに、メッセージルート ID で FOBSCache を検索して、オブジェクトの参照を見つけるだけです。
+
+生成されたファイルの管理
 ========================
 
-As described above, files are generated during the serialization process. It’s not desirable to keep these large files on the file system for a long time.
+上で説明したように、シリアライズ処理の間にファイルが生成されます。これらの大きなファイルをファイルシステム上に長期間保持するのは望ましくありません。
 
-Message root object is needed only for a limited amount of time. Typically after the object has been sent to all recipients, or when there is no need to wait for other recipients, the message root object is no longer needed. In this case, the message root is deleted, which will then cause all the temporary files associated with the message root ID to be deleted.
+メッセージルートオブジェクトが必要なのは限られた時間だけです。通常、オブジェクトがすべての受信者に送信された後、あるいは他の受信者を待つ必要がなくなった時点で、メッセージルートオブジェクトは不要になります。この場合、メッセージルートは削除され、それに伴ってメッセージルート ID に関連付けられたすべての一時ファイルが削除されます。
 
-The following places in Flare system have been updated to use the message root mechanism:
-- Task-based interactions (wf_comm_server, wf_comm_client, task_controller)
-- Reliable Message, which may resend the message multiple times
-- Task Exchanger, which sends message to client API
-- Pipe Handler, which may resend the message multiple times
+Flare システムの以下の箇所が、メッセージルートの仕組みを使うように更新されています:
+- タスクベースのやり取り(wf_comm_server、wf_comm_client、task_controller)
+- Reliable Message(メッセージを複数回再送する可能性があります)
+- Task Exchanger(クライアント API にメッセージを送信します)
+- Pipe Handler(メッセージを複数回再送する可能性があります)
 
-Another protection is that the generated files will be deleted after the download transaction is timed out (see FileDownloader for detail), regardless of whether the message root ID is deleted or not.
+もう1つの保護として、メッセージルート ID が削除されているかどうかにかかわらず、ダウンロードトランザクションがタイムアウトした後に生成されたファイルは削除されます(詳細は FileDownloader を参照してください)。
 
-Finally, when a Flare Job is finished, the FileDownloader’s shutdown() method is always called, causing all files associated with all pending transactions to be deleted.
+最後に、Flare のジョブが終了すると、FileDownloader の shutdown() メソッドが必ず呼び出され、保留中のすべてのトランザクションに関連付けられたすべてのファイルが削除されます。
 
-The three approaches described above assure that temporary files generated by the serialization process will eventually be deleted from the file system.
+上で説明した3つのアプローチにより、シリアライズ処理で生成された一時ファイルは最終的にファイルシステムから削除されることが保証されます。
 
-Developing a File Based Decomposer
-==================================
+ファイルベースのデコンポーザーの開発
+====================================
 
-If you need to send an object type that can potentially be very large, you should develop a file-based decomposer for this object type. You do this by extending ViaFileDecomposer.
+非常に大きくなる可能性のあるオブジェクト型を送信する必要がある場合は、そのオブジェクト型のためのファイルベースのデコンポーザーを開発すべきです。これは ViaFileDecomposer を拡張することで行います。
 
 .. code-block:: python
 
@@ -173,35 +173,35 @@ If you need to send an object type that can potentially be very large, you shoul
          """
          pass
 
-All you need to do is to provide the four methods required by this base class. The methods are self-explanatory. The only thing is that the DOT values are in the range of 1 to 127 and must be globally unique. If your decomposer is part of Flare's core, it should register its DOT values in ``nvflare.fuel.utils.fobs.dots.py``; otherwise, make sure its DOT values do not conflict with values defined there. Currently, only 4 DOT values are defined:
+必要なのは、この基底クラスが要求する4つのメソッドを提供することだけです。各メソッドの意味は見てのとおりです。唯一の注意点は、DOT の値が 1 から 127 の範囲であり、グローバルに一意でなければならないことです。デコンポーザーが Flare のコアの一部である場合は、その DOT 値を ``nvflare.fuel.utils.fobs.dots.py`` に登録すべきです。そうでない場合は、そこで定義されている値と DOT 値が衝突しないようにしてください。現在、定義されている DOT 値は4つだけです:
 - NUMPY_BYTES = 1
 - NUMPY_FILE = 2
 - TENSOR_BYTES = 3
 - TENSOR_FILE = 4
 
-FOBS Security
-=============
+FOBS のセキュリティ
+===================
 
-FOBS enforces two independent security checks during deserialization to prevent arbitrary class loading and remote code execution (RCE).
+FOBS は、任意のクラスの読み込みとリモートコード実行(RCE)を防ぐため、デシリアライズの際に2つの独立したセキュリティチェックを実施します。
 
-Non-Builtin Decomposers Must Be Registered
--------------------------------------------
+組み込みでないデコンポーザーは登録が必要
+-----------------------------------------
 
-When the serialized data specifies a decomposer by name, FOBS checks whether it is a builtin decomposer (i.e., listed in ``BUILTIN_DECOMPOSERS``). Builtin decomposers — such as ``NumpyArrayDecomposer``, ``DXODecomposer``, ``EnumTypeDecomposer``, ``DataClassDecomposer``, and others shipped with FLARE — are always trusted without explicit registration. Any decomposer *not* in ``BUILTIN_DECOMPOSERS`` must be explicitly registered before deserialization, otherwise FOBS raises::
+シリアライズされたデータがデコンポーザーを名前で指定している場合、FOBS はそれが組み込みデコンポーザー(すなわち ``BUILTIN_DECOMPOSERS`` に列挙されているもの)かどうかをチェックします。``NumpyArrayDecomposer``、``DXODecomposer``、``EnumTypeDecomposer``、``DataClassDecomposer`` など、FLARE に同梱されている組み込みデコンポーザーは、明示的な登録なしで常に信頼されます。``BUILTIN_DECOMPOSERS`` に\ *含まれない*\ デコンポーザーは、デシリアライズの前に明示的に登録されていなければならず、そうでない場合 FOBS は次のエラーを発生させます::
 
    ValueError: Decomposer <name> must be registered
 
-Type Whitelist
---------------
+型のホワイトリスト
+------------------
 
-Independently of the decomposer check, FOBS also enforces a type-name whitelist. The whitelist is consulted only when a type is *not* already in the internal decomposer registry (``_decomposers``). If the type is already registered (e.g., via ``fobs.register()``), the whitelist check is bypassed entirely.
+デコンポーザーのチェックとは独立に、FOBS は型名のホワイトリストも実施します。ホワイトリストが参照されるのは、その型が内部のデコンポーザーレジストリ(``_decomposers``)にまだ\ *登録されていない*\ 場合のみです。型がすでに登録されている場合(例: ``fobs.register()`` 経由)、ホワイトリストのチェックは完全にスキップされます。
 
-The whitelist is relevant for types handled by generic builtin decomposers (``EnumTypeDecomposer``, ``DataClassDecomposer``) that have not been pre-registered via ``register_data_classes()`` or ``register_enum_types()``. The whitelist is pre-populated with all builtin FLARE types (defined in ``BUILTIN_TYPES``). Application types are added automatically when registered via:
+ホワイトリストは、``register_data_classes()`` や ``register_enum_types()`` で事前登録されていない、汎用の組み込みデコンポーザー(``EnumTypeDecomposer``、``DataClassDecomposer``)によって処理される型に関係します。ホワイトリストには、FLARE の組み込み型(``BUILTIN_TYPES`` で定義)がすべて事前に登録されています。アプリケーションの型は、以下で登録されると自動的に追加されます:
 
 - ``fobs.register_data_classes(*classes)``
 - ``fobs.register_enum_types(*classes)``
 
-For application types that need lazy loading through a generic builtin decomposer without calling the above registration functions, types can be added to the whitelist explicitly:
+上記の登録関数を呼び出さずに、汎用の組み込みデコンポーザーを通じた遅延読み込みを必要とするアプリケーションの型については、明示的にホワイトリストに型を追加できます:
 
 .. code-block:: python
 
@@ -209,7 +209,7 @@ For application types that need lazy loading through a generic builtin decompose
 
    fobs.add_type_name_whitelist("mypackage.mymodule.MyClass")
 
-If the type is not in the whitelist, FOBS raises::
+型がホワイトリストにない場合、FOBS は次のエラーを発生させます::
 
    ValueError: Type '<name>' is not allowed. Use fobs.register_data_classes(),
    fobs.register_enum_types(), or fobs.add_type_name_whitelist() to allow this type.

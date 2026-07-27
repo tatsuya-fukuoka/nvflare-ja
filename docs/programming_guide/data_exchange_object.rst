@@ -4,17 +4,17 @@ Data Exchange Object (DXO)
 ==========================
 .. currentmodule:: nvflare.apis.dxo.DXO
 
-The Data Exchange Format (:class:`nvflare.apis.dxo.DXO`) in NVIDIA FLARE standardizes the data passed between the communicating parties.
+NVIDIA FLARE の Data Exchange Format(:class:`nvflare.apis.dxo.DXO`)は、通信する当事者間で受け渡されるデータを標準化します。
 
 .. literalinclude:: ../../nvflare/apis/dxo.py
     :language: python
     :lines: 54-76
 
-``data_kind`` keeps track of the kind of data for example "WEIGHTS" or "WEIGHT_DIFF".
+``data_kind`` は、データの種類(例: "WEIGHTS" や "WEIGHT_DIFF")を管理します。
 
-``meta`` is a dict that can contain additional properties.
+``meta`` は、追加のプロパティを含めることができる dict です。
 
-The method :meth:`to_shareable()<to_shareable>` produces a :ref:`shareable`, and a DXO can be retrieved from a
-:ref:`shareable` with :meth:`nvflare.apis.dxo.from_shareable`.
+:meth:`to_shareable()<to_shareable>` メソッドは :ref:`shareable` を生成し、
+:meth:`nvflare.apis.dxo.from_shareable` を使うと :ref:`shareable` から DXO を取り出せます。
 
-It is recommended to use DXO to maintain consistency in managing the data throughout the FL system.
+FL システム全体でデータ管理の一貫性を保つために、DXO の使用を推奨します。

@@ -1,21 +1,19 @@
 .. _filters:
 
-#######
-Filters
-#######
-Filters in NVIDIA FLARE are a type of FLComponent that has a ``process`` method to transform the ``Shareable`` object between
-the communicating parties. A ``Filter`` can be used to provide additional processing to shareable data before sending or
-after receiving from the peer.
+##############
+フィルター
+##############
+NVIDIA FLAREにおけるフィルター(Filter)は、通信する当事者間で ``Shareable`` オブジェクトを変換するための ``process`` メソッドを持つFLComponentの一種です。``Filter`` を使用すると、送信前または相手(ピア)からの受信後に、shareableデータへ追加の処理を施すことができます。
 
-The ``FLContext`` is available for the ``Filter`` to use.
+``Filter`` は ``FLContext`` を利用できます。
 
 .. literalinclude:: ../../nvflare/apis/filter.py
     :language: python
     :lines: 22-
 
-In config_fed_server.json and config_fed_client.json (for details see :ref:`application`),
-task_result_filters and task_data_filters can be configured for processing data at the points
-highlighted in the image below:
+config_fed_server.jsonおよびconfig_fed_client.json(詳細は :ref:`application` を参照)では、
+下の画像でハイライトされたポイントでデータを処理するために、
+task_result_filtersとtask_data_filtersを設定できます:
 
 .. image:: ../resources/Filters.png
     :height: 350px
@@ -23,84 +21,77 @@ highlighted in the image below:
 .. _dxo_based_filtering:
 
 ****************************************
-DXO Based Filtering
+DXOベースのフィルタリング
 ****************************************
 
-In NVFLARE, filters are used for the pre and post processing of a task. 
+NVFLAREでは、フィルターはタスクの前処理・後処理に使用されます。
 
-On the Server side, before sending the task to the Client, "task data filters" (if any) are applied to the task data. Only the filtered task data is sent to the client. Similarly, when the task result is received from the client, "task result filters" are applied to the received result before passing on to the Controller.
+サーバー側では、タスクをクライアントに送信する前に、「タスクデータフィルター」(存在する場合)がタスクデータに適用されます。フィルタリングされたタスクデータのみがクライアントに送信されます。同様に、クライアントからタスク結果を受信すると、コントローラーに渡す前に「タスク結果フィルター」が受信した結果に適用されます。
 
-On the Client side, once a task is received from the Server, "task data filters" (if any) are applied to the task data before passing to the task executor. Similarly, when the task result is computed from the executor, "task result filters" are applied to the task result before sending it to the Server.
+クライアント側では、サーバーからタスクを受信すると、タスクエグゼキューターに渡す前に「タスクデータフィルター」(存在する場合)がタスクデータに適用されます。同様に、エグゼキューターからタスク結果が計算されると、サーバーに送信する前に「タスク結果フィルター」がタスク結果に適用されます。
 
-Filters are the primary technique for data privacy protection.
+フィルターは、データプライバシー保護のための主要な技術です。
 
 .. _filters_for_privacy:
 
-Filters can convert data formats and a lot more. You can apply any type of massaging to the data for the
-purpose of security. In fact, privacy and homomorphic encryption techniques are all implemented as filters:
+フィルターはデータ形式の変換をはじめ、さまざまな処理を行えます。セキュリティの目的で、データに任意の種類の加工を適用できます。実際、プライバシーおよび準同型暗号の技術はすべてフィルターとして実装されています:
 
-    - ExcludeVars to exclude variables from shareable (:mod:`nvflare.app_common.filters.exclude_vars`)
-    - PercentilePrivacy for truncation of weights by percentile (:mod:`nvflare.app_common.filters.percentile_privacy`)
-    - SVTPrivacy for differential privacy through sparse vector techniques (:mod:`nvflare.app_common.filters.svt_privacy`)
-    - Homomorphic encryption filters to encrypt data before sharing (:mod:`nvflare.app_common.homomorphic_encryption.he_model_encryptor.py` and :mod:`nvflare.app_common.homomorphic_encryption.he_model_decryptor`)
+    - shareableから変数を除外するExcludeVars (:mod:`nvflare.app_common.filters.exclude_vars`)
+    - パーセンタイルによる重みの切り捨てを行うPercentilePrivacy (:mod:`nvflare.app_common.filters.percentile_privacy`)
+    - スパースベクトル技術による差分プライバシーのためのSVTPrivacy (:mod:`nvflare.app_common.filters.svt_privacy`)
+    - 共有前にデータを暗号化する準同型暗号フィルター (:mod:`nvflare.app_common.homomorphic_encryption.he_model_encryptor.py` および :mod:`nvflare.app_common.homomorphic_encryption.he_model_decryptor`)
 
-Filters are also the right place for model update compression: compress before
-sending and decompress after receiving so trainer and aggregator code can
-exchange normal model updates. Use :ref:`message_quantization` for built-in
-model quantization. For custom schemes, implement a ``DXOFilter`` for
-``DataKind.WEIGHTS`` or ``DataKind.WEIGHT_DIFF`` and register it as a task
-result filter for client-to-server updates, or as a task data filter for
-server-to-client model messages.
+フィルターは、モデル更新の圧縮を行うのにも適した場所です。送信前に圧縮し、受信後に展開することで、トレーナーとアグリゲーターのコードは通常のモデル更新をやり取りできます。組み込みのモデル量子化には :ref:`message_quantization` を使用してください。独自の方式を実装する場合は、``DataKind.WEIGHTS`` または ``DataKind.WEIGHT_DIFF`` 向けの ``DXOFilter`` を実装し、クライアントからサーバーへの更新にはタスク結果フィルターとして、サーバーからクライアントへのモデルメッセージにはタスクデータフィルターとして登録します。
 
 DXO - Data Exchange Object
 ===========================
 
-The message object passed between the server and clients is of the Shareable class. Shareable is a general structure for all kinds of communication (task interaction, aux messages, fed events, etc.) that in addition to the message payload, also carries contextual information (such as peer FL context). NVFLARE's DXO object is a general-purpose structure that is meant to be used to carry message payload in a self-descriptive manner. As an analogy, think of Shareable as an HTTP message, whereas a DXO as a JPEG image that is carried by the HTTP message.
+サーバーとクライアント間で受け渡されるメッセージオブジェクトはShareableクラスです。Shareableはあらゆる種類の通信(タスクのやり取り、auxメッセージ、fedイベントなど)のための汎用的な構造であり、メッセージペイロードに加えて、コンテキスト情報(相手側のFLコンテキストなど)も保持します。NVFLAREのDXOオブジェクトは、メッセージペイロードを自己記述的な形で運ぶことを目的とした汎用構造です。例えるなら、ShareableがHTTPメッセージであるのに対し、DXOはHTTPメッセージによって運ばれるJPEG画像のようなものです。
 
-A DXO object has the following properties:
+DXOオブジェクトには以下のプロパティがあります:
 
-    - Data Kind - the kind of data the DXO object carries (e.g. WEIGHTS, WEIGHT_DIFF, COLLECTION of DXOs, etc.)
-    - Meta - meta properties that describe the data (e.g. whether processed/encrypted and processing algorithm). This is a dict.
-    - Data - the dict that holds data of the DXO. 
+    - Data Kind - DXOオブジェクトが運ぶデータの種類(例: WEIGHTS、WEIGHT_DIFF、DXOのCOLLECTIONなど)
+    - Meta - データを記述するメタプロパティ(例: 処理済み/暗号化済みかどうか、処理アルゴリズム)。これはdictです。
+    - Data - DXOのデータを保持するdict。
 
-Note that a DXO object could be of COLLECTION kind. In this case, the Data of the DXO is a dict of DXO objects.
+DXOオブジェクトはCOLLECTION種別になり得ることに注意してください。この場合、DXOのDataはDXOオブジェクトのdictです。
 
-DXO Filter
-==========
+DXOフィルター
+==============
 
-Even though a filter can be written to process anything in a Shareable, for data privacy processing, filtering is usually against the payload itself. DXO-based filters could be very useful when the payload is a DXO object.
+フィルターはShareable内のあらゆるものを処理するように書くことができますが、データプライバシー処理の場合、フィルタリングは通常ペイロード自体に対して行われます。ペイロードがDXOオブジェクトである場合、DXOベースのフィルターは非常に有用です。
 
-DXOFilter is a subclass of Filter and a mini-framework that makes it easy to write DXO-based filters. To write a DXO-based filter, you create the filter as a subclass of DXOFilter. Instead of writing the "process" method of the Filter class, you will write the "process_dxo" method. The "process" method is provided by the DXOFilter class.
+DXOFilterはFilterのサブクラスであり、DXOベースのフィルターを簡単に書けるようにするミニフレームワークです。DXOベースのフィルターを書くには、DXOFilterのサブクラスとしてフィルターを作成します。Filterクラスの「process」メソッドを書く代わりに、「process_dxo」メソッドを書きます。「process」メソッドはDXOFilterクラスによって提供されます。
 
-Your subclass of DXOFilter benefits from the features of DXOFilter:
+DXOFilterのサブクラスは、DXOFilterの次の機能の恩恵を受けます:
 
-    - DXO structure processing. Since a DXO could contain a collection of sub-DXOs, which can contain even more DXOs, you can view the whole DXO as a tree of DXO nodes. Traversing this tree is done for you by the DXOFilter's "process" method.
-    - Data Kind checking. Your process_dxo method is called to process a DXO only when the DXO node is a data kind that your filter is configured to handle.
-    - Filtering history recording. If a DXO node is processed by your filter, your filter's class name will be appended to the DXO's "filter_history"
-    - Auditing. If your filter is applied, a job audit event will be created to record the fact that the filter is applied to data.
+    - DXO構造の処理。DXOはサブDXOのコレクションを含むことができ、それがさらに多くのDXOを含み得るため、DXO全体をDXOノードのツリーとして見ることができます。このツリーの走査はDXOFilterの「process」メソッドが行ってくれます。
+    - Data Kindのチェック。あなたのprocess_dxoメソッドは、DXOノードがフィルターの処理対象として設定されたデータ種別である場合にのみ、そのDXOを処理するために呼び出されます。
+    - フィルタリング履歴の記録。DXOノードがあなたのフィルターによって処理されると、フィルターのクラス名がDXOの「filter_history」に追加されます。
+    - 監査。フィルターが適用されると、フィルターがデータに適用されたという事実を記録するジョブ監査イベントが作成されます。
 
-Filter Behavior in 1-N Communication
-====================================
+1対N通信におけるフィルターの挙動
+==================================
 
-Based on the design, when a filter is applied to a object, for memory efficiency without making local deep copies, it can modify the object in place.
-This is fine when the object is expected to be sent to only one recipient, as in the case of 1-1 communication, e.g. client to server.
-However, in the case of 1-N communication, e.g. server to clients, the object will be expected by multiple recipients.
-Assuming a common filter is being used, if the object is modified in place, then the object sent to the second and other recipients should not be filtered again,
-otherwise they might be different from the one sent to the first recipient.
+設計上、フィルターがオブジェクトに適用される際、ローカルでディープコピーを作らずにメモリ効率を高めるため、オブジェクトをその場で(in place)変更することがあります。
+これは、クライアントからサーバーへの1対1通信のように、オブジェクトが1つの受信者にのみ送信されることが想定される場合は問題ありません。
+しかし、サーバーからクライアントへの1対N通信の場合、オブジェクトは複数の受信者に届くことが想定されます。
+共通のフィルターが使用されていると仮定すると、オブジェクトがその場で変更された場合、2番目以降の受信者に送信されるオブジェクトには再度フィルターを適用してはなりません。
+そうしないと、最初の受信者に送信されたものと異なってしまう可能性があります。
 
-Therefore, when designing and implementing filters, such behavior needs to be considered with care:
+したがって、フィルターを設計・実装する際は、このような挙動を慎重に考慮する必要があります:
 
-    - If the object is modified in place, then the filter should be applied only once to the object.
-    - If different filters are expected to be applied to the same object, then the object should not be modified in place. Instead, a deep copy should be created and used by the filter.
+    - オブジェクトをその場で変更する場合、フィルターはそのオブジェクトに一度だけ適用されるべきです。
+    - 同じオブジェクトに異なるフィルターを適用することが想定される場合、オブジェクトをその場で変更してはなりません。代わりに、ディープコピーを作成してフィルターで使用すべきです。
 
-Creating a DXO Filter
----------------------
+DXOフィルターの作成
+--------------------
 
-You create a new DXO-based filter by extending the DXOFilter class, and provide the "process_dxo" method.
+DXOFilterクラスを拡張し、「process_dxo」メソッドを提供することで、新しいDXOベースのフィルターを作成します。
 
-In your constructor, you need to determine supported DXO kinds and make them known to the super class (supported_data_kinds). You also need to specify what data kinds your filter is to be applied to (data_kinds_to_filter). Of course, data_kinds_to_filter must be a subset of the supported_data_kinds. Typically data_kinds_to_filter should be user configurable.
-Specifying supported_data_kinds makes it clear what the filter is capable of, and data_kinds_to_filter specifies how this particular filter is used.
+コンストラクタでは、サポートするDXO種別を決定し、それをスーパークラスに知らせる必要があります(supported_data_kinds)。また、フィルターを適用するデータ種別も指定する必要があります(data_kinds_to_filter)。当然ながら、data_kinds_to_filterはsupported_data_kindsのサブセットでなければなりません。通常、data_kinds_to_filterはユーザーが設定可能であるべきです。
+supported_data_kindsを指定することでフィルターが何を処理できるかが明確になり、data_kinds_to_filterはこの特定のフィルターがどのように使用されるかを指定します。
 
-Pay attention to the return value of the "process_dxo" method that you will write. You must return None if no processing is done to the DXO object passed to you. You must return a DXO object (could be the same DXO passed to you or a newly created one) if processing is applied to the DXO passed to you.
+あなたが書く「process_dxo」メソッドの戻り値に注意してください。渡されたDXOオブジェクトに何も処理を行わなかった場合は、Noneを返さなければなりません。渡されたDXOに処理を適用した場合は、DXOオブジェクト(渡されたものと同じDXOでも、新しく作成したものでもかまいません)を返さなければなりません。
 
-In the past, filters were written with implicitly assumed data kinds. They did not explicitly specify what kinds of data they can process. This worked sort of okay because filters could only be specified in the job configuration by a researcher, who usually knows what filters are applicable to the job. But this won't work for site privacy policy where specified filters are for all jobs. DXO based filters work in a different way now: instead of assuming the data is always to be processed, DXOFilter only filters the DXO objects that are configured to be processed based on their data kinds - if a DXO object is not a configured kind, then it won't be processed. This makes it possible for the Org Admin to simply specify filters based on data kinds they want to control.
+かつて、フィルターは暗黙的に想定されたデータ種別を前提に書かれていました。どの種類のデータを処理できるかを明示的に指定していなかったのです。フィルターはジョブ設定の中で研究者によってのみ指定でき、研究者は通常どのフィルターがそのジョブに適用可能かを知っているため、これはある程度うまく機能していました。しかし、指定されたフィルターがすべてのジョブに適用されるサイトプライバシーポリシーでは、これは機能しません。DXOベースのフィルターは現在、異なる方法で動作します。データが常に処理対象であると想定するのではなく、DXOFilterはデータ種別に基づいて処理対象として設定されたDXOオブジェクトのみをフィルタリングします。DXOオブジェクトが設定された種別でない場合、処理されません。これにより、Org Adminは制御したいデータ種別に基づいてフィルターを指定するだけで済むようになります。

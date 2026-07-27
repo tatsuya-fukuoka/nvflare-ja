@@ -1,77 +1,77 @@
 .. _hierarchical_communication:
 
-#########################################
-Hierarchical Communication and Clients
-#########################################
+##########################################
+階層型通信とクライアント
+##########################################
 
-In a basic FLARE deployment, clients connect to the server directly, with one dedicated connection between the server and each client. This architecture performs well when the number of clients is relatively small (e.g., fewer than 100). However, as the number of clients increases, the number of concurrent connections to the server increases proportionally, which can reduce communication efficiency.
+基本的なFLAREデプロイメントでは、クライアントはサーバーに直接接続し、サーバーと各クライアントの間に専用の接続が1つずつ存在します。このアーキテクチャは、クライアント数が比較的少ない場合(例: 100未満)にはうまく機能します。しかし、クライアント数が増えると、サーバーへの同時接続数もそれに比例して増加し、通信効率が低下する可能性があります。
 
-CellNet, FLARE's underlying communication technology, supports hierarchical communication topologies. Cells can be organized hierarchically to enable efficient connection management at scale.
+FLAREの基盤となる通信技術であるCellNetは、階層型の通信トポロジーをサポートしています。セルを階層的に編成することで、大規模環境でも効率的な接続管理が可能になります。
 
-Communication Hierarchy
+通信階層
 -----------------------
 
-FLARE 2.7 leverages this capability to manage FL clients efficiently, particularly when the number of clients is very large (e.g., more than 1,000).
+FLARE 2.7はこの機能を活用して、特にクライアント数が非常に多い場合(例: 1,000超)に、FLクライアントを効率的に管理します。
 
-Relay
-~~~~~
+リレー
+~~~~~~~~
 
-In a communication hierarchy, relays are intermediate nodes that connect to either the server or to parent relays, as illustrated in the following diagram:
+通信階層において、リレーは、次の図に示すように、サーバーまたは親リレーのいずれかに接続する中間ノードです:
 
 .. image:: ../resources/communication_hierarchy_relay.png
     :height: 350px
 
-The hierarchy can extend to any depth, and a parent node can have any number of child nodes. However, since the primary purpose of this arrangement is efficient connection management, it is recommended that each parent node have fewer than 100 child nodes.
+階層は任意の深さまで拡張でき、親ノードは任意の数の子ノードを持てます。ただし、この構成の主な目的は効率的な接続管理であるため、各親ノードの子ノード数は100未満にすることを推奨します。
 
 FQCN
 ~~~~~
 
-In the communication hierarchy, each node is called a cell, and each cell has a unique name called a fully qualified cell name (FQCN). The FQCN represents the path from the server to the node.
+通信階層では、各ノードはセルと呼ばれ、各セルは完全修飾セル名(fully qualified cell name、FQCN)と呼ばれる一意の名前を持ちます。FQCNは、サーバーからそのノードまでのパスを表します。
 
-- The server's FQCN is "server".
-- The FQCNs of the server's direct children are their base names. In the example above, the FQCNs of R1 and R2 are R1 and R2, respectively.
-- The FQCN of R11 is R1.R11. Similarly, R12's FQCN is R1.R12.
-- The FQCN of R21 is R2.R21. Similarly, R22's FQCN is R2.R22.
+- サーバーのFQCNは「server」です。
+- サーバーの直下の子のFQCNは、そのベース名です。上の例では、R1とR2のFQCNはそれぞれR1とR2です。
+- R11のFQCNはR1.R11です。同様に、R12のFQCNはR1.R12です。
+- R21のFQCNはR2.R21です。同様に、R22のFQCNはR2.R22です。
 
 .. note::
-   For simplicity, the root name of the hierarchy (i.e., server) is omitted from the FQCN. Otherwise, every cell's FQCN would begin with "server".
+   簡潔にするため、階層のルート名(すなわちserver)はFQCNから省略されます。そうしないと、すべてのセルのFQCNが「server」で始まることになってしまいます。
 
-CellNet guarantees that any cell can communicate with any other cell in the hierarchy.
+CellNetは、階層内の任意のセルが他の任意のセルと通信できることを保証します。
 
-Connect Clients to the Hierarchy
+クライアントを階層に接続する
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clients can connect to any node in the hierarchy. They may connect directly to the server or to intermediate or leaf relay nodes. While connecting clients only to leaf relay nodes simplifies the topology, this is not a strict requirement.
+クライアントは階層内の任意のノードに接続できます。サーバーに直接接続することも、中間またはリーフのリレーノードに接続することもできます。クライアントをリーフのリレーノードのみに接続するとトポロジーは単純になりますが、これは厳密な要件ではありません。
 
-The following diagram shows a simple arrangement where 8 clients (C1 to C8) are connected to leaf nodes only.
+以下の図は、8つのクライアント(C1からC8)がリーフノードのみに接続された単純な構成を示しています。
 
 .. image:: ../resources/communication_hierarchy_clients.png
     :height: 350px
 
-From CellNet's perspective, clients are simply cells, each with its own FQCN. For example, C6's FQCN is R2.R21.C6.
+CellNetの観点からは、クライアントは単なるセルであり、それぞれが自身のFQCNを持ちます。例えば、C6のFQCNはR2.R21.C6です。
 
-The following diagram shows an alternative arrangement where some clients are connected to intermediate nodes or directly to the server.
+以下の図は、一部のクライアントが中間ノードまたはサーバーに直接接続された別の構成を示しています。
 
 
 .. image:: ../resources/communication_hierarchy_intermediary_nodes.png
     :height: 350px
 
 
-Regardless of how clients are connected, they can communicate with the server and with other clients. This communication is completely transparent to application code.
+クライアントがどのように接続されているかにかかわらず、クライアントはサーバーおよび他のクライアントと通信できます。この通信はアプリケーションコードに対して完全に透過的です。
 
-Client Hierarchy
+クライアント階層
 -----------------
 
-Although clients may connect to the server or different relays in the communication hierarchy, they are equal in that they are all independent of each other by default.
+クライアントは通信階層内のサーバーまたは異なるリレーに接続できますが、デフォルトではすべてのクライアントは互いに独立しているという点で対等です。
 
-FLARE 2.7 introduces the ability to organize clients hierarchically. This means that clients do not have to be independent of each other: some clients can be designated as children of others. This hierarchical organization enables more efficient implementation of certain algorithms, such as hierarchical aggregation.
+FLARE 2.7では、クライアントを階層的に編成する機能が導入されました。これは、クライアントが互いに独立している必要はなく、一部のクライアントを他のクライアントの子として指定できることを意味します。この階層的な編成により、階層的集約などの特定のアルゴリズムをより効率的に実装できます。
 
 .. note::
-   Client hierarchy and communication hierarchy are distinct concepts. Communication hierarchy is designed for efficient connection management, while client hierarchy is designed for hierarchical algorithm implementation.
+   クライアント階層と通信階層は別個の概念です。通信階層は効率的な接続管理のために設計されており、クライアント階層は階層的アルゴリズムの実装のために設計されています。
 
-Client hierarchy can be thought of as a logical arrangement of client relationships, independent of how clients are connected in the communication hierarchy. In fact, child clients typically do not connect directly to their parent client.
+クライアント階層は、クライアントが通信階層でどのように接続されているかとは独立した、クライアント間の関係の論理的な配置と考えることができます。実際、子クライアントは通常、親クライアントに直接接続しません。
 
-The following diagram shows a client hierarchy.
+以下の図は、クライアント階層を示しています。
 
 .. image:: ../resources/client_hierarchy.png
     :height: 350px
@@ -80,97 +80,96 @@ The following diagram shows a client hierarchy.
 FQSN
 ~~~~~
 
-Each client in the client hierarchy has a unique name called a fully qualified site name (FQSN). The FQSN specifies the path of the client from the server.
+クライアント階層内の各クライアントは、完全修飾サイト名(fully qualified site name、FQSN)と呼ばれる一意の名前を持ちます。FQSNは、サーバーからそのクライアントまでのパスを指定します。
 
-- In the above example, the FQSNs of C1 and C2 are C1 and C2, respectively. The FQSN of client C11 is C1.C11, and so on.
+- 上の例では、C1とC2のFQSNはそれぞれC1とC2です。クライアントC11のFQSNはC1.C11、という具合です。
 
-This client hierarchy can be implemented on any communication hierarchy.
+このクライアント階層は、任意の通信階層の上に実装できます。
 
-The following diagram shows how the client hierarchy is implemented with a relay-based communication hierarchy:
+以下の図は、リレーベースの通信階層でクライアント階層がどのように実装されるかを示しています:
 
 .. image:: ../resources/FQSN_relay_hierarchy.png
     :height: 350px
 
-Alternatively, clients can connect directly to the server:
+あるいは、クライアントはサーバーに直接接続することもできます:
 
 .. image:: ../resources/FQSN_server_directly.png
     :height: 350px
 
 
-Job Hierarchy
+ジョブ階層
 --------------
 
-When a job is deployed, job processes are created for each client and the server. These processes are called CJs (client jobs) and SJ (server job). There is one CJ for each client.
+ジョブがデプロイされると、各クライアントとサーバーに対してジョブプロセスが作成されます。これらのプロセスはCJ (client job)およびSJ (server job)と呼ばれます。クライアントごとに1つのCJが存在します。
 
-The relationships between job processes (CJs and SJ) mirror the relationships between their corresponding clients. For example, since C11 is a child of C1, the CJ on client C11 is also a child of the CJ on client C1.
+ジョブプロセス(CJとSJ)間の関係は、対応するクライアント間の関係を反映します。例えば、C11はC1の子であるため、クライアントC11上のCJもクライアントC1上のCJの子になります。
 
-Job hierarchy is essential for implementing hierarchical algorithms, where results computed by child CJs are sent to the parent CJ for aggregation.
+ジョブ階層は、子のCJが計算した結果を親のCJに送信して集約する階層的アルゴリズムを実装するために不可欠です。
 
 .. note::
-   Although client hierarchy and communication hierarchy are independent of each other, they share the same goal of optimizing overall system performance by reducing the burden of central processing, which typically arises from communication and computation overhead.
+   クライアント階層と通信階層は互いに独立していますが、通信と計算のオーバーヘッドから通常生じる中央処理の負担を軽減することでシステム全体のパフォーマンスを最適化する、という同じ目標を共有しています。
 
-Without client hierarchy, each client sends its results directly to the server. While the communication hierarchy can reduce the number of connections to the server, the number of messages and the amount of data the server must process remain unchanged.
+クライアント階層がない場合、各クライアントは結果をサーバーに直接送信します。通信階層によってサーバーへの接続数は減らせますが、サーバーが処理しなければならないメッセージ数とデータ量は変わりません。
 
-Client hierarchy addresses this issue. Since only top-tier clients report to the server, client hierarchy reduces the amount of processing the server must perform.
+クライアント階層はこの問題に対処します。最上位層のクライアントのみがサーバーに報告するため、クライアント階層はサーバーが実行しなければならない処理量を削減します。
 
-Therefore, the optimal approach is to align the client hierarchy with the communication hierarchy, as illustrated in the first example. This minimizes both the number of communication hops and the amount of processing required.
+したがって、最適なアプローチは、最初の例に示したように、クライアント階層を通信階層に揃えることです。これにより、通信ホップ数と必要な処理量の両方が最小化されます。
 
-Provision
-----------
+プロビジョニング
+------------------
 
-The communication hierarchy and client hierarchy are established through the provisioning process.
+通信階層とクライアント階層は、プロビジョニングプロセスを通じて確立されます。
 
-Relay
-~~~~~~
+リレー
+~~~~~~~~
 
-A relay node connects to its parent (or to the server) while simultaneously accepting connections from other nodes. Therefore, a relay node must function as both a listener (acting as a communication server) and a connector (acting as a communication client). Consequently, the provisioning process creates both server credentials (certificate and private key) and client credentials (certificate and key) for the relay node, including them in the relay's startup kit.
+リレーノードは、親(またはサーバー)に接続すると同時に、他のノードからの接続を受け入れます。そのため、リレーノードはリスナー(通信サーバーとして動作)とコネクター(通信クライアントとして動作)の両方として機能しなければなりません。したがって、プロビジョニングプロセスは、リレーノード用にサーバー資格情報(証明書と秘密鍵)とクライアント資格情報(証明書と鍵)の両方を作成し、リレーのスタートアップキットに含めます。
 
-These credentials are specified by the following properties:
+これらの資格情報は、以下のプロパティで指定されます:
 
 listening_host
 ~~~~~~~~~~~~~~~
 
-This property specifies the location where the relay will run and the port number on which it will listen for incoming connections.
+このプロパティは、リレーが実行される場所と、着信接続を待ち受けるポート番号を指定します。
 
-This property can have up to 5 elements:
+このプロパティは最大5つの要素を持てます:
 
-- **scheme**: The communication protocol (http, grpc, or tcp). If not specified, the overall scheme of the project is used.
-- **host_names**: Additional host names or IP addresses by which this host will be known. All specified names are included in the "Subject Alternative Names" field of the server certificate. This element is optional.
-- **default_host**: The default host name to be used for connecting to the host. Must be specified.
-- **port**: The port number on which to listen. Must be specified.
-- **connection_security**: The connection security mode for incoming connections (tls, mtls, or clear). If not specified, the project's default connection security is used. If the project's connection security is not explicitly specified, the default value is "mtls" (mutual TLS).
+- **scheme**: 通信プロトコル(http、grpc、またはtcp)。指定しない場合、プロジェクト全体のschemeが使用されます。
+- **host_names**: このホストを識別するための追加のホスト名またはIPアドレス。指定されたすべての名前は、サーバー証明書の「Subject Alternative Names」フィールドに含まれます。この要素はオプションです。
+- **default_host**: ホストへの接続に使用されるデフォルトのホスト名。指定必須です。
+- **port**: 待ち受けるポート番号。指定必須です。
+- **connection_security**: 着信接続の接続セキュリティモード(tls、mtls、またはclear)。指定しない場合、プロジェクトのデフォルトの接続セキュリティが使用されます。プロジェクトの接続セキュリティが明示的に指定されていない場合、デフォルト値は「mtls」(相互TLS)です。
 
 connect_to
 ~~~~~~~~~~~
 
-This property specifies the information necessary for the relay to establish a connection.
+このプロパティは、リレーが接続を確立するために必要な情報を指定します。
 
-This property can have up to 4 elements:
+このプロパティは最大4つの要素を持てます:
 
-- **name**: The base name of the node in the hierarchy. Note that each node has a unique base name. If this is specified, the relay will connect to the specified node at that node's default_host.
-- **host**: The host name or IP address to connect to. This should be accessible from the intended node (either its default_host or one of its host_names), unless :ref:`BYOConn <byoconn>` is used.
-- **port**: The port number to connect to. This element is usually not needed unless :ref:`BYOConn <byoconn>` is used.
-- **connection_security**: The connection security mode for outgoing connections (tls, mtls, or clear). This usually does not need to be specified explicitly unless :ref:`BYOConn <byoconn>` is used.
+- **name**: 階層内のノードのベース名。各ノードは一意のベース名を持つことに注意してください。これが指定された場合、リレーは指定されたノードのdefault_hostでそのノードに接続します。
+- **host**: 接続先のホスト名またはIPアドレス。:ref:`BYOConn <byoconn>` を使用しない限り、対象ノードからアクセス可能なもの(そのdefault_hostまたはhost_namesのいずれか)であるべきです。
+- **port**: 接続先のポート番号。:ref:`BYOConn <byoconn>` を使用しない限り、この要素は通常不要です。
+- **connection_security**: 発信接続の接続セキュリティモード(tls、mtls、またはclear)。:ref:`BYOConn <byoconn>` を使用しない限り、通常は明示的に指定する必要はありません。
 
 .. note::
-   Either the **name** or **host** element must be specified, but not both.
+   **name** または **host** 要素のいずれか一方を指定しなければなりませんが、両方を指定してはいけません。
 
-A Note about BYOConn
-~~~~~~~~~~~~~~~~~~~~~
+BYOConnに関する注記
+~~~~~~~~~~~~~~~~~~~~~~
+FLAREは :ref:`BYOConn <byoconn>` (Bring Your Own Connectivity)をサポートしています。BYOConnでは、待ち受けエンドポイントをingressプロキシで保護できます。そのようなエンドポイントに接続するには、``connect_to`` プロパティは実際のエンドポイントではなくingressプロキシを指す必要があります。
 
-FLARE supports :ref:`BYOConn <byoconn>` (Bring Your Own Connectivity). With BYOConn, a listening endpoint can be protected by an ingress proxy. To connect to such an endpoint, the ``connect_to`` property must point to the ingress proxy rather than the actual endpoint.
+クライアント階層
+~~~~~~~~~~~~~~~~~~
 
-Client Hierarchy
-~~~~~~~~~~~~~~~~~
+クライアントは、サーバーまたはリレーノードのいずれかに接続します。サーバーに接続する場合、追加の設定は不要です。リレーに接続するには、上で説明したように ``connect_to`` プロパティを使用します。
 
-Clients connect to either the server or a relay node. To connect to the server, no additional configuration is required. To connect to a relay, use the ``connect_to`` property as described above.
+クライアント階層のもう1つの側面は、階層内でのクライアントの位置です。これは ``parent`` プロパティを使用して指定します。このプロパティの値は、親クライアントのベース名です。
 
-Another aspect of client hierarchy is the client's position within the hierarchy. This is specified using the ``parent`` property. The value of this property is the base name of the parent client.
-
-Example
+例
 ~~~~~~~~
 
-The following ``project.yml`` demonstrates how to use these properties to specify the communication hierarchy and client hierarchy for the example discussed in the FQSN section.
+以下の ``project.yml`` は、FQSNのセクションで説明した例について、これらのプロパティを使用して通信階層とクライアント階層を指定する方法を示しています。
 
 .. code-block:: yaml
 
@@ -250,5 +249,3 @@ The following ``project.yml`` demonstrates how to use these properties to specif
 
     - path: nvflare.lighter.impl.cert.CertBuilder
     - path: nvflare.lighter.impl.signature.SignatureBuilder
-
-

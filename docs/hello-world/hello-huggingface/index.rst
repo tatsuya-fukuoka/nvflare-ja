@@ -3,24 +3,24 @@
 Hello HuggingFace
 =================
 
-This example demonstrates how to use NVIDIA FLARE with the HuggingFace Client
-API to run federated PEFT/LoRA fine-tuning with a Qwen causal language model.
-The complete example code is in
-:github_nvflare_link:`examples/hello-world/hello-huggingface <examples/hello-world/hello-huggingface>`.
+この例では、NVIDIA FLARE と HuggingFace Client API を使用して、Qwen 因果言語モデルの
+連合 PEFT/LoRA ファインチューニングを実行する方法を示します。
+完全なサンプルコードは
+:github_nvflare_link:`examples/hello-world/hello-huggingface <examples/hello-world/hello-huggingface>` にあります。
 
-Install NVFLARE and Dependencies
---------------------------------
+NVFLAREと依存関係のインストール
+------------------------------------------------------------
 
-For complete installation instructions, see :doc:`Installation </installation>`.
-On a released branch:
+完全なインストール手順については、:doc:`Installation </installation>` を参照してください。
+リリース済みブランチの場合:
 
 .. code-block:: text
 
    pip install nvflare
 
-The HuggingFace Client API is introduced for NVFlare 2.9.0. Until that package
-is published, install NVFlare from this repository and install the remaining
-example dependencies separately:
+HuggingFace Client API は NVFlare 2.9.0 で導入されます。そのパッケージが公開される
+までは、このリポジトリから NVFlare をインストールし、残りの例の依存関係を個別に
+インストールしてください:
 
 .. code-block:: bash
 
@@ -29,13 +29,12 @@ example dependencies separately:
    python -m pip install -e .
    python -m pip install torch transformers accelerate datasets peft trl safetensors
 
-The ``nvflare~=2.9.0rc`` entry in ``requirements.txt`` records the first
-compatible release. After NVFlare 2.9.0 is published,
-``python -m pip install -r requirements.txt`` installs the complete
-environment.
+``requirements.txt`` の ``nvflare~=2.9.0rc`` エントリは、最初の互換リリースを
+記録しています。NVFlare 2.9.0 の公開後は、
+``python -m pip install -r requirements.txt`` で完全な環境をインストールできます。
 
-Code Structure
---------------
+コード構造
+--------------------
 
 .. code-block:: text
 
@@ -48,16 +47,16 @@ Code Structure
    |-- requirements.txt
    |-- README.md
 
-Data
-----
+データ
+------------
 
-Prepare the default two-client synthetic JSONL dataset:
+デフォルトの2クライアント用合成JSONLデータセットを準備します:
 
 .. code-block:: bash
 
    python prepare_data.py
 
-By default this writes:
+デフォルトでは以下の場所に書き込まれます:
 
 .. code-block:: text
 
@@ -70,14 +69,14 @@ By default this writes:
    |   |-- train.jsonl
    |   |-- valid.jsonl
 
-You can use your own prepared data by passing ``--data_root`` to
-``prepare_data.py`` and ``job.py``.
+``prepare_data.py`` と ``job.py`` に ``--data_root`` を渡すことで、独自に準備した
+データを使用できます。
 
-Client Code
------------
+クライアントコード
+------------------------------------
 
-The client script is a normal HuggingFace/TRL ``SFTTrainer`` script. The
-federated adaptation is intentionally small:
+クライアントスクリプトは、通常の HuggingFace/TRL ``SFTTrainer`` スクリプトです。
+連合学習向けの変更は意図的に最小限に抑えられています:
 
 .. code-block:: python
 
@@ -92,25 +91,26 @@ federated adaptation is intentionally small:
        trainer.evaluate()
        trainer.train()
 
-``flare.patch(trainer)`` wraps the trainer methods so the script can receive
-global parameters, evaluate, run the local training budget, and send the result
-back to the FL server.
+``flare.patch(trainer)`` はトレーナーのメソッドをラップし、スクリプトがグローバル
+パラメータを受け取り、評価を実行し、ローカルトレーニングの割り当て分を実行し、
+結果を FL サーバーに送り返せるようにします。
 
-Run Job
--------
+ジョブの実行
+------------------------
 
-After preparing data, run the simulation:
+データを準備した後、シミュレーションを実行します:
 
 .. code-block:: bash
 
    python job.py
 
-The job runs two simulated clients for two FL rounds using PEFT/LoRA. Each
-client resolves its data from ``<data_root>/<site_name>/`` after initializing
-the Client API. For full-model and multi-node Qwen workflows, see
-:github_nvflare_link:`examples/advanced/llm_hf <examples/advanced/llm_hf>`.
+このジョブは、PEFT/LoRA を使用して、2つのシミュレートされたクライアントで2回の
+FLラウンドを実行します。各クライアントは、Client API の初期化後に
+``<data_root>/<site_name>/`` から自身のデータを解決します。フルモデルおよび
+マルチノードの Qwen ワークフローについては、
+:github_nvflare_link:`examples/advanced/llm_hf <examples/advanced/llm_hf>` を参照してください。
 
-Learn More
-----------
+さらに学ぶ
+--------------------
 
-For the HuggingFace Client API contract and options, see :ref:`hf_client_api`.
+HuggingFace Client API のコントラクトとオプションについては、:ref:`hf_client_api` を参照してください。

@@ -4,41 +4,41 @@
 ModelController API
 ###################
 
-The FLARE :mod:`ModelController<nvflare.app_common.workflows.model_controller>` API provides an easy way for users to write and customize FLModel-based controller workflows.
+FLARE の :mod:`ModelController<nvflare.app_common.workflows.model_controller>` API は、FLModel ベースのコントローラーワークフローを簡単に作成・カスタマイズできる手段を提供します。
 
-* Highly flexible with a simple API (run routine and basic communication and utility functions)
-* :ref:`fl_model` for the communication data structure, everything else is pure Python
-* Option to support pre-existing components and FLARE-specific functionalities
+* シンプルな API(run ルーチンと基本的な通信・ユーティリティ関数)による高い柔軟性
+* 通信データ構造には :ref:`fl_model` を使用し、それ以外はすべて純粋な Python
+* 既存コンポーネントや FLARE 固有の機能をサポートするオプション
 
 .. note::
 
-    The ModelController API is a high-level API meant to simplify writing workflows.
-    If users prefer or need the full flexibility of the Controller with all the capabilities of FLARE functions, refer to the :ref:`controllers`.
+    注記: ModelController API は、ワークフローの記述を簡単にすることを目的とした高レベル API です。
+    FLARE のすべての機能を備えた Controller の完全な柔軟性を好む、または必要とする場合は、:ref:`controllers` を参照してください。
 
 
-Core Concepts
-=============
+コアコンセプト
+==============
 
-As an example, we can take a look at the popular federated learning workflow, "FedAvg" which has the following steps:
+例として、よく知られた連合学習ワークフローである "FedAvg" を見てみましょう。これは次の手順で構成されます:
 
-#. FL server initializes an initial model
-#. For each round (global iteration):
+#. FL サーバーが初期モデルを初期化する
+#. 各ラウンド(グローバルイテレーション)ごとに:
 
-   #. FL server sends the global model to clients
-   #. Each FL client starts with this global model and trains on their own data
-   #. Each FL client sends back their trained model
-   #. FL server aggregates all the models and produces a new global model
-
-
-To implement this workflow using the ModelController there are a few essential parts:
-
-* Import and subclass the :class:`nvflare.app_common.workflows.model_controller.ModelController`.
-* Implement the ``run()`` routine for the workflow logic.
-* Utilize ``send_model()`` / ``send_model_and_wait()`` for communication to send tasks with FLModel to target clients, and receive FLModel results.
-* Customize workflow using predefined utility functions and components, or implement your own logics.
+   #. FL サーバーがグローバルモデルをクライアントに送信する
+   #. 各 FL クライアントはこのグローバルモデルから開始し、自身のデータでトレーニングする
+   #. 各 FL クライアントはトレーニング済みモデルを送り返す
+   #. FL サーバーがすべてのモデルを集約し、新しいグローバルモデルを生成する
 
 
-Here is an example of the FedAvg workflow using the :class:`BaseFedAvg<nvflare.app_common.workflows.base_fedavg.BaseFedAvg>` base class:
+ModelController を使ってこのワークフローを実装するには、いくつかの重要な要素があります:
+
+* :class:`nvflare.app_common.workflows.model_controller.ModelController` をインポートしてサブクラス化する。
+* ワークフローのロジックとして ``run()`` ルーチンを実装する。
+* 通信には ``send_model()`` / ``send_model_and_wait()`` を利用し、FLModel を伴うタスクを対象クライアントに送信し、FLModel の結果を受信する。
+* 事前定義されたユーティリティ関数やコンポーネントを使ってワークフローをカスタマイズするか、独自のロジックを実装する。
+
+
+以下は、:class:`BaseFedAvg<nvflare.app_common.workflows.base_fedavg.BaseFedAvg>` 基底クラスを使った FedAvg ワークフローの例です:
 
 .. code-block:: python
 
@@ -79,7 +79,7 @@ Here is an example of the FedAvg workflow using the :class:`BaseFedAvg<nvflare.a
           self.info("Finished FedAvg.")
 
 
-Below is a comprehensive table overview of the :class:`ModelController<nvflare.app_common.workflows.model_controller.ModelController>` API:
+以下は、:class:`ModelController<nvflare.app_common.workflows.model_controller.ModelController>` API の包括的な概要テーブルです:
 
 
 .. list-table:: ModelController API
@@ -87,65 +87,65 @@ Below is a comprehensive table overview of the :class:`ModelController<nvflare.a
    :header-rows: 1
 
    * - API
-     - Description
-     - API Doc Link
+     - 説明
+     - API ドキュメントへのリンク
    * - run
-     - Run routine for workflow.
+     - ワークフローの run ルーチン。
      - :func:`run<nvflare.app_common.workflows.model_controller.ModelController.run>`
    * - send_model_and_wait
-     - Send a task with data to targets (blocking) and wait for results..
+     - データを伴うタスクをターゲットに送信し(ブロッキング)、結果を待ちます。
      - :func:`send_model_and_wait<nvflare.app_common.workflows.model_controller.ModelController.send_model_and_wait>`
    * - send_model
-     - Send a task with data to targets (non-blocking) with callback.
+     - データを伴うタスクをターゲットに送信し(ノンブロッキング)、コールバックを使用します。
      - :func:`send_model<nvflare.app_common.workflows.model_controller.ModelController.send_model>`
    * - sample_clients
-     - Returns a list of num_clients clients.
+     - num_clients 個のクライアントのリストを返します。
      - :func:`sample_clients<nvflare.app_common.workflows.model_controller.ModelController.sample_clients>`
    * - save_model
-     - Save model with persistor.
+     - persistor を使ってモデルを保存します。
      - :func:`save_model<nvflare.app_common.workflows.model_controller.ModelController.save_model>`
    * - load_model
-     - Load model from persistor.
+     - persistor からモデルを読み込みます。
      - :func:`load_model<nvflare.app_common.workflows.model_controller.ModelController.load_model>`
 
 
-Communication
-=============
+通信
+====
 
-The ModelController uses a task based communication where tasks are sent to targets, and targets execute the tasks and return results.
-The :ref:`fl_model` is standardized data structure object that is sent along with each task, and :ref:`fl_model` responses are received for the results.
+ModelController はタスクベースの通信を用います。タスクがターゲットに送信され、ターゲットがタスクを実行して結果を返します。
+:ref:`fl_model` は各タスクとともに送信される標準化されたデータ構造オブジェクトであり、結果として :ref:`fl_model` の応答が受信されます。
 
 .. note::
 
-    The :ref:`fl_model` object can be any type of data depending on the specific task.
-    For example, in the "train" and "validate" tasks we send the model parameters along with the task so the target clients can train and validate the model.
-    However in many other tasks that do not involve sending the model (e.g. "submit_model"), the :ref:`fl_model` can contain any type of data (e.g. metadata, metrics etc.) or may not be needed at all.
+    注記: :ref:`fl_model` オブジェクトは、具体的なタスクに応じて任意の種類のデータになり得ます。
+    たとえば "train" や "validate" タスクでは、対象クライアントがモデルのトレーニングや検証を行えるように、タスクとともにモデルパラメーターを送信します。
+    一方、モデルの送信を伴わない他の多くのタスク(例: "submit_model")では、:ref:`fl_model` は任意の種類のデータ(例: メタデータ、メトリクスなど)を含むことができ、まったく不要な場合もあります。
 
 
 send_model_and_wait
 -------------------
-:func:`send_model_and_wait<nvflare.app_common.workflows.model_controller.ModelController.send_model_and_wait>` is the core communication function which enables users to send tasks to targets, and wait for responses.
+:func:`send_model_and_wait<nvflare.app_common.workflows.model_controller.ModelController.send_model_and_wait>` は、ターゲットにタスクを送信し、応答を待つことを可能にする中核的な通信関数です。
 
-The ``data`` is an :ref:`fl_model` object, and the ``task_name`` is the task for the target executors to execute (Client API executors by default support "train", "validate", and "submit_model", however executors can be written for any arbitrary task name).
+``data`` は :ref:`fl_model` オブジェクトであり、``task_name`` は対象のエグゼキューターが実行するタスクです(Client API のエグゼキューターはデフォルトで "train"、"validate"、"submit_model" をサポートしますが、エグゼキューターは任意のタスク名に対して作成できます)。
 
-``targets`` can be chosen from client names obtained with ``sample_clients()``.
+``targets`` は、``sample_clients()`` で取得したクライアント名から選択できます。
 
-Returns the :ref:`fl_model` responses from the target clients once the task is completed (``min_responses`` have been received, or ``timeout`` time has passed).
+タスクが完了する(``min_responses`` 件の応答を受信するか、``timeout`` の時間が経過する)と、対象クライアントからの :ref:`fl_model` 応答を返します。
 
 send_model
 ----------
-:func:`send_model<nvflare.app_common.workflows.model_controller.ModelController.send_model>` is the non-blocking version of 
-:func:`send_model_and_wait<nvflare.app_common.workflows.model_controller.ModelController.send_model_and_wait>` with a user-defined callback when receiving responses.
+:func:`send_model<nvflare.app_common.workflows.model_controller.ModelController.send_model>` は、
+:func:`send_model_and_wait<nvflare.app_common.workflows.model_controller.ModelController.send_model_and_wait>` のノンブロッキング版であり、応答受信時にユーザー定義のコールバックが呼ばれます。
 
-A callback with the signature ``Callable[[FLModel], None]`` can be passed in, which will be called when a response is received from each target.
+シグネチャ ``Callable[[FLModel], None]`` のコールバックを渡すことができ、各ターゲットから応答を受信したときに呼び出されます。
 
-The task is standing until either ``min_responses`` have been received, or ``timeout`` time has passed.
-Since this call is asynchronous, the Controller :func:`get_num_standing_tasks<nvflare.apis.impl.controller.Controller.get_num_standing_tasks>` method can be used to get the number of standing tasks for synchronization purposes.
+タスクは、``min_responses`` 件の応答を受信するか、``timeout`` の時間が経過するまで存続(standing)します。
+この呼び出しは非同期であるため、同期の目的で Controller の :func:`get_num_standing_tasks<nvflare.apis.impl.controller.Controller.get_num_standing_tasks>` メソッドを使って存続中のタスク数を取得できます。
 
-For example, in the :github_nvflare_link:`CrossSiteEval <nvflare/app_common/workflows/cross_site_eval.py>` workflow, the tasks are asynchronously sent with :func:`send_model<nvflare.app_common.workflows.model_controller.ModelController.send_model>` to get each client's model.
-Then through a callback, the clients' models are sent to the other clients for validation.
-Finally, the workflow waits for all standing tasks to complete with :func:`get_num_standing_tasks<nvflare.apis.impl.controller.Controller.get_num_standing_tasks>`.
-Below is an example of how these functions can be used. For more details view the implementation of :github_nvflare_link:`CrossSiteEval <nvflare/app_common/workflows/cross_site_eval.py>`.
+たとえば :github_nvflare_link:`CrossSiteEval <nvflare/app_common/workflows/cross_site_eval.py>` ワークフローでは、各クライアントのモデルを取得するために :func:`send_model<nvflare.app_common.workflows.model_controller.ModelController.send_model>` でタスクが非同期に送信されます。
+その後、コールバックを通じて、クライアントのモデルが検証のために他のクライアントへ送信されます。
+最後に、ワークフローは :func:`get_num_standing_tasks<nvflare.apis.impl.controller.Controller.get_num_standing_tasks>` を使って、存続中のすべてのタスクの完了を待ちます。
+以下はこれらの関数の使用例です。詳細は :github_nvflare_link:`CrossSiteEval <nvflare/app_common/workflows/cross_site_eval.py>` の実装を参照してください。
 
 
 .. code-block:: python
@@ -187,19 +187,19 @@ Below is an example of how these functions can be used. For more details view th
         ...
 
 
-Saving & Loading
-================
+保存と読み込み
+==============
 
 persistor
 ---------
-The :func:`save_model<nvflare.app_common.workflows.model_controller.ModelController.save_model>` and :func:`load_model<nvflare.app_common.workflows.model_controller.ModelController.load_model>`
-functions utilize the configured :class:`ModelPersistor<nvflare.app_common.abstract.model_persistor.ModelPersistor>` set in the ModelController ``persistor_id: str = "persistor"`` init argument.
+:func:`save_model<nvflare.app_common.workflows.model_controller.ModelController.save_model>` と :func:`load_model<nvflare.app_common.workflows.model_controller.ModelController.load_model>`
+の各関数は、ModelController の初期化引数 ``persistor_id: str = "persistor"`` で設定された :class:`ModelPersistor<nvflare.app_common.abstract.model_persistor.ModelPersistor>` を利用します。
 
-custom save & load
-------------------
-Users can also choose to instead create their own custom save and load functions rather than use a persistor.
+カスタムの保存・読み込み
+------------------------
+persistor を使う代わりに、独自のカスタム保存・読み込み関数を作成することもできます。
 
-For example we can use PyTorch's save and load functions for the model parameters, and save the FLModel metadata with :mod:`FOBS<nvflare.fuel.utils.fobs>` separately to different filepaths.
+たとえば、モデルパラメーターには PyTorch の保存・読み込み関数を使い、FLModel のメタデータは :mod:`FOBS<nvflare.fuel.utils.fobs>` を使って別のファイルパスに個別に保存できます。
 
 .. code-block:: python
 
@@ -228,9 +228,9 @@ For example we can use PyTorch's save and load functions for the model parameter
             return model
 
 
-Note: for non-primitive data types such as ``torch.nn.Module`` (used for the initial PyTorch model),
-we must configure a corresponding FOBS decomposer for serialization and deserialization.
-Read more at :ref:`serialization`.
+注記: ``torch.nn.Module``\ (初期 PyTorch モデルに使用)のような非プリミティブなデータ型については、
+シリアライズおよびデシリアライズのために対応する FOBS デコンポーザーを設定する必要があります。
+詳細は :ref:`serialization` を参照してください。
 
 .. code-block:: python
 
@@ -239,28 +239,28 @@ Read more at :ref:`serialization`.
   fobs.register(TensorDecomposer)
 
 
-Additional Functionalities
-==========================
-
-In some cases, more advanced FLARE-specific functionalities may be of use.
-
-The :mod:`BaseModelController<nvflare.app_common.workflows.base_model_controller>` class provides access to the engine ``self.engine`` and FLContext ``self.fl_ctx`` if needed.
-Functions such as ``get_component()`` and ``build_component()`` can be used to load or dynamically build components.
-
-Furthermore, the underlying :mod:`Controller<nvflare.apis.impl.controller>` class offers additional communication functions and task related utilities.
-Many of our pre-existing workflows are based on this lower-level Controller API.
-For more details refer to the :ref:`controllers` section.
-
-Examples
+追加機能
 ========
 
-Examples of basic workflows using the ModelController API:
+場合によっては、より高度な FLARE 固有の機能が役立つことがあります。
+
+:mod:`BaseModelController<nvflare.app_common.workflows.base_model_controller>` クラスは、必要に応じてエンジン ``self.engine`` と FLContext ``self.fl_ctx`` へのアクセスを提供します。
+``get_component()`` や ``build_component()`` などの関数を使って、コンポーネントを読み込んだり動的に構築したりできます。
+
+さらに、基盤となる :mod:`Controller<nvflare.apis.impl.controller>` クラスは、追加の通信関数やタスク関連のユーティリティを提供します。
+既存のワークフローの多くは、この低レベルの Controller API に基づいています。
+詳細は :ref:`controllers` セクションを参照してください。
+
+例
+==
+
+ModelController API を使った基本的なワークフローの例:
 
 * :github_nvflare_link:`Cyclic <nvflare/app_common/workflows/cyclic.py>`
 * :github_nvflare_link:`BaseFedAvg <nvflare/app_common/workflows/base_fedavg.py>`
 * :github_nvflare_link:`FedAvg <nvflare/app_common/workflows/fedavg.py>`
 
-Advanced examples:
+高度な例:
 
 * :github_nvflare_link:`Scaffold <nvflare/app_common/workflows/scaffold.py>`
 * :github_nvflare_link:`FedOpt <nvflare/app_opt/pt/fedopt_ctl.py>`
