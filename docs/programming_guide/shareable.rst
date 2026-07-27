@@ -2,63 +2,52 @@
 
 Shareable
 =========
-A :class:`Shareable<nvflare.apis.shareable.Shareable>` object represents a communication between server and client.
-Technically a Shareable object is implemented as a Python dict. This dict contains two kinds of information:
+:class:`Shareable<nvflare.apis.shareable.Shareable>` オブジェクトは、サーバーとクライアント間の通信を表します。
+技術的には、Shareable オブジェクトは Python の dict として実装されています。この dict には 2 種類の情報が含まれます。
 
-Headers
-^^^^^^^
-A special item in the Shareable is "headers", which is a dict itself. The headers are used to carry meta information
-about the communication (e.g. peer identity name, peer's job id / run number, cookies, return code, etc.). Headers are usually
-added and processed by the framework.
+ヘッダー
+^^^^^^^^
+Shareable の特別な項目として "headers" があり、これ自体も dict です。ヘッダーは通信に関するメタ情報 (例えばピアの識別名、ピアのジョブ ID / 実行番号、クッキー、リターンコードなど) を運ぶために使用されます。ヘッダーは通常、フレームワークによって追加および処理されます。
 
-Content
-^^^^^^^
-All other items in the Shareable object are the contents of the communication. You can place any elements into the
-Shareable object, but never use ReservedHeaderKey.HEADERS as the key of your content elements.
+コンテンツ
+^^^^^^^^^^
+Shareable オブジェクト内のその他すべての項目は、通信のコンテンツです。Shareable オブジェクトには任意の要素を格納できますが、コンテンツ要素のキーとして ReservedHeaderKey.HEADERS を決して使用しないでください。
 
-For all methods of Shareable, see :class:`nvflare.apis.shareable.Shareable`.
+Shareable のすべてのメソッドについては、:class:`nvflare.apis.shareable.Shareable` を参照してください。
 
-Peer Properties
----------------
-When processing requests or responses (which are all Shareable objects), you can get the information about the peer
-site using::
+ピアプロパティ
+--------------
+リクエストやレスポンス (いずれも Shareable オブジェクトです) を処理する際に、以下を使ってピアサイトに関する情報を取得できます::
 
     peer_props = shareable.get_peer_props()
 
-This is a Python dictionary that contains peer site information.
+これはピアサイトの情報を含む Python の辞書です。
 
-Cookie
-------
-If you are a workflow developer, when processing the client's Get Task Request, you sometimes want to keep some contextual info with the task assignment
-sent to the client, and expect this info echoed back in the client's task result submission. This can be done through
-the cookie mechanism.
+クッキー
+--------
+ワークフロー開発者の場合、クライアントの Get Task リクエストを処理する際に、クライアントに送信されるタスク割り当てとともに何らかのコンテキスト情報を保持し、その情報がクライアントのタスク結果の提出時にエコーバックされることを期待することがあります。これはクッキーの仕組みを通じて実現できます。
 
-A cookie is just a named piece of data (key/value pair). During the task request processing, any involved component
-(Controller, Filters, Event Handlers, etc.) can add a cookie to the FLContext::
+クッキーは名前付きのデータ (キー / 値のペア) にすぎません。タスクリクエストの処理中に、関与するコンポーネント (Controller、Filter、イベントハンドラーなど) はいずれも FLContext にクッキーを追加できます::
 
     shareable.add_cookie(name='foo', data=whatEverData)
 
-The headers of the Shareable object can keep a special public prop called "Cookie Jar", which is just a Python dict.
+Shareable オブジェクトのヘッダーは、"Cookie Jar" と呼ばれる特別なパブリックプロパティを保持できます。これは単なる Python の dict です。
 
-The NVIDIA FLARE framework guarantees that the cookie jar prop will be sent back to the server when the client submits
-the task result to the server.
+NVIDIA FLARE フレームワークは、クライアントがサーバーにタスク結果を提出する際に、cookie jar プロパティがサーバーに送り返されることを保証します。
 
 .. note::
 
-    Cookie data is for the server's consumption only. Client processing logic should not rely on the knowledge of cookie
-    data.
+    クッキーのデータはサーバーが利用するためだけのものです。クライアントの処理ロジックは、クッキーのデータに関する知識に依存すべきではありません。
 
-Return Code
------------
-Another special header element from the client's task result submission (which is a Shareable object too) is "return code". This is a
-string that indicates whether the task was successfully executed. If this element is not present in the headers, it
-is considered to be successful.
+リターンコード
+--------------
+クライアントのタスク結果提出 (これも Shareable オブジェクトです) におけるもう 1 つの特別なヘッダー要素は "return code" です。これは、タスクが正常に実行されたかどうかを示す文字列です。この要素がヘッダーに存在しない場合は、成功したとみなされます。
 
-You can get the return code with::
+リターンコードは以下で取得できます::
 
     shareable.get_return_code()
 
-The return code specifies error condition that prevented the task from being executed::
+リターンコードは、タスクの実行を妨げたエラー状態を示します::
 
     MISSING_PEER_CONTEXT = "MISSING_PEER_CONTEXT"
     BAD_PEER_CONTEXT = "BAD_PEER_CONTEXT"
@@ -69,16 +58,16 @@ The return code specifies error condition that prevented the task from being exe
     EXECUTION_EXCEPTION = "EXECUTION_EXCEPTION"
     EXECUTION_RESULT_ERROR = "EXECUTION_RESULT_ERROR"
 
-Some error conditions should never occur (e.g. MISSING_PEER_CONTEXT, BAD_PEER_CONTEXT).
+一部のエラー状態は決して発生しないはずのものです (例: MISSING_PEER_CONTEXT、BAD_PEER_CONTEXT)。
 
-RUN_MISMATCH - client and server are out of sync on the RUN. When this happens, the client will automatically end the RUN.
+RUN_MISMATCH - クライアントとサーバーで RUN の同期が取れていません。これが発生すると、クライアントは自動的に RUN を終了します。
 
-TASK_UNKNOWN - client cannot find an executor for the assigned task. This is usually caused by misconfiguration of the task table.
+TASK_UNKNOWN - クライアントが、割り当てられたタスクに対する Executor を見つけられません。これは通常、タスクテーブルの設定ミスによって引き起こされます。
 
-TASK_DATA_FILTER_ERROR - client failed to filter task data. Usually bugs in one of the filters.
+TASK_DATA_FILTER_ERROR - クライアントがタスクデータのフィルタリングに失敗しました。通常はいずれかのフィルターのバグです。
 
-TASK_RESULT_FILTER_ERROR - client failed to filter results generated by the task executor. Usually bugs in one of the filters.
+TASK_RESULT_FILTER_ERROR - クライアントが、タスク Executor によって生成された結果のフィルタリングに失敗しました。通常はいずれかのフィルターのバグです。
 
-EXECUTION_EXCEPTION - client failed the task execution. Usually bugs in the executor code.
+EXECUTION_EXCEPTION - クライアントがタスクの実行に失敗しました。通常は Executor のコードのバグです。
 
-EXECUTION_RESULT_ERROR - the executor failed to generate a Shareable object as the result - bugs in the code.
+EXECUTION_RESULT_ERROR - Executor が結果として Shareable オブジェクトを生成できませんでした。コードのバグです。
