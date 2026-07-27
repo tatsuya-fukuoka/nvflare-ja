@@ -3,76 +3,76 @@
 .. _common_errors:
 
 ############################
-Common Errors & Solutions
+よくあるエラーと解決策
 ############################
 
 .. note::
-   This guide is coming soon. It will catalog the most frequently encountered
-   errors in NVIDIA FLARE with root causes and solutions.
+   このガイドは近日公開予定です。NVIDIA FLARE で最も頻繁に遭遇する
+   エラーを、根本原因と解決策とともにカタログ化する予定です。
 
-Overview
-========
+概要
+====
 
-This page provides solutions for the most common errors encountered when developing,
-testing, and deploying NVIDIA FLARE applications.
+このページでは、NVIDIA FLARE アプリケーションの開発、テスト、およびデプロイ時に遭遇する
+最も一般的なエラーの解決策を提供します。
 
-Installation & Setup Errors
-============================
+インストールとセットアップのエラー
+====================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Python version compatibility issues
-- Package dependency conflicts
-- GPU/CUDA setup issues
+- Python バージョンの互換性の問題
+- パッケージ依存関係の競合
+- GPU/CUDA のセットアップに関する問題
 
-Connection & Communication Errors
+接続と通信のエラー
 ===================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Client cannot connect to server
-- TLS/SSL handshake failures
-- Certificate errors
-- Firewall and port issues
-- Proxy configuration problems
+- クライアントがサーバーに接続できない
+- TLS/SSL ハンドシェイクの失敗
+- 証明書のエラー
+- ファイアウォールとポートの問題
+- プロキシ設定の問題
 
-Job Submission & Execution Errors
+ジョブの投入と実行のエラー
 ==================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Job submission failures
-- Resource allocation errors
-- Timeout errors (see also :doc:`/user_guide/timeout_troubleshooting`)
-- Out-of-memory errors (see also :doc:`/programming_guide/memory_management`)
-- Model serialization errors
+- ジョブ投入の失敗
+- リソース割り当てのエラー
+- タイムアウトエラー (:doc:`/user_guide/timeout_troubleshooting` も参照)
+- メモリ不足のエラー (:doc:`/programming_guide/memory_management` も参照)
+- モデルのシリアライズのエラー
 
-Training & Convergence Issues
+トレーニングと収束の問題
 ==============================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Model not converging in federated setting
-- NaN/Inf values during training
-- Data loading errors across sites
-- Inconsistent results between simulator and production
+- フェデレーテッド環境でモデルが収束しない
+- トレーニング中の NaN/Inf 値
+- サイトをまたいだデータ読み込みのエラー
+- シミュレーターと本番環境で結果が一致しない
 
-Deployment & Operations Errors
+デプロイメントと運用のエラー
 ================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Provisioning failures
-- Dashboard UI issues
-- Monitoring setup problems
-- Log file analysis
+- プロビジョニングの失敗
+- ダッシュボード UI の問題
+- モニタリングのセットアップに関する問題
+- ログファイルの分析
 
-Getting Help
+ヘルプの入手
 ============
 
-If your error is not listed here:
+お探しのエラーがここに記載されていない場合は、次の手順を試してください。
 
-1. Check the :doc:`/faq` for general questions
-2. Run the :ref:`Preflight Check <preflight_check>` to diagnose connectivity issues
-3. Search the `NVIDIA FLARE GitHub Issues <https://github.com/NVIDIA/NVFlare/issues>`_
-4. Open a new issue with logs and error details
+1. 一般的な質問については :doc:`/faq` を確認してください
+2. 接続性の問題を診断するために :ref:`プリフライトチェック <preflight_check>` を実行してください
+3. `NVIDIA FLARE GitHub Issues <https://github.com/NVIDIA/NVFlare/issues>`_ を検索してください
+4. ログとエラーの詳細を添えて新しい issue を作成してください

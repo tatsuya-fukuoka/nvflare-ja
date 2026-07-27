@@ -1,19 +1,19 @@
-**************************
-What's New in FLARE v2.7.2
-**************************
+*****************************
+FLARE v2.7.2 の新機能
+*****************************
 
-NVIDIA FLARE 2.7.2 is a feature release that builds on the Job Recipe API introduced in 2.7.0,
-bringing it to general availability.
-This release also delivers major system hardening across the F3 streaming layer, comprehensive
-memory management improvements for large-model training, and startup stability fixes for
-large-scale hierarchical FL deployments.
+NVIDIA FLARE 2.7.2 は、2.7.0 で導入された Job Recipe API を基盤とし、
+それを一般提供 (GA) に引き上げた機能リリースです。
+本リリースではさらに、F3 ストリーミングレイヤー全体にわたる大幅なシステム堅牢化、
+大規模モデルのトレーニングに向けた包括的なメモリ管理の改善、
+そして大規模な階層型 FL デプロイにおける起動時の安定性修正も提供します。
 
-Job Recipe API - Generally Available
-=====================================
+Job Recipe API - 一般提供 (GA)
+==============================
 
 .. sidebar::
 
-    **Recipe-based Example**
+    **レシピベースの例**
 
     .. code-block:: python
 
@@ -30,416 +30,413 @@ Job Recipe API - Generally Available
             env = SimEnv(num_clients=2)
             run = recipe.execute(env)
 
-The Job Recipe API, introduced as a technical preview in 2.7.0, is now generally available with comprehensive coverage across all major examples.
-Almost all examples in the NVFlare repository have been converted to use Job Recipes, demonstrating the simplicity and power of this approach.
+2.7.0 でテクニカルプレビューとして導入された Job Recipe API が、主要なすべての例を網羅する形で一般提供となりました。
+NVFlare リポジトリ内のほぼすべての例が Job Recipe を使用するように変換されており、このアプローチのシンプルさと強力さを実証しています。
 
-Key Highlights
+主なハイライト
 ~~~~~~~~~~~~~~
 
-- **Unified Recipe Architecture**: All framework-specific recipes (PyTorch, TensorFlow, NumPy, scikit-learn) now inherit from a unified base recipe, ensuring consistent behavior and easier maintenance.
+- **統一されたレシピアーキテクチャ**: フレームワーク固有のすべてのレシピ (PyTorch、TensorFlow、NumPy、scikit-learn) が統一されたベースレシピを継承するようになり、一貫した動作と保守の容易さが確保されました。
 
-- **Comprehensive Recipe Library**: Ready-to-use recipes for:
+- **包括的なレシピライブラリ**: 以下のすぐに使えるレシピを提供します:
 
-  - **FedAvg** (PyTorch, TensorFlow, NumPy, scikit-learn)
-  - **FedProx** (via FedAvg with proximal loss helper)
-  - **FedOpt** (server-side optimization with SGD, Adam, etc.)
-  - **SCAFFOLD** (control variates for data heterogeneity)
-  - **Cyclic Learning** (sequential client training)
-  - **XGBoost** (horizontal, vertical, and bagging modes)
-  - **Federated Statistics** (distributed statistics computation)
-  - **FedEval** (federated evaluation of pre-trained models)
-  - **Cross-Site Evaluation** (model evaluation across sites)
+  - **FedAvg** (PyTorch、TensorFlow、NumPy、scikit-learn)
+  - **FedProx** (近接損失ヘルパーを用いた FedAvg 経由)
+  - **FedOpt** (SGD、Adam などによるサーバー側最適化)
+  - **SCAFFOLD** (データの不均一性に対する制御変量)
+  - **Cyclic Learning** (逐次的なクライアントトレーニング)
+  - **XGBoost** (水平、垂直、バギングの各モード)
+  - **Federated Statistics** (分散統計計算)
+  - **FedEval** (事前学習済みモデルのフェデレーテッド評価)
+  - **Cross-Site Evaluation** (サイト横断でのモデル評価)
   - **PSI** (Private Set Intersection)
-  - **Flower Integration**
-  - **Swarm Learning** (decentralized FL)
-  - **Edge Recipes** (for edge device FL)
+  - **Flower 連携**
+  - **Swarm Learning** (分散型 FL)
+  - **Edge Recipes** (エッジデバイス向け FL)
 
-- **Simplified Example Structure**: All Hello World and advanced examples now follow a consistent pattern with ``job.py`` scripts using the Recipe API.
+- **簡素化された例の構造**: すべての Hello World および高度な例が、Recipe API を使用する ``job.py`` スクリプトによる一貫したパターンに従うようになりました。
 
-- **Consolidated Examples**: Examples have been streamlined and consolidated. Redundant examples using deprecated APIs (such as the old Executor-based and ModelLearner-based patterns) have been removed to reduce confusion and maintenance burden.
+- **例の統合**: 例は整理・統合されました。非推奨の API を使用する冗長な例 (旧来の Executor ベースや ModelLearner ベースのパターンなど) は、混乱と保守負担を軽減するために削除されました。
 
-- **Environment Flexibility**: The same recipe works seamlessly across:
+- **環境の柔軟性**: 同じレシピが以下の環境でシームレスに動作します:
 
-  - **SimEnv**: Local simulation for development
-  - **PocEnv**: Multi-process proof-of-concept
-  - **ProdEnv**: Production deployment
+  - **SimEnv**: 開発用のローカルシミュレーション
+  - **PocEnv**: マルチプロセスの概念実証
+  - **ProdEnv**: 本番デプロイ
 
-.. admonition:: Available Recipes
+.. admonition:: 利用可能なレシピ
 
-    For a complete list of available recipes with code examples and links to corresponding examples, see :ref:`available_recipes`.
+    コード例および対応する例へのリンクを含む、利用可能なレシピの完全な一覧については :ref:`available_recipes` を参照してください。
 
-Memory Management
------------------
+メモリ管理
+----------
 
-FLARE 2.7.2 delivers a full memory management stack covering the server, the CJ relay process,
-and the client training process — addressing the peak memory challenges that arise when running
-large-model FL at scale.
+FLARE 2.7.2 は、サーバー、CJ リレープロセス、クライアントのトレーニングプロセスを網羅する
+完全なメモリ管理スタックを提供し、大規模モデルの FL を大規模に実行する際に生じる
+ピークメモリの課題に対処します。
 
-Memory Management with Tensor-based Downloader
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FLARE 2.7.2 introduces the **TensorDownloader** for PyTorch models, extending the FileDownloader concept introduced in 2.7.0 specifically for tensor data.
-This feature addresses critical memory challenges when working with large language models (LLMs) and other large-scale models in federated learning.
-
-Key Features
-^^^^^^^^^^^^
-
-- **Zero Code Changes Required**: Your existing PyTorch FL jobs benefit from memory optimization without any modification.
-
-- **Incremental Tensor Serialization**: Instead of serializing all model parameters at once, tensors are serialized individually using safetensors format, significantly reducing peak memory consumption.
-
-- **Pull-based Architecture**: Unlike push-based streaming, each recipient pulls data at its own pace, making it more reliable for heterogeneous network conditions.
-
-Performance Results
-^^^^^^^^^^^^^^^^^^^
-
-Based on our internal testing with a 5GB model and 4 clients using FedAvg, we observed **20% to 50% memory usage reduction** on both server and client sides.
-
-.. note::
-
-    Your results may vary depending on model size, number of clients, network conditions, and different FL algorithms and workflows.
-
-Benefits for LLM Training
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- **Reduced Memory Footprint**: 20-50% reduction critical for large models that approach memory limits
-- **Improved Scalability**: Multiple clients can download at different rates without blocking
-- **Safetensors Format**: Secure and efficient tensor serialization without pickle vulnerabilities
-- **No Migration Required**: Existing PyTorch jobs automatically benefit from this optimization
-
-.. admonition:: Learn More
-
-    **Transparent & zero code changes** -- the TensorDownloader works automatically in all PyTorch workflows.
-    Supports **PyTorch tensors and NumPy arrays** (TensorFlow uses traditional serialization).
-
-    - User guide with configuration and tuning: :ref:`tensor_downloader`
-    - FOBS decomposer architecture: :ref:`decomposer_for_large_object`
-
-Zero Tensor Copy at the CJ Process (Pass-Through)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For hierarchical and large-model deployments, the Client Job (CJ) relay process previously
-deserialized and re-serialized every model tensor before forwarding it to the client subprocess.
-This doubled the memory footprint at the relay tier for every round.
-
-FLARE 2.7.2 introduces a **pass-through architecture** for ``ClientAPILauncherExecutor``:
-
-- **Lazy references instead of full tensors**: The CJ process holds lightweight
-  ``LazyDownloadRef`` placeholders rather than materializing the full model, so the CJ
-  memory footprint is independent of model size.
-- **Direct subprocess download**: The training subprocess fetches tensors directly from the
-  FL server, eliminating the CJ as a memory bottleneck and halving network transfers between
-  the server and CJ tier.
-- **Zero code changes**: Existing jobs using ``ClientAPILauncherExecutor`` benefit
-  automatically.
-
-This is particularly impactful for LLM-scale models (7B–70B parameters) where CJ memory
-previously equalled the full model size.
-
-Large-Model Subprocess Reliability
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FLARE 2.7.2 adds a set of reliability improvements for jobs using subprocess-mode
-clients (``launch_external_process=True``) with large models.
-
-**Reduced memory on retry**: Send retries no longer accumulate per-attempt model
-copies in memory — a single serialized payload is reused across retries, preventing
-OOM growth on slow or congested networks.
-
-**Configurable large-model timeouts**: Three timeout parameters previously hardcoded
-at values too short for large models are now configurable via
-``recipe.add_client_config({...})``:
-
-- ``submit_result_timeout`` (default 60 s): time the training subprocess waits for
-  acknowledgment of its result.  Set to 1800 s for LLM-scale transfers.
-- ``tensor_min_download_timeout`` (PyTorch) / ``np_min_download_timeout`` (NumPy),
-  default 300 s: minimum idle time before an inactive download transaction is declared
-  dead.  Increase to 600 s for 70B+ models on congested networks.
-- ``max_resends`` (default 3): retry limit on persistent send failures.
-  Previously unlimited.
-
-**Timeout consistency validation**: At job start, FLARE logs warnings when timeout
-values are inconsistent (e.g., ``min_download_timeout < streaming_per_request_timeout``),
-making misconfiguration visible before a failure.
-
-**Client-Controlled Workflows min_clients fault tolerance**: Swarm Learning and SAG
-workflows now accept a ``min_clients`` threshold; if configured clients meet the
-threshold the workflow proceeds with a warning for missing participants rather than
-aborting.
-
-Client-Side Memory Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FLARE 2.7.2 extends memory lifecycle control to the client training process, complementing
-the existing server-side cleanup:
-
-- **Allocator-aware cleanup**: After each ``flare.send()`` call, FLARE automatically
-  invokes ``gc.collect()`` plus allocator-specific trimming — ``malloc_trim(0)`` for
-  glibc (Linux), jemalloc arena purge where available, and ``torch.cuda.empty_cache()``
-  for GPU memory — returning freed pages to the OS between rounds.
-- **Configurable frequency**: Cleanup runs every ``N`` rounds (default: every round),
-  configurable via recipe parameters (``client_memory_gc_rounds``) and ``ScriptRunner``.
-- **No training script changes**: Cleanup is injected transparently into the FLARE
-  client lifecycle without touching user training code.
-- **Combined with server-side cleanup**: Together with the server-side garbage collection
-  introduced in 2.7.2, this prevents unbounded RSS growth in both the server and client
-  processes across long-running jobs with many rounds.
-- **Full pipeline coverage for subprocess mode**: When using subprocess-mode clients
-  (``launch_external_process=True``), all stages of the client training process now
-  run the same GC and heap-trim cycle — not just the training subprocess — preventing
-  RSS growth across the entire client-side pipeline.
-
-Server-Side Memory Cleanup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FLARE 2.7.2 adds automatic server-side memory management to address RSS (Resident Set Size — the actual physical memory used by a process) growth in long-running jobs:
-
-- **Periodic garbage collection and heap trimming**: Automatically runs ``gc.collect()`` and ``malloc_trim()`` to return freed memory back to the OS, preventing unbounded RSS growth over many training rounds.
-- **Environment variable tuning**: Guidance on ``MALLOC_ARENA_MAX`` settings to control glibc memory arena fragmentation for both server and client processes.
-- **Platform-aware**: Memory cleanup adapts to the runtime platform (Linux/glibc, musl, macOS), with full heap trimming on Linux/glibc and safe fallbacks elsewhere.
-- **Minimal overhead**: Cleanup takes 10-500ms per invocation — negligible compared to typical training round durations.
-
-On the client side, ``flare.send(..., clear_cache=True)`` (default) releases parameter references
-after serialization. This reference-release path is the primary mechanism to reclaim large tensor
-objects; ``gc.collect()`` is a supplemental safeguard mainly for cyclic references.
-
-.. admonition:: Learn More
-
-    For configuration details, platform compatibility, recommended settings, and API reference, see :doc:`/programming_guide/memory_management`.
-
-F3 Streaming Reliability and Performance
------------------------------------------
-
-A focused hardening effort on the F3 streaming layer addresses several concurrency and
-stability issues that manifested at scale, particularly in hierarchical and large-model
-deployments.
-
-Head-of-Line (HOL) Stall Mitigation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In 2.7.0/2.7.1, a slow or congested connection could hold the per-connection SFM send lock
-indefinitely, blocking all outgoing traffic on that relay — heartbeats, admin commands, and
-task requests — behind a single large frame send.
-
-FLARE 2.7.2 eliminates this with a multi-layer guard:
-
-- **Bounded send timeout**: ``send_frame()`` now has a configurable deadline
-  (``STREAMING_SEND_TIMEOUT``); a send that exceeds it raises rather than blocking forever.
-- **ACK-progress watchdog**: A background monitor checks that ACKs advance within
-  ``STREAMING_ACK_PROGRESS_TIMEOUT``; if a connection stalls it is flagged.
-- **Stall detection and optional recovery**: Consecutive stall detections (configurable via
-  ``SFM_SEND_STALL_CONSECUTIVE_CHECKS``) can optionally trigger connection reset
-  (``SFM_CLOSE_STALLED_CONNECTION``), unblocking all pending traffic.
-
-For recommended settings, see :ref:`timeout_troubleshooting` — *Streaming Stall Guardrail* section.
-
-Stream Pool Starvation Fix
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Concurrent model downloads could stall indefinitely when streaming callbacks were dispatched
-on the same thread pool they depended on, exhausting it. The fix routes callbacks to a
-dedicated pool, keeping stream workers free. An end-to-end test validates that 8 concurrent
-downloads complete without starvation.
-
-Streaming Download Retry on Timeout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Transient timeouts during streaming downloads (particularly in LLM swarming scenarios over
-congested networks) previously resulted in silent stream loss. FLARE 2.7.2 adds structured
-retry semantics:
-
-- **Exponential-backoff retry**: Up to 3 retries with configurable backoff, capped at 60 s.
-- **Abort-signal aware**: Retry loop respects abort signals; no stale retries after job stop.
-- **State-safe**: Retry is idempotent; re-requesting the same stream is safe for the server.
-
-RxTask Self-Deadlock Fix
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Stream error signals arriving during an active receive could cause a self-deadlock in the
-receiver cleanup path. The fix defers cleanup until after the critical section is exited,
-eliminating the deadlock without changing error-handling correctness.
-
-Lock Contention Reduction in Model Downloads
+Tensor ベースのダウンローダーによるメモリ管理
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the cacheable streaming layer, cache-miss production previously serialized all concurrent
-clients behind a single lock, increasing model-download latency at high client counts (e.g.,
-24 per relay). The lock scope has been reduced so production runs concurrently, significantly
-improving throughput when many clients request the same model chunk at once.
+FLARE 2.7.2 では、PyTorch モデル向けに **TensorDownloader** が導入されました。これは 2.7.0 で導入された FileDownloader の概念を、テンソルデータ専用に拡張したものです。
+この機能は、フェデレーテッドラーニングにおいて大規模言語モデル (LLM) やその他の大規模モデルを扱う際の重大なメモリ課題に対処します。
 
-Hierarchical FL Startup Stability
------------------------------------
+主な機能
+^^^^^^^^
 
-Large-scale hierarchical FL deployments (many clients across relay tiers) are subject to
-startup race conditions that can abort jobs before training begins. FLARE 2.7.2 addresses
-these with a set of coordinated fixes and new configuration controls.
+- **コード変更が一切不要**: 既存の PyTorch FL ジョブは、何ら修正することなくメモリ最適化の恩恵を受けられます。
 
-Deployment Timeout Now Treated as Failure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- **段階的なテンソルのシリアライズ**: すべてのモデルパラメータを一度にシリアライズするのではなく、safetensors 形式を用いてテンソルを個別にシリアライズすることで、ピークメモリ消費量を大幅に削減します。
 
-Previously, a client that did not acknowledge job deployment within the timeout window
-(``reply=None``) was silently treated as successfully deployed. The server proceeded to
-start the job including that client in the participant list, creating a state inconsistency
-that led to premature dead-client detection and job abort.
+- **プル型アーキテクチャ**: プッシュ型のストリーミングとは異なり、各受信側が自身のペースでデータを取得するため、不均一なネットワーク条件下でもより信頼性が高くなります。
 
-FLARE 2.7.2 correctly classifies deployment timeouts as failures, applying the existing
-``min_sites`` / ``required_sites`` tolerance check at the deployment phase. Timed-out
-clients are excluded from the job before ``start_client_job`` is called, preventing the
-state inconsistency from ever forming.
+性能の測定結果
+^^^^^^^^^^^^^^
 
-Startup Grace Period for Dead-Client Detection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The server's heartbeat monitor previously fired a dead-job notification on the very first
-heartbeat from a client that was not yet running the job — there was no startup grace period.
-For clients that were still initializing (slow filesystem, GPU allocation, subprocess
-spawning), this caused premature dead-client classification.
-
-FLARE 2.7.2 adds a debounce mechanism: a client must first be positively observed reporting
-the job in a heartbeat before a subsequent missing report triggers a dead-job notification.
-This gives clients the time they need to start without false alarms.
-
-This behavior is now the **default** (``sync_client_jobs_require_previous_report=true``).
-Operators who need the legacy aggressive detection can opt out via configuration.
-
-Selective Client Exclusion on Start-Job Timeout
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When strict start-job reply checking is enabled
-(``strict_start_job_reply_check=true``), clients that time out at the start-job phase are
-now **excluded from the run** rather than causing a full job abort — provided the remaining
-active client count still satisfies ``min_clients``. A warning is logged identifying the
-excluded clients.
-
-This allows a job to proceed with e.g., 142 of 144 clients when 2 stragglers fail to
-respond, rather than aborting when the training majority is ready.
-
-Hardened Client Job Metadata Parsing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If a client process started after the job was already aborted, it would crash with an
-opaque ``TypeError: 'NoneType' object is not iterable`` when reading job client metadata.
-FLARE 2.7.2 replaces this with an explicit ``RuntimeError`` that names the missing field,
-making the failure actionable in logs.
-
-For recommended configuration settings for HPC environments (Slurm, Lustre filesystems),
-see :ref:`timeout_troubleshooting` — *Large-Scale Hierarchical / HPC Deployments* scenario.
-
-Comprehensive Timeout Documentation
-------------------------------------
-
-Two new timeout guides have been added:
-
-**Timeout Troubleshooting Guide** (:doc:`/user_guide/timeout_troubleshooting`) — A user-facing guide covering common timeout-related job failures and how to resolve them. Covers the most frequently encountered timeout scenarios with symptoms, causes, and fixes.
-
-**Timeouts Reference** (:doc:`/programming_guide/timeouts`) — A comprehensive programming reference covering all 100+ timeout parameters across NVFlare components, organized by functional categories:
-
-- **Network Communication**: F3/CellNet, server config, client config, gRPC, reliable message
-- **Executor and Launcher**: LauncherExecutor, TaskExchanger, IPCExchanger, Pipe Handler
-- **Workflow Controllers**: FedAvg, SAG, CrossSiteEval, Statistics, SplitNN, etc.
-- **Edge Devices**: Edge general, Hierarchical FL, Mobile client
-- **Streaming**: File, container, tensor, object streaming
-- **XGBoost**: Histogram controller, reliable message, gRPC client
-- **Configuration Locations**: System-level and job-level file paths
-- **Recommended Settings**: Use-case specific configurations (development, production, LLM training, edge devices)
-
-Additional Improvements
------------------------
-
-Example Consolidation
-~~~~~~~~~~~~~~~~~~~~~
-
-To provide a cleaner and more focused learning experience, we have consolidated and streamlined the examples:
-
-- **Removed Deprecated Examples**: Most examples using old APIs (Executor-based, ModelLearner-based patterns) have been removed. The majority of examples now use the modern Recipe API or Client API.
-
-- **Unified Example Structure**: Each example now follows a consistent structure with a ``job.py`` entry point that uses the Recipe API, making it easier to understand and adapt.
-
-- **Reduced Redundancy**: Duplicate examples demonstrating the same concepts with different APIs have been consolidated into single, canonical examples.
-
-- **Focus on Best Practices**: Remaining examples showcase the recommended patterns for building federated learning applications with FLARE.
-
-- **New Example**: **Hello Differential Privacy** (``hello-world/hello-dp``) — Demonstrates federated learning with differential privacy using the Recipe API.
+5GB のモデルと FedAvg を使用する 4 クライアントによる社内テストに基づき、サーバー側とクライアント側の双方で **20% から 50% のメモリ使用量の削減** が確認されました。
 
 .. note::
 
-    A few examples and tutorials still use older APIs. These will continue to be updated in upcoming releases.
+    結果は、モデルサイズ、クライアント数、ネットワーク条件、および FL アルゴリズムやワークフローの違いによって変動する場合があります。
 
-Edge Recipes
+LLM トレーニングにおける利点
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **メモリフットプリントの削減**: メモリ上限に迫る大規模モデルにとって重要な 20〜50% の削減
+- **スケーラビリティの向上**: 複数のクライアントがブロックされることなく、それぞれ異なる速度でダウンロードできます
+- **Safetensors 形式**: pickle の脆弱性を伴わない、安全かつ効率的なテンソルのシリアライズ
+- **移行作業は不要**: 既存の PyTorch ジョブは自動的にこの最適化の恩恵を受けます
+
+.. admonition:: 詳細情報
+
+    **透過的かつコード変更ゼロ** -- TensorDownloader はすべての PyTorch ワークフローで自動的に動作します。
+    **PyTorch テンソルおよび NumPy 配列** をサポートします (TensorFlow は従来のシリアライズを使用します)。
+
+    - 設定とチューニングに関するユーザーガイド: :ref:`tensor_downloader`
+    - FOBS デコンポーザのアーキテクチャ: :ref:`decomposer_for_large_object`
+
+CJ プロセスでのテンソルコピーゼロ (パススルー)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+階層型および大規模モデルのデプロイにおいて、Client Job (CJ) リレープロセスは従来、
+すべてのモデルテンソルをデシリアライズし、再シリアライズしてからクライアントのサブプロセスへ転送していました。
+このため、ラウンドごとにリレー層でのメモリフットプリントが 2 倍になっていました。
+
+FLARE 2.7.2 では、``ClientAPILauncherExecutor`` 向けに **パススルーアーキテクチャ** が導入されました:
+
+- **完全なテンソルではなく遅延参照**: CJ プロセスはモデル全体を実体化するのではなく、軽量な
+  ``LazyDownloadRef`` プレースホルダーを保持するため、CJ のメモリフットプリントはモデルサイズに
+  依存しません。
+- **サブプロセスによる直接ダウンロード**: トレーニングのサブプロセスが FL サーバーから直接テンソルを取得するため、
+  CJ がメモリのボトルネックになることがなくなり、サーバーと CJ 層の間のネットワーク転送量が半減します。
+- **コード変更ゼロ**: ``ClientAPILauncherExecutor`` を使用する既存のジョブは自動的に恩恵を受けます。
+
+これは、従来 CJ のメモリがモデル全体のサイズと同等になっていた LLM 規模のモデル (7B〜70B パラメータ) において
+特に大きな効果があります。
+
+大規模モデルにおけるサブプロセスの信頼性
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FLARE 2.7.2 では、大規模モデルを扱うサブプロセスモードのクライアント
+(``launch_external_process=True``) を使用するジョブ向けに、一連の信頼性改善が追加されました。
+
+**リトライ時のメモリ削減**: 送信のリトライにおいて、試行ごとのモデルのコピーがメモリ上に蓄積されなくなりました。
+単一のシリアライズ済みペイロードがリトライ間で再利用されるため、低速または輻輳したネットワークにおける
+OOM の増大が防止されます。
+
+**大規模モデル向けの設定可能なタイムアウト**: 従来、大規模モデルには短すぎる値でハードコードされていた
+3 つのタイムアウトパラメータが、``recipe.add_client_config({...})`` を介して設定可能になりました:
+
+- ``submit_result_timeout`` (デフォルト 60 秒): トレーニングのサブプロセスが結果の確認応答を
+  待機する時間。LLM 規模の転送では 1800 秒に設定してください。
+- ``tensor_min_download_timeout`` (PyTorch) / ``np_min_download_timeout`` (NumPy)、
+  デフォルト 300 秒: 非アクティブなダウンロードトランザクションが停止したとみなされるまでの
+  最小アイドル時間。輻輳したネットワーク上の 70B 以上のモデルでは 600 秒に増やしてください。
+- ``max_resends`` (デフォルト 3): 継続的な送信失敗時のリトライ上限。
+  従来は無制限でした。
+
+**タイムアウトの整合性検証**: ジョブ開始時に、タイムアウト値に不整合がある場合
+(例: ``min_download_timeout < streaming_per_request_timeout``) に FLARE が警告をログ出力し、
+障害が発生する前に設定ミスを可視化します。
+
+**クライアント制御ワークフローにおける min_clients の耐障害性**: Swarm Learning および SAG の
+ワークフローが ``min_clients`` のしきい値を受け付けるようになりました。設定されたクライアントが
+しきい値を満たしている場合、ワークフローは中断するのではなく、不足している参加者について警告を出しつつ
+処理を継続します。
+
+クライアント側のメモリ管理
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FLARE 2.7.2 は、既存のサーバー側のクリーンアップを補完する形で、メモリのライフサイクル制御を
+クライアントのトレーニングプロセスにも拡張しています:
+
+- **アロケータを考慮したクリーンアップ**: 各 ``flare.send()`` の呼び出し後、FLARE は自動的に
+  ``gc.collect()`` に加えてアロケータ固有のトリミング処理 (glibc (Linux) 向けの ``malloc_trim(0)``、
+  利用可能な場合は jemalloc のアリーナパージ、GPU メモリ向けの ``torch.cuda.empty_cache()``) を
+  実行し、ラウンド間で解放されたページを OS へ返却します。
+- **設定可能な頻度**: クリーンアップは ``N`` ラウンドごとに実行され (デフォルト: 毎ラウンド)、
+  レシピのパラメータ (``client_memory_gc_rounds``) および ``ScriptRunner`` を介して設定できます。
+- **トレーニングスクリプトの変更は不要**: クリーンアップはユーザーのトレーニングコードに手を加えることなく、
+  FLARE のクライアントライフサイクルに透過的に組み込まれます。
+- **サーバー側のクリーンアップとの組み合わせ**: 2.7.2 で導入されたサーバー側のガベージコレクションと
+  組み合わせることで、多数のラウンドを伴う長時間実行ジョブにおいて、サーバーとクライアントの両プロセスでの
+  RSS の際限のない増大を防ぎます。
+- **サブプロセスモードにおけるパイプライン全体のカバレッジ**: サブプロセスモードのクライアント
+  (``launch_external_process=True``) を使用する場合、トレーニングのサブプロセスだけでなく、
+  クライアントのトレーニングプロセスのすべての段階で同じ GC およびヒープトリムのサイクルが
+  実行されるようになり、クライアント側パイプライン全体での RSS の増大を防ぎます。
+
+サーバー側のメモリクリーンアップ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FLARE 2.7.2 では、長時間実行ジョブにおける RSS (Resident Set Size — プロセスが実際に使用する物理メモリ) の増大に対処するため、自動的なサーバー側メモリ管理が追加されました:
+
+- **定期的なガベージコレクションとヒープトリミング**: ``gc.collect()`` と ``malloc_trim()`` を自動的に実行して解放済みメモリを OS へ返却し、多数のトレーニングラウンドにわたる RSS の際限のない増大を防ぎます。
+- **環境変数によるチューニング**: サーバーおよびクライアントの両プロセスにおいて、glibc のメモリアリーナの断片化を制御するための ``MALLOC_ARENA_MAX`` の設定に関するガイダンスを提供します。
+- **プラットフォームを考慮**: メモリのクリーンアップは実行時のプラットフォーム (Linux/glibc、musl、macOS) に応じて適応し、Linux/glibc では完全なヒープトリミングを、それ以外では安全なフォールバックを行います。
+- **オーバーヘッドは最小限**: クリーンアップは 1 回あたり 10〜500 ミリ秒で完了し、一般的なトレーニングラウンドの所要時間と比べると無視できる程度です。
+
+クライアント側では、``flare.send(..., clear_cache=True)`` (デフォルト) がシリアライズ後にパラメータの
+参照を解放します。この参照解放の経路が、大きなテンソルオブジェクトを回収する主要な仕組みです。
+``gc.collect()`` は主に循環参照に対する補助的なセーフガードです。
+
+.. admonition:: 詳細情報
+
+    設定の詳細、プラットフォーム互換性、推奨設定、API リファレンスについては :doc:`/programming_guide/memory_management` を参照してください。
+
+F3 ストリーミングの信頼性と性能
+--------------------------------
+
+F3 ストリーミングレイヤーに焦点を当てた堅牢化の取り組みにより、特に階層型および大規模モデルの
+デプロイにおいて大規模環境で顕在化していた、いくつかの並行処理および安定性の問題に
+対処しました。
+
+ヘッドオブライン (HOL) ストールの緩和
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2.7.0/2.7.1 では、低速または輻輳した接続が接続単位の SFM 送信ロックを無期限に保持し、
+単一の大きなフレーム送信の背後で、そのリレー上のすべての送信トラフィック (ハートビート、
+Admin コマンド、タスク要求) をブロックする可能性がありました。
+
+FLARE 2.7.2 は、多層的なガードによってこれを解消します:
+
+- **送信タイムアウトの上限設定**: ``send_frame()`` に設定可能な期限
+  (``STREAMING_SEND_TIMEOUT``) が設けられ、これを超過した送信は永久にブロックするのではなく例外を送出します。
+- **ACK 進行のウォッチドッグ**: バックグラウンドのモニターが ``STREAMING_ACK_PROGRESS_TIMEOUT``
+  以内に ACK が進行しているかを確認し、接続が停止していればフラグを立てます。
+- **ストール検知と任意の復旧処理**: 連続したストール検知 (``SFM_SEND_STALL_CONSECUTIVE_CHECKS``
+  で設定可能) により、任意で接続のリセット (``SFM_CLOSE_STALLED_CONNECTION``) をトリガーし、
+  保留中のすべてのトラフィックのブロックを解除できます。
+
+推奨設定については :ref:`timeout_troubleshooting` の *Streaming Stall Guardrail* セクションを参照してください。
+
+ストリームプール枯渇の修正
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ストリーミングのコールバックが、それが依存しているのと同じスレッドプール上でディスパッチされて
+プールを枯渇させると、同時実行のモデルダウンロードが無期限に停止する可能性がありました。この修正では
+コールバックを専用のプールへ振り分け、ストリームワーカーを空けたままにします。エンドツーエンドのテストにより、
+8 件の同時ダウンロードが枯渇なしに完了することが検証されています。
+
+タタタタタタタタタタタタタタタタタタタタタタタタタタ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ストリーミングダウンロード中の一時的なタイムアウト (特に輻輳したネットワーク上の LLM スワーミングの
+シナリオ) は、従来サイレントなストリームの喪失につながっていました。FLARE 2.7.2 では、構造化された
+リトライのセマンティクスが追加されました:
+
+- **指数バックオフによるリトライ**: 設定可能なバックオフで最大 3 回のリトライを行い、上限は 60 秒です。
+- **中断シグナルへの対応**: リトライループは中断シグナルを尊重し、ジョブ停止後に古いリトライが行われることはありません。
+- **状態に対して安全**: リトライは冪等であり、同じストリームを再要求してもサーバーにとって安全です。
+
+RxTask の自己デッドロックの修正
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+受信の実行中に到着したストリームのエラーシグナルにより、受信側のクリーンアップ経路で
+自己デッドロックが発生する可能性がありました。この修正では、クリティカルセクションを抜けるまで
+クリーンアップを遅延させることで、エラー処理の正しさを変えることなくデッドロックを解消します。
+
+モモモモモモモモモモモモモモモモモモモモモ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+キャッシュ可能なストリーミングレイヤーでは、キャッシュミス時の生成処理が従来、同時実行中のすべての
+クライアントを単一のロックの背後で直列化しており、クライアント数が多い場合 (例: リレーあたり 24)
+にモデルダウンロードのレイテンシが増大していました。ロックのスコープが縮小され、生成処理が同時に
+実行されるようになったため、多数のクライアントが同時に同じモデルチャンクを要求する場合の
+スループットが大幅に向上しました。
+
+階層型 FL の起動時の安定性
+---------------------------
+
+大規模な階層型 FL のデプロイ (リレー層をまたぐ多数のクライアント) では、トレーニング開始前に
+ジョブが中断されうる起動時の競合状態が発生する可能性があります。FLARE 2.7.2 では、一連の
+協調的な修正と新しい設定コントロールによってこれに対処します。
+
+デデデデデデデデデデデデデデデデデデデデデデデデ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+従来、タイムアウト時間内にジョブのデプロイを確認応答しなかったクライアント (``reply=None``) は、
+デプロイに成功したものとして暗黙的に扱われていました。サーバーはそのクライアントを参加者リストに
+含めたままジョブを開始するため状態の不整合が生じ、早すぎるデッドクライアント検知とジョブの中断に
+つながっていました。
+
+FLARE 2.7.2 はデプロイのタイムアウトを正しく失敗として分類し、既存の ``min_sites`` /
+``required_sites`` の許容チェックをデプロイフェーズで適用します。タイムアウトしたクライアントは
+``start_client_job`` が呼び出される前にジョブから除外されるため、状態の不整合が生じること自体が
+防止されます。
+
+デデデデデデデデデデデデデデデデデデデデデデデ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+サーバーのハートビートモニターは従来、まだジョブを実行していないクライアントからの最初のハートビートで
+デッドジョブ通知を発火させていました。つまり、起動時の猶予期間が存在しませんでした。
+まだ初期化中のクライアント (低速なファイルシステム、GPU の割り当て、サブプロセスの生成) では、
+これにより早すぎるデッドクライアントの分類が引き起こされていました。
+
+FLARE 2.7.2 ではデバウンス機構が追加されました。クライアントがハートビートでジョブを報告している
+ことが一度確認されて初めて、その後の報告の欠落がデッドジョブ通知をトリガーするようになります。
+これにより、クライアントは誤警報なしに起動に必要な時間を確保できます。
+
+この動作が現在では **デフォルト** (``sync_client_jobs_require_previous_report=true``) です。
+従来の積極的な検知が必要な運用者は、設定によってオプトアウトできます。
+
+ssssssssssssssssssssssssssssss
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+厳格な start-job 応答チェックが有効な場合 (``strict_start_job_reply_check=true``)、
+start-job フェーズでタイムアウトしたクライアントは、ジョブ全体を中断させるのではなく
+**実行から除外** されるようになりました。ただし、残りのアクティブなクライアント数が引き続き
+``min_clients`` を満たしていることが条件です。除外されたクライアントを特定する警告がログ出力されます。
+
+これにより、たとえば 2 台の遅延クライアントが応答しない場合でも、トレーニングに必要な大多数が
+準備できていれば中断せずに、144 台中 142 台でジョブを進めることができます。
+
+ククククククククククククククククククククク
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ジョブがすでに中断された後にクライアントプロセスが起動した場合、ジョブのクライアントメタデータを
+読み取る際に不明瞭な ``TypeError: 'NoneType' object is not iterable`` でクラッシュしていました。
+FLARE 2.7.2 では、これを欠落しているフィールド名を示す明示的な ``RuntimeError`` に置き換え、
+ログから対処可能な形にしました。
+
+HPC 環境 (Slurm、Lustre ファイルシステム) における推奨設定については、
+:ref:`timeout_troubleshooting` の *Large-Scale Hierarchical / HPC Deployments* シナリオを参照してください。
+
+包括的なタイムアウトのドキュメント
+-----------------------------------
+
+2 つの新しいタイムアウトガイドが追加されました:
+
+**タイムアウトのトラブルシューティングガイド** (:doc:`/user_guide/timeout_troubleshooting`) — タイムアウトに関連するよくあるジョブ失敗とその解決方法を扱う、ユーザー向けのガイドです。最も頻繁に遭遇するタイムアウトのシナリオを、症状、原因、対処法とともに解説します。
+
+**タイムアウトのリファレンス** (:doc:`/programming_guide/timeouts`) — NVFlare の各コンポーネントにわたる 100 を超えるすべてのタイムアウトパラメータを、機能カテゴリ別に整理して扱う包括的なプログラミングリファレンスです:
+
+- **ネットワーク通信**: F3/CellNet、サーバー設定、クライアント設定、gRPC、reliable message
+- **Executor と Launcher**: LauncherExecutor、TaskExchanger、IPCExchanger、Pipe Handler
+- **ワークフローの Controller**: FedAvg、SAG、CrossSiteEval、Statistics、SplitNN など
+- **エッジデバイス**: エッジ全般、階層型 FL、モバイルクライアント
+- **ストリーミング**: ファイル、コンテナ、テンソル、オブジェクトのストリーミング
+- **XGBoost**: ヒストグラム Controller、reliable message、gRPC クライアント
+- **設定の場所**: システムレベルおよびジョブレベルのファイルパス
+- **推奨設定**: ユースケース別の設定 (開発、本番、LLM トレーニング、エッジデバイス)
+
+その他の改善
+------------
+
+例の統合
+~~~~~~~~
+
+よりすっきりとした、焦点の定まった学習体験を提供するため、例を統合し整理しました:
+
+- **非推奨の例の削除**: 旧来の API (Executor ベース、ModelLearner ベースのパターン) を使用するほとんどの例が削除されました。現在、大半の例はモダンな Recipe API または Client API を使用しています。
+
+- **統一された例の構造**: 各例は、Recipe API を使用する ``job.py`` をエントリポイントとする一貫した構造に従うようになり、理解と応用が容易になりました。
+
+- **冗長性の削減**: 同じ概念を異なる API で示していた重複する例は、単一の標準的な例に統合されました。
+
+- **ベストプラクティスへの注力**: 残された例は、FLARE でフェデレーテッドラーニングアプリケーションを構築するための推奨パターンを示しています。
+
+- **新しい例**: **Hello Differential Privacy** (``hello-world/hello-dp``) — Recipe API を用いた差分プライバシー付きのフェデレーテッドラーニングを実演します。
+
+.. note::
+
+    一部の例やチュートリアルは、依然として旧来の API を使用しています。これらは今後のリリースで引き続き更新されていきます。
+
+エッジ向けレシピ
+~~~~~~~~~~~~~~~~
+
+- **ETFedBuffRecipe 向けの ``device_wait_timeout``**: ジョブを中断するまでにデバイスの参加を
+  待機する明示的なタイムアウト (秒) を設定します。有限のデバイスプールで ``device_reuse=False``
+  を使用する場合、プールが枯渇した際の無期限のハングを防ぐために推奨されます。
+  デフォルトは ``None`` (無期限に待機) です。
+
+MONAI 連携
+~~~~~~~~~~
+
+- **MONAI-FLARE Wheel の非推奨化**: 独立した ``nvflare-monai`` の wheel パッケージは非推奨となりました。MONAI 連携は Client API を介して直接実現されるようになり、統合が簡素化され、依存関係管理のオーバーヘッドが軽減されます。詳細については `MONAI 移行ガイド <https://github.com/NVIDIA/NVFlare/blob/main/integration/monai/MIGRATION.md>`_ を参照してください。
+
+- **MONAI の例の更新**: すべての MONAI の例が Client API のパターンを使用するように更新され、追加のパッケージを必要とせずに MONAI のトレーニングワークフローを FLARE と統合しやすくなりました。
+
+ドキュメント
 ~~~~~~~~~~~~
 
-- **``device_wait_timeout`` for ETFedBuffRecipe**: Sets an explicit timeout (seconds)
-  for waiting for devices to join before aborting the job.  Recommended when
-  ``device_reuse=False`` with a finite device pool to prevent indefinite hangs once
-  the pool is exhausted.  Defaults to ``None`` (wait indefinitely).
+- **利用可能なレシピのガイド**: 利用可能なすべてのレシピについて、コード例と動作する例へのリンクを掲載した新しい :ref:`available_recipes` ガイド。
 
-MONAI Integration
-~~~~~~~~~~~~~~~~~
+- **タイムアウトのドキュメント**: タイムアウトに関連するよくあるジョブ失敗と対処法 (タスク取得、外部プロセスの初期化前、結果の送信など) を扱う新しい :doc:`/user_guide/timeout_troubleshooting`、および 100 を超えるすべてのタイムアウトパラメータをコンポーネントとユースケース別に扱う包括的なリファレンスとしての :doc:`/programming_guide/timeouts`。
 
-- **MONAI-FLARE Wheel Deprecated**: The separate ``nvflare-monai`` wheel package is now deprecated. MONAI integration is now achieved directly through the Client API, simplifying the integration and reducing dependency management overhead. For further information, see the `MONAI Migration Guide <https://github.com/NVIDIA/NVFlare/blob/main/integration/monai/MIGRATION.md>`_.
+- **メモリ管理ガイド**: サーバー側およびクライアント側のガベージコレクション、``MALLOC_ARENA_MAX`` のチューニング、プラットフォーム互換性、トラブルシューティングを扱う新しい :doc:`/programming_guide/memory_management`。
 
-- **Updated MONAI Examples**: All MONAI examples have been updated to use the Client API pattern, making it easier to integrate MONAI training workflows with FLARE without requiring additional packages.
+- **Tensor Downloader ガイド**: 設定例、アーキテクチャの詳細、チューニングの指針を追加して拡充された :doc:`/programming_guide/tensor_downloader`。
 
-Documentation
-~~~~~~~~~~~~~
+- **Hello Differential Privacy**: 新しい :doc:`/hello-world/hello-dp/index` の例とドキュメント。
 
-- **Available Recipes Guide**: New :ref:`available_recipes` guide with code examples and links to working examples for all available recipes.
+- **クライアント制御ワークフロー**: :doc:`/programming_guide/controllers/client_controlled_workflows` のドキュメントを拡充。
 
-- **Timeout Documentation**: New :doc:`/user_guide/timeout_troubleshooting` for common timeout-related job failures and fixes (task fetch, external process pre-init, submit result, etc.), and :doc:`/programming_guide/timeouts` as the comprehensive reference for all 100+ timeout parameters by component and use case.
+- **Job Recipe ガイド**: dict によるモデル設定と初期チェックポイントの例を追加して更新された :doc:`/user_guide/data_scientist_guide/job_recipe`。
 
-- **Memory Management Guide**: New :doc:`/programming_guide/memory_management` covering server-side and client-side garbage collection, ``MALLOC_ARENA_MAX`` tuning, platform compatibility, and troubleshooting.
+バグ修正
+~~~~~~~~
 
-- **Tensor Downloader Guide**: Expanded :doc:`/programming_guide/tensor_downloader` with configuration examples, architecture details, and tuning guidance.
+- サブプロセスの送信リトライにおける OOM の蓄積を修正しました。試行ごとに再シリアライズするのではなく、単一のシリアライズ済みペイロードがリトライ間で再利用されるようになりました。
+- サブプロセスのタスク取得の停止を修正しました。クライアントのトレーニングプロセスがダウンロード完了を待たずに直ちにタスクの受領を確認応答するようになり、大規模モデルの転送中のサブプロセスのタイムアウトを防止します。
+- 外部プロセスによるトレーニング後の CSE モデル読み込み失敗を修正しました。サイト横断評価は、すでに終了したトレーニングのサブプロセスを再起動するのではなく、ディスク上の persistor を使用するようになりました。
+- JSON 設定から ``min_clients`` が省略された場合の ``SwarmServerController`` のクラッシュを修正しました (``None < 0`` の TypeError を ``int = 0`` のデフォルト値に置き換え)。
+- プライベート属性のシャドーイングにより、サブプロセスの Executor で ``max_resends`` が暗黙的に無視されていた問題を修正しました。
+- サーバーに到達できない場合の ``nvflare job submit`` における gRPC セッションのリソースリークを修正しました。
+- ジョブのティアダウン後にフレームが到着した際のコネクションマネージャーのクラッシュを修正しました。
+- F3 ストリーミングのヘッドオブラインストールを修正しました。``send_frame()`` がタイムアウトの上限なしに接続ロックを保持することはなくなりました。
+- 受信の実行中にストリームのエラーシグナルによって引き起こされる RxTask の自己デッドロックを修正しました。
+- 同時実行のモデルダウンロードの完了を妨げていたストリームスレッドプールの枯渇を修正しました。
+- デプロイのタイムアウトが暗黙的に通過していた問題を修正しました。タイムアウトしたクライアントは ``min_sites`` に対してカウントされるようになりました。
+- 早すぎるデッドジョブ検知を修正しました。クライアントは最初の肯定的なハートビートより前に欠落として報告されることはなくなりました。
+- ジョブのメタデータが存在しない場合にクライアントジョブプロセスで発生していた ``TypeError`` によるクラッシュを修正しました (説明的な ``RuntimeError`` に置き換え)。
+- ローカル結果の送信における Swarm Learning の自己メッセージのデッドロックを修正しました。
+- サブプロセスの生成において ``fork`` を ``posix_spawn`` に置き換えることで、TLS の破損を修正しました。
+- Streamer コンポーネントにおけるデータ破損の潜在的な問題を修正しました。
+- Swarm Learning の Controller とテンソルストリーミングの互換性を修正しました。
+- XGBoost のアダプタおよびレシピ連携の問題を修正しました。
+- ツリーベースの水平 XGBoost におけるクライアント側の脆弱性に対処しました。
+- NumPy のサイト横断評価のリグレッションを修正しました。
+- POC の実行結果のキャッシュと環境のクリーンアップを修正しました。
+- TensorBoard の analytics receiver のインポートエラーを修正しました。
+- FOBS のシリアライズにおけるエラー処理を改善しました (エラー時に例外を送出)。
+- Client API のエラーメッセージを改善しました。
+- **セキュリティ修正 (CWE-502、CVSS 8.8)**: FOBS のデシリアライズにおけるリモートコード実行の脆弱性を修正しました。``Packer.unpack()`` メソッドが、攻撃者が制御可能な ``type_name`` を ``load_class()`` に渡す前に検証していなかったため、認証済みの参加者が集約サーバー上で任意の Python コードを実行できる状態にありました。``BUILTIN_TYPES`` の許可リストを導入し、クラスの読み込み前に ``type_name`` を検証することで修正しました。カスタム型による実行時の拡張のために、公開 API ``add_type_name_whitelist()`` が提供されています。
+- **セキュリティ修正 (CWE-22)**: ``FileRetriever`` におけるパストラバーサルの脆弱性を修正しました。要求されたファイルに対してソースディレクトリの境界チェックを強制することで、``../`` によるトラバーサル攻撃が許可されたディレクトリから脱出することを防ぎます。
+- 最新の API との互換性のために PEFT/TRL 連携を更新しました。
+- HuggingFace の LLM 連携を更新しました。
+- Web コンポーネントのセキュリティ関連の依存関係を更新しました。
 
-- **Hello Differential Privacy**: New :doc:`/hello-world/hello-dp/index` example and documentation.
+移行ガイド
+----------
 
-- **Client-Controlled Workflows**: Expanded documentation for :doc:`/programming_guide/controllers/client_controlled_workflows`.
+API の変更、名称が変更されたパラメータ、後方互換性に関する注意事項を含む詳細な移行手順については、
+:ref:`移行ガイド <migration_guide>` を参照してください。
 
-- **Job Recipe Guide**: Updated :doc:`/user_guide/data_scientist_guide/job_recipe` with dict model config and initial checkpoint examples.
+はじめに
+--------
 
-Bug Fixes
-~~~~~~~~~
-
-- Fixed OOM accumulation on subprocess send retry: a single serialized payload is now reused across retries rather than re-serializing per attempt.
-- Fixed subprocess task-fetch stall: the client training process now acknowledges task receipt immediately instead of waiting for download completion, preventing subprocess timeout during large-model transfers.
-- Fixed CSE model-load failure after external-process training: cross-site evaluation now uses the on-disk persistor instead of relaunching the already-exited training subprocess.
-- Fixed ``SwarmServerController`` crash when ``min_clients`` is omitted from JSON config (``None < 0`` TypeError replaced with ``int = 0`` default).
-- Fixed ``max_resends`` silently ignored in subprocess executor due to private attribute shadowing.
-- Fixed gRPC session resource leak in ``nvflare job submit`` when the server is unreachable.
-- Fixed connection manager crash on frame arrival after job teardown.
-- Fixed F3 streaming Head-of-Line stall: ``send_frame()`` no longer holds the connection lock without a timeout bound.
-- Fixed RxTask self-deadlock triggered by stream error signals during active receive.
-- Fixed stream thread pool starvation that prevented concurrent model downloads from completing.
-- Fixed deployment timeout silent pass-through: timed-out clients are now counted against ``min_sites``.
-- Fixed premature dead-job detection: clients are no longer reported missing before their first positive heartbeat.
-- Fixed ``TypeError`` crash in client job process when job metadata is absent (replaced with descriptive ``RuntimeError``).
-- Fixed Swarm Learning self-message deadlock for local result submission.
-- Fixed TLS corruption by replacing ``fork`` with ``posix_spawn`` for subprocess creation.
-- Fixed potential data corruption issue in the Streamer component.
-- Fixed Swarm Learning controller compatibility with tensor streaming.
-- Fixed XGBoost adaptor and recipe integration issues.
-- Addressed client-side vulnerability for tree-based horizontal XGBoost.
-- Fixed NumPy cross-site evaluation regression.
-- Fixed POC Run result caching and environment cleanup.
-- Fixed TensorBoard analytics receiver import error.
-- Improved error handling in FOBS serialization (raise exception on errors).
-- Improved error messages in Client API.
-- **Security fix (CWE-502, CVSS 8.8)**: Fixed a Remote Code Execution vulnerability in FOBS deserialization. The ``Packer.unpack()`` method failed to validate the attacker-controlled ``type_name`` before passing it to ``load_class()``, allowing authenticated participants to execute arbitrary Python code on the aggregation server. Fixed by introducing a ``BUILTIN_TYPES`` allowlist and validating ``type_name`` before class loading. A public API ``add_type_name_whitelist()`` is provided for runtime extension with custom types.
-- **Security fix (CWE-22)**: Fixed a path traversal vulnerability in ``FileRetriever`` by enforcing source-directory boundary checks on requested files, preventing ``../`` traversal attacks from escaping the allowed directory.
-- Updated PEFT/TRL integration for latest API compatibility.
-- Updated HuggingFace LLM integration.
-- Security dependency updates for web components.
-
-Migration Guide
----------------
-
-For detailed migration steps including API changes, renamed parameters, and backward
-compatibility notes, see the :ref:`Migration Guide <migration_guide>`.
-
-Getting Started
----------------
-
-The easiest way to get started with FLARE 2.7.2 is through the Hello World examples:
+FLARE 2.7.2 を最も簡単に使い始める方法は、Hello World の例を通じて試すことです:
 
 .. code-block:: bash
 
@@ -447,13 +444,11 @@ The easiest way to get started with FLARE 2.7.2 is through the Hello World examp
     cd examples/hello-world/hello-pt
     python job.py
 
-For more examples and tutorials, see:
+その他の例やチュートリアルについては、以下を参照してください:
 
-- :ref:`quickstart` — Get up and running quickly
-- :ref:`available_recipes` — Complete list of ready-to-use recipes
-- :ref:`job_recipe` — Job Recipe programming guide
-- `Hello World Examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/hello-world>`_
-- `Advanced Examples <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced>`_
-- `Self-Paced Training Tutorials <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/self-paced-training>`_
-
-
+- :ref:`quickstart` — すぐに始めて動かす
+- :ref:`available_recipes` — すぐに使えるレシピの完全な一覧
+- :ref:`job_recipe` — Job Recipe プログラミングガイド
+- `Hello World の例 <https://github.com/NVIDIA/NVFlare/tree/main/examples/hello-world>`_
+- `高度な例 <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced>`_
+- `自習型トレーニングチュートリアル <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/self-paced-training>`_

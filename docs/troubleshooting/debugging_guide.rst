@@ -3,73 +3,73 @@
 .. _debugging_guide:
 
 ####################
-Debugging Guide
+デバッグガイド
 ####################
 
 .. note::
-   This guide is coming soon. It will cover techniques for debugging
-   NVIDIA FLARE applications during development and production.
+   このガイドは近日公開予定です。開発時および本番環境における
+   NVIDIA FLARE アプリケーションのデバッグ手法を扱う予定です。
 
-Overview
-========
+概要
+====
 
-Debugging federated learning applications involves challenges unique to distributed
-systems -- errors may occur at specific client sites, during communication, or only
-under certain data conditions. This guide covers systematic debugging approaches.
+フェデレーテッドラーニングのアプリケーションのデバッグには、分散システム特有の課題が伴います。
+エラーは特定のクライアントサイトで発生することもあれば、通信中に発生することも、
+特定のデータ条件下でのみ発生することもあります。本ガイドでは、体系的なデバッグのアプローチを扱います。
 
-Log Analysis
-=============
+ログの分析
+============
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Where to find FLARE log files (server, client, admin)
-- Log level configuration (see :doc:`/user_guide/admin_guide/configurations/logging_configuration`)
-- Reading and interpreting FLARE logs
-- Correlating events across server and client logs
-- Common log patterns and what they mean
+- FLARE のログファイルの場所 (サーバー、クライアント、管理者)
+- ログレベルの設定 (:doc:`/user_guide/admin_guide/configurations/logging_configuration` を参照)
+- FLARE のログの読み方と解釈
+- サーバーとクライアントのログ間でのイベントの関連付け
+- よくあるログのパターンとその意味
 
-Using the FL Simulator for Debugging
+デバッグのための FL Simulator の活用
 ======================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Running jobs in the simulator with verbose logging
-- Debugging with breakpoints in simulator mode
-- Comparing simulator vs. POC vs. production behavior
+- 詳細ログを有効にしてシミュレーターでジョブを実行する
+- シミュレーターモードでのブレークポイントを用いたデバッグ
+- シミュレーター、POC、本番環境の挙動の比較
 
-Message Tracing
-================
+メッセージのトレース
+====================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Tracing messages between server and clients
-- Understanding the communication flow
-- Diagnosing message delivery failures
-- Using monitoring tools to observe message patterns
+- サーバーとクライアント間のメッセージのトレース
+- 通信フローの理解
+- メッセージ配送の失敗の診断
+- モニタリングツールを用いたメッセージパターンの観察
 
-Debugging Training Issues
-==========================
+トレーニングに関する問題のデバッグ
+====================================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Debugging model convergence issues
-- Inspecting model weights and gradients at each round
-- Comparing local vs. federated training results
-- Using experiment tracking for debugging (see :doc:`/programming_guide/experiment_tracking`)
+- モデルの収束に関する問題のデバッグ
+- 各ラウンドにおけるモデルの重みと勾配の検査
+- ローカル学習とフェデレーテッド学習の結果の比較
+- デバッグのための実験トラッキングの活用 (:doc:`/programming_guide/experiment_tracking` を参照)
 
-Performance Debugging
-======================
+パフォーマンスのデバッグ
+========================
 
-*Coming soon.* Will cover:
+*近日公開予定。* 以下を扱う予定です。
 
-- Identifying bottlenecks (computation vs. communication)
-- Profiling training time per round
-- Monitoring resource usage (CPU, GPU, memory, network)
+- ボトルネックの特定 (計算 vs. 通信)
+- ラウンドごとの学習時間のプロファイリング
+- リソース使用状況 (CPU、GPU、メモリ、ネットワーク) の監視
 
-See Also
+関連項目
 ========
 
-- :doc:`common_errors` -- Common error messages and solutions
-- :doc:`/user_guide/timeout_troubleshooting` -- Timeout-related issues
-- :ref:`Preflight Check <preflight_check>` -- Pre-deployment diagnostics
-- :doc:`/faq` -- Frequently asked questions
+- :doc:`common_errors` -- よくあるエラーメッセージと解決策
+- :doc:`/user_guide/timeout_troubleshooting` -- タイムアウト関連の問題
+- :ref:`プリフライトチェック <preflight_check>` -- デプロイ前の診断
+- :doc:`/faq` -- よくある質問
