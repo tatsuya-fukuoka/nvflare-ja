@@ -1,0 +1,5 @@
+sphinx>=5,<8
+sphinx_rtd_theme
+recommonmark
+sphinx-copybutton
+sphinxcontrib-jquery
