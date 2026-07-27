@@ -1,20 +1,19 @@
 .. _poc_command:
 
 *****************************************
-Proof Of Concept (POC) Command
+概念実証 (POC) コマンド
 *****************************************
 
-The ``nvflare poc`` command manages a local proof-of-concept deployment on a
-single machine. Separate processes represent the server, clients, and admin
-startup kits, which makes POC mode a convenient way to validate job workflows
-before a distributed deployment.
+``nvflare poc`` コマンドは、単一マシン上でのローカルな概念実証 (proof-of-concept) デプロイメントを
+管理します。サーバー、クライアント、管理者のスタートアップキットはそれぞれ別のプロセスとして表現され、
+これにより POC モードは分散デプロイメントの前にジョブのワークフローを検証する便利な手段となります。
 
 ***********************
-Command Usage
+コマンドの使い方
 ***********************
 
-The POC command provides the subcommands ``config``, ``prepare``,
-``add-user``, ``add-site``, ``start``, ``stop``, and ``clean``.
+POC コマンドは、 ``config`` 、 ``prepare`` 、 ``add-user`` 、 ``add-site`` 、 ``start`` 、 ``stop`` 、
+``clean`` の各サブコマンドを提供します。
 
 .. code-block:: none
 
@@ -22,48 +21,48 @@ The POC command provides the subcommands ``config``, ``prepare``,
 
    usage: nvflare poc [-h] {config,prepare,add-user,add-site,start,stop,clean} ...
 
-*****************
-Common Workflow
-*****************
+*************************
+一般的なワークフロー
+*************************
 
-1. Optionally run ``nvflare poc config --pw <poc_workspace>`` to choose the
-   local workspace path.
-2. Run ``nvflare poc prepare`` to create the local workspace and startup kits.
-3. Optionally run ``nvflare poc add-user`` or ``nvflare poc add-site`` to add a
-   local participant startup kit.
-4. Run ``nvflare poc start`` to start the server and clients.
-5. Submit jobs directly with ``nvflare job submit -j <path/to/job>``.
-6. Start an admin console explicitly only when you need one.
-7. Run ``nvflare poc stop`` to stop the system.
-8. Run ``nvflare poc clean`` after the system is stopped.
+1. 必要に応じて ``nvflare poc config --pw <poc_workspace>`` を実行し、ローカルワークスペースのパスを
+   選択します。
+2. ``nvflare poc prepare`` を実行して、ローカルワークスペースとスタートアップキットを作成します。
+3. 必要に応じて ``nvflare poc add-user`` または ``nvflare poc add-site`` を実行し、ローカル参加者の
+   スタートアップキットを追加します。
+4. ``nvflare poc start`` を実行して、サーバーとクライアントを起動します。
+5. ``nvflare job submit -j <path/to/job>`` でジョブを直接投入します。
+6. 管理コンソールが必要な場合にのみ、明示的に起動します。
+7. ``nvflare poc stop`` を実行してシステムを停止します。
+8. システムの停止後に ``nvflare poc clean`` を実行します。
 
-*******************
-Configure Workspace
-*******************
+*****************************
+ワークスペースの設定
+*****************************
 
-Use ``nvflare poc config`` to show or set the local POC workspace path:
+ローカル POC ワークスペースのパスを表示または設定するには、 ``nvflare poc config`` を使用します。
 
 .. code-block:: none
 
    nvflare poc config [-h] [-pw [POC_WORKSPACE_DIR]] [--schema]
 
-Options:
+オプション:
 
-- ``-pw, --pw, --poc_workspace_dir, --poc-workspace-dir``: POC workspace location.
-- ``--schema``: print the command schema as JSON and exit.
+- ``-pw, --pw, --poc_workspace_dir, --poc-workspace-dir``: POC ワークスペースの場所です。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
    nvflare poc config
    nvflare poc config --pw /tmp/nvflare/poc
 
-*******************
-Prepare Workspace
-*******************
+*********************************
+ワークスペースの準備
+*********************************
 
-Use ``nvflare poc prepare`` to provision a local project:
+ローカルプロジェクトをプロビジョニングするには、 ``nvflare poc prepare`` を使用します。
 
 .. code-block:: none
 
@@ -71,51 +70,46 @@ Use ``nvflare poc prepare`` to provision a local project:
                        [-he] [-i [PROJECT_INPUT]] [-d [DOCKER_IMAGE]]
                        [-debug] [--force] [--schema]
 
-Options:
+オプション:
 
-- ``-n, --number_of_clients``: number of sites or clients. Default: ``2``.
-- ``-c, --clients``: space-separated client names. If specified,
-  ``number_of_clients`` is ignored.
-- ``-he, --he``: enable homomorphic encryption in the generated local project.
-- ``-i, --project_input``: path to a ``project.yaml`` file. If specified,
-  client-count, client-name, and docker-image options are ignored.
-- ``-d, --docker_image``: provision POC in Docker runtime mode and prepare
-  server/client startup kits with the same Docker preparation used by
-  ``nvflare deploy prepare``. The value is the SP/CP Docker image; if given
-  without a value, the default image is used. Jobs submitted to Docker-mode
-  sites must specify their SJ/CJ Docker image in job ``launcher_spec``.
-- ``-debug, --debug``: debug mode.
-- ``--force``: overwrite the existing workspace without prompting.
-- ``--schema``: print command schema as JSON and exit.
+- ``-n, --number_of_clients``: サイトまたはクライアントの数です。既定値: ``2`` 。
+- ``-c, --clients``: 空白区切りのクライアント名です。指定した場合、 ``number_of_clients`` は
+  無視されます。
+- ``-he, --he``: 生成されるローカルプロジェクトで準同型暗号を有効にします。
+- ``-i, --project_input``: ``project.yaml`` ファイルへのパスです。指定した場合、クライアント数、
+  クライアント名、Docker イメージのオプションは無視されます。
+- ``-d, --docker_image``: POC を Docker ランタイムモードでプロビジョニングし、 ``nvflare deploy prepare``
+  と同じ Docker 準備処理を用いてサーバー／クライアントのスタートアップキットを準備します。値は SP/CP の
+  Docker イメージです。値を指定せずに与えた場合は、既定のイメージが使用されます。Docker モードのサイトに
+  投入されるジョブは、ジョブの ``launcher_spec`` で SJ/CJ の Docker イメージを指定する必要があります。
+- ``-debug, --debug``: デバッグモードです。
+- ``--force``: 確認プロンプトを表示せずに既存のワークスペースを上書きします。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Behavior notes:
+動作に関する注意:
 
-- If the workspace already exists and stdin is non-interactive, ``--force`` is
-  required.
-- ``nvflare poc prepare`` updates ``~/.nvflare/config.conf`` with the POC
-  workspace, registers generated admin/user startup kits, and activates the
-  default Project Admin kit. Site startup kits stay in the POC workspace and are
-  not registered as CLI identities.
-- Docker POC mode starts server and client parent processes with
-  ``start_docker.sh`` and uses ``DockerJobLauncher`` to start job containers.
-  The POC workspace ``data`` directory is mounted into Docker job containers at
-  ``/data/default/poc`` for jobs in the default study, so examples can download
-  or read local datasets from that path.
-- On success, the command prints a JSON result containing the workspace path and
-  discovered client list.
+- ワークスペースが既に存在し、標準入力が対話的でない場合は、 ``--force`` が必須です。
+- ``nvflare poc prepare`` は ``~/.nvflare/config.conf`` を POC ワークスペースで更新し、生成された
+  管理者／ユーザーのスタートアップキットを登録して、既定のプロジェクト管理者キットを有効化します。
+  サイトのスタートアップキットは POC ワークスペース内に留まり、CLI のアイデンティティとしては登録されません。
+- Docker POC モードでは、サーバーおよびクライアントの親プロセスを ``start_docker.sh`` で起動し、
+  ジョブコンテナの起動には ``DockerJobLauncher`` を使用します。既定のスタディに属するジョブの場合、
+  POC ワークスペースの ``data`` ディレクトリが Docker ジョブコンテナ内の ``/data/default/poc`` に
+  マウントされるため、サンプルはそのパスからローカルデータセットをダウンロードしたり読み込んだりできます。
+- 成功すると、コマンドはワークスペースのパスと検出されたクライアントの一覧を含む JSON の結果を出力します。
 
-Example:
+例:
 
 .. code-block:: shell
 
    nvflare poc prepare -n 2
 
-***************
-Add Participant
-***************
+***********************
+参加者の追加
+***********************
 
-Use ``nvflare poc add-user`` or ``nvflare poc add-site`` to extend the prepared
-local POC workspace with another user or site:
+準備済みのローカル POC ワークスペースにユーザーやサイトを追加するには、 ``nvflare poc add-user`` または
+``nvflare poc add-site`` を使用します。
 
 .. code-block:: none
 
@@ -124,27 +118,25 @@ local POC workspace with another user or site:
 
    nvflare poc add-site [-h] [--org ORG] [--force] [--schema] name
 
-Behavior notes:
+動作に関する注意:
 
-- ``poc add-user`` and ``poc add-site`` are local POC workspace operations.
-  They use the local POC project metadata and local POC CA created by
-  ``poc prepare``; they are not gated by the currently active startup kit.
-- ``poc add-user`` adds a secondary admin participant to the persisted POC
-  ``project.yml``, dynamically provisions only that new user with the existing
-  POC CA, and registers the generated user startup kit in the shared startup
-  kit registry. It cannot add another ``project_admin``; the POC Project Admin
-  is created by ``poc prepare``.
-- ``poc add-site`` adds a client participant to the persisted POC
-  ``project.yml`` and dynamically provisions only that new site with the
-  existing POC CA. The generated site kit is placed in the current POC output
-  directory, normally ``prod_00``, and is not registered in
-  ``~/.nvflare/config.conf`` because only admin/user kits are CLI identities.
-- POC add uses the existing provision state/rootCA and does not regenerate
-  existing participant startup kits.
-- Use ``--force`` only to replace an existing participant entry in the local
-  POC project metadata.
+- ``poc add-user`` と ``poc add-site`` は、ローカル POC ワークスペースに対する操作です。これらは
+  ``poc prepare`` が作成したローカル POC プロジェクトのメタデータとローカル POC CA を使用し、
+  現在有効なスタートアップキットによる制約を受けません。
+- ``poc add-user`` は、永続化された POC の ``project.yml`` にセカンダリの管理者参加者を追加し、
+  既存の POC CA を用いてその新しいユーザーのみを動的にプロビジョニングして、生成されたユーザーの
+  スタートアップキットを共有スタートアップキットレジストリに登録します。別の ``project_admin`` を
+  追加することはできません。POC のプロジェクト管理者は ``poc prepare`` によって作成されます。
+- ``poc add-site`` は、永続化された POC の ``project.yml`` にクライアント参加者を追加し、既存の POC CA を
+  用いてその新しいサイトのみを動的にプロビジョニングします。生成されたサイトキットは現在の POC 出力
+  ディレクトリ（通常は ``prod_00`` ）に配置され、CLI のアイデンティティとなるのは管理者／ユーザーの
+  キットのみであるため、 ``~/.nvflare/config.conf`` には登録されません。
+- POC の追加処理は既存のプロビジョニング状態およびルート CA を使用し、既存の参加者のスタートアップキットを
+  再生成することはありません。
+- ``--force`` は、ローカル POC プロジェクトのメタデータ内にある既存の参加者エントリを置き換える場合にのみ
+  使用してください。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -155,11 +147,11 @@ Examples:
    nvflare config list
    nvflare poc start -p site-3
 
-**************
-Start Services
-**************
+***********************
+サービスの起動
+***********************
 
-Use ``nvflare poc start`` to launch services in the prepared POC workspace:
+準備済みの POC ワークスペースでサービスを起動するには、 ``nvflare poc start`` を使用します。
 
 .. code-block:: none
 
@@ -167,43 +159,40 @@ Use ``nvflare poc start`` to launch services in the prepared POC workspace:
                      [--study STUDY] [--no-wait] [--timeout SECONDS]
                      [-debug] [--schema]
 
-Options:
+オプション:
 
-- ``-p, --service``: participant to start. By default, starts the server and
-  clients; admin consoles are excluded unless explicitly requested.
-- ``-ex, --exclude``: participant to exclude from startup.
-- ``-gpu, --gpu``: GPU device IDs to use as ``CUDA_VISIBLE_DEVICES``.
-- ``--study``: study for admin console launches only. Ignored for server and
-  client services.
-- ``--no-wait``: return after starting processes without waiting for the admin
-  server and selected clients to become ready.
-- ``--timeout``: seconds to wait for the admin server and selected clients to
-  become ready. Defaults to the built-in POC readiness timeout.
-- ``-debug, --debug``: debug mode.
-- ``--schema``: print command schema as JSON and exit.
+- ``-p, --service``: 起動する参加者です。既定ではサーバーとクライアントを起動し、明示的に要求しない限り
+  管理コンソールは除外されます。
+- ``-ex, --exclude``: 起動対象から除外する参加者です。
+- ``-gpu, --gpu``: ``CUDA_VISIBLE_DEVICES`` として使用する GPU デバイス ID です。
+- ``--study``: 管理コンソールの起動時にのみ使用するスタディです。サーバーおよびクライアントのサービスでは
+  無視されます。
+- ``--no-wait``: 管理サーバーおよび選択されたクライアントが利用可能になるのを待たずに、プロセスを起動した
+  時点で戻ります。
+- ``--timeout``: 管理サーバーおよび選択されたクライアントが利用可能になるまで待機する秒数です。既定では
+  組み込みの POC レディネスタイムアウトが使用されます。
+- ``-debug, --debug``: デバッグモードです。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Behavior changes:
+動作の変更点:
 
-- Admin console participants are **not started by default**.
-- Running ``nvflare poc start`` with no explicit service starts the server and
-  clients only.
-- By default, the command waits until the admin server accepts connections and
-  selected clients are registered before returning ``status: running``.
-- Use ``--timeout`` to control this readiness wait.
-- With ``--no-wait``, the command returns immediately with ``status: starting``.
-- The command returns JSON with ``status``, ``server_url``, ``server_address``,
-  ``admin_address``, ``clients``, ``ready_timeout``, ``port_conflict``,
-  ``port_preflight``, ``warnings``, and, when readiness was checked or
-  explicitly skipped, ``ready``.
-- Use ``data.server_address`` and ``data.admin_address`` as the machine-readable
-  endpoint addresses for subsequent automation. ``data.server_url`` is kept for
-  compatibility with existing clients.
-- ``data.port_conflict`` is a best-effort pre-start warning based on local port
-  checks. When true, inspect ``data.port_preflight.conflicts`` and
-  ``data.warnings`` before submitting jobs to avoid connecting to a different
-  running POC system.
+- 管理コンソールの参加者は **既定では起動されません** 。
+- サービスを明示せずに ``nvflare poc start`` を実行した場合、起動されるのはサーバーとクライアントのみです。
+- 既定では、管理サーバーが接続を受け付け、選択されたクライアントが登録されるまで待機してから
+  ``status: running`` を返します。
+- このレディネス待機は ``--timeout`` で制御できます。
+- ``--no-wait`` を指定すると、コマンドは直ちに ``status: starting`` を返します。
+- コマンドは ``status`` 、 ``server_url`` 、 ``server_address`` 、 ``admin_address`` 、 ``clients`` 、
+  ``ready_timeout`` 、 ``port_conflict`` 、 ``port_preflight`` 、 ``warnings`` を含む JSON を返し、
+  レディネスが確認されたか明示的にスキップされた場合は ``ready`` も返します。
+- 以降の自動化では、機械可読なエンドポイントアドレスとして ``data.server_address`` と
+  ``data.admin_address`` を使用してください。 ``data.server_url`` は既存のクライアントとの互換性のために
+  維持されています。
+- ``data.port_conflict`` は、ローカルのポートチェックに基づくベストエフォートの起動前警告です。true の
+  場合は、別の稼働中の POC システムに接続してしまうことを避けるため、ジョブを投入する前に
+  ``data.port_preflight.conflicts`` と ``data.warnings`` を確認してください。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -214,37 +203,35 @@ Examples:
    nvflare poc start -p admin@nvidia.com --study cancer_research
    nvflare poc start -ex admin@nvidia.com
 
-To start an admin console, specify it explicitly with ``-p``.
+管理コンソールを起動するには、 ``-p`` で明示的に指定してください。
 
-Study notes:
+スタディに関する注意:
 
-- Use ``--study`` only when starting an admin console.
-- Named studies require the POC workspace to be prepared from a custom
-  ``project.yml`` with ``api_version: 4`` and ``studies:``. If the workspace
-  was prepared from the default generated project, only the ``default`` study
-  is valid.
+- ``--study`` は管理コンソールを起動するときにのみ使用してください。
+- 名前付きスタディを使用するには、POC ワークスペースが ``api_version: 4`` と ``studies:`` を含む
+  カスタムの ``project.yml`` から準備されている必要があります。ワークスペースが既定の生成プロジェクトから
+  準備された場合、有効なスタディは ``default`` のみです。
 
-*************
-Stop Services
-*************
+***********************
+サービスの停止
+***********************
 
-Use ``nvflare poc stop`` to stop running POC services:
+稼働中の POC サービスを停止するには、 ``nvflare poc stop`` を使用します。
 
 .. code-block:: none
 
    nvflare poc stop [-h] [-p [SERVICE]] [-ex [EXCLUDE]] [--no-wait]
                     [-debug] [--schema]
 
-Options:
+オプション:
 
-- ``-p, --service``: participant to stop. By default, stops all running
-  services, including admin consoles.
-- ``-ex, --exclude``: participant to exclude from stop handling.
-- ``--no-wait``: return after requesting shutdown without waiting for completion.
-- ``-debug, --debug``: debug mode.
-- ``--schema``: print command schema as JSON and exit.
+- ``-p, --service``: 停止する参加者です。既定では、管理コンソールを含むすべての稼働中サービスを停止します。
+- ``-ex, --exclude``: 停止処理から除外する参加者です。
+- ``--no-wait``: シャットダウンを要求した後、完了を待たずに戻ります。
+- ``-debug, --debug``: デバッグモードです。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Examples:
+例:
 
 .. code-block:: shell
 
@@ -253,113 +240,107 @@ Examples:
    nvflare poc stop -p site-1
    nvflare poc stop --no-wait
 
-Stopping the server path uses coordinated system shutdown logic. Stopping a
-subset of services uses the local stop script flow. By default, the server path
-waits for shutdown completion before returning ``status: stopped``. With
-``--no-wait``, it returns immediately with ``status: shutdown_initiated``.
+サーバーを停止する経路では、協調的なシステムシャットダウンのロジックが使用されます。一部のサービスのみを
+停止する場合は、ローカルの停止スクリプトのフローが使用されます。既定では、サーバーの経路はシャットダウンの
+完了を待ってから ``status: stopped`` を返します。 ``--no-wait`` を指定した場合は、直ちに
+``status: shutdown_initiated`` を返します。
 
-****************
-Clean Workspace
-****************
+*****************************
+ワークスペースのクリーンアップ
+*****************************
 
-Use ``nvflare poc clean`` to remove the POC workspace:
+POC ワークスペースを削除するには、 ``nvflare poc clean`` を使用します。
 
 .. code-block:: none
 
    nvflare poc clean [-h] [-debug] [--force] [--schema]
 
-Options:
+オプション:
 
-- ``-debug, --debug``: debug mode.
-- ``--force``: stop a running local POC system before removing the workspace.
-- ``--schema``: print command schema as JSON and exit.
+- ``-debug, --debug``: デバッグモードです。
+- ``--force``: ワークスペースを削除する前に、稼働中のローカル POC システムを停止します。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Behavior notes:
+動作に関する注意:
 
-- The workspace is removed only when it is a valid POC directory.
-- If the POC system is still running, ``nvflare poc clean`` fails with a hint to
-  stop it first. Use ``nvflare poc clean --force`` to stop the local POC system
-  and then remove the workspace in one command.
+- ワークスペースは、有効な POC ディレクトリである場合にのみ削除されます。
+- POC システムがまだ稼働している場合、 ``nvflare poc clean`` は先に停止するよう促すヒントとともに
+  失敗します。 ``nvflare poc clean --force`` を使用すると、ローカル POC システムの停止とワークスペースの
+  削除を 1 つのコマンドで実行できます。
 
-*********************
-Workspace Configuration
-*********************
+*******************************
+ワークスペースの構成
+*******************************
 
-The default POC workspace is ``/tmp/nvflare/poc``.
+既定の POC ワークスペースは ``/tmp/nvflare/poc`` です。
 
-The workspace can also be controlled by:
+ワークスペースは次の方法でも制御できます。
 
 - ``NVFLARE_POC_WORKSPACE``
-- ``~/.nvflare/config.conf`` via ``nvflare poc config --pw <poc_workspace>``
+- ``nvflare poc config --pw <poc_workspace>`` を介した ``~/.nvflare/config.conf``
 
-Use ``nvflare poc config`` to show or set the local POC workspace:
+ローカル POC ワークスペースを表示または設定するには、 ``nvflare poc config`` を使用します。
 
 .. code-block:: shell
 
    nvflare poc config
    nvflare poc config --pw /tmp/nvflare/poc
 
-The older root command ``nvflare config -pw <poc_workspace>`` remains accepted
-for compatibility, but it is deprecated and prints a warning that points to
-``nvflare poc config --pw``.
+以前のルートコマンドである ``nvflare config -pw <poc_workspace>`` も互換性のために引き続き受け付けられますが、
+非推奨であり、 ``nvflare poc config --pw`` を案内する警告を出力します。
 
-``nvflare poc prepare`` writes the POC workspace into the local NVFlare config
-and registers generated admin/user startup kits in the shared startup kit
-registry automatically. If a generated POC identity collides with an existing
-startup-kit registration outside the POC workspace, prepare preserves the
-existing registration when its path still exists. If the existing registration
-points to a path that no longer exists, prepare treats it as stale local POC
-state and replaces it. Site startup kits remain in the POC workspace for local
-service management.
+``nvflare poc prepare`` は、POC ワークスペースをローカルの NVFlare 設定に書き込み、生成された管理者／
+ユーザーのスタートアップキットを共有スタートアップキットレジストリに自動的に登録します。生成された POC の
+アイデンティティが、POC ワークスペース外の既存のスタートアップキット登録と衝突する場合、その登録先のパスが
+まだ存在していれば、prepare は既存の登録を保持します。既存の登録が既に存在しないパスを指している場合は、
+prepare はそれを古いローカル POC の状態とみなして置き換えます。サイトのスタートアップキットは、ローカルな
+サービス管理のために POC ワークスペース内に残ります。
 
-The default Project Admin startup kit becomes active, so server-connected
-commands such as ``nvflare job list`` and ``nvflare system status`` work
-without extra startup-kit flags.
+既定のプロジェクト管理者スタートアップキットが有効になるため、 ``nvflare job list`` や
+``nvflare system status`` のようなサーバー接続を伴うコマンドを、追加のスタートアップキットフラグなしで
+実行できます。
 
-In JSON mode, ``nvflare poc prepare`` reports the active-kit transition:
-``data.startup_kit.prior_active`` is the startup-kit ID that was active before
-prepare, ``data.startup_kit.active`` is the ID active after prepare, and
-``data.startup_kit.changed`` indicates whether prepare changed the default
-identity. Agents can use this information to restore the user's previous
-identity after the POC workflow.
+JSON モードでは、 ``nvflare poc prepare`` は有効なキットの遷移を報告します。
+``data.startup_kit.prior_active`` は prepare の前に有効だったスタートアップキット ID、
+``data.startup_kit.active`` は prepare の後に有効になった ID、 ``data.startup_kit.changed`` は prepare が
+既定のアイデンティティを変更したかどうかを示します。エージェントはこの情報を利用して、POC のワークフローの
+後にユーザーの以前のアイデンティティを復元できます。
 
-``nvflare poc prepare`` also reports a best-effort local server port preflight
-under ``data.port_preflight``. The command checks the generated POC server ports
-on the loopback address when the project configuration can be read and lists
-unavailable ports in ``data.port_preflight.conflicts``. These conflicts are
-warnings for the later ``nvflare poc start`` step; they do not make
-``poc prepare`` fail. Since the preflight does not bind wildcard interfaces,
-``data.port_preflight.note`` describes the check as best effort.
+``nvflare poc prepare`` は、 ``data.port_preflight`` の下にベストエフォートのローカルサーバーポート
+プリフライトも報告します。プロジェクト設定を読み取れる場合、このコマンドは生成された POC サーバーポートを
+ループバックアドレス上でチェックし、利用できないポートを ``data.port_preflight.conflicts`` に列挙します。
+これらの衝突は後続の ``nvflare poc start`` ステップに対する警告であり、 ``poc prepare`` を失敗させることは
+ありません。このプリフライトはワイルドカードインターフェースにバインドしないため、
+``data.port_preflight.note`` はこのチェックがベストエフォートであることを説明します。
 
-In JSON mode, ``nvflare poc start`` reports the bound POC endpoints under
-``data.server_address`` and ``data.admin_address``. The command waits for
-readiness by default unless ``--no-wait`` is used. It also repeats a best-effort
-local server port preflight before startup and reports unavailable configured
-ports under ``data.port_preflight.conflicts`` with ``data.port_conflict`` set to
-``true``. The preflight is loopback-scoped and is intended as an early warning;
-startup can still fail if another local bind address conflicts.
+JSON モードでは、 ``nvflare poc start`` はバインドされた POC のエンドポイントを ``data.server_address``
+および ``data.admin_address`` の下に報告します。 ``--no-wait`` が使用されない限り、コマンドは既定で
+レディネスを待機します。また、起動前にベストエフォートのローカルサーバーポートプリフライトを再度実行し、
+利用できない設定済みポートを ``data.port_preflight.conflicts`` の下に報告するとともに
+``data.port_conflict`` を ``true`` に設定します。このプリフライトはループバックのみを対象とした早期警告を
+意図したものであり、他のローカルバインドアドレスが競合している場合には起動が失敗することもあります。
 
-Use :ref:`config_command` to inspect generated POC startup kit registrations or
-switch between POC-generated user startup kits.
+生成された POC スタートアップキットの登録内容を確認したり、POC で生成されたユーザースタートアップキットを
+切り替えたりするには、 :ref:`config_command` を使用してください。
 
-*********************
-JSON Output and Help
-*********************
+*************************
+JSON 出力とヘルプ
+*************************
 
-Add ``--format json`` after the subcommand for machine-readable output:
+機械可読な出力を得るには、サブコマンドの後に ``--format json`` を追加します。
 
 .. code-block:: shell
 
    nvflare poc prepare -n 2 --format json
    nvflare poc start --format json
 
-Use ``--schema`` for machine-readable command discovery. ``--schema`` always
-returns JSON so ``--format json`` is not needed with it:
+機械可読なコマンド探索には ``--schema`` を使用します。 ``--schema`` は常に JSON を返すため、
+``--format json`` を併用する必要はありません。
 
 .. code-block:: shell
 
    nvflare poc prepare --schema
    nvflare poc start --schema
 
-Human-readable argument errors print help first, followed by the specific
-error. JSON mode prints only the JSON error envelope.
+人間向けの引数エラーでは、まずヘルプが表示され、その後に具体的なエラーが表示されます。JSON モードでは
+JSON のエラーエンベロープのみが出力されます。
