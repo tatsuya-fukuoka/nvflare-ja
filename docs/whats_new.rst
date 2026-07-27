@@ -2,4 +2,4 @@
 
 .. include:: release_notes/flare_280.rst
 
-Please refer to :ref:`previous_release` for previous releases.
+過去のリリースについては :ref:`previous_release` を参照してください。

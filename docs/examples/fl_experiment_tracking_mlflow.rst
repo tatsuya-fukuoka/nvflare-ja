@@ -1,114 +1,114 @@
 .. _experiment_tracking_mlflow:
 
-FL Experiment Tracking with MLflow
-==================================
+MLflow によるFL実験トラッキング
+================================
 
-Introduction
+はじめに
 -------------
 
-The example for experiment tracking with MLflow has clients streaming their statistics to the server through
-events and the server writing the statistics to MLflow. This is similar to the :ref:`tensorboard_streaming` example
-but uses MLflow as a back end for experiment tracking. This example is in the advanced examples folder under 
-experiment-tracking, in the "mlflow" directory.
+MLflow による実験トラッキングの例では、クライアントがイベントを通じて統計情報をサーバーにストリーミングし、
+サーバーがその統計情報を MLflow に書き込みます。これは :ref:`tensorboard_streaming` の例と似ていますが、
+実験トラッキングのバックエンドとして MLflow を使用します。この例は advanced examples フォルダの
+experiment-tracking 配下、"mlflow" ディレクトリにあります。
 
-The setup of this exercise consists of one **server** and two **clients**. The clients stream their statistics to
-the server as events with :class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>`,
-and only the server writes data to the MLflow tracking server with
-:class:`MLflowReceiver<nvflare.app_opt.tracking.mlflow.mlflow_receiver.MLflowReceiver>`. This allows the server to
-be the only party that needs to deal with authentication and communication with the MLflow tracking server, and
-streamlines and reduces the communication by buffering the data to send.
+この演習のセットアップは、1つの **サーバー** と2つの **クライアント** で構成されます。クライアントは
+:class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>` を使って統計情報をイベントとして
+サーバーにストリーミングし、MLflow トラッキングサーバーへデータを書き込むのはサーバーだけです
+(:class:`MLflowReceiver<nvflare.app_opt.tracking.mlflow.mlflow_receiver.MLflowReceiver>` を使用)。これにより、
+MLflow トラッキングサーバーとの認証や通信を扱う必要があるのはサーバーだけになり、送信データをバッファリングすることで
+通信を効率化し削減できます。
 
 
-Let's get started. Make sure you have an environment with NVIDIA FLARE installed as described in
-:ref:`getting_started`. First clone the repo:
+では始めましょう。:ref:`getting_started` で説明されているとおり、NVIDIA FLARE がインストールされた環境を
+用意してください。まずリポジトリをクローンします。
 
 .. code-block:: shell
 
   $ git clone https://github.com/NVIDIA/NVFlare.git
 
-Now remember to activate your NVIDIA FLARE Python virtual environment from the installation guide.
+インストールガイドで作成した NVIDIA FLARE の Python 仮想環境を有効化することを忘れないでください。
 
-Install the required dependencies (NVFlare/examples/advanced/experiment-tracking/mlflow).
+必要な依存関係をインストールします (NVFlare/examples/advanced/experiment-tracking/mlflow)。
 
 .. code-block:: shell
 
   (nvflare-env) $ python3 -m pip install -r requirements.txt
 
-When running, make sure to set `PYTHONPATH` to include the custom files of the example (replacing the path below
-with the appropriate path to the directory containing the "pt" directory with custom files):
+実行する際は、この例のカスタムファイルを含めるように `PYTHONPATH` を設定してください (下記のパスは、カスタムファイルを
+含む "pt" ディレクトリがあるディレクトリへの適切なパスに置き換えてください)。
 
 .. code-block:: shell
 
   (nvflare-env) $ export PYTHONPATH=${YOUR PATH TO NVFLARE}/examples/advanced/experiment-tracking
 
-Adding MLflow Logging to Configurations
+設定へのMLflowロギングの追加
 ------------------------------------------------
 
-Inside the example, job configuration and tracking setup are defined in the job script and client script:
+この例では、ジョブ構成とトラッキングのセットアップはジョブスクリプトとクライアントスクリプトで定義されています。
 
 - :github_nvflare_link:`job.py <examples/advanced/experiment-tracking/mlflow/hello-pt-mlflow/job.py>`
 - :github_nvflare_link:`client.py <examples/advanced/experiment-tracking/mlflow/hello-pt-mlflow/client.py>`
 
-Take a look at the components section of the client config at line 24.
-The first component is the ``pt_learner`` which contains the initialization, training, and validation logic.
-``learner_with_mlflow.py`` (under NVFlare/examples/advanced/experiment-tracking/pt) contains the code written for the MLflowWriter syntax.
+クライアント設定の24行目にある components セクションを見てみましょう。
+最初のコンポーネントは ``pt_learner`` で、初期化、学習、検証のロジックを含んでいます。
+``learner_with_mlflow.py`` (NVFlare/examples/advanced/experiment-tracking/pt 配下) には、MLflowWriter の構文で書かれたコードが含まれています。
 
-The :class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>` mimics the syntax of mlflow, to make it easier to use existing code
-that is using MLflow for metrics tracking. Instead of writing to the MLflow tracking server, however, the MLflowWriter creates and sends an event
-within NVFlare with the information to track.
+:class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>` は mlflow の構文を模しており、メトリクストラッキングに
+MLflow を使用している既存コードを使いやすくしています。ただし MLflow トラッキングサーバーに書き込む代わりに、MLflowWriter は
+トラッキングする情報を含んだイベントを NVFlare 内で生成して送信します。
 
-Finally, :class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` converts local events to federated events.
-This changes the event ``analytix_log_stats`` into a fed event ``fed.analytix_log_stats``, which will then be streamed from the clients to the server.
+最後に、:class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` がローカルイベントをフェデレーテッドイベントに変換します。
+これにより ``analytix_log_stats`` イベントは fed イベント ``fed.analytix_log_stats`` に変換され、クライアントからサーバーへストリーミングされます。
 
-Under the component section in the server config, we have the
-:class:`MLflowReceiver<nvflare.app_opt.tracking.mlflow.mlflow_receiver.MLflowReceiver>`. This component receives
-events from the clients and internally buffers them before writing to the MLflow tracking server. The default
-"buffer_flush_time" is one second, but this can be configured as an arg in the component config for MLflowReceiver.
+サーバー設定の components セクションには
+:class:`MLflowReceiver<nvflare.app_opt.tracking.mlflow.mlflow_receiver.MLflowReceiver>` があります。このコンポーネントは
+クライアントからイベントを受け取り、MLflow トラッキングサーバーに書き込む前に内部でバッファリングします。デフォルトの
+"buffer_flush_time" は1秒ですが、MLflowReceiver のコンポーネント設定の引数として構成できます。
 
-Notice how the accepted event type ``"fed.analytix_log_stats"`` matches the output of
-:class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` in the client config.
+受け付けるイベントタイプ ``"fed.analytix_log_stats"`` が、クライアント設定の
+:class:`ConvertToFedEvent<nvflare.app_common.widgets.convert_to_fed_event.ConvertToFedEvent>` の出力と一致していることに注目してください。
 
 
-Adding MLflow Logging to Your Code
+コードへのMLflowロギングの追加
 -------------------------------------------
 
-In this exercise, all of the MLflow code additions are in the training script:
+この演習では、MLflow に関するコードの追加はすべて学習スクリプトの中にあります。
 
 - :github_nvflare_link:`client.py <examples/advanced/experiment-tracking/mlflow/hello-pt-mlflow/client.py>`
 
-First we must initialize our MLflow writer we defined in the client config:
+まず、クライアント設定で定義した MLflow writer を初期化する必要があります。
 
-See initialization and logging usage directly in:
+初期化とロギングの使い方は次のファイルで直接確認できます。
 
 - :github_nvflare_link:`client.py <examples/advanced/experiment-tracking/mlflow/hello-pt-mlflow/client.py>`
 
-The ``LearnerExecutor`` passes in the component dictionary into the ``parts`` parameter of ``initialize()``.
-We can then access the ``MLflowWriter`` component we defined in ``config_fed_client.json``
-by using the ``self.analytic_sender_id`` as the key in the ``parts`` dictionary.
-Note that ``self.analytic_sender_id`` defaults to ``"analytic_sender"``,
-but we can also define it in the client config to be passed into the constructor.
+``LearnerExecutor`` はコンポーネントの辞書を ``initialize()`` の ``parts`` パラメータに渡します。
+``parts`` 辞書のキーとして ``self.analytic_sender_id`` を使うことで、``config_fed_client.json`` で定義した
+``MLflowWriter`` コンポーネントにアクセスできます。
+``self.analytic_sender_id`` のデフォルト値は ``"analytic_sender"`` ですが、
+クライアント設定で定義してコンストラクタに渡すこともできます。
 
-Now that our writer is set to ``MLflowWriter``,
-we can write and stream training metrics to the server in ``local_train()``:
+writer が ``MLflowWriter`` に設定されたので、
+``local_train()`` の中で学習メトリクスを書き込み、サーバーへストリーミングできます。
 
-The script logs training and validation metrics through the MLflow tracking integration during local training.
+このスクリプトは、ローカル学習中に MLflow トラッキング統合を通じて学習と検証のメトリクスを記録します。
 
-You can see the currently supported methods for MLflowWriter in
-:class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>`.
+MLflowWriter で現在サポートされているメソッドは
+:class:`MLflowWriter<nvflare.app_opt.tracking.mlflow.mlflow_writer.MLflowWriter>` で確認できます。
 
 
-Train the Model, Federated!
----------------------------
+モデルをフェデレーテッドに学習しよう！
+--------------------------------------
 
 .. |ExampleApp| replace:: hello-pt-mlflow
 .. include:: run_fl_system.rst
 
 
-Viewing the MLflow UI
+MLflow UIの表示
 ---------------------------------
-By default, MLflow will create an experiment log directory under a directory named "mlruns" in the
-workspace. For example, if your server workspace is located at "/example_workspace/workspace/example_project/prod_00/server-1",
-then you can launch the MLflow UI with:
+デフォルトでは、MLflow はワークスペース内の "mlruns" というディレクトリの下に実験ログのディレクトリを作成します。
+たとえばサーバーのワークスペースが "/example_workspace/workspace/example_project/prod_00/server-1" にある場合、
+次のコマンドで MLflow UI を起動できます。
 
 .. code-block:: shell
 
@@ -119,9 +119,9 @@ then you can launch the MLflow UI with:
 
 .. include:: shutdown_fl_system.rst
 
-Congratulations!
+おめでとうございます！
 
-Now you will be able to see the live training metrics of each client from MLflow, streamed from the server.
+これで、サーバーからストリーミングされた各クライアントのライブ学習メトリクスを MLflow で確認できるようになりました。
 
-The full source code for this exercise can be found in
-:github_nvflare_link:`examples/advanced/experiment-tracking/mlflow <examples/advanced/experiment-tracking/mlflow>`.
+この演習の完全なソースコードは
+:github_nvflare_link:`examples/advanced/experiment-tracking/mlflow <examples/advanced/experiment-tracking/mlflow>` にあります。

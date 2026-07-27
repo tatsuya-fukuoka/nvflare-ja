@@ -6,24 +6,24 @@ Executor
 .. image:: ../../resources/Executor.png
     :height: 300px
 
-An :class:`Executor<nvflare.apis.executor.Executor>` is an FLComponent for FL clients used for executing tasks,
-wherein the ``execute`` method receives and returns a Shareable object given a task name,
-``FLContext``, and ``abort_signal``.
+:class:`Executor<nvflare.apis.executor.Executor>` は、タスクを実行するために FL クライアントで使用される FLComponent です。
+``execute`` メソッドは、タスク名、``FLContext``、``abort_signal`` を受け取り、
+Shareable オブジェクトを受け取って返します。
 
 .. note::
 
-   The Executor API is the low-level client task API. Most new ML training
-   examples should start with the :ref:`client_api` and :ref:`job_recipe`, and
-   use Executor directly only when they need a custom task contract or framework
-   integration.
+   Executor API は低レベルのクライアントタスク API です。新しい ML 学習の
+   サンプルのほとんどは :ref:`client_api` と :ref:`job_recipe` から始めるべきであり、
+   カスタムのタスクコントラクトやフレームワーク統合が必要な場合にのみ
+   Executor を直接使用してください。
 
 .. literalinclude:: ../../../nvflare/apis/executor.py
     :language: python
     :lines: 24-
 
-Examples for Executors are :class:`Trainer<nvflare.app_common.executors.trainer.Trainer>` and :class:`Validator<nvflare.app_common.executors.validator.Validator>`.
-The source code for some example implementations can be found in the example apps. On clients, tasks can be configured
-for Executors in config_fed_client.json:
+Executor の例としては :class:`Trainer<nvflare.app_common.executors.trainer.Trainer>` や :class:`Validator<nvflare.app_common.executors.validator.Validator>` があります。
+いくつかの実装例のソースコードはサンプルアプリの中にあります。クライアント側では、config_fed_client.json で
+Executor に対してタスクを設定できます。
 
 .. code-block:: json
 
@@ -55,29 +55,29 @@ for Executors in config_fed_client.json:
       "components": []
     }
 
-The above configuration is an example from hello_numpy. Each task can only be assigned to one Executor.
+上記の設定は hello_numpy からの例です。各タスクは 1 つの Executor にのみ割り当てられます。
 
 .. _multi_process_executor:
 
-Multi-Process Executor
-----------------------
-:class:`MultiProcessExecutor<nvflare.app_common.executors.multi_process_executor.MultiProcessExecutor>` is designed to
-easily allow the FL executor to support multi-processes execution. The behavior of the Executor remains the same
-including the firing and handling of FL events. MultiProcessExecutor allows researchers to focus on the training and
-execution logic instead of worrying about how to make use of multiple processes or deal with multi-GPU training.
+マルチプロセス Executor
+-----------------------
+:class:`MultiProcessExecutor<nvflare.app_common.executors.multi_process_executor.MultiProcessExecutor>` は、
+FL Executor がマルチプロセス実行を簡単にサポートできるように設計されています。FL イベントの発火や処理を含め、
+Executor の挙動は変わりません。MultiProcessExecutor により、研究者は複数プロセスの活用方法やマルチ GPU 学習の扱いに
+悩むことなく、学習と実行のロジックに集中できます。
 
-During the execution, any event fired from other components will be relayed from the MultiProcessExecutor to all the
-sub-worker processes. Any component which listens to the event in the sub-worker processes can handle the event
-accordingly. Also, any event fired by the FL component in the sub-worker processes will be relayed by the
-MultiProcessExecutor to all other components to handle.
+実行中、他のコンポーネントから発火されたイベントは、MultiProcessExecutor からすべての
+サブワーカープロセスへ中継されます。サブワーカープロセス内でそのイベントを購読しているコンポーネントは、
+そのイベントを適切に処理できます。また、サブワーカープロセス内の FL コンポーネントが発火したイベントも、
+MultiProcessExecutor によって他のすべてのコンポーネントへ中継され、処理されます。
 
 .. image:: ../../resources/multi_process_executor.png
     :height: 400px
 
-MultiProcessExecutor keeps the same FL Executor API signature. When turning the FL executor into
-MultiProcessExecutor, configure the task executor to use MultiProcessExecutor (currently PTMultiProcessExecutor is the
-only implemented MultiProcessExecutor), and configure the existing executor as the "executor_id", and the number of
-processes to use.
+MultiProcessExecutor は FL Executor と同じ API シグネチャを保っています。FL Executor を
+MultiProcessExecutor に変える際は、タスクの executor に MultiProcessExecutor を使うように設定し
+(現時点で実装されている MultiProcessExecutor は PTMultiProcessExecutor のみです)、既存の executor を "executor_id" として設定し、
+使用するプロセス数を指定します。
 
 .. code-block:: json
 

@@ -1,14 +1,14 @@
 :orphan:
 
-********************
-Tutorial Notebooks
-********************
+********************************
+チュートリアルノートブック
+********************************
 
-Tutorial notebooks on GitHub:
+GitHub 上のチュートリアルノートブック:
 
-- :github_nvflare_link:`FL Simulator Notebook (GitHub) <examples/tutorials/flare_simulator.ipynb>`
-- :github_nvflare_link:`Hello FLARE API Notebook (GitHub) <examples/tutorials/flare_api.ipynb>`
-- :github_nvflare_link:`NVFLARE POC Mode in detail Notebook (GitHub) <examples/tutorials/setup_poc.ipynb>`
-- :github_nvflare_link:`NVFlare CLI Notebook (GitHub) <examples/tutorials/nvflare_cli.ipynb>`
-- :github_nvflare_link:`Job Recipe Notebook (GitHub) <examples/tutorials/job_recipe.ipynb>`
-- :github_nvflare_link:`FLARE Logging Notebook (GitHub) <examples/tutorials/logging.ipynb>`
+- :github_nvflare_link:`FL Simulator ノートブック (GitHub) <examples/tutorials/flare_simulator.ipynb>`
+- :github_nvflare_link:`Hello FLARE API ノートブック (GitHub) <examples/tutorials/flare_api.ipynb>`
+- :github_nvflare_link:`NVFLARE POC モード詳細ノートブック (GitHub) <examples/tutorials/setup_poc.ipynb>`
+- :github_nvflare_link:`NVFlare CLI ノートブック (GitHub) <examples/tutorials/nvflare_cli.ipynb>`
+- :github_nvflare_link:`Job Recipe ノートブック (GitHub) <examples/tutorials/job_recipe.ipynb>`
+- :github_nvflare_link:`FLARE ロギングノートブック (GitHub) <examples/tutorials/logging.ipynb>`

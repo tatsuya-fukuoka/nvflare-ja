@@ -2,11 +2,11 @@
 
 .. _admin_guide:
 
-############
-Admin Guide
-############
+##########################
+管理者ガイド
+##########################
 
-Guide for project Admin and Org Admin
+プロジェクト管理者(Project Admin)および組織管理者(Org Admin)向けのガイドです。
 
 .. toctree::
    :maxdepth: 2

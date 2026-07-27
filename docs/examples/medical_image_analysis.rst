@@ -1,11 +1,11 @@
 :orphan:
 
-**********************
-Medical Image Analysis
-**********************
+****************
+医用画像解析
+****************
 
-Medical imaging examples on GitHub:
+GitHub 上の医用画像のサンプル:
 
 - :github_nvflare_link:`Hello MONAI Bundle (GitHub) <integration/monai/examples/spleen_ct_segmentation_sim>`
-- :github_nvflare_link:`Differential Privacy for BraTS18 Segmentation (GitHub) <research/brats18>`
-- :github_nvflare_link:`Prostate Segmentation from Multi-source Data (GitHub) <research/prostate>`
+- :github_nvflare_link:`BraTS18 セグメンテーションにおける差分プライバシー (GitHub) <research/brats18>`
+- :github_nvflare_link:`複数ソースデータからの前立腺セグメンテーション (GitHub) <research/prostate>`

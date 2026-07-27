@@ -1,11 +1,11 @@
-############
-Agent Skills
-############
+########################
+エージェントスキル
+########################
 
-NVFlare-owned agent skills package repeatable coding-agent workflows with
-deterministic helpers and reviewable contracts. Install the skill set through
-the standard ``npx skills add`` workflow; interact with an installed skill
-through the coding agent rather than by invoking its private scripts directly.
+NVFlare が提供するエージェントスキルは、再現可能なコーディングエージェントのワークフローを、
+決定論的なヘルパーとレビュー可能なコントラクトとしてパッケージ化したものです。標準的な
+``npx skills add`` のワークフローでスキルセットをインストールしてください。インストール済みの
+スキルは、その内部スクリプトを直接呼び出すのではなく、コーディングエージェントを通じて利用します。
 
 .. toctree::
    :maxdepth: 1

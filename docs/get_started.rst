@@ -2,4 +2,4 @@
 
 .. _get_started_old:
 
-This page has moved. See :ref:`quickstart`.
+このページは移動しました。:ref:`quickstart` を参照してください。

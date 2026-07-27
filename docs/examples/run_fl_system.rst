@@ -1,30 +1,30 @@
-Now you can use admin command prompt to submit and start this example job.
-To do this on a proof of concept local FL system, follow the sections
-:ref:`setting_up_poc` and :ref:`starting_poc` if you have not already.
+これで、管理コマンドプロンプトを使ってこのサンプルジョブを送信し、開始できます。
+概念実証(proof of concept)のローカル FL システムでこれを行うには、まだ実施していない場合は
+:ref:`setting_up_poc` と :ref:`starting_poc` のセクションに従ってください。
 
 
 
-Running the FL System
-^^^^^^^^^^^^^^^^^^^^^
+FL システムの実行
+^^^^^^^^^^^^^^^^^^^^
 
-With the admin client command prompt successfully connected and logged in, enter the command below.
+管理クライアントのコマンドプロンプトが正常に接続され、ログインできたら、以下のコマンドを入力します。
 
 .. parsed-literal::
 
     > submit_job |ExampleApp|
 
-Pay close attention to what happens in each of four terminals.
-You can see how the admin submits the job to the server and how
-the :class:`JobRunner <nvflare.private.fed.server.job_runner.JobRunner>` on the server
-automatically picks up the job to deploy and start the run.
+4 つのターミナルそれぞれで何が起こるかをよく観察してください。
+管理クライアントがサーバーにジョブを送信し、サーバー上の
+:class:`JobRunner <nvflare.private.fed.server.job_runner.JobRunner>` が
+そのジョブを自動的に取得してデプロイし、実行を開始する様子を確認できます。
 
-This command uploads the job configuration from the admin client to the server.
-A job id will be returned, and we can use that id to access job information.
+このコマンドは、管理クライアントからサーバーへジョブ設定をアップロードします。
+ジョブ ID が返され、その ID を使ってジョブ情報にアクセスできます。
 
 .. note::
 
-    If we use submit_job [app] then that app will be treated as a single app job.
+    submit_job [app] を使用した場合、その app は単一 app のジョブとして扱われます。
 
-From time to time, you can issue ``check_status server`` in the admin client to check the entire training progress.
+学習全体の進捗を確認したいときは、管理クライアントで ``check_status server`` を随時実行できます。
 
-You should now see how the training does in the very first terminal (the one that started the server).
+これで、一番最初のターミナル(サーバーを起動したターミナル)で学習の様子を確認できるはずです。
