@@ -1190,32 +1190,31 @@ SJ または CJ のジョブ Pod が ``job_launcher.pending_timeout`` 秒を超�
    kubectl -n "$NAMESPACE" describe pod <job-pod-name>
    kubectl -n "$NAMESPACE" get events --sort-by=.lastTimestamp
 
-Common causes include insufficient CPU, memory, GPU, or ephemeral storage;
-missing study-data PVCs; image pull failures; and missing GPU device-plugin
-resources.
+よくある原因としては、CPU、メモリ、GPU、エフェメラルストレージの不足、スタディデータ PVC
+の欠落、イメージ pull の失敗、GPU デバイスプラグインのリソースの欠如などが挙げられます。
 
-Job pod cannot pull its image
------------------------------
+ジョブ Pod がイメージを pull できない
+--------------------------------------
 
-Job pods use the image from the submitted job's ``launcher_spec`` and set
-``imagePullPolicy: Always``. Confirm the job image name and configure registry
-credentials for dynamically launched pods. Use
-``job_launcher.image_pull_secrets`` in ``k8s.yaml`` for explicit Secret
-references, or rely on node-level credentials or the namespace default
-ServiceAccount if your cluster is configured that way.
+ジョブ Pod は、送信されたジョブの ``launcher_spec`` にあるイメージを使用し、
+``imagePullPolicy: Always`` を設定します。ジョブイメージ名を確認し、動的に起動される Pod
+向けにレジストリ認証情報を設定してください。明示的な Secret 参照には ``k8s.yaml`` の
+``job_launcher.image_pull_secrets`` を使用するか、クラスタがそのように構成されている場合は
+ノードレベルの認証情報やネームスペースのデフォルト ServiceAccount を利用してください。
 
-Client cannot connect to the server
------------------------------------
+クライアントがサーバーに接続できない
+-------------------------------------
 
-Verify these items:
+次の項目を確認してください。
 
-* ``default_host`` in ``project.yml`` matches the DNS name used by the client.
-* The DNS name resolves from the client cluster.
-* The server cluster exposes ``fed_learn_port``.
-* The server certificate includes the DNS name in ``host_names``.
-* Network policy and firewalls allow outbound client traffic to the server.
+* ``project.yml`` の ``default_host`` が、クライアントが使用する DNS 名と一致していること。
+* その DNS 名がクライアントクラスタから解決できること。
+* サーバークラスタが ``fed_learn_port`` を公開していること。
+* サーバー証明書の ``host_names`` にその DNS 名が含まれていること。
+* ネットワークポリシーとファイアウォールが、クライアントからサーバーへの外向きトラフィックを
+  許可していること。
 
-Run a DNS check from the client cluster:
+クライアントクラスタから DNS チェックを実行します。
 
 .. code-block:: bash
 
@@ -1223,35 +1222,35 @@ Run a DNS check from the client cluster:
        --image=busybox:1.36 -- \
        nslookup server1.example.com
 
-If you change ``default_host`` or ``host_names``, reprovision, restage the
-updated folders, and redeploy the charts.
+``default_host`` または ``host_names`` を変更した場合は、再プロビジョニングし、更新された
+フォルダを再ステージングして、チャートを再デプロイしてください。
 
-Uninstall
-=========
+アンインストール
+=================
 
-To stop a participant installed by Helm:
+Helm でインストールした参加者を停止するには、次のコマンドを実行します。
 
 .. code-block:: bash
 
    helm uninstall server -n "$NAMESPACE"
    helm uninstall site-1 -n "$NAMESPACE"
 
-If the participants used ConfigMap/Secret staging, remove those objects after
-uninstalling the Helm releases. They are not owned by Helm, and the startup
-Secret contains the participant's identity keys and certificates:
+参加者が ConfigMap/Secret のステージングを使用していた場合は、Helm リリースをアンインス
+トールした後にそれらのオブジェクトを削除してください。これらは Helm の管理対象ではなく、
+またスタートアップ Secret には参加者のアイデンティティ鍵と証明書が含まれています。
 
 .. code-block:: bash
 
    nvflare deploy k8s unstage ./server-k8s --namespace "$NAMESPACE"
    nvflare deploy k8s unstage ./site-1-k8s --namespace "$NAMESPACE"
 
-Delete the namespace only if it is dedicated to this deployment:
+ネームスペースの削除は、それがこのデプロイ専用である場合にのみ行ってください。
 
 .. code-block:: bash
 
    kubectl delete namespace "$NAMESPACE"
 
-Depending on the storage class reclaim policy, PVC-backed volumes may remain
-after deleting Helm releases or namespaces. Remove retained volumes only after
-confirming that the startup kits, logs, snapshots, job history, and study data
-no longer need to be preserved.
+ストレージクラスの reclaim ポリシーによっては、Helm リリースやネームスペースを削除した後も
+PVC に紐づくボリュームが残る場合があります。残存したボリュームの削除は、スタートアップ
+キット、ログ、スナップショット、ジョブ履歴、スタディデータをこれ以上保持する必要がないことを
+確認したうえで行ってください。

@@ -1,13 +1,13 @@
 .. _application:
 
-########################
-NVIDIA FLARE Application
-########################
+##################################
+NVIDIA FLARE アプリケーション
+##################################
 
-The NVIDIA FLARE application defines how the server and client should run.
-Note that in the scope of one job, each site will only run one application.
+NVIDIA FLARE アプリケーションは、サーバーとクライアントがどのように実行されるべきかを定義します。
+1つのジョブの範囲においては、各サイトは1つのアプリケーションのみを実行することに注意してください。
 
-The structure of the app folder needs to be::
+アプリケーションフォルダの構造は次のようにする必要があります::
 
     app_folder/
         config/
@@ -22,79 +22,79 @@ The structure of the app folder needs to be::
 
 .. note::
 
-    Note that apps can be configured to run on certain sites in a job's deploy_map configuration.
-    An application can also be run without a job.
-    To do this, simply submit an app as a job and a default deploy map of all sites will be used.
+    アプリケーションは、ジョブの deploy_map 設定によって特定のサイト上で実行するように構成できることに注意してください。
+    アプリケーションはジョブなしで実行することもできます。
+    その場合は、アプリケーションを単にジョブとして送信するだけで、全サイトを対象とするデフォルトのデプロイマップが使用されます。
 
 .. note::
 
-    If the same application is going to be deployed on both server and clients, it can contain both
-    ``config_fed_server.json`` and ``config_fed_client.json``
+    同一のアプリケーションをサーバーとクライアントの両方にデプロイする場合、そのアプリケーションは
+    ``config_fed_server.json`` と ``config_fed_client.json`` の両方を含めることができます。
 
 .. note::
 
-    The configuration JSON files config_fed_server.json and config_fed_client.json may be in the root folder of the FL
-    application or in a sub-folder (for example: config) of the FL application.
+    設定用のJSONファイル config_fed_server.json および config_fed_client.json は、FLアプリケーションの
+    ルートフォルダに置くことも、FLアプリケーションのサブフォルダ(例: config)に置くこともできます。
 
-***********************
-FL server configuration
-***********************
+********************************
+FLサーバーの設定
+********************************
 
-``config_fed_server.json`` is the FL server configuration file.
+``config_fed_server.json`` はFLサーバーの設定ファイルです。
 
-Example:
+例:
 
 .. literalinclude:: ../../resources/config_fed_server.json
     :language: json
 
 .. csv-table::
-    :header: Key, Notes
+    :header: キー, 説明
 
-    format_version, The NVIDIA FLARE version for this config
-    server, Specify server-specific attributes like heart_beat_timeout for seconds before the heart beat times out
-    task_data_filters, "What filters to apply to data leaving server, see :ref:`filters`"
-    task_result_filters, "What filters to apply to data arriving to server, see :ref:`filters`"
-    components, All of the Components to use
-    workflows, "What Workflows to use, see :ref:`controllers`"
+    format_version, この設定に対応する NVIDIA FLARE のバージョン
+    server, ハートビートがタイムアウトするまでの秒数を指定する heart_beat_timeout など、サーバー固有の属性を指定します
+    task_data_filters, "サーバーから送出されるデータに適用するフィルタです。 :ref:`filters` を参照してください"
+    task_result_filters, "サーバーに到着するデータに適用するフィルタです。 :ref:`filters` を参照してください"
+    components, 使用するすべてのコンポーネント
+    workflows, "使用するワークフローです。 :ref:`controllers` を参照してください"
 
-***********************
-FL client configuration
-***********************
+********************************
+FLクライアントの設定
+********************************
 
-``config_fed_client.json`` is the FL client configuration file.
+``config_fed_client.json`` はFLクライアントの設定ファイルです。
 
-Example:
+例:
 
 .. literalinclude:: ../../resources/config_fed_client.json
     :language: json
 
 .. csv-table::
-    :header: Key, Notes
+    :header: キー, 説明
 
-    format_version, The NVIDIA FLARE version for this config
-    executors, The configuration for Tasks and Executors which now includes Trainers
-    task_data_filters, "What filters to apply to data arriving at client, see :ref:`filters`"
-    task_result_filters, "What filters to apply to data leaving client, :ref:`filters`"
-    components, All of the Components to use
+    format_version, この設定に対応する NVIDIA FLARE のバージョン
+    executors, タスクとエグゼキュータの設定です。現在はトレーナーもここに含まれます
+    task_data_filters, "クライアントに到着するデータに適用するフィルタです。 :ref:`filters` を参照してください"
+    task_result_filters, "クライアントから送出されるデータに適用するフィルタです。 :ref:`filters`"
+    components, 使用するすべてのコンポーネント
 
 
 .. _custom_code:
 
-***********
-Custom code
-***********
+************************
+カスタムコード
+************************
 
-You can write your own components and bring your own code (BYOC) following the :ref:`programming_guide`.
+:ref:`programming_guide` に従って、独自のコンポーネントを記述し、独自のコードを持ち込む(BYOC)ことができます。
 
-To use it in your application, put the code inside the "custom" folder of the application folder and make sure BYOC is
-enabled and allowed.
+アプリケーションでそれを使用するには、そのコードをアプリケーションフォルダの "custom" フォルダ内に配置し、
+BYOCが有効かつ許可されていることを確認してください。
 
-In your server or client config, use path to refer to that component.
+サーバーまたはクライアントの設定では、path を使ってそのコンポーネントを参照します。
 
-Custom code config example
-==========================
-For example, with a ``SimpleTrainer`` class stored in a file ``my_trainer.py`` inside the custom folder,
-the client config should have the following in order to configure it as an Executor::
+カスタムコードの設定例
+==============================
+例えば、custom フォルダ内の ``my_trainer.py`` というファイルに ``SimpleTrainer`` クラスが格納されている場合、
+それをエグゼキュータとして設定するには、クライアント設定に次のような記述が必要です::
 
     ...
     "executor": {
@@ -105,25 +105,25 @@ the client config should have the following in order to configure it as an Execu
 
 .. note::
 
-    Configuration of Executor Tasks is ignored here.
+    ここではエグゼキュータのタスク設定は省略しています。
 
-Please follow :ref:`getting_started` to learn more.
+詳しくは :ref:`getting_started` を参照してください。
 
 .. _troubleshooting_byoc:
 
-Troubleshooting BYOC
-====================
-In 2.2.1, authorization has been redesigned and BYOC is no longer controlled through settings at provisioning, but
-instead by each site's authorization.json (in the local folder of the workspace). BYOC is a right and can be restricted
-to certain roles or even orgs or users. See :ref:`federated_authorization` for details.
+BYOCのトラブルシューティング
+========================================
+2.2.1では認可の仕組みが再設計され、BYOCはプロビジョニング時の設定では制御されなくなり、代わりに各サイトの
+authorization.json (ワークスペースの local フォルダ内)によって制御されるようになりました。BYOCは権利(right)であり、
+特定のロール、さらには組織やユーザーに対して制限することができます。詳細は :ref:`federated_authorization` を参照してください。
 
-*********
-Resources
-*********
+************
+リソース
+************
 
-A ``log_config.json`` is needed inside the resources folder.
-This file is for the Python logger to use.
-If you don't want to customize the log behavior, you can use the same ``log_config.json`` from one of
-the example application folder.
+resources フォルダ内には ``log_config.json`` が必要です。
+このファイルはPythonのロガーが使用します。
+ログの挙動をカスタマイズする必要がない場合は、サンプルアプリケーションフォルダのいずれかにある
+``log_config.json`` をそのまま使用できます。
 
 .. literalinclude:: ../../resources/log_config.json
