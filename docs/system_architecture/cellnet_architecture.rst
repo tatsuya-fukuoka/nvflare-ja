@@ -1,212 +1,227 @@
 .. _cellnet_architecture:
 
-####################
-CellNet Architecture
-####################
+##############################
+CellNet アーキテクチャ
+##############################
 
 .. image:: ../resources/cellnet.png
    :alt: CellNet Architecture
 
 
-Purpose and Scope
-#################
+目的と適用範囲
+##############
 
-CellNet is FLARE's unified communication layer that provides secure, scalable messaging between distributed federated
-learning components. It abstracts away network transport details and provides a consistent API for both small messages and
-large data transfers.
+CellNet は FLARE の統一通信レイヤーであり、分散されたフェデレーテッドラーニングの
+コンポーネント間で、セキュアかつスケーラブルなメッセージングを提供します。ネットワーク
+トランスポートの詳細を抽象化し、小さなメッセージと大容量データ転送の双方に対して一貫した
+API を提供します。
 
-Position in NVFLARE Architecture: CellNet sits between the application layer (Controllers, Executors, Admin commands) and
-the network transport layer (gRPC, TCP, HTTP drivers). All NVFLARE components communicate through CellNet, including:
+NVFLARE アーキテクチャにおける位置づけ: CellNet は、アプリケーション層(Controller、
+Executor、管理コマンド)とネットワークトランスポート層(gRPC、TCP、HTTP のドライバー)の
+間に位置します。次のものを含め、すべての NVFLARE コンポーネントは CellNet を通じて
+通信します。
 
-- **Server-to-client task distribution**
-- **Client-to-server result submission**
-- **Peer-to-peer communication**
-- **Admin command execution**
-- **Cross-site auxiliary communication**
-- **Job deployment and management**
-
-
-Key Design Goals
-################
-
-- **Unified API**: Single interface for both small messages and large data streams
-- **Transport Agnostic**: Supports multiple network protocols (gRPC, TCP, HTTP)
-- **Hierarchical Addressing**: FQCN-based routing for multi-level cell hierarchies
-- **Secure Communication**: Built-in encryption and authentication
-- **Flow Control**: Automatic chunking and flow control for large transfers
-
-Three-Layer Architecture
-########################
-
-- **CoreCell**: Basic message routing, connection management, security
-- **StreamCell**: Large data streaming with chunking and flow control
-- **Cell**: High-level request/reply patterns with automatic channel detection
-
-Layered Cell Architecture
-#########################
+- **サーバーからクライアントへのタスク配布**
+- **クライアントからサーバーへの結果送信**
+- **ピアツーピア通信**
+- **管理コマンドの実行**
+- **サイト間の補助通信**
+- **ジョブのデプロイと管理**
 
 
-Three-Layer Design
-^^^^^^^^^^^^^^^^^^
+主要な設計目標
+##############
 
-The CellNet architecture consists of three layers, each extending the previous:
+- **統一された API**: 小さなメッセージと大容量データストリームの双方に対する単一の
+  インターフェース
+- **トランスポート非依存**: 複数のネットワークプロトコル(gRPC、TCP、HTTP)をサポート
+- **階層的なアドレッシング**: 多階層のセル階層に対応した FQCN ベースのルーティング
+- **セキュアな通信**: 暗号化と認証を標準で内蔵
+- **フロー制御**: 大容量転送に対する自動チャンク分割とフロー制御
 
-**Layer 1: CoreCell** - Basic Message Infrastructure
+3 層アーキテクチャ
+##################
 
-CoreCell provides the fundamental messaging infrastructure:
+- **CoreCell**: 基本的なメッセージルーティング、接続管理、セキュリティ
+- **StreamCell**: チャンク分割とフロー制御を備えた大容量データのストリーミング
+- **Cell**: チャネルの自動判別を伴う高レベルなリクエスト/リプライのパターン
 
-**Key Responsibilities**:
+階層化されたセルアーキテクチャ
+##############################
 
-- **Message Handling** - Routes messages to appropriate handlers based on channel/topic
-- **Connection Management** - Manages listeners (incoming) and connectors (outgoing)
-- **Callback Registry** - Stores message handlers in ``req_reg: Registry``
-- **Agent Tracking** - Maintains ``agents: Dict[str, CellAgent]`` for remote cells
-- **Request Tracking** - Tracks pending requests in ``waiters: Dict[str, _Waiter]``
-- **Security** - Delegates to ``credential_manager: CredentialManager`` for encryption
 
-**Core Methods**:
+3 層設計
+^^^^^^^^^
 
-- **send_request** (channel, target, topic, request, timeout, ...) - Send message and wait for reply
-- **fire_and_forget** (channel, topic, targets, message, ...) - Send without waiting
-- **broadcast_request** (channel, topic, targets, request, ...) - Send to multiple targets
-- **register_request_cb** (channel, topic, cb, ...) - Register callback for channel/topic
+CellNet アーキテクチャは 3 つの層で構成され、それぞれが前の層を拡張しています。
 
-**Layer 2: StreamCell** - Large Data Transfer
+**レイヤー 1: CoreCell** - 基本的なメッセージ基盤
 
-The StreamCell adds large data transfer capabilities on top of CoreCell:
+CoreCell は、基礎となるメッセージング基盤を提供します。
 
-**Key Components**:
+**主な責務**:
 
-- **cell**: CoreCell - Wrapped CoreCell for basic messaging
-- **byte_streamer**: ByteStreamer - Sends data as chunked streams
-- **byte_receiver**: ByteReceiver - Receives and reassembles chunks
-- **blob_streamer**: BlobStreamer - Optimized for in-memory BLOBs
+- **メッセージ処理** - チャネル/トピックに基づいて、適切なハンドラーへメッセージを
+  ルーティングします
+- **接続管理** - リスナー(受信側)とコネクター(送信側)を管理します
+- **コールバックレジストリ** - メッセージハンドラーを ``req_reg: Registry`` に格納します
+- **エージェントの追跡** - リモートセル用に ``agents: Dict[str, CellAgent]`` を
+  維持します
+- **リクエストの追跡** - 処理待ちのリクエストを ``waiters: Dict[str, _Waiter]`` で
+  追跡します
+- **セキュリティ** - 暗号化を ``credential_manager: CredentialManager`` に委譲します
 
-**Streaming Methods**:
+**中核となるメソッド**:
 
-- **send_stream** (channel, topic, target, message, ...) - Send byte stream with flow control
-- **send_blob** (channel, topic, target, message, ...) - Send BLOB (fits in memory)
-- **register_stream_cb** (channel, topic, stream_cb, ...) - Register stream receiver
-- **register_blob_cb** (channel, topic, blob_cb, ...) - Register BLOB receiver
+- **send_request** (channel, target, topic, request, timeout, ...) - メッセージを
+  送信し、リプライを待ちます
+- **fire_and_forget** (channel, topic, targets, message, ...) - 待たずに送信します
+- **broadcast_request** (channel, topic, targets, request, ...) - 複数のターゲットへ
+  送信します
+- **register_request_cb** (channel, topic, cb, ...) - チャネル/トピックに対する
+  コールバックを登録します
 
-**Streaming Protocol**:
+**レイヤー 2: StreamCell** - 大容量データ転送
 
-- Automatic chunking into configurable chunk sizes (default 1MB)
-- Flow control with sliding window and ACKs
-- Progress tracking via StreamFuture
+StreamCell は、CoreCell の上に大容量データ転送の機能を追加します。
 
-**Layer 3: Cell** - Intelligent Request/Reply
+**主要なコンポーネント**:
 
-The **Cell** class provides a unified interface for streaming and non-streaming messages:
+- **cell**: CoreCell - 基本的なメッセージングのためにラップされた CoreCell
+- **byte_streamer**: ByteStreamer - データをチャンク化されたストリームとして送信します
+- **byte_receiver**: ByteReceiver - チャンクを受信して再構成します
+- **blob_streamer**: BlobStreamer - インメモリの BLOB 向けに最適化されています
 
-**Key Features**:
+**ストリーミングのメソッド**:
 
-1. **Dynamic Method Dispatch**:
+- **send_stream** (channel, topic, target, message, ...) - フロー制御付きでバイト
+  ストリームを送信します
+- **send_blob** (channel, topic, target, message, ...) - BLOB(メモリに収まるもの)を
+  送信します
+- **register_stream_cb** (channel, topic, stream_cb, ...) - ストリームの受信側を
+  登録します
+- **register_blob_cb** (channel, topic, blob_cb, ...) - BLOB の受信側を登録します
 
-- Intercepts method calls and checks if the channel requires streaming via ``_is_stream_channel()``
-- Routes to the appropriate implementation:
+**ストリーミングプロトコル**:
 
-  - Stream channels → ``_broadcast_request()``, ``_send_request()``, etc.
-  - Non-stream channels → ``core_cell.broadcast_request()``, etc.
+- 設定可能なチャンクサイズ(デフォルトは 1MB)への自動チャンク分割
+- スライディングウィンドウと ACK によるフロー制御
+- StreamFuture による進捗の追跡
 
-2. **Channel Classification**:
+**レイヤー 3: Cell** - インテリジェントなリクエスト/リプライ
 
-**Excluded Channels** (non-streaming):
+**Cell** クラスは、ストリーミングと非ストリーミングのメッセージに対する統一された
+インターフェースを提供します。
 
-- ``CellChannel.CLIENT_MAIN`` - Admin commands
-- ``CellChannel.SERVER_MAIN`` - Task distribution
-- ``CellChannel.RETURN_ONLY`` - Internal replies
-- ``CellChannel.CLIENT_COMMAND`` - Client commands
-- Other internal channels
+**主な特徴**:
 
-3. **Request Tracking**:
+1. **動的なメソッドディスパッチ**:
 
-- Maintains ``requests_dict: Dict[str, SimpleWaiter]`` for pending requests
-- ``SimpleWaiter`` tracks request state and receiving progress
-- Reply handling via ``_process_reply()``
+- メソッド呼び出しをインターセプトし、``_is_stream_channel()`` によってそのチャネルが
+  ストリーミングを必要とするかどうかを確認します
+- 適切な実装へルーティングします:
 
-4. **Callback Adaptation**:
+  - ストリームチャネル → ``_broadcast_request()``、``_send_request()`` など
+  - 非ストリームチャネル → ``core_cell.broadcast_request()`` など
 
-- ``Adapter`` class wraps application callbacks for streaming
-- Handles encoding/decoding of stream payloads
-- Sends replies back via ``RETURN_ONLY`` channel
+2. **チャネルの分類**:
 
-5. **FQCN: Fully Qualified Cell Name**:
+**除外されるチャネル**(非ストリーミング):
 
-Every cell is identified by a Fully Qualified Cell Name (FQCN), which is a dot-separated hierarchical name:
+- ``CellChannel.CLIENT_MAIN`` - 管理コマンド
+- ``CellChannel.SERVER_MAIN`` - タスク配布
+- ``CellChannel.RETURN_ONLY`` - 内部リプライ
+- ``CellChannel.CLIENT_COMMAND`` - クライアントコマンド
+- その他の内部チャネル
+
+3. **リクエストの追跡**:
+
+- 処理待ちのリクエスト用に ``requests_dict: Dict[str, SimpleWaiter]`` を維持します
+- ``SimpleWaiter`` がリクエストの状態と受信の進捗を追跡します
+- リプライの処理は ``_process_reply()`` を通じて行われます
+
+4. **コールバックの適応**:
+
+- ``Adapter`` クラスが、アプリケーションのコールバックをストリーミング向けにラップします
+- ストリームペイロードのエンコード/デコードを処理します
+- ``RETURN_ONLY`` チャネル経由でリプライを返送します
+
+5. **FQCN: 完全修飾セル名(Fully Qualified Cell Name)**:
+
+すべてのセルは、ドット区切りの階層的な名前である完全修飾セル名(FQCN)によって識別されます。
 
 ``<site_name>[.<job_id>[.<rank>]]``
 
-6. **End-to-end Encryption**: All messages can be encrypted for secure communication.
+6. **エンドツーエンドの暗号化**: すべてのメッセージは、セキュアな通信のために暗号化できます。
 
-Message Structure and Addressing
+メッセージの構造とアドレッシング
 ################################
 
-Channel and Topic Addressing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+チャネルとトピックによるアドレッシング
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-F3 CellNet routes messages using a two-level addressing scheme: channel and topic.
-This is stored in message headers:
+F3 CellNet は、チャネルとトピックという 2 段階のアドレッシング方式でメッセージを
+ルーティングします。これはメッセージヘッダーに格納されます。
 
-.. list-table:: **Predefined Channels**
+.. list-table:: **定義済みのチャネル**
    :header-rows: 1
    :widths: 35 25 40
 
-   * - Constant
-     - Value
-     - Purpose
+   * - 定数
+     - 値
+     - 用途
    * - CellChannel.CLIENT_MAIN
      - "admin"
-     - Admin commands
+     - 管理コマンド
    * - CellChannel.SERVER_MAIN
      - "task"
-     - Task distribution
+     - タスク配布
    * - CellChannel.AUX_COMMUNICATION
      - "aux_communication"
-     - Application-defined
+     - アプリケーション定義
    * - CellChannel.RETURN_ONLY
      - "return_only"
-     - Internal reply routing
+     - 内部リプライのルーティング
    * - CellChannel.SERVER_COMMAND
      - "server_command"
-     - Server commands
+     - サーバーコマンド
 
 
-Communication Patterns
-^^^^^^^^^^^^^^^^^^^^^^
-- **Request-Reply Pattern** -- send request and wait for reply
-- **Fire-and-Forget Pattern** -- send message without waiting for reply
-- **Broadcast Pattern** -- send to multiple targets
+通信パターン
+^^^^^^^^^^^^
+- **リクエスト-リプライパターン** -- リクエストを送信し、リプライを待ちます
+- **ファイアアンドフォーゲットパターン** -- リプライを待たずにメッセージを送信します
+- **ブロードキャストパターン** -- 複数のターゲットへ送信します
 
-Streaming Components Overview
-#############################
+ストリーミングコンポーネントの概要
+##################################
 
-The streaming system is organized into sender components, receiver components, and stream abstractions:
+ストリーミングのシステムは、送信側コンポーネント、受信側コンポーネント、そしてストリームの
+抽象化に整理されています。
 
-Key Streaming Classes:
+主要なストリーミングクラス:
 
-.. list-table:: **Key Streaming Classes**
+.. list-table:: **主要なストリーミングクラス**
    :header-rows: 1
    :widths: 25 40
 
-   * - Class
-     - Purpose
+   * - クラス
+     - 用途
    * - ByteStreamer
-     - Sends byte streams as chunks
+     - バイトストリームをチャンクとして送信します
    * - ByteReceiver
-     - Receives and reassembles chunks
+     - チャンクを受信して再構成します
    * - BlobStreamer
-     - Wraps blobs for streaming
+     - ストリーミングのために blob をラップします
    * - TxTask
-     - Per-stream sending task
+     - ストリームごとの送信タスク
    * - RxTask
-     - Per-stream receiving task
+     - ストリームごとの受信タスク
 
 
-Performance and Statistics
-##########################
+パフォーマンスと統計
+####################
 
-CellNet includes comprehensive statistics collection for monitoring and debugging.
-Statistics are collected via ``StatsPoolManager`` with categories for different operation types and cell FQCNs.
-
-
+CellNet には、監視とデバッグのための包括的な統計収集機能が含まれています。
+統計は ``StatsPoolManager`` を通じて収集され、操作の種類とセルの FQCN ごとの
+カテゴリに分類されます。

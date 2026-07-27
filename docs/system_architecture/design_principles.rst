@@ -1,23 +1,23 @@
 
-Design Principles
-=================
+設計原則
+========
 
-**Less is more**
+**Less is more(少ないことは豊かなこと)**
 
-The system is intentionally scoped to include only essential functionality. Rather than addressing every domain-specific requirement, it provides an open and extensible platform that enables others to build customized solutions while adhering to well-defined specifications.
+本システムは、必要不可欠な機能だけを含むように意図的にスコープを絞っています。ドメイン固有の要件をすべて満たそうとするのではなく、明確に定義された仕様に従いながら、他者がカスタマイズされたソリューションを構築できる、オープンで拡張可能なプラットフォームを提供します。
 
-**Design to the specification**
+**仕様に対して設計する**
 
-All components and APIs are defined by explicit specifications, allowing alternative and interoperable implementations. This specification-driven approach ensures flexibility, promotes extensibility, and avoids tight coupling to any single reference implementation.
+すべてのコンポーネントと API は明示的な仕様によって定義されており、代替可能で相互運用性のある実装を可能にします。この仕様駆動のアプローチにより、柔軟性が確保され、拡張性が促進され、特定のリファレンス実装への密結合が避けられます。
 
-**Build for real-world use**
+**実世界での利用を前提に構築する**
 
-The system is designed to operate reliably under real-world conditions, including unexpected failures and misbehaving components. Default reference implementations to ensure predictable behavior in production environments.
+本システムは、予期しない障害や不正な振る舞いをするコンポーネントを含む実世界の条件下でも、信頼性高く動作するよう設計されています。デフォルトのリファレンス実装により、本番環境で予測可能な挙動を確保します。
 
-**Keep the system general-purpose**
+**システムを汎用的に保つ**
 
-The architecture is designed to support a broad range of federated computing use cases. Components are organized into layered abstractions with minimal interdependencies, enabling use-case-specific extensions without modifying the system core.
+本アーキテクチャは、幅広いフェデレーテッドコンピューティングのユースケースをサポートするよう設計されています。コンポーネントは相互依存を最小限に抑えた階層的な抽象へと整理されており、システムのコアを変更することなくユースケース固有の拡張を行えます。
 
-**Be client-system friendly**
+**クライアントシステムに優しくする**
 
-The system is designed to run in diverse deployment environments with minimal external dependencies. It integrates cleanly with existing applications and platforms, avoiding assumptions or constraints that would interfere with client systems.
+本システムは、外部依存を最小限に抑えて多様なデプロイ環境で動作するよう設計されています。既存のアプリケーションやプラットフォームときれいに統合され、クライアントシステムを妨げるような前提や制約を課しません。

@@ -1,29 +1,29 @@
 .. _logging_configuration:
 
-#####################
-Logging Configuration
-#####################
+####################
+ロギング設定
+####################
 
-FLARE uses python logging with the `dictConfig API <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`_ following the `configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema>`_.
-FLARE Loggers are designed to follow the package level hierarchy using dot separated logger names in order to facilitate granular control at different levels.
+FLARE は `dictConfig API <https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig>`_ を用いた Python の logging を、`設定ディクショナリスキーマ <https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema>`_ に従って使用します。
+FLARE のロガーは、異なるレベルできめ細かく制御できるようにするため、ドット区切りのロガー名を用いてパッケージレベルの階層に従うよう設計されています。
 
-We provide a :ref:`Default Logging Configuration <default_logging_configuration>` file **log_config.json.default** for all NVFLARE sub-systems with pre-configured handlers for console level colors, logs, error logs, structured json logs, and fl training logs.
+すべての NVFLARE サブシステム向けに、コンソールレベルの色付け、ログ、エラーログ、構造化された json ログ、FL 学習ログ用のハンドラをあらかじめ設定した :ref:`デフォルトのロギング設定 <default_logging_configuration>` ファイル **log_config.json.default** を提供しています。
 
-Overwrite the default configuration by :ref:`Modifying Logging Configurations <modifying_logging_configurations>` files,
-or change the logging configuration during runtime by using the :ref:`Dynamic Logging Configuration Commands <dynamic_logging_configuration_commands>` ``configure_site_log`` and ``configure_job_log``.
+デフォルト設定を上書きするには :ref:`ロギング設定の変更 <modifying_logging_configurations>` でファイルを変更するか、
+:ref:`動的ロギング設定コマンド <dynamic_logging_configuration_commands>` の ``configure_site_log`` および ``configure_job_log`` を使って実行時にロギング設定を変更します。
 
-**********************************
-Logging Configuration and Features
-**********************************
+************************
+ロギング設定と機能
+************************
 
 .. _default_logging_configuration:
 
-Default Logging Configuration
-=============================
+デフォルトのロギング設定
+==============================
 
-The default logging configuration json file (**log_config.json.default**, ``LogMode.FULL``) is divided into 3 main sections: formatters, handlers, and loggers.
-This file can be found at :github_nvflare_link:`log_config.json <nvflare/fuel/utils/log_config.json>`.
-See the `configuration dictionary schema <https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema>`_ for more details.
+デフォルトのロギング設定 json ファイル (**log_config.json.default**、``LogMode.FULL``) は、formatters、handlers、loggers という 3 つの主要セクションに分かれています。
+このファイルは :github_nvflare_link:`log_config.json <nvflare/fuel/utils/log_config.json>` にあります。
+詳細については `設定ディクショナリスキーマ <https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema>`_ を参照してください。
 
 .. code-block:: json
 
@@ -105,22 +105,22 @@ See the `configuration dictionary schema <https://docs.python.org/3/library/logg
         }
     }
 
-We use different formatters, filters, and handlers to output log records to the console and various log files, which are described in more detail below.
+ログレコードをコンソールや各種ログファイルに出力するために、さまざまなフォーマッタ、フィルタ、ハンドラを使用します。これらについては以下で詳しく説明します。
 
-Formatters
-==========
+フォーマッタ
+==================
 
-`Formatters <https://docs.python.org/3/library/logging.html#formatter-objects>`_ are used to specify the format of log records.
-We provide several useful formatters by default:
+`フォーマッタ <https://docs.python.org/3/library/logging.html#formatter-objects>`_ は、ログレコードの形式を指定するために使用します。
+デフォルトで便利なフォーマッタをいくつか提供しています。
 
 BaseFormatter
 -------------
-The :class:`BaseFormatter<nvflare.fuel.utils.log_utils.BaseFormatter>` is the default formatter serving as the base class for other FLARE formatters.
+:class:`BaseFormatter<nvflare.fuel.utils.log_utils.BaseFormatter>` はデフォルトのフォーマッタであり、他の FLARE フォーマッタの基底クラスとして機能します。
 
-- All the default `Formatter <https://docs.python.org/3/library/logging.html#logging.Formatter>`_ arguments such as **fmt** with `log record attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_ and the **datefmt** `date format string <https://docs.python.org/3/library/logging.html#logging.Formatter.formatTime>`_ can be specified.
-- The **record.name** is shortened to the logger base name, and **record.fullName** is set to the logger full name.
+- `ログレコード属性 <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_ を伴う **fmt** や、**datefmt** の `日付フォーマット文字列 <https://docs.python.org/3/library/logging.html#logging.Formatter.formatTime>`_ など、標準の `Formatter <https://docs.python.org/3/library/logging.html#logging.Formatter>`_ の引数をすべて指定できます。
+- **record.name** はロガーのベース名に短縮され、**record.fullName** にはロガーのフルネームが設定されます。
 
-Example configuration and output:
+設定例と出力例:
 
 .. code-block:: json
 
@@ -137,15 +137,15 @@ Example configuration and output:
 
 ColorFormatter
 --------------
-The :class:`ColorFormatter<nvflare.fuel.utils.log_utils.ColorFormatter>` uses ANSI color codes to format log records based on log level and/or logger names.
+:class:`ColorFormatter<nvflare.fuel.utils.log_utils.ColorFormatter>` は ANSI カラーコードを使用して、ログレベルやロガー名に基づいてログレコードを整形します。
 
-We provide the :class:`ANSIColor<nvflare.fuel.utils.log_utils.ANSIColor>` class for commonly used colors and default mappings for log levels.
-To customize the colors, use either string of a color name specified in ANSIColor.COLORS, or an ANSI color code (semicolons can be used for additional ANSI arguments).
+よく使われる色とログレベルのデフォルトマッピングのために、:class:`ANSIColor<nvflare.fuel.utils.log_utils.ANSIColor>` クラスを提供しています。
+色をカスタマイズするには、ANSIColor.COLORS で指定されている色名の文字列、または ANSI カラーコード (追加の ANSI 引数にはセミコロンを使用できます) を使用します。
 
-- **level_colors**: dict of levelname: ANSI color. Defaults to ANSIColor.DEFAULT_LEVEL_COLORS.
-- **logger_colors**: dict of loggername: ANSI color. Defaults to {}.
+- **level_colors**: levelname と ANSI カラーの dict。デフォルトは ANSIColor.DEFAULT_LEVEL_COLORS です。
+- **logger_colors**: loggername と ANSI カラーの dict。デフォルトは {} です。
 
-Example configuration:
+設定例:
 
 .. code-block:: json
 
@@ -169,9 +169,9 @@ Example configuration:
 
 JsonFormatter
 -------------
-The :class:`JsonFormatter<nvflare.fuel.utils.log_utils.JsonFormatter>` converts the log records into a json string.
+:class:`JsonFormatter<nvflare.fuel.utils.log_utils.JsonFormatter>` はログレコードを json 文字列に変換します。
 
-Example configuration and output:
+設定例と出力例:
 
 .. code-block:: json
 
@@ -185,22 +185,22 @@ Example configuration and output:
     {"asctime": "2025-01-14 14:44:46,559", "name": "PTInProcessClientAPIExecutor", "fullName": "nvflare.app_opt.pt.in_process_client_api_executor.PTInProcessClientAPIExecutor", "levelname": "INFO", "fl_ctx": "[identity=site-1, run=fc711945-a7cf-4834-9fc4-aa9cb60e327b, peer=example_project, peer_run=fc711945-a7cf-4834-9fc4-aa9cb60e327b, task_name=train, task_id=a16b7a02-b2ea-4eb5-895a-b40d507b2c5c]", "message": "execute for task (train)"}
 
 
-Filters
-=======
+フィルタ
+============
 
-`Filters <https://docs.python.org/3/library/logging.html#filter-objects>`_ are used to allow certain log records to pass through based on specified criteria.
+`フィルタ <https://docs.python.org/3/library/logging.html#filter-objects>`_ は、指定した条件に基づいて特定のログレコードのみを通過させるために使用します。
 
 LoggerNameFilter
 ----------------
-:class:`LoggerNameFilter<nvflare.fuel.utils.log_utils.LoggerNameFilter>` filters loggers based on a list of logger_names.
-Filters utilize the logger hierarchy, so any descendants of the specified names will also be allowed through the filter.
-By default, LoggerNameFilter is configured with allow_all_error_logs to allow all logs with level greater than INFO though even if they are not from a logger in logger_names.
+:class:`LoggerNameFilter<nvflare.fuel.utils.log_utils.LoggerNameFilter>` は logger_names のリストに基づいてロガーをフィルタリングします。
+フィルタはロガーの階層を利用するため、指定した名前の子孫にあたるロガーもフィルタを通過します。
+デフォルトでは、LoggerNameFilter は allow_all_error_logs が設定されており、logger_names に含まれるロガー以外からのログであっても、INFO より高いレベルのログはすべて通過させます。
 
-- **logger_names**: list of logger names to allow through filter
-- **exclude_logger_names**: list of logger names to disallow through filter (takes precedence over allowing from logger_names)
-- **allow_all_error_logs**: allow all log records with levelno > logging.INFO through filter, even if they are not from a logger in logger_names. Defaults to True.
+- **logger_names**: フィルタを通過させるロガー名のリスト
+- **exclude_logger_names**: フィルタを通過させないロガー名のリスト (logger_names による許可よりも優先されます)
+- **allow_all_error_logs**: logger_names に含まれるロガー以外からのログであっても、levelno > logging.INFO のログレコードをすべてフィルタを通過させます。デフォルトは True です。
 
-We leverage this in our FLFilter, which filters loggers related to fl training or custom code.
+これを FLFilter で活用しており、FL 学習やカスタムコードに関連するロガーをフィルタリングします。
 
 .. code-block:: json
 
@@ -209,16 +209,16 @@ We leverage this in our FLFilter, which filters loggers related to fl training o
         "logger_names": ["custom", "nvflare.app_common", "nvflare.app_opt"]
     }
 
-Handlers
-========
-`Handlers <https://docs.python.org/3/library/logging.html#handler-objects>`_ are responsible for sending log records to a destination, while applying any specified Formatter or Filters (applied sequentially).
+ハンドラ
+============
+`ハンドラ <https://docs.python.org/3/library/logging.html#handler-objects>`_ は、指定された Formatter や Filter を (順次) 適用しながら、ログレコードを送信先に送る役割を担います。
 
 consoleHandler
 --------------
 
-The consoleHandler uses the `StreamHandler <https://docs.python.org/3/library/logging.handlers.html#streamhandler>`_ to send logging output to a stream, such as sys.stdout.
+consoleHandler は `StreamHandler <https://docs.python.org/3/library/logging.handlers.html#streamhandler>`_ を使用して、sys.stdout などのストリームにログ出力を送ります。
 
-Example configuration:
+設定例:
 
 .. code-block:: json
 
@@ -233,12 +233,12 @@ Example configuration:
 
 FileHandlers
 ------------
-We use `FileHandlers <https://docs.python.org/3/library/logging.handlers.html#filehandler>`_ to send different formatted and filtered log records to different files.
+`FileHandlers <https://docs.python.org/3/library/logging.handlers.html#filehandler>`_ を使用して、異なる形式でフォーマットされフィルタされたログレコードを異なるファイルに送ります。
 
-In the pre-configured handlers, more specifically we utilize the `RotatingFileHandler <https://docs.python.org/3/library/logging.handlers.html#rotatingfilehandler>`_ to rollover to backup files after a certain file size is reached.
-FLARE dynamically interprets the ``filename`` to be relative to the either the workspace root directory (for site log files), or the run directory (for job log files).
+あらかじめ設定されたハンドラでは、より具体的には `RotatingFileHandler <https://docs.python.org/3/library/logging.handlers.html#rotatingfilehandler>`_ を利用して、一定のファイルサイズに達した後にバックアップファイルへローテーションします。
+FLARE は ``filename`` を、ワークスペースのルートディレクトリからの相対パス (サイトのログファイルの場合)、または実行ディレクトリからの相対パス (ジョブのログファイルの場合) として動的に解釈します。
 
-Example configuration:
+設定例:
 
 .. code-block:: json
 
@@ -252,21 +252,21 @@ Example configuration:
         "backupCount": 10
     }
 
-The following log file handlers are pre-configured:
+以下のログファイルハンドラがあらかじめ設定されています。
 
-- logFileHandler with baseFormatter to write all logs to ``log.txt``
-- errorFileHandler  with baseFormatter and level "ERROR" to write error level logs to ``error_log.txt``
-- jsonFileHandler with jsonFormatter to write json formatted logs to ``log.json``
-- FLFileHandler with baseFormatter and FLFilter to write fl training and custom logs to ``log_fl.txt``
+- logFileHandler: baseFormatter を使用してすべてのログを ``log.txt`` に書き込みます
+- errorFileHandler: baseFormatter とレベル "ERROR" を使用して、エラーレベルのログを ``error_log.txt`` に書き込みます
+- jsonFileHandler: jsonFormatter を使用して json 形式のログを ``log.json`` に書き込みます
+- FLFileHandler: baseFormatter と FLFilter を使用して、FL 学習ログとカスタムログを ``log_fl.txt`` に書き込みます
 
 .. _loggers:
 
-Loggers
-=======
+ロガー
+============
 
-Loggers can be configured in the logger section to have a level and handlers.
+ロガーは logger セクションでレベルとハンドラを設定できます。
 
-We define the root logger with INFO level and add the desired handlers.
+root ロガーは INFO レベルで定義し、必要なハンドラを追加します。
 
 .. code-block:: json
 
@@ -275,61 +275,61 @@ We define the root logger with INFO level and add the desired handlers.
         "handlers": ["consoleHandler", "logFileHandler", "errorFileHandler", "jsonFileHandler", "FLFileHandler"]
     }
 
-Given the hierarchical structure of loggers, specific loggers can be configured using their dot separated names.
-Furthermore, any intermediate logger parents are already created and are configurable.
+ロガーは階層構造を持つため、ドット区切りの名前を使って個別のロガーを設定できます。
+さらに、中間にあたる親ロガーもすでに作成されており、設定可能です。
 
-When creating loggers for custom code, we provide a user custom logger function:
+カスタムコード用のロガーを作成する際には、ユーザー向けのカスタムロガー関数を提供しています。
 
-:func:`custom_logger<nvflare.fuel.utils.log_utils.custom_logger>`: From a logger, return a new logger with "custom" prepended to the logger name.
-This enables logs from the custom logger to pass through the default FLFilter so the logs will be displayed in "concise" mode.
+:func:`custom_logger<nvflare.fuel.utils.log_utils.custom_logger>`: あるロガーから、ロガー名の先頭に "custom" を付加した新しいロガーを返します。
+これにより、カスタムロガーからのログがデフォルトの FLFilter を通過できるようになり、"concise" モードでもログが表示されます。
 
-When creating loggers for FLARE code, we provide several developer functions to help adhere to the package logger hierarchy:
+FLARE のコード用のロガーを作成する際には、パッケージのロガー階層に従うのを助ける開発者向け関数をいくつか提供しています。
 
-- :func:`get_obj_logger<nvflare.fuel.utils.log_utils.get_obj_logger>` for classes
-- :func:`get_script_logger<nvflare.fuel.utils.log_utils.get_script_logger>` for scripts
-- :func:`get_module_logger<nvflare.fuel.utils.log_utils.get_module_logger>` for modules
+- クラス用の :func:`get_obj_logger<nvflare.fuel.utils.log_utils.get_obj_logger>`
+- スクリプト用の :func:`get_script_logger<nvflare.fuel.utils.log_utils.get_script_logger>`
+- モジュール用の :func:`get_module_logger<nvflare.fuel.utils.log_utils.get_module_logger>`
 
 
 .. _modifying_logging_configurations:
 
-********************************
-Modifying Logging Configurations
-********************************
+************************
+ロギング設定の変更
+************************
 
 .. _log_config_argument:
 
-Log Config Argument
-===================
-We provide a log config argument (``-l`` or ``log_config`` in simulator mode, and ``config`` in the dynamic logging admin commands for POC and production mode).
-This argument can be any of the following:
+ログ設定引数
+==================
+ログ設定引数を提供しています (シミュレータモードでは ``-l`` または ``log_config``、POC モードおよび本番モードの動的ロギング管理コマンドでは ``config``)。
+この引数には次のいずれかを指定できます。
 
-- log configuration json file (``/path/to/my_log_config.json``, ``my_log_config.json``)
-- predefined console :class:`LogMode<nvflare.fuel.utils.log_utils.LogMode>` (``concise``, ``full``, ``verbose``)
+- ログ設定 json ファイル (``/path/to/my_log_config.json``、``my_log_config.json``)
+- 定義済みのコンソール :class:`LogMode<nvflare.fuel.utils.log_utils.LogMode>` (``concise``、``full``、``verbose``)
 
-    - ``concise`` (default for simulator mode): FLFilter for FL training logs with simplified log attributes
-    - ``full`` (default in workspaces in poc and production mode): full info level logs
-    - ``verbose``: debug level logs with detailed log attributes
+    - ``concise`` (シミュレータモードのデフォルト): 簡略化されたログ属性で FL 学習ログ向けの FLFilter を適用します
+    - ``full`` (POC モードおよび本番モードのワークスペースにおけるデフォルト): 完全な info レベルのログ
+    - ``verbose``: 詳細なログ属性を伴う debug レベルのログ
 
-- log level name or number (``debug``, ``info``, ``warning``, ``error``, ``critical``, ``30``)
-- For admin commands only: read the current log configuration file log_config.json from the workspace (``reload``)
+- ログレベル名または番号 (``debug``、``info``、``warning``、``error``、``critical``、``30``)
+- 管理コマンドのみ: ワークスペースにある現在のログ設定ファイル log_config.json を読み込みます (``reload``)
 
 .. _fl_log_level_env_var:
 
-FL_LOG_LEVEL Environment Variable
-=================================
+FL_LOG_LEVEL 環境変数
+==============================
 
-The ``FL_LOG_LEVEL`` environment variable can be used to set the log configuration without passing a command-line argument or API parameter.
-It accepts the same values as the :ref:`Log Config Argument <log_config_argument>` above (``concise``, ``full``, ``verbose``, a filepath, or a log level).
+``FL_LOG_LEVEL`` 環境変数を使用すると、コマンドライン引数や API パラメータを渡さずにログ設定を行えます。
+上記の :ref:`ログ設定引数 <log_config_argument>` と同じ値 (``concise``、``full``、``verbose``、ファイルパス、またはログレベル) を受け付けます。
 
-This environment variable is applied across all modes: simulator, POC, and production.
+この環境変数は、シミュレータ、POC、本番のすべてのモードで適用されます。
 
-**Precedence** (highest to lowest):
+**優先順位** (高い順):
 
-1. Explicit parameter (``-l`` CLI flag or ``log_config`` API argument)
-2. ``FL_LOG_LEVEL`` environment variable
-3. Default (``concise`` for simulator CLI, workspace ``log_config.json`` for POC/production)
+1. 明示的なパラメータ (``-l`` CLI フラグまたは ``log_config`` API 引数)
+2. ``FL_LOG_LEVEL`` 環境変数
+3. デフォルト (シミュレータ CLI では ``concise``、POC / 本番ではワークスペースの ``log_config.json``)
 
-Example usage:
+使用例:
 
 .. code-block:: shell
 
@@ -343,24 +343,24 @@ Example usage:
     export FL_LOG_LEVEL=error
 
 
-Simulator log configuration
-===========================
+シミュレータのログ設定
+==============================
 
-Users can specify a log configuration in the simulator command with the ``-l`` simulator :ref:`Log Config Argument <log_config_argument>`:
+ユーザーは、シミュレータコマンドの ``-l`` シミュレータ :ref:`ログ設定引数 <log_config_argument>` でログ設定を指定できます。
 
 .. code-block:: shell
 
     nvflare simulator -w /tmp/nvflare/hello-numpy -n 2 -t 2 hello-world/hello-numpy -l log_config.json
 
-Or using the ``log_config`` argument of the Job API simulator run:
+または、Job API のシミュレータ実行の ``log_config`` 引数を使用します。
 
 .. code-block:: python
 
     job.simulator_run("/tmp/nvflare/hello-numpy", log_config="log_config.json")
 
-POC log configurations
-======================
-If you search the POC workspace, you will find the following:
+POC のログ設定
+========================
+POC ワークスペースを検索すると、次のようなファイルが見つかります。
 
 .. code-block:: shell
 
@@ -370,16 +370,16 @@ If you search the POC workspace, you will find the following:
     /tmp/nvflare/poc/site-1/local/log_config.json.default
     /tmp/nvflare/poc/site-2/local/log_config.json.default
 
-You can add a ``log_config.json`` to make changes.
+変更を加えるには ``log_config.json`` を追加できます。
 
-We also recommend using the :ref:`Dynamic Logging Configuration Commands <dynamic_logging_configuration_commands>`.
+また、:ref:`動的ロギング設定コマンド <dynamic_logging_configuration_commands>` の使用も推奨します。
 
-Startup kits log configurations
-===============================
+スタートアップキットのログ設定
+========================================
 
-The log configuration files are located in the startup kits under the local directory.
+ログ設定ファイルは、スタートアップキットの local ディレクトリ配下にあります。
 
-If you search for the ``log_config.json.*`` files in the startup kits workspace, you will find the following files:
+スタートアップキットのワークスペースで ``log_config.json.*`` ファイルを検索すると、次のファイルが見つかります。
 
 .. code-block:: shell
 
@@ -389,43 +389,43 @@ If you search for the ``log_config.json.*`` files in the startup kits workspace,
     ./site-2/local/log_config.json.default
     ./server1/local/log_config.json.default
 
-The server ``log_config.json.default`` is the default logging configuration used by the FL Server and clients. To overwrite the default,
-you can change ``log_config.json.default`` to ``log_config.json`` and modify the configuration.
+サーバーの ``log_config.json.default`` は、FL サーバーおよびクライアントが使用するデフォルトのロギング設定です。デフォルトを上書きするには、
+``log_config.json.default`` を ``log_config.json`` に変更し、設定を修正します。
 
-We also recommend using the :ref:`Dynamic Logging Configuration Commands <dynamic_logging_configuration_commands>`.
+また、:ref:`動的ロギング設定コマンド <dynamic_logging_configuration_commands>` の使用も推奨します。
 
 .. _dynamic_logging_configuration_commands:
 
-**************************************
-Dynamic Logging Configuration Commands
-**************************************
+******************************
+動的ロギング設定コマンド
+******************************
 
-When running the FLARE system (POC mode or production mode), there are two sets of logs: the site logs and job logs.
-The current site log configuration will be used for the site logs as well as the log config of any new job started on that site.
-In order to access the generated logs in the workspaces refer to :ref:`access_server_workspace` and :ref:`client_workspace`.
+FLARE システムを実行しているとき (POC モードまたは本番モード)、サイトログとジョブログという 2 種類のログがあります。
+現在のサイトログ設定は、サイトログに加えて、そのサイトで新たに開始されるジョブのログ設定にも使用されます。
+ワークスペース内に生成されたログにアクセスする方法については、:ref:`access_server_workspace` および :ref:`client_workspace` を参照してください。
 
-We provide two admin commands to enable users to dynamically configure the site or job level logging when running the FLARE system.
-Note these command effects will last until reconfiguration or as long as the corresponding site or job is running.
-However these commands do not overwrite the log configuration file in the workspace- the log configuration file can be reloaded using "reload".
+FLARE システムの実行中に、サイトレベルまたはジョブレベルのロギングを動的に設定できるように、2 つの管理コマンドを提供しています。
+これらのコマンドの効果は、再設定されるまで、あるいは対応するサイトやジョブが実行されている間、持続します。
+ただし、これらのコマンドはワークスペース内のログ設定ファイルを上書きしません。ログ設定ファイルは "reload" を使って再読み込みできます。
 
-- **target**: ``server``, ``client <clients>...``, or ``all``
-- **config**: the log config argument can be any of the following (For more details, refer to :ref:`Log Config Argument <log_config_argument>` above):
+- **target**: ``server``、``client <clients>...``、または ``all``
+- **config**: ログ設定引数には次のいずれかを指定できます (詳細は上記の :ref:`ログ設定引数 <log_config_argument>` を参照してください)。
 
-    - path to a json log configuration file (``/path/to/my_log_config.json``)
-    - predefined log mode (``concise``, ``full``, ``verbose``)
-    - log level name or number (``debug``, ``info``, ``warning``, ``error``, ``critical``, ``30``)
-    - read the current log configuration file log_config.json from the workspace (``reload``)
+    - json ログ設定ファイルへのパス (``/path/to/my_log_config.json``)
+    - 定義済みのログモード (``concise``、``full``、``verbose``)
+    - ログレベル名または番号 (``debug``、``info``、``warning``、``error``、``critical``、``30``)
+    - ワークスペースにある現在のログ設定ファイル log_config.json を読み込む (``reload``)
 
-To configure the target site logging (does not affect currently running jobs):
+対象サイトのロギングを設定するには (実行中のジョブには影響しません):
 
 .. code-block:: shell
 
     configure_site_log target config
 
-To configure the target job logging (the job must be running):
+対象ジョブのロギングを設定するには (ジョブが実行中である必要があります):
 
 .. code-block:: shell
 
     configure_job_log job_id target config
 
-See :ref:`operating_nvflare` for how to use commands and :ref:`command_categories` for the default authorization policy.
+コマンドの使い方については :ref:`operating_nvflare` を、デフォルトの認可ポリシーについては :ref:`command_categories` を参照してください。
