@@ -247,97 +247,97 @@ NVIDIA は、``nvcr.io`` の NGC コンテナレジストリで公式の NVFlare
        - job-registry-credentials
      pending_timeout: 300
 
-The runtime config controls site-level Kubernetes settings:
+このランタイム設定は、サイトレベルの Kubernetes 設定を制御します。
 
-* ``namespace`` is where the parent pod and dynamically launched job pods run.
-* ``server_service_name`` sets the FL server Kubernetes Service name. It
-  defaults to ``nvflare-server``.
-* ``parent`` values are rendered into the Helm chart. They set the parent image,
-  Python executable, workspace PVC, parent service port, parent pod resources,
-  optional parent pod security context, and optional image pull Secret
-  references. ``parent.image_pull_secrets`` must name Kubernetes Secrets that
-  already exist in the target namespace; NVFLARE does not create registry
-  credentials. This setting applies to the generated parent pod chart; use
-  ``job_launcher.image_pull_secrets`` for dynamically launched job pods.
-  ``parent.python_path`` controls the long-lived SP/CP parent pod command.
-  ``parent.workspace_mount_path`` is also written into the K8s launcher config
-  so spawned SJ/CJ job pods mount their job workspace and startup kit at the
-  same in-container path.
-* ``job_launcher`` values are written into the participant's
-  ``local/resources.json.default`` so the parent process can create job pods.
-  ``config_file_path`` may be empty for in-cluster configuration, and
-  ``default_python_path`` controls SJ/CJ job pods when a job does not override
-  ``launcher_spec[site][k8s].python_path``. It does not control the SP/CP parent
-  pod Python path; use ``parent.python_path`` for that command.
-  ``image_pull_secrets`` names existing Kubernetes image pull Secrets attached
-  to every dynamically launched job pod for this prepared site. Configure this
-  during deployment preparation when job images live in a private registry; job
-  authors still only specify the job image in ``meta.json``.
-  Study-specific Pod templates for dynamically launched job pods are configured
-  per study in ``local/study_runtime.yaml`` via ``pod_template``.
-  ``pending_timeout`` is in seconds. It controls how long a dynamically launched
-  job pod can stay in ``Pending`` or ``Unknown`` before the launcher deletes it
-  and reports the run as an execution exception. The admin ``list_jobs`` command
-  then shows ``FINISHED:EXECUTION_EXCEPTION`` instead of treating the timeout as
-  a user abort.
+* ``namespace`` は、親 Pod と動的に起動されるジョブ Pod が実行されるネームスペースです。
+* ``server_service_name`` は、FL サーバーの Kubernetes Service 名を設定します。
+  デフォルトは ``nvflare-server`` です。
+* ``parent`` の値は Helm チャートに反映されます。これらは、親イメージ、Python 実行ファイル、
+  ワークスペース PVC、親サービスのポート、親 Pod のリソース、任意の親 Pod セキュリティ
+  コンテキスト、任意のイメージ pull Secret 参照を設定します。
+  ``parent.image_pull_secrets`` には、対象ネームスペースに既に存在する Kubernetes Secret
+  を指定する必要があります。NVFLARE はレジストリ認証情報を作成しません。この設定は生成
+  される親 Pod のチャートに適用されます。動的に起動されるジョブ Pod には
+  ``job_launcher.image_pull_secrets`` を使用してください。
+  ``parent.python_path`` は、長時間稼働する SP/CP 親 Pod のコマンドを制御します。
+  ``parent.workspace_mount_path`` は K8s ランチャーの設定にも書き込まれ、起動される
+  SJ/CJ ジョブ Pod がジョブワークスペースとスタートアップキットをコンテナ内の同じパスに
+  マウントするようにします。
+* ``job_launcher`` の値は、親プロセスがジョブ Pod を作成できるように、参加者の
+  ``local/resources.json.default`` に書き込まれます。``config_file_path`` はクラスタ内
+  設定の場合は空でも構いません。``default_python_path`` は、ジョブが
+  ``launcher_spec[site][k8s].python_path`` を上書きしない場合に SJ/CJ ジョブ Pod を
+  制御します。これは SP/CP 親 Pod の Python パスは制御しません。そのコマンドには
+  ``parent.python_path`` を使用してください。
+  ``image_pull_secrets`` は、この準備済みサイトで動的に起動されるすべてのジョブ Pod に
+  付与される、既存の Kubernetes イメージ pull Secret を指定します。ジョブイメージが
+  プライベートレジストリにある場合は、デプロイ準備の段階でこれを設定してください。
+  ジョブの作成者は引き続き ``meta.json`` でジョブイメージを指定するだけで済みます。
+  動的に起動されるジョブ Pod のスタディ固有の Pod テンプレートは、
+  ``local/study_runtime.yaml`` の ``pod_template`` によってスタディごとに設定します。
+  ``pending_timeout`` は秒単位です。これは、動的に起動されたジョブ Pod が ``Pending``
+  または ``Unknown`` の状態にとどまることのできる時間を制御し、この時間を超えるとランチャーは
+  その Pod を削除し、実行を実行例外として報告します。その結果、管理者の ``list_jobs``
+  コマンドは、このタイムアウトをユーザーによる中断として扱うのではなく、
+  ``FINISHED:EXECUTION_EXCEPTION`` と表示します。
 
-The parent pod and job pods use different Python settings:
+親 Pod とジョブ Pod では、異なる Python 設定が使用されます。
 
 .. list-table::
    :header-rows: 1
 
-   * - Setting
-     - Applies to
-     - Notes
+   * - 設定
+     - 適用対象
+     - 備考
    * - ``parent.python_path``
-     - Parent server or client pod
-     - Rendered as the Helm container command for ``server_train`` or
-       ``client_train``.
+     - 親サーバー Pod または親クライアント Pod
+     - ``server_train`` または ``client_train`` 用の Helm コンテナコマンドとして
+       反映されます。
    * - ``job_launcher.default_python_path``
-     - Dynamically launched job pods
-     - Used when a job does not set
-       ``launcher_spec[site][k8s].python_path``.
+     - 動的に起動されるジョブ Pod
+     - ジョブが ``launcher_spec[site][k8s].python_path`` を設定していない場合に
+       使用されます。
    * - ``launcher_spec[site][k8s].python_path``
-     - Dynamically launched job pods
-     - Per-job override in ``meta.json``.
+     - 動的に起動されるジョブ Pod
+     - ``meta.json`` におけるジョブ単位の上書き設定です。
 
-Prepare Cluster Storage
-=======================
+クラスタストレージの準備
+=========================
 
-Create and bind any workspace or study-data PVCs required by your cluster before
-starting the participant.
+参加者を起動する前に、クラスタで必要となるワークスペース PVC やスタディデータ PVC を
+作成してバインドしてください。
 
-Create the namespace before applying namespaced PVC manifests or installing
-the Helm chart:
+ネームスペース付きの PVC マニフェストを適用したり、Helm チャートをインストールしたりする
+前に、ネームスペースを作成します。
 
 .. code-block:: bash
 
    export NAMESPACE=nvflare
    kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-Workspace PVC
--------------
+ワークスペース PVC
+-------------------
 
-The workspace PVC is for the parent server or client pod. The generated chart
-mounts ``parent.workspace_pvc`` at ``parent.workspace_mount_path``, but it does
-not upload files to the PVC. Before installing the chart, choose one of two
-supported staging methods for the parent pod's ``startup/`` and ``local/``
-folders:
+ワークスペース PVC は、親サーバー Pod または親クライアント Pod のためのものです。生成
+されるチャートは ``parent.workspace_pvc`` を ``parent.workspace_mount_path`` に
+マウントしますが、PVC へファイルをアップロードすることはありません。チャートをインストール
+する前に、親 Pod の ``startup/`` および ``local/`` フォルダについて、サポートされている
+2 つのステージング方法のいずれかを選択してください。
 
-- Copy the prepared kit's ``startup/`` and ``local/`` directories into the
-  workspace PVC root.
-- Run ``nvflare deploy k8s stage`` to create a ConfigMap for ``local/`` and a
-  Secret for ``startup/`` and patch the generated chart values.
+- 準備済みキットの ``startup/`` および ``local/`` ディレクトリを、ワークスペース PVC の
+  ルートへコピーする。
+- ``nvflare deploy k8s stage`` を実行して、``local/`` 用の ConfigMap と ``startup/``
+  用の Secret を作成し、生成されたチャートの値にパッチを当てる。
 
-For server kits using the PVC-copy method, also create or copy ``transfer/`` at
-the workspace root for admin file-transfer storage. If you use ``kubectl cp`` as
-shown below, the temporary copy pod image must contain ``tar`` because
-``kubectl cp`` requires it in the target container.
+PVC コピー方式を使用するサーバーキットでは、管理者ファイル転送用ストレージとして
+``transfer/`` もワークスペースのルートに作成またはコピーしてください。以下に示すように
+``kubectl cp`` を使用する場合、``kubectl cp`` は対象コンテナ内に ``tar`` を必要とする
+ため、一時的なコピー用 Pod のイメージには ``tar`` が含まれている必要があります。
 
-After either staging method, run ``helm upgrade --install`` for the generated
-chart to start the long-lived parent server or client pod.
+いずれのステージング方法の後でも、生成されたチャートに対して ``helm upgrade --install``
+を実行し、長時間稼働する親サーバー Pod または親クライアント Pod を起動します。
 
-Example ``workspace-pvc.yaml``:
+``workspace-pvc.yaml`` の例を示します。
 
 .. code-block:: yaml
 

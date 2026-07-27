@@ -1,93 +1,89 @@
 .. _brev_deployment:
 
 ###############################
-Brev Kubernetes Helm Deployment
+Brev Kubernetes Helm デプロイ
 ###############################
 
-This guide walks through an end-to-end NVIDIA FLARE deployment on two Brev
-single-node Kubernetes environments, treated as two Kubernetes clusters:
+このガイドでは、2 つの Kubernetes クラスタとして扱う 2 つの Brev シングルノード Kubernetes
+環境上で、NVIDIA FLARE のエンドツーエンドのデプロイを行う手順を説明します。
 
-* one cluster for the FLARE server;
-* one cluster for a single FLARE client named ``site-1``.
+* 1 つのクラスタは FLARE サーバー用
+* もう 1 つのクラスタは ``site-1`` という名前の単一の FLARE クライアント用
 
-It covers provisioning, editing ``project.yml``, using ``nvflare deploy prepare``
-to generate Helm charts for the server and client, creating the Helm workspace
-PersistentVolumeClaim (PVC) and any job data PVCs, staging the prepared folders
-into the workspace PVC, and deploying the generated charts.
+本ガイドでは、プロビジョニング、``project.yml`` の編集、``nvflare deploy prepare`` による
+サーバーとクライアント向けの Helm チャートの生成、Helm ワークスペース用の
+PersistentVolumeClaim (PVC) およびジョブデータ用 PVC の作成、準備済みフォルダのワークスペース
+PVC へのステージング、そして生成されたチャートのデプロイまでを扱います。
 
-The Kubernetes environments are created from the Brev web UI. The exact control
-labels in Brev can change, but the workflow is the same: create an environment,
-select compute, switch the software configuration to ``Single-node Kubernetes``,
-open a Brev shell, copy the prepared kits to the environment, then deploy with
-``kubectl`` and ``helm`` inside each Brev environment.
+Kubernetes 環境は Brev の Web UI から作成します。Brev 上の正確なコントロールのラベルは変更される
+ことがありますが、ワークフローは同じです。環境を作成し、コンピュートを選択し、ソフトウェア構成を
+``Single-node Kubernetes`` に切り替え、Brev のシェルを開き、準備済みのキットを環境にコピーし、
+各 Brev 環境の内部で ``kubectl`` と ``helm`` を使ってデプロイします。
 
-Brev System Overview
+Brev システムの概要
 ====================
 
-Brev provides managed compute environments that can be created with CPU or GPU
-hardware and an optional single-node Kubernetes software configuration. In this
-guide, each Brev environment is used as a small independent Kubernetes cluster:
-one environment runs the FLARE server, and each client site runs in its own
-environment.
+Brev は、CPU または GPU ハードウェアと、オプションのシングルノード Kubernetes ソフトウェア構成で
+作成できるマネージドなコンピュート環境を提供します。このガイドでは、各 Brev 環境を小規模で独立した
+Kubernetes クラスタとして使用します。1 つの環境で FLARE サーバーを実行し、各クライアントサイトは
+それぞれ独自の環境で実行します。
 
-The Brev console is used to create environments, choose hardware, select
-``Single-node Kubernetes``, and expose the FLARE server port. The Brev CLI is
-used from the local workstation to copy files and open shells:
+Brev コンソールは、環境の作成、ハードウェアの選択、``Single-node Kubernetes`` の選択、および
+FLARE サーバーポートの公開に使用します。Brev CLI は、ファイルのコピーとシェルのオープンのために
+ローカルワークステーションから使用します。
 
-* ``brev copy`` uploads each prepared participant archive.
-* ``brev shell`` opens a shell inside a Brev environment.
-* ``brev exec`` can run non-interactive commands after the environment is ready.
+* ``brev copy`` は準備済みの各参加者アーカイブをアップロードします。
+* ``brev shell`` は Brev 環境の内部でシェルを開きます。
+* ``brev exec`` は環境の準備が整った後に非対話的なコマンドを実行できます。
 
-Inside each Brev Kubernetes environment, ``kubectl`` and ``helm`` operate on
-that environment's local cluster. Because the clusters are separate, using the
-same Kubernetes namespace and PVC names in each cluster is safe.
+各 Brev Kubernetes 環境の内部では、``kubectl`` と ``helm`` はその環境のローカルクラスタに対して
+動作します。クラスタは互いに分離されているため、各クラスタで同じ Kubernetes ネームスペースと
+PVC 名を使用しても安全です。
 
-The FLARE server environment needs an inbound TCP port for
-``fed_learn_port``. Client environments usually do not need inbound FLARE
-ports; they connect outbound to the server endpoint configured in
-``project.yml``.
+FLARE サーバー環境には ``fed_learn_port`` 用のインバウンド TCP ポートが必要です。クライアント環境
+は通常、インバウンドの FLARE ポートを必要としません。クライアントは ``project.yml`` で設定された
+サーバーのエンドポイントへアウトバウンドで接続します。
 
-Assumptions
-===========
+前提条件
+=========
 
-The examples use:
+例では次の構成を使用します。
 
-* one server named ``server1``;
-* one client named ``site-1``;
-* one Brev Kubernetes environment named ``nvflare-server-k8s``;
-* one Brev Kubernetes environment named ``nvflare-site-1-k8s``;
-* namespace ``nvflare`` in both clusters;
-* workspace PVC name ``nvflws`` in both clusters;
-* optional job data PVC name ``nvfldata`` in both clusters;
-* an externally reachable DNS name for the server, for example
-  ``server1.example.com``;
-* a container image in a registry that both clusters can pull, for example
-  ``registry.example.com/nvflare:dev``.
+* ``server1`` という名前のサーバー 1 つ
+* ``site-1`` という名前のクライアント 1 つ
+* ``nvflare-server-k8s`` という名前の Brev Kubernetes 環境 1 つ
+* ``nvflare-site-1-k8s`` という名前の Brev Kubernetes 環境 1 つ
+* 両方のクラスタでのネームスペース ``nvflare``
+* 両方のクラスタでのワークスペース PVC 名 ``nvflws``
+* 両方のクラスタでのオプションのジョブデータ PVC 名 ``nvfldata``
+* サーバー用の外部から到達可能な DNS 名 (例: ``server1.example.com``)
+* 両方のクラスタが pull できるレジストリ上のコンテナイメージ
+  (例: ``registry.example.com/nvflare:dev``)
 
-Using the same namespace and PVC names in both clusters is safe because each
-cluster has its own Kubernetes API and storage backend.
+各クラスタはそれぞれ独自の Kubernetes API とストレージバックエンドを持つため、両方のクラスタで
+同じネームスペースと PVC 名を使用しても安全です。
 
-References:
+参考資料:
 
-* `NVIDIA Brev documentation <https://docs.nvidia.com/brev/>`__
-* `NVIDIA Brev console documentation <https://docs.nvidia.com/brev/guides/console-reference>`__
-* `Brev connectivity documentation <https://docs.nvidia.com/brev/cli/connectivity>`__
+* `NVIDIA Brev ドキュメント <https://docs.nvidia.com/brev/>`__
+* `NVIDIA Brev コンソールのドキュメント <https://docs.nvidia.com/brev/guides/console-reference>`__
+* `Brev の接続に関するドキュメント <https://docs.nvidia.com/brev/cli/connectivity>`__
 * :ref:`helm_chart`
 * :ref:`deploy_prepare_command`
 
-Scripted Three-Environment Variant
-==================================
+スクリプトによる 3 環境構成のバリエーション
+==========================================
 
-If you already have three Brev single-node Kubernetes environments named
-``server``, ``site-1``, and ``site-2``, the helper scripts below automate the
-same provisioning, deploy prepare, copy, PVC staging, and Helm install flow for
-a server plus two clients:
+``server``、``site-1``、``site-2`` という名前の Brev シングルノード Kubernetes 環境を既に 3 つ
+持っている場合、以下のヘルパースクリプトによって、サーバー 1 台とクライアント 2 台に対する同じ
+プロビジョニング、deploy prepare、コピー、PVC ステージング、Helm インストールの流れを自動化でき
+ます。
 
 * :download:`prepare_brev_startup_kits.sh <brev_scripts/prepare_brev_startup_kits.sh>`
 * :download:`launch_brev_nvflare.sh <brev_scripts/launch_brev_nvflare.sh>`
 
-Run the prepare script from a local NVFlare checkout with an external server
-host name and an image that all Brev clusters can pull:
+外部サーバーのホスト名と、すべての Brev クラスタが pull できるイメージを指定して、ローカルの
+NVFlare チェックアウトから prepare スクリプトを実行します。
 
 .. code-block:: shell
 
@@ -95,8 +91,7 @@ host name and an image that all Brev clusters can pull:
    export IMAGE=registry.example.com/nvflare:dev
    bash docs/user_guide/admin_guide/deployment/brev_scripts/prepare_brev_startup_kits.sh
 
-If your Brev environment names differ from the participant names, set them with
-environment variables or ask the script to prompt for them:
+Brev 環境の名前が参加者名と異なる場合は、環境変数で設定するか、スクリプトに入力を促させてください。
 
 .. code-block:: shell
 
@@ -108,7 +103,7 @@ environment variables or ask the script to prompt for them:
    bash docs/user_guide/admin_guide/deployment/brev_scripts/prepare_brev_startup_kits.sh \
      --prompt-brev-names
 
-Then run the launch script inside each Brev environment:
+続いて、各 Brev 環境の内部で launch スクリプトを実行します。
 
 .. code-block:: shell
 
@@ -121,147 +116,136 @@ Then run the launch script inside each Brev environment:
    brev shell "${SITE_2_BREV:-site-2}"
    IMAGE="$IMAGE" SERVER_HOST="$SERVER_HOST" bash /home/ubuntu/launch_brev_nvflare.sh site-2
 
-The current Brev CLI exposes ``brev port-forward`` for local forwarding, but it
-does not provide a public TCP port exposure command. Use the Brev UI Access page
-to expose TCP ``8002`` on the ``server`` environment before starting the two
-sites.
+現在の Brev CLI にはローカルのポートフォワード用に ``brev port-forward`` がありますが、パブリックな
+TCP ポートを公開するコマンドは提供されていません。2 つのサイトを起動する前に、Brev UI の Access
+ページを使用して ``server`` 環境の TCP ``8002`` を公開してください。
 
-Create Brev Kubernetes Environments
-===================================
+Brev Kubernetes 環境の作成
+===========================
 
-Create the server Kubernetes environment first, then repeat the same flow for
-the client Kubernetes environment. In the Brev UI, a single-node Kubernetes
-environment is created from the same ``GPUs`` page used for GPU and CPU
-development environments.
+まずサーバー用の Kubernetes 環境を作成し、その後クライアント用の Kubernetes 環境について同じ流れを
+繰り返します。Brev UI では、シングルノードの Kubernetes 環境は、GPU および CPU の開発環境に使用する
+のと同じ ``GPUs`` ページから作成します。
 
-Server Kubernetes Environment
------------------------------
+サーバー用 Kubernetes 環境
+---------------------------
 
-#. Sign in to the `Brev console <https://brev.nvidia.com>`__.
-#. Open ``GPUs`` in the top navigation.
-#. Click ``Create Environment``.
+#. `Brev コンソール <https://brev.nvidia.com>`__ にサインインします。
+#. 上部ナビゲーションの ``GPUs`` を開きます。
+#. ``Create Environment`` をクリックします。
 
    .. figure:: ../../../resources/brev_creating.png
       :alt: Brev GPU Environments page with the Create Environment button.
 
-      Start from the Brev ``GPUs`` page and create a new environment.
+      Brev の ``GPUs`` ページから開始し、新しい環境を作成します。
 
-#. Select the hardware for the server environment. A CPU instance is enough for
-   the FLARE server unless your server-side workflow requires GPU compute.
+#. サーバー環境用のハードウェアを選択します。サーバー側のワークフローが GPU コンピュートを必要と
+   しない限り、FLARE サーバーには CPU インスタンスで十分です。
 
    .. figure:: ../../../resources/brev_instance.png
       :alt: Brev Create Environment page with CPU selected.
 
-      Select a CPU or GPU instance type. For a basic server deployment, a CPU
-      instance type is sufficient.
+      CPU または GPU のインスタンスタイプを選択します。基本的なサーバーデプロイでは、CPU
+      インスタンスタイプで十分です。
 
-#. Configure storage and region:
+#. ストレージとリージョンを設定します。
 
-   * ``Name``: ``nvflare-server-k8s``.
-   * ``Organization`` or ``Project``: choose the Brev organization that should
-     own the environment.
-   * ``Provider`` or ``Cloud``: choose the cloud provider where the server
-     should run.
-   * ``Region``: choose a region reachable by the client cluster and by your
-     admin operator.
-   * ``Disk Storage``: choose enough space for the container image cache, the
-     provisioned workspace PVC, server job storage, snapshots, and logs.
+   * ``Name``: ``nvflare-server-k8s``
+   * ``Organization`` または ``Project``: 環境を所有する Brev の組織を選択します。
+   * ``Provider`` または ``Cloud``: サーバーを実行するクラウドプロバイダを選択します。
+   * ``Region``: クライアントクラスタおよび管理オペレーターから到達可能なリージョンを選択します。
+   * ``Disk Storage``: コンテナイメージキャッシュ、プロビジョニングされるワークスペース PVC、
+     サーバーのジョブストレージ、スナップショット、ログのために十分な容量を選択します。
 
    .. figure:: ../../../resources/brev_config_instance.png
       :alt: Brev hardware, storage, region, and software configuration page.
 
-      Configure disk storage and region before changing the software mode.
+      ソフトウェアモードを変更する前に、ディスクストレージとリージョンを設定します。
 
-#. In ``Software Configuration``, click ``Edit``.
-#. Select ``Single-node Kubernetes``.
-#. Keep ``Install Kubernetes Dashboard`` enabled if you want browser access to
-   the cluster dashboard.
-#. Leave ``Run a cluster init script`` disabled unless your organization has a
-   required initialization script.
-#. Click ``Apply``.
+#. ``Software Configuration`` で ``Edit`` をクリックします。
+#. ``Single-node Kubernetes`` を選択します。
+#. クラスタのダッシュボードにブラウザからアクセスしたい場合は、``Install Kubernetes Dashboard`` を
+   有効のままにします。
+#. 組織で必須の初期化スクリプトがない限り、``Run a cluster init script`` は無効のままにします。
+#. ``Apply`` をクリックします。
 
    .. figure:: ../../../resources/brev_select_k8s.png
       :alt: Brev software picker with Single-node Kubernetes selected.
 
-      Choose ``Single-node Kubernetes`` so the environment is created with
-      Kubernetes, ``kubectl``, and ``helm`` ready to use.
+      ``Single-node Kubernetes`` を選択することで、Kubernetes、``kubectl``、``helm`` がすぐに
+      使える状態で環境が作成されます。
 
-#. Expand ``Advanced`` only if you need to set custom network or startup
-   options.
-#. Set ``Name Instance`` to ``nvflare-server-k8s``.
-#. Click ``Deploy``.
+#. カスタムのネットワークまたは起動オプションを設定する必要がある場合のみ、``Advanced`` を展開
+   します。
+#. ``Name Instance`` に ``nvflare-server-k8s`` を設定します。
+#. ``Deploy`` をクリックします。
 
    .. figure:: ../../../resources/brev_deploy.png
       :alt: Brev deployment page showing Name Instance and Deploy.
 
-      Name the server environment and deploy it.
+      サーバー環境に名前を付けてデプロイします。
 
-#. Wait until the environment status is ``Running`` or ``Ready``.
+#. 環境のステータスが ``Running`` または ``Ready`` になるまで待ちます。
 
-Client Kubernetes Environment
------------------------------
+クライアント用 Kubernetes 環境
+-------------------------------
 
-Repeat the same web UI flow and use these values:
+同じ Web UI の流れを繰り返し、次の値を使用します。
 
-* ``Name``: ``nvflare-site-1-k8s``.
-* ``Instance Type``: choose CPU or GPU compute based on the jobs that ``site-1``
-  will run.
-* ``Networking``: the client cluster needs outbound access to
-  ``server1.example.com:8002``.
-* ``Disk Storage``: choose enough space for the client workspace, logs, and data
-  PVC.
-* ``Software Configuration``: choose ``Single-node Kubernetes``.
-* ``Ports``: no inbound FLARE port is required for this basic client
-  deployment. The client connects outbound to the server on ``8002``.
+* ``Name``: ``nvflare-site-1-k8s``
+* ``Instance Type``: ``site-1`` が実行するジョブに応じて、CPU または GPU のコンピュートを選択
+  します。
+* ``Networking``: クライアントクラスタには ``server1.example.com:8002`` へのアウトバウンドアクセス
+  が必要です。
+* ``Disk Storage``: クライアントのワークスペース、ログ、データ PVC のために十分な容量を選択します。
+* ``Software Configuration``: ``Single-node Kubernetes`` を選択します。
+* ``Ports``: この基本的なクライアントデプロイでは、インバウンドの FLARE ポートは不要です。
+  クライアントはサーバーの ``8002`` へアウトバウンドで接続します。
 
-Enable Server Port Access and SSH
----------------------------------
+サーバーポートアクセスと SSH の有効化
+--------------------------------------
 
-After both Kubernetes environments are running, open the server environment's
-``Access`` page. In the ``Using Ports`` section, expose the FLARE federated
-learning port, ``fed_learn_port`` ``8002``:
+両方の Kubernetes 環境が稼働したら、サーバー環境の ``Access`` ページを開きます。``Using Ports``
+セクションで、FLARE の連合学習ポートである ``fed_learn_port`` ``8002`` を公開します。
 
-This guide does not set ``admin_port`` in ``project.yml``. When ``admin_port``
-is omitted, NVFlare uses the same value as ``fed_learn_port``. Therefore, the
-Brev server environment only needs to expose ``fed_learn_port`` ``8002``.
+このガイドでは ``project.yml`` に ``admin_port`` を設定しません。``admin_port`` を省略した場合、
+NVFlare は ``fed_learn_port`` と同じ値を使用します。したがって、Brev のサーバー環境では
+``fed_learn_port`` ``8002`` のみを公開すれば十分です。
 
-#. Find ``TCP/UDP Ports``.
-#. In ``Expose Port(s)``, enter ``8002``.
-#. Select the access scope. ``Allow All IPs`` is convenient for a quick test;
-   restrict this to known client/admin source IPs for a real deployment.
-#. Click ``Expose Port``.
-#. Confirm that the table lists port ``8002`` and shows a public endpoint such
-   as ``<server-ip>:8002``.
+#. ``TCP/UDP Ports`` を見つけます。
+#. ``Expose Port(s)`` に ``8002`` を入力します。
+#. アクセススコープを選択します。手早くテストするには ``Allow All IPs`` が便利ですが、実運用の
+   デプロイでは既知のクライアント/管理者の送信元 IP に制限してください。
+#. ``Expose Port`` をクリックします。
+#. 表にポート ``8002`` が表示され、``<server-ip>:8002`` のようなパブリックエンドポイントが表示
+   されることを確認します。
 
 .. figure:: ../../../resources/brev_port.png
    :alt: Brev Access page showing copy, secure links, and TCP ports.
 
-   In ``Using Ports``, expose the server ``fed_learn_port`` ``8002``. The same
-   page also shows the ``brev copy`` command format for uploading files to an
-   environment.
+   ``Using Ports`` で、サーバーの ``fed_learn_port`` ``8002`` を公開します。同じページには、
+   環境にファイルをアップロードするための ``brev copy`` コマンドの形式も表示されます。
 
-Copy the public ``host:port`` value for port ``8002``. Point
-``server1.example.com`` to the host/IP portion of that endpoint. Do not include
-the port in ``default_host``; the port is already configured as
-``fed_learn_port: 8002`` in ``project.yml``.
+ポート ``8002`` のパブリックな ``host:port`` の値をコピーします。``server1.example.com`` をその
+エンドポイントのホスト/IP 部分に向けます。``default_host`` にポートを含めないでください。ポートは
+既に ``project.yml`` で ``fed_learn_port: 8002`` として設定されています。
 
-The environment also provides SSH instructions through the ``Access`` page:
+環境は ``Access`` ページを通じて SSH の手順も提供します。
 
 .. figure:: ../../../resources/brev_ssh.png
    :alt: Brev Access page showing Brev CLI install, login, and shell commands.
 
-   Use the Brev CLI commands shown in the UI to install the CLI, log in, and
-   open a shell on the Kubernetes environment.
+   UI に表示される Brev CLI のコマンドを使用して、CLI のインストール、ログイン、Kubernetes 環境
+   でのシェルのオープンを行います。
 
-Install and authenticate the Brev CLI on your local workstation if it is not
-already available:
+ローカルのワークステーションで Brev CLI がまだ利用できない場合は、インストールして認証します。
 
 .. code-block:: shell
 
    sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/brevdev/brev-cli/main/bin/install-latest.sh)"
    brev login
 
-Set environment variables on your local workstation for the rest of the guide:
+このガイドの残りの部分のために、ローカルのワークステーションで環境変数を設定します。
 
 .. code-block:: shell
 
@@ -271,7 +255,7 @@ Set environment variables on your local workstation for the rest of the guide:
    export SERVER_HOST=server1.example.com
    export IMAGE=registry.example.com/nvflare:dev
 
-Verify that you can SSH to both Brev Kubernetes environments:
+両方の Brev Kubernetes 環境に SSH できることを確認します。
 
 .. code-block:: shell
 
@@ -280,8 +264,8 @@ Verify that you can SSH to both Brev Kubernetes environments:
    brev shell "$CLIENT_BREV"
    exit
 
-Inside each Brev Kubernetes environment, ``kubectl`` and ``helm`` should already
-be configured for the local single-node cluster. You can verify this after SSH:
+各 Brev Kubernetes 環境の内部では、``kubectl`` と ``helm`` はローカルのシングルノードクラスタ用に
+既に設定されているはずです。SSH した後に、次のコマンドで確認できます。
 
 .. code-block:: shell
 
@@ -290,63 +274,61 @@ be configured for the local single-node cluster. You can verify this after SSH:
 
 .. _brev_build_push_flare_image:
 
-Build and Push the FLARE Image
-==============================
+FLARE イメージのビルドとプッシュ
+=================================
 
-Build the FLARE runtime image from an NVFlare source checkout and push it to a
-registry that both Brev Kubernetes clusters can pull from:
+NVFlare のソースチェックアウトから FLARE のランタイムイメージをビルドし、両方の Brev Kubernetes
+クラスタが pull できるレジストリにプッシュします。
 
-The ``ServerK8sJobLauncher`` and ``ClientK8sJobLauncher`` use the Kubernetes
-Python client from inside the running FLARE container. If you use a custom
-Dockerfile, install the dependency in the image:
+``ServerK8sJobLauncher`` と ``ClientK8sJobLauncher`` は、実行中の FLARE コンテナの内部から
+Kubernetes の Python クライアントを使用します。カスタムの Dockerfile を使用する場合は、イメージに
+この依存関係をインストールしてください。
 
 .. code-block:: dockerfile
 
    RUN pip install "kubernetes!=36.0.0"
 
-The repository ``docker/Dockerfile.parent`` already installs the NVFlare
-``K8S`` extra, which includes this dependency. Keep that install line, or add
-the explicit ``pip install kubernetes!=36.0.0`` line above before building your image.
+リポジトリの ``docker/Dockerfile.parent`` は、この依存関係を含む NVFlare の ``K8S`` エクストラを
+既にインストールしています。イメージをビルドする前に、そのインストール行をそのまま残すか、上記の
+明示的な ``pip install kubernetes!=36.0.0`` の行を追加してください。
 
-The prepared Brev launcher uses in-cluster Kubernetes config
-(``job_launcher.config_file_path: null``), so the parent pod authenticates with
-its ServiceAccount token.
+準備される Brev のランチャーはクラスタ内 Kubernetes 設定
+(``job_launcher.config_file_path: null``) を使用するため、親 Pod は自身の ServiceAccount トークン
+で認証します。
 
 .. code-block:: shell
 
    docker build -t "$IMAGE" -f docker/Dockerfile.parent .
    docker push "$IMAGE"
 
-If the registry is private, make sure both clusters can pull the image. Depending
-on your registry and cluster configuration, this can mean configuring node-level
-registry credentials or adding Kubernetes image pull secrets. The generated
-chart does not add ``imagePullSecrets`` by default, so use a registry already
-trusted by the nodes or customize the chart for your environment.
+レジストリがプライベートである場合は、両方のクラスタがイメージを pull できることを確認してください。
+レジストリとクラスタの構成によっては、ノードレベルのレジストリ認証情報を設定するか、Kubernetes の
+イメージ pull シークレットを追加することを意味する場合があります。生成されるチャートはデフォルトでは
+``imagePullSecrets`` を追加しないため、ノードから既に信頼されているレジストリを使用するか、環境に
+合わせてチャートをカスタマイズしてください。
 
-Edit project.yml
-================
+project.yml の編集
+===================
 
-Generate a sample project file if you do not already have one:
+まだ用意していない場合は、サンプルのプロジェクトファイルを生成します。
 
 .. code-block:: shell
 
    nvflare provision -g
 
-Edit ``project.yml`` with these deployment-specific goals:
+次のデプロイ固有の目的に沿って ``project.yml`` を編集します。
 
-#. Define only one client, ``site-1``.
-#. Set the server ``default_host`` to the stable external DNS name that the
-   client cluster will use.
-#. Include the same DNS name in ``host_names`` so the server certificate is
-   valid for that endpoint.
-#. Leave ``admin_port`` unset so it defaults to ``fed_learn_port``. The Brev
-   server only needs to expose the ``fed_learn_port`` value.
-#. Use ``nvflare deploy prepare`` after provisioning to generate Kubernetes
-   runtime files from the server and client startup kits.
-#. Use a container image that both clusters can pull in the deploy prepare
-   runtime config.
+#. クライアントを ``site-1`` の 1 つだけ定義します。
+#. サーバーの ``default_host`` に、クライアントクラスタが使用する安定した外部 DNS 名を設定します。
+#. サーバー証明書がそのエンドポイントに対して有効になるように、``host_names`` にも同じ DNS 名を
+   含めます。
+#. ``admin_port`` は未設定のままにして、``fed_learn_port`` にデフォルトで一致させます。Brev の
+   サーバーは ``fed_learn_port`` の値のみを公開すれば十分です。
+#. プロビジョニングの後に ``nvflare deploy prepare`` を使用して、サーバーとクライアントの
+   スタートアップキットから Kubernetes のランタイムファイルを生成します。
+#. deploy prepare のランタイム設定では、両方のクラスタが pull できるコンテナイメージを使用します。
 
-Example:
+例:
 
 .. code-block:: yaml
 
@@ -383,27 +365,26 @@ Example:
      - path: nvflare.lighter.impl.cert.CertBuilder
      - path: nvflare.lighter.impl.signature.SignatureBuilder
 
-The value of ``default_host`` must be chosen before provisioning because it is
-written into startup configuration and server certificates. Use a stable DNS
-name that you control, such as ``server1.example.com``, in ``project.yml`` and
-point that DNS name to the Brev server environment's exposed host after you
-enable port access.
+``default_host`` の値は、スタートアップ設定とサーバー証明書に書き込まれるため、プロビジョニングの
+前に決めておく必要があります。``server1.example.com`` のような自身で管理する安定した DNS 名を
+``project.yml`` で使用し、ポートアクセスを有効にした後、その DNS 名を Brev サーバー環境の公開された
+ホストに向けてください。
 
-The generated server and client charts mount only the configured
-``workspace_pvc``. In this guide, that PVC is ``nvflws`` and it is mounted at
-``/var/tmp/nvflare/workspace``. Create separate data PVCs, such as
-``nvfldata``, only for launched Kubernetes job pods that need study data.
+生成されるサーバーとクライアントのチャートは、設定された ``workspace_pvc`` のみをマウントします。
+このガイドでは、その PVC は ``nvflws`` であり、``/var/tmp/nvflare/workspace`` にマウントされます。
+``nvfldata`` のような別のデータ PVC は、スタディデータを必要とする起動済みの Kubernetes ジョブ Pod
+のためだけに作成してください。
 
-Run Provisioning
-================
+プロビジョニングの実行
+=======================
 
-Run the provision command:
+provision コマンドを実行します。
 
 .. code-block:: shell
 
    nvflare provision -p project.yml -w /tmp/nvflare/provision
 
-Set ``PROD_DIR`` to the generated production folder:
+生成された production フォルダを ``PROD_DIR`` に設定します。
 
 .. code-block:: shell
 
@@ -416,7 +397,7 @@ Set ``PROD_DIR`` to the generated production folder:
    fi
    echo "$PROD_DIR"
 
-Prepare the server and client startup kits for Kubernetes:
+サーバーとクライアントのスタートアップキットを Kubernetes 向けに準備します。
 
 .. code-block:: shell
 
@@ -438,22 +419,21 @@ Prepare the server and client startup kits for Kubernetes:
    nvflare deploy prepare "$PROD_DIR/server1" --output /tmp/nvflare-prepared/server1 --config /tmp/nvflare-k8s.yaml
    nvflare deploy prepare "$PROD_DIR/site-1" --output /tmp/nvflare-prepared/site-1 --config /tmp/nvflare-k8s.yaml
 
-The example above only sets the keys this guide needs. ``parent`` also accepts
-optional ``resources`` (parent pod CPU/memory requests and limits) and
-``pod_security_context``, and ``job_launcher`` accepts optional
-``job_pod_security_context``. See :ref:`deploy_prepare_command` for the full
-runtime config schema and :ref:`helm_chart` for how the prepared chart is
-installed.
+上記の例では、このガイドに必要なキーのみを設定しています。``parent`` はオプションの ``resources``
+(親 Pod の CPU/メモリのリクエストとリミット) と ``pod_security_context`` も受け付け、
+``job_launcher`` はオプションの ``job_pod_security_context`` を受け付けます。ランタイム設定の完全な
+スキーマについては :ref:`deploy_prepare_command` を、準備されたチャートのインストール方法については
+:ref:`helm_chart` を参照してください。
 
-The prepared folders should contain one ``helm_chart`` directory under the
-server and client:
+準備されたフォルダには、サーバーとクライアントの下にそれぞれ 1 つの ``helm_chart`` ディレクトリが
+含まれているはずです。
 
 .. code-block:: shell
 
    ls /tmp/nvflare-prepared/server1/helm_chart
    ls /tmp/nvflare-prepared/site-1/helm_chart
 
-Each participant folder has this structure:
+各参加者のフォルダは次の構造になっています。
 
 .. code-block:: text
 
@@ -466,60 +446,56 @@ Each participant folder has this structure:
      startup/
      transfer/
 
-During this step, ``nvflare deploy prepare`` updates
-``local/resources.json.default`` to use the Kubernetes launcher, removes any
-active ``local/resources.json`` override, updates runtime communication to use
-the generated Kubernetes Service, creates a ``local/study_runtime.yaml`` template
-when needed, removes the legacy ``startup/start.sh``, ``startup/sub_start.sh``,
-and ``startup/stop_fl.sh`` scripts (the parent process is launched by the Helm
-chart instead), and generates ``helm_chart/``. For server kits, it also
-relocates the default ``job_manager`` and ``snapshot_persistor`` storage paths
-under ``parent.workspace_mount_path``
-(``/var/tmp/nvflare/workspace/jobs-storage`` and
-``/var/tmp/nvflare/workspace/snapshot-storage``) so server job history and
-snapshots persist on the workspace PVC. Do not edit the launcher in
-``resources.json.default`` by hand after this step; change
-``/tmp/nvflare-k8s.yaml`` and rerun ``nvflare deploy prepare`` instead.
+このステップの間に、``nvflare deploy prepare`` は次の処理を行います。Kubernetes ランチャーを使用する
+ように ``local/resources.json.default`` を更新し、有効な ``local/resources.json`` のオーバーライドを
+削除し、生成された Kubernetes Service を使用するようにランタイム通信を更新し、必要に応じて
+``local/study_runtime.yaml`` のテンプレートを作成し、レガシーな ``startup/start.sh``、
+``startup/sub_start.sh``、``startup/stop_fl.sh`` の各スクリプトを削除し (親プロセスは代わりに Helm
+チャートによって起動されます)、``helm_chart/`` を生成します。サーバーのキットについては、サーバーの
+ジョブ履歴とスナップショットがワークスペース PVC 上で永続化されるように、デフォルトの
+``job_manager`` と ``snapshot_persistor`` のストレージパスを ``parent.workspace_mount_path`` の下
+(``/var/tmp/nvflare/workspace/jobs-storage`` と
+``/var/tmp/nvflare/workspace/snapshot-storage``) へ移動します。このステップの後に
+``resources.json.default`` 内のランチャーを手作業で編集しないでください。代わりに
+``/tmp/nvflare-k8s.yaml`` を変更して ``nvflare deploy prepare`` を再実行してください。
 
-If the input kit already configures a custom ``resource_manager``,
-``resource_consumer``, or job launcher, ``nvflare deploy prepare`` prints a
-warning and replaces those components with the runtime configuration shown
-above.
+入力キットが既にカスタムの ``resource_manager``、``resource_consumer``、またはジョブランチャーを
+設定している場合、``nvflare deploy prepare`` は警告を表示し、それらのコンポーネントを上記のランタイム
+設定で置き換えます。
 
-Copy Prepared Kits to Brev Environments
-=======================================
+準備済みキットの Brev 環境へのコピー
+=====================================
 
-Package the prepared server and client folders on your local workstation:
+ローカルのワークステーション上で、準備済みのサーバーとクライアントのフォルダをパッケージ化します。
 
 .. code-block:: shell
 
    tar -czf /tmp/nvflare-server1.tgz -C /tmp/nvflare-prepared server1
    tar -czf /tmp/nvflare-site-1.tgz -C /tmp/nvflare-prepared site-1
 
-Use the ``Copy Files`` section of the Brev environment ``Access`` page, or run
-the equivalent ``brev copy`` commands:
+Brev 環境の ``Access`` ページの ``Copy Files`` セクションを使用するか、同等の ``brev copy`` コマンド
+を実行します。
 
 .. code-block:: shell
 
    brev copy /tmp/nvflare-server1.tgz "$SERVER_BREV:/home/ubuntu/"
    brev copy /tmp/nvflare-site-1.tgz "$CLIENT_BREV:/home/ubuntu/"
 
-The archive contains the generated ``startup/``, ``local/``, and
-``helm_chart/`` folders. The Helm chart is run from the Brev environment after
-the archive is extracted. Only ``startup/`` and ``local/`` need to be staged in
-the workspace PVC.
+アーカイブには、生成された ``startup/``、``local/``、``helm_chart/`` の各フォルダが含まれます。Helm
+チャートは、アーカイブを展開した後に Brev 環境から実行します。ワークスペース PVC にステージングする
+必要があるのは ``startup/`` と ``local/`` だけです。
 
-Deploy the Server Environment
-=============================
+サーバー環境のデプロイ
+=======================
 
-Open a shell on the server Brev environment:
+サーバーの Brev 環境でシェルを開きます。
 
 .. code-block:: shell
 
    brev shell "$SERVER_BREV"
 
-Run the rest of this section from inside the server environment. First extract
-the uploaded archive and set deployment variables:
+このセクションの残りの部分は、サーバー環境の内部から実行します。まず、アップロードしたアーカイブを
+展開し、デプロイ用の変数を設定します。
 
 .. code-block:: shell
 
@@ -531,9 +507,9 @@ the uploaded archive and set deployment variables:
    kubectl get nodes
    helm version
 
-Create the namespace and PVCs. The generated server chart requires the
-``nvflws`` workspace PVC. The ``nvfldata`` PVC is used later only by launched
-Kubernetes job pods that need study data:
+ネームスペースと PVC を作成します。生成されたサーバーチャートには ``nvflws`` ワークスペース PVC が
+必要です。``nvfldata`` PVC は後で、スタディデータを必要とする起動済みの Kubernetes ジョブ Pod によって
+のみ使用されます。
 
 .. code-block:: shell
 
@@ -566,23 +542,21 @@ Kubernetes job pods that need study data:
    kubectl -n "$NAMESPACE" apply -f ~/nvflare/nvflare-pvcs.yaml
    kubectl -n "$NAMESPACE" get pvc
 
-If your Brev Kubernetes environment does not have a default storage class, add
-``storageClassName: <storage-class-name>`` under each PVC ``spec``.
+Brev の Kubernetes 環境にデフォルトのストレージクラスがない場合は、各 PVC の ``spec`` の下に
+``storageClassName: <storage-class-name>`` を追加してください。
 
-The server folder is already prepared for Kubernetes. Its
-``local/resources.json.default`` contains ``ServerK8sJobLauncher`` with
-``namespace: nvflare``, ``default_python_path: /usr/local/bin/python3``,
-``pending_timeout: 300``, and ``workspace_mount_path:
-/var/tmp/nvflare/workspace`` from ``/tmp/nvflare-k8s.yaml``. The same namespace
-must be used for the Helm release because the launcher creates dynamic job pods
-in that namespace.
+サーバーのフォルダは既に Kubernetes 向けに準備されています。その ``local/resources.json.default``
+には、``/tmp/nvflare-k8s.yaml`` に由来する ``namespace: nvflare``、
+``default_python_path: /usr/local/bin/python3``、``pending_timeout: 300``、
+``workspace_mount_path: /var/tmp/nvflare/workspace`` を持つ ``ServerK8sJobLauncher`` が含まれます。
+ランチャーはそのネームスペース内に動的なジョブ Pod を作成するため、Helm リリースにも同じネーム
+スペースを使用する必要があります。
 
-Copy the prepared server ``startup/`` and ``local/`` directories into the
-``nvflws`` PVC. The chart starts the server with
-``-m /var/tmp/nvflare/workspace``, so the PVC root must contain ``startup/``
-and ``local/`` directly. The temporary copy pod image must contain ``tar``
-because ``kubectl cp`` requires it in the target container; ``busybox:1.36``
-includes ``tar``.
+準備済みのサーバーの ``startup/`` および ``local/`` ディレクトリを ``nvflws`` PVC にコピーします。
+チャートは ``-m /var/tmp/nvflare/workspace`` でサーバーを起動するため、PVC のルートには ``startup/``
+と ``local/`` が直接含まれている必要があります。``kubectl cp`` は対象コンテナ内に ``tar`` を必要と
+するため、一時的なコピー用 Pod のイメージには ``tar`` が含まれている必要があります。``busybox:1.36``
+には ``tar`` が含まれています。
 
 .. code-block:: shell
 
@@ -621,14 +595,13 @@ includes ``tar``.
      ls -la /mnt/nvflws/startup /mnt/nvflws/local
    kubectl -n "$NAMESPACE" delete pod nvflare-pvc-copy
 
-Copy ``startup/`` and ``local/`` directly into the PVC root. If the PVC root
-only contains a nested ``server1/`` directory, the server pod will not find
-``/var/tmp/nvflare/workspace/startup`` and
-``/var/tmp/nvflare/workspace/local``.
+``startup/`` と ``local/`` は PVC のルートに直接コピーしてください。PVC のルートにネストされた
+``server1/`` ディレクトリしか含まれていない場合、サーバー Pod は
+``/var/tmp/nvflare/workspace/startup`` と ``/var/tmp/nvflare/workspace/local`` を見つけられません。
 
-Install the server Helm chart. Set ``hostPortEnabled=true`` so the server pod
-binds ``fed_learn_port`` ``8002`` on the Brev host. This is the port exposed in
-the Brev ``Using Ports`` UI.
+サーバーの Helm チャートをインストールします。サーバー Pod が Brev ホスト上で ``fed_learn_port``
+``8002`` にバインドされるように、``hostPortEnabled=true`` を設定します。これは Brev の
+``Using Ports`` UI で公開したポートです。
 
 .. code-block:: shell
 
@@ -643,17 +616,17 @@ the Brev ``Using Ports`` UI.
    kubectl -n "$NAMESPACE" get pods
    kubectl -n "$NAMESPACE" logs deploy/server1
 
-Deploy the site-1 Environment
-=============================
+site-1 環境のデプロイ
+======================
 
-Open a shell on the client Brev environment:
+クライアントの Brev 環境でシェルを開きます。
 
 .. code-block:: shell
 
    brev shell "$CLIENT_BREV"
 
-Run the rest of this section from inside the client environment. First extract
-the uploaded archive and set deployment variables:
+このセクションの残りの部分は、クライアント環境の内部から実行します。まず、アップロードしたアーカイブ
+を展開し、デプロイ用の変数を設定します。
 
 .. code-block:: shell
 
@@ -666,9 +639,9 @@ the uploaded archive and set deployment variables:
    kubectl get nodes
    helm version
 
-Create the namespace and PVCs. The generated client chart requires the
-``nvflws`` workspace PVC. The ``nvfldata`` PVC is used later only by launched
-Kubernetes job pods that need study data:
+ネームスペースと PVC を作成します。生成されたクライアントチャートには ``nvflws`` ワークスペース PVC
+が必要です。``nvfldata`` PVC は後で、スタディデータを必要とする起動済みの Kubernetes ジョブ Pod に
+よってのみ使用されます。
 
 .. code-block:: shell
 
@@ -701,15 +674,14 @@ Kubernetes job pods that need study data:
    kubectl -n "$NAMESPACE" apply -f ~/nvflare/nvflare-pvcs.yaml
    kubectl -n "$NAMESPACE" get pvc
 
-The ``site-1`` folder is already prepared for Kubernetes. Its
-``local/resources.json.default`` contains ``ClientK8sJobLauncher`` with the
-same launcher settings from ``/tmp/nvflare-k8s.yaml``. Keep the Helm namespace
-consistent with the ``namespace`` value used by ``nvflare deploy prepare``.
+``site-1`` のフォルダは既に Kubernetes 向けに準備されています。その
+``local/resources.json.default`` には、``/tmp/nvflare-k8s.yaml`` に由来する同じランチャー設定を持つ
+``ClientK8sJobLauncher`` が含まれます。Helm のネームスペースは、``nvflare deploy prepare`` で使用した
+``namespace`` の値と一致させてください。
 
-Copy the prepared ``site-1`` ``startup/`` and ``local/`` directories into the
-client ``nvflws`` PVC. The temporary copy pod image must contain ``tar``
-because ``kubectl cp`` requires it in the target container; ``busybox:1.36``
-includes ``tar``:
+準備済みの ``site-1`` の ``startup/`` および ``local/`` ディレクトリを、クライアントの ``nvflws``
+PVC にコピーします。``kubectl cp`` は対象コンテナ内に ``tar`` を必要とするため、一時的なコピー用 Pod
+のイメージには ``tar`` が含まれている必要があります。``busybox:1.36`` には ``tar`` が含まれています。
 
 .. code-block:: shell
 
@@ -748,8 +720,8 @@ includes ``tar``:
      ls -la /mnt/nvflws/startup /mnt/nvflws/local
    kubectl -n "$NAMESPACE" delete pod nvflare-pvc-copy
 
-Before installing the client chart, verify that the client environment can
-resolve the server host:
+クライアントチャートをインストールする前に、クライアント環境がサーバーのホストを解決できることを
+確認します。
 
 .. code-block:: shell
 
@@ -757,7 +729,7 @@ resolve the server host:
      --image=busybox:1.36 -- \
      nslookup "$SERVER_HOST"
 
-Install the ``site-1`` Helm chart:
+``site-1`` の Helm チャートをインストールします。
 
 .. code-block:: shell
 
@@ -770,34 +742,33 @@ Install the ``site-1`` Helm chart:
    kubectl -n "$NAMESPACE" get pods
    kubectl -n "$NAMESPACE" logs deploy/site-1
 
-If you reprovision later, back up or remove old PVC contents before copying the
-new folders. Certificates, local config, and communication settings are tied to
-the provisioned project state.
+後で再プロビジョニングする場合は、新しいフォルダをコピーする前に古い PVC の内容をバックアップまたは
+削除してください。証明書、ローカル設定、通信設定は、プロビジョニングされたプロジェクトの状態と
+結び付いています。
 
-Connect an Admin Console
-========================
+管理コンソールの接続
+=====================
 
-Run the admin client from a network location that can reach
-``server1.example.com:8002``:
+``server1.example.com:8002`` に到達できるネットワーク上の場所から管理クライアントを実行します。
 
 .. code-block:: shell
 
    cd "$PROD_DIR/admin@nvidia.com/startup"
    ./fl_admin.sh
 
-The generated admin kit connects to the server host configured in
-``project.yml``. If you used ``server1.example.com`` as ``default_host``, that
-name must resolve to the Brev server environment endpoint.
+生成された管理者キットは、``project.yml`` で設定されたサーバーホストに接続します。``default_host``
+として ``server1.example.com`` を使用した場合、その名前が Brev のサーバー環境のエンドポイントに解決
+される必要があります。
 
-Kubernetes Job Pods and nvfldata
-================================
+Kubernetes ジョブ Pod と nvfldata
+==================================
 
-``nvflare deploy prepare`` writes the Kubernetes launcher into
-``local/resources.json.default`` and a ``local/study_runtime.yaml`` template
-before the participant folders are copied to Brev. When launched job pods need
-the ``nvfldata`` PVC, edit ``local/study_runtime.yaml`` in the prepared server
-and client folders before copying those folders into ``nvflws``. This example
-maps the ``default`` study's ``data`` dataset to ``nvfldata``:
+``nvflare deploy prepare`` は、参加者のフォルダが Brev にコピーされる前に、Kubernetes ランチャーを
+``local/resources.json.default`` に、``local/study_runtime.yaml`` のテンプレートを書き込みます。
+起動されたジョブ Pod が ``nvfldata`` PVC を必要とする場合は、それらのフォルダを ``nvflws`` にコピー
+する前に、準備済みのサーバーとクライアントのフォルダ内の ``local/study_runtime.yaml`` を編集して
+ください。次の例では、``default`` スタディの ``data`` データセットを ``nvfldata`` にマッピングして
+います。
 
 .. code-block:: yaml
 
@@ -809,29 +780,28 @@ maps the ``default`` study's ``data`` dataset to ``nvfldata``:
            source: nvfldata
            mode: rw
 
-Job pod image, Python, CPU, memory, and ephemeral storage settings should be
-specified in the submitted job's ``meta.json`` under ``launcher_spec`` for the
-``k8s`` launcher. GPU resource requests such as ``num_of_gpus`` should be
-specified under ``resource_spec``, matching :ref:`helm_chart`.
+ジョブ Pod のイメージ、Python、CPU、メモリ、エフェメラルストレージの設定は、``k8s`` ランチャー向けに
+投入されるジョブの ``meta.json`` の ``launcher_spec`` の下で指定してください。``num_of_gpus`` のような
+GPU リソースのリクエストは、:ref:`helm_chart` に合わせて ``resource_spec`` の下で指定してください。
 
-Troubleshooting
-===============
+トラブルシューティング
+=======================
 
-PVC stays ``Pending``
----------------------
+PVC が ``Pending`` のままになる
+--------------------------------
 
-Check that the Brev cluster has a default storage class, or add an explicit
-``storageClassName`` to ``nvflare-pvcs.yaml``:
+Brev のクラスタにデフォルトのストレージクラスがあることを確認するか、``nvflare-pvcs.yaml`` に明示的な
+``storageClassName`` を追加してください。
 
 .. code-block:: shell
 
    kubectl get storageclass
    kubectl -n "$NAMESPACE" describe pvc nvflws
 
-Pod has ``ImagePullBackOff``
-----------------------------
+Pod が ``ImagePullBackOff`` になる
+-----------------------------------
 
-Confirm the image exists and that both clusters can pull it:
+イメージが存在し、両方のクラスタがそれを pull できることを確認してください。
 
 .. code-block:: shell
 
@@ -839,32 +809,32 @@ Confirm the image exists and that both clusters can pull it:
    kubectl -n "$NAMESPACE" describe pod -l app.kubernetes.io/name=server1
    kubectl -n "$NAMESPACE" describe pod -l app.kubernetes.io/name=site-1
 
-Server pod cannot find ``startup`` or ``local``
------------------------------------------------
+サーバー Pod が ``startup`` または ``local`` を見つけられない
+--------------------------------------------------------------
 
-The participant folder was copied to the wrong level in the PVC. The server
-workspace root must contain:
+参加者のフォルダが PVC 内の誤った階層にコピーされています。サーバーのワークスペースのルートには、
+次のものが含まれている必要があります。
 
 .. code-block:: text
 
    /var/tmp/nvflare/workspace/startup
    /var/tmp/nvflare/workspace/local
 
-Use the helper pod to inspect ``/mnt/nvflws`` and restage ``startup/`` and
-``local/`` from the extracted prepared folder, such as
-``~/nvflare/server1/startup`` and ``~/nvflare/server1/local``, if needed.
+ヘルパー Pod を使って ``/mnt/nvflws`` を確認し、必要に応じて、展開した準備済みフォルダ
+(``~/nvflare/server1/startup`` および ``~/nvflare/server1/local`` など) から ``startup/`` と
+``local/`` を再ステージングしてください。
 
-site-1 cannot connect to the server
------------------------------------
+site-1 がサーバーに接続できない
+--------------------------------
 
-Verify these items:
+次の項目を確認してください。
 
-* ``default_host`` in ``project.yml`` matches the DNS name used by the client.
-* The DNS name resolves from the client cluster.
-* The server cluster exposes TCP port ``8002``.
-* The server certificate includes the DNS name in ``host_names``.
+* ``project.yml`` の ``default_host`` が、クライアントが使用する DNS 名と一致していること。
+* その DNS 名がクライアントクラスタから解決できること。
+* サーバークラスタが TCP ポート ``8002`` を公開していること。
+* サーバー証明書の ``host_names`` にその DNS 名が含まれていること。
 
-Run a DNS check from the client cluster:
+クライアントクラスタから DNS のチェックを実行します。
 
 .. code-block:: shell
 
@@ -872,13 +842,13 @@ Run a DNS check from the client cluster:
      --image=busybox:1.36 -- \
      nslookup "$SERVER_HOST"
 
-If you change ``default_host`` or ``host_names``, reprovision, restage the
-updated folders, and redeploy the charts.
+``default_host`` または ``host_names`` を変更した場合は、再プロビジョニングし、更新されたフォルダを
+再ステージングし、チャートを再デプロイしてください。
 
-Cleanup
-========
+クリーンアップ
+===============
 
-Remove the Helm releases:
+Helm のリリースを削除します。
 
 .. code-block:: shell
 
@@ -888,18 +858,17 @@ Remove the Helm releases:
    # Run inside the site-1 Brev environment.
    helm uninstall site-1 -n "$NAMESPACE"
 
-Delete the namespaces and PVCs:
+ネームスペースと PVC を削除します。
 
 .. code-block:: shell
 
    # Run inside each Brev environment.
    kubectl delete namespace "$NAMESPACE"
 
-Delete the Brev clusters from the web UI when you no longer need them:
+不要になったら、Web UI から Brev のクラスタを削除します。
 
-#. Open the Brev console.
-#. Open the Kubernetes or clusters page.
-#. Select ``nvflare-server-k8s`` and delete it.
-#. Select ``nvflare-site-1-k8s`` and delete it.
-#. Confirm in the billing or usage page that the resources are no longer
-   running.
+#. Brev コンソールを開きます。
+#. Kubernetes またはクラスタのページを開きます。
+#. ``nvflare-server-k8s`` を選択して削除します。
+#. ``nvflare-site-1-k8s`` を選択して削除します。
+#. 課金または使用状況のページで、リソースが実行されていないことを確認します。
