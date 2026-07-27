@@ -1,14 +1,14 @@
 .. _recipe_command:
 
 #########################
-Recipe Command
+Recipe コマンド
 #########################
 
-``nvflare recipe`` lists built-in Job Recipe API recipes and shows structured
-metadata that agents and scripts can use to choose a recipe.
+``nvflare recipe`` は、組み込みの Job Recipe API レシピを一覧表示し、エージェントやスクリプトが
+レシピを選択する際に利用できる構造化されたメタデータを表示します。
 
 ***********************
-Command Usage
+コマンドの使い方
 ***********************
 
 .. code-block:: none
@@ -21,29 +21,29 @@ Command Usage
      list      list available recipes (default)
      show      show structured metadata for a recipe
 
-****************
-List Recipes
-****************
+********************
+レシピの一覧表示
+********************
 
-Use ``nvflare recipe list`` to display the available built-in recipes:
+利用可能な組み込みレシピを表示するには ``nvflare recipe list`` を使用します。
 
 .. code-block:: shell
 
    nvflare recipe list
 
-In text mode, the command prints ``Loading installed recipe catalog...`` before
-importing and inspecting installed recipe metadata. This is a local Python
-environment operation; it does not connect to a FLARE server.
+テキストモードでは、インストール済みのレシピメタデータをインポートして検査する前に、
+コマンドが ``Loading installed recipe catalog...`` と出力します。これはローカルの Python 環境上の
+操作であり、FLARE サーバーには接続しません。
 
-Filter by framework:
+フレームワークで絞り込む:
 
 .. code-block:: shell
 
    nvflare recipe list --framework pytorch
 
-``--framework`` is a shorthand for ``--filter framework=<framework>``.
+``--framework`` は ``--filter framework=<framework>`` の短縮形です。
 
-Supported framework filter values:
+サポートされているフレームワークのフィルタ値:
 
 - ``core``
 - ``numpy``
@@ -52,14 +52,14 @@ Supported framework filter values:
 - ``sklearn``
 - ``xgboost``
 
-Filter by recipe metadata:
+レシピのメタデータで絞り込む:
 
 .. code-block:: shell
 
    nvflare recipe list --filter framework=pytorch --filter algorithm=fedavg
    nvflare recipe list --filter privacy=homomorphic_encryption
 
-Supported ``--filter`` keys:
+サポートされている ``--filter`` のキー:
 
 - ``framework``
 - ``privacy``
@@ -67,28 +67,28 @@ Supported ``--filter`` keys:
 - ``aggregation``
 - ``state_exchange``
 
-``--filter`` is repeatable. Filters for different keys are combined together;
-repeating the same key matches any of the provided values. Hyphens and
-underscores are normalized in filter values, so ``homomorphic-encryption`` and
-``homomorphic_encryption`` are equivalent.
+``--filter`` は繰り返し指定できます。異なるキーに対するフィルタは組み合わせて適用され、
+同じキーを繰り返した場合は指定されたいずれかの値に一致します。フィルタ値ではハイフンと
+アンダースコアが正規化されるため、``homomorphic-encryption`` と ``homomorphic_encryption`` は
+同等に扱われます。
 
-Metadata Filter Values
+メタデータのフィルタ値
 ======================
 
-Filter values are recipe metadata values. A value is valid only when at least
-one recipe in the installed catalog declares that value. In practice, most
-metadata values apply to specific frameworks, so combine metadata filters with
-``framework`` when you want a precise result.
+フィルタ値はレシピのメタデータの値です。ある値が有効となるのは、インストール済みのカタログ内の
+少なくとも 1 つのレシピがその値を宣言している場合のみです。実際には、ほとんどのメタデータ値は
+特定のフレームワークに対応しているため、正確な結果を得たい場合はメタデータのフィルタを
+``framework`` と組み合わせてください。
 
-Algorithm values:
+アルゴリズムの値:
 
 .. list-table::
    :header-rows: 1
    :widths: 30 30 40
 
-   * - Value
-     - Frameworks
-     - Example
+   * - 値
+     - フレームワーク
+     - 例
    * - ``cyclic``
      - ``core``, ``pytorch``, ``tensorflow``
      - ``nvflare recipe list --filter algorithm=cyclic``
@@ -132,15 +132,15 @@ Algorithm values:
      - ``xgboost``
      - ``nvflare recipe list --filter algorithm=xgboost_vertical``
 
-Aggregation values:
+集約 (aggregation) の値:
 
 .. list-table::
    :header-rows: 1
    :widths: 30 30 40
 
-   * - Value
-     - Frameworks
-     - Example
+   * - 値
+     - フレームワーク
+     - 例
    * - ``cluster_centers``
      - ``sklearn``
      - ``nvflare recipe list --filter framework=sklearn --filter aggregation=cluster_centers``
@@ -157,15 +157,15 @@ Aggregation values:
      - ``core``, ``numpy``, ``pytorch``, ``sklearn``, ``tensorflow``
      - ``nvflare recipe list --filter aggregation=weighted_average``
 
-State exchange values:
+状態交換 (state exchange) の値:
 
 .. list-table::
    :header-rows: 1
    :widths: 30 30 40
 
-   * - Value
-     - Frameworks
-     - Example
+   * - 値
+     - フレームワーク
+     - 例
    * - ``cluster_centers``
      - ``sklearn``
      - ``nvflare recipe list --filter state_exchange=cluster_centers``
@@ -185,26 +185,26 @@ State exchange values:
      - ``pytorch``, ``tensorflow``
      - ``nvflare recipe list --filter state_exchange=weight_diff``
 
-Privacy values:
+プライバシー (privacy) の値:
 
 .. list-table::
    :header-rows: 1
    :widths: 30 30 40
 
-   * - Value
-     - Frameworks
-     - Example
+   * - 値
+     - フレームワーク
+     - 例
    * - ``homomorphic_encryption``
      - ``pytorch``
      - ``nvflare recipe list --filter privacy=homomorphic_encryption``
 
-The ``privacy`` filter matches privacy features declared by a recipe entry.
-If a recipe does not declare a privacy value, that does not mean the underlying
-algorithm is incompatible with privacy-enhancing technologies. For example,
-FedAvg can be combined with multiple PETs through additional configuration or
-components, but the generic FedAvg recipe does not enable one by default.
+``privacy`` フィルタは、レシピのエントリが宣言しているプライバシー機能に一致します。
+レシピがプライバシーの値を宣言していないからといって、そのアルゴリズム自体が
+プライバシー強化技術 (PET) と互換性がないという意味ではありません。たとえば FedAvg は、
+追加の構成やコンポーネントによって複数の PET と組み合わせることができますが、
+汎用の FedAvg レシピはデフォルトではいずれも有効にしません。
 
-More examples:
+その他の例:
 
 .. code-block:: shell
 
@@ -214,32 +214,31 @@ More examples:
    nvflare recipe list --filter framework=sklearn --filter aggregation=cluster_centers
    nvflare recipe list --filter privacy=homomorphic_encryption
 
-Other options:
+その他のオプション:
 
-- Omitting ``--framework`` returns all available recipes.
-- ``--schema``: print the command schema as JSON and exit.
+- ``--framework`` を省略すると、利用可能なすべてのレシピが返されます。
+- ``--schema``: コマンドスキーマを JSON として出力して終了します。
 
-Behavior notes:
+動作に関する注意:
 
-- The command lists all documented built-in recipe variants, including recipe
-  variants whose optional framework dependencies are not installed locally.
-- ``optional_dependencies`` reports the packages needed to run a recipe whose
-  framework is not currently installed.
-- Valid metadata filters that match no available recipes return an empty list.
-- The command combines a documented recipe manifest with dynamic recipe module
-  discovery. When a recipe module cannot be imported because an optional
-  dependency is missing, the CLI still returns the documented metadata and
-  derives constructor parameters statically from source where possible.
+- このコマンドは、オプションのフレームワーク依存関係がローカルにインストールされていない
+  レシピバリアントも含め、ドキュメント化されているすべての組み込みレシピバリアントを一覧表示します。
+- ``optional_dependencies`` は、現在インストールされていないフレームワークのレシピを実行するために
+  必要なパッケージを報告します。
+- 有効なメタデータフィルタでも、該当するレシピがない場合は空のリストが返されます。
+- このコマンドは、ドキュメント化されたレシピマニフェストと、動的なレシピモジュール検出を
+  組み合わせて使用します。オプションの依存関係が不足しているためにレシピモジュールを
+  インポートできない場合でも、CLI はドキュメント化されたメタデータを返し、可能な範囲で
+  ソースから静的にコンストラクタのパラメータを導出します。
 
-The CLI prints a human-readable table in text mode and also emits the machine-
-readable result envelope.
+CLI はテキストモードでは人間が読みやすいテーブルを出力し、併せて機械可読な結果エンベロープも
+出力します。
 
-The JSON that ``nvflare recipe list --format json`` prints has a stable,
-documented structure that scripts and tools can rely on. It is described by
-the
-:download:`recipe catalog JSON schema <../../schemas/recipe_catalog.schema.json>`.
+``nvflare recipe list --format json`` が出力する JSON は、スクリプトやツールが依拠できる安定した
+ドキュメント化済みの構造を持っています。この構造は
+:download:`レシピカタログ JSON スキーマ <../../schemas/recipe_catalog.schema.json>` に記述されています。
 
-Example JSON response:
+JSON レスポンスの例:
 
 .. code-block:: json
 
@@ -262,35 +261,32 @@ Example JSON response:
      ]
    }
 
-****************
-Show Recipe
-****************
+********************
+レシピの詳細表示
+********************
 
-Use ``nvflare recipe show`` with a name returned by ``nvflare recipe list`` to
-get one recipe's queryable metadata:
+1 つのレシピについてクエリ可能なメタデータを取得するには、``nvflare recipe list`` が返した名前を
+指定して ``nvflare recipe show`` を使用します。
 
 .. code-block:: shell
 
    nvflare recipe show fedavg-pt --format json
 
-In text mode, the command prints ``Loading installed recipe metadata for
-'<name>'...`` while it imports and inspects the selected recipe metadata. The
-human output summarizes the main fields and points to the exact JSON command
-for full constructor parameter details.
+テキストモードでは、選択したレシピのメタデータをインポートして検査している間、コマンドが
+``Loading installed recipe metadata for '<name>'...`` と出力します。人間向けの出力は主要なフィールドを
+要約し、コンストラクタのパラメータの詳細をすべて確認するための正確な JSON コマンドを示します。
 
-The JSON response includes list-time metadata plus framework support, privacy
-compatibility, client requirements, constructor parameters, optional
-dependencies, and template references. Parameter metadata is derived from the
-recipe constructor signature or static source parsing; the command does not
-instantiate the recipe.
+JSON レスポンスには、一覧表示時のメタデータに加えて、フレームワークのサポート状況、プライバシーの
+互換性、クライアント要件、コンストラクタのパラメータ、オプションの依存関係、テンプレート参照が
+含まれます。パラメータのメタデータは、レシピのコンストラクタのシグネチャまたは静的なソース解析から
+導出されます。コマンドがレシピをインスタンス化することはありません。
 
-For recipes with a configurable parameter transfer type, text output reports the
-default state exchange and the transfer setting. For example, FedAvg reports
-``state_exchange: full_model (default; params_transfer_type=FULL, supports FULL
-or DIFF)`` because the default transfer is the full model, but the recipe can be
-configured to send diffs.
+パラメータの転送タイプを構成できるレシピについては、テキスト出力にデフォルトの状態交換と転送設定が
+報告されます。たとえば FedAvg では、デフォルトの転送がフルモデルであり、かつ差分を送信するように
+構成することもできるため、``state_exchange: full_model (default; params_transfer_type=FULL, supports FULL
+or DIFF)`` と報告されます。
 
-Example JSON response:
+JSON レスポンスの例:
 
 .. code-block:: json
 
@@ -332,11 +328,11 @@ Example JSON response:
      }
    }
 
-*****************
-Typical Workflow
-*****************
+*********************
+典型的なワークフロー
+*********************
 
-``nvflare recipe list`` is a discovery tool. A common workflow is:
+``nvflare recipe list`` は探索用のツールです。一般的なワークフローは次のとおりです。
 
 .. code-block:: shell
 
@@ -345,25 +341,24 @@ Typical Workflow
    python job.py --export --export-dir /tmp/nvflare/hello-pt
    nvflare job submit -j /tmp/nvflare/hello-pt
 
-``nvflare recipe list`` replaces the deprecated ``nvflare job list_templates``
-discovery flow for new examples and recipes.
+新しいサンプルやレシピでは、``nvflare recipe list`` が非推奨の ``nvflare job list_templates`` による
+探索フローを置き換えます。
 
-*********************
-JSON Output and Help
-*********************
+*************************
+JSON 出力とヘルプ
+*************************
 
-Use ``--schema`` for machine-readable command discovery:
+機械可読なコマンド探索には ``--schema`` を使用します。
 
 .. code-block:: shell
 
    nvflare recipe list --schema
    nvflare recipe show --schema
 
-``--schema`` describes command arguments and command behavior. Use the recipe
-catalog JSON schema when validating the catalog output of
-``nvflare recipe list --format json``.
+``--schema`` はコマンドの引数と動作を記述します。``nvflare recipe list --format json`` のカタログ出力を
+検証する際には、レシピカタログ JSON スキーマを使用してください。
 
-The top-level CLI also supports JSON output mode:
+トップレベルの CLI も JSON 出力モードをサポートしています。
 
 .. code-block:: shell
 
@@ -372,5 +367,5 @@ The top-level CLI also supports JSON output mode:
    nvflare recipe list --filter framework=pytorch --filter state_exchange=full_model --format json
    nvflare recipe show fedavg-pt --format json
 
-Human-readable argument errors print help first, followed by the specific
-error. JSON mode prints only the JSON envelope.
+人間向けの引数エラーでは、まずヘルプが出力され、続いて具体的なエラーが表示されます。
+JSON モードでは JSON エンベロープのみが出力されます。
