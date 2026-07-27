@@ -1,102 +1,102 @@
 .. _message_quantization:
 
-Message Quantization
-********************
+メッセージ量子化
+************************
 
-Message quantization in NVIDIA FLARE reduces communication overhead in federated learning by reducing the precision of transmitted updates. This feature is particularly beneficial for large language models (LLMs) where the default fp32 message precision can artificially inflate message size.
+NVIDIA FLARE のメッセージ量子化は、送信される更新の精度を下げることで、フェデレーテッドラーニングにおける通信オーバーヘッドを削減します。この機能は、デフォルトの fp32 のメッセージ精度によってメッセージサイズが実質的に膨れ上がってしまう大規模言語モデル (LLM) において特に有益です。
 
-Background
-==========
+背景
+======================
 
-Previous NVFlare default transmission mode was float32 numpy, which could lead to unnecessarily large messages when working with reduced precision models (e.g., bf16). This was due to the conversion process (bf16->float32) and size doubling. For LLMs, federated aggregation may not be sensitive to quantization, making full precision communication unnecessary.
+これまでの NVFlare のデフォルトの送信モードは float32 の numpy であり、低精度のモデル (例: bf16) を扱う際に不必要に大きなメッセージになる可能性がありました。これは変換処理 (bf16->float32) とサイズが2倍になることが原因でした。LLM の場合、フェデレーテッドな集約は量子化に対して敏感ではない可能性があり、完全精度での通信は不要となります。
 
-Two key features were added to improve NVFlare's messaging efficiency for LLMs:
+LLM に対する NVFlare のメッセージング効率を改善するため、2つの主要な機能が追加されました。
 
-1. Direct tensor communication without converting to numpy
-   - Enables sending tensors directly without numpy conversion
-   - Preserves special data formats like bf16 that aren't supported by numpy
-   - Eliminates the need to cast to float32 before numpy conversion
+1. numpy に変換しない直接的なテンソル通信
+   - numpy への変換なしにテンソルを直接送信できます
+   - numpy がサポートしていない bf16 のような特殊なデータ形式を保持します
+   - numpy 変換の前に float32 へキャストする必要をなくします
 
-2. Model quantization and dequantization filters
-   - Quantizes messages before transmission
-   - Dequantizes after transmission in both directions
-   - Reduces transmission size while maintaining original precision for computations
+2. モデルの量子化・逆量子化フィルタ
+   - 送信前にメッセージを量子化します
+   - 双方向で送信後に逆量子化します
+   - 計算時には元の精度を維持しつつ、送信サイズを削減します
 
-Implementation
---------------
+実装
+--------------------
 
-Message quantization is implemented using a filter mechanism that handles the quantization and dequantization of model updates. The process involves:
+メッセージ量子化は、モデル更新の量子化と逆量子化を処理するフィルタ機構を使って実装されています。処理の流れは次のとおりです。
 
-1. Quantization of model updates before transmission
-2. Transmission of the quantized data
-3. Dequantization of the received data
-4. Training and aggregation at original precision
+1. 送信前のモデル更新の量子化
+2. 量子化されたデータの送信
+3. 受信したデータの逆量子化
+4. 元の精度での学習と集約
 
-We utilize bitsandbytes for 8- and 4-bit quantization functionality. The quantization filter automatically recognizes message format (numpy or tensor) and processes accordingly.
+8ビットおよび4ビットの量子化機能には bitsandbytes を利用しています。量子化フィルタはメッセージ形式 (numpy またはテンソル) を自動的に認識し、それに応じて処理します。
 
-For a practical implementation example, see the :github_nvflare_link:`LLM example <examples/advanced/llm_hf>` which demonstrates message quantization in a real-world scenario.
+実践的な実装例については、実運用に近いシナリオでのメッセージ量子化を示している :github_nvflare_link:`LLM のサンプル <examples/advanced/llm_hf>` を参照してください。
 
-Key Features
-------------
+主な機能
+--------------------
 
-* Quantization and dequantization implemented with filter mechanism
-* No code changes required from user side - same training script works with/without quantization
-* Training and aggregation performed at original precision to minimize impact on training process
-* Support for both numpy arrays and torch Tensors
-* Direct cropping and casting for fp32 to fp16 conversion
-* 8- and 4-bit quantization using bitsandbytes
+* 量子化と逆量子化はフィルタ機構で実装されています
+* ユーザー側でのコード変更は不要です。同じ学習スクリプトが量子化の有無にかかわらず動作します
+* 学習処理への影響を最小限に抑えるため、学習と集約は元の精度で実行されます
+* numpy 配列と torch Tensor の両方をサポートします
+* fp32 から fp16 への変換には直接的な切り捨てとキャストを使用します
+* bitsandbytes による8ビットおよび4ビットの量子化
 
-Precision Options and Performance
----------------------------------
+精度のオプションと性能
+--------------------------------
 
-The following precision options are available, with their respective size reductions:
+以下の精度オプションが利用可能で、それぞれのサイズ削減率は次のとおりです。
 
-* 32-bit (fp32): Original precision, no quantization
-* 16-bit (fp16, bf16): 50% size reduction
-* 8-bit: 75% size reduction
-* 4-bit (fp4, nf4): 86% size reduction
+* 32ビット (fp32): 元の精度、量子化なし
+* 16ビット (fp16、bf16): 50% のサイズ削減
+* 8ビット: 75% のサイズ削減
+* 4ビット (fp4、nf4): 86% のサイズ削減
 
-.. table:: Message Size under Different Quantization Precisions
+.. table:: 量子化精度ごとのメッセージサイズ
    :widths: auto
    :align: center
 
-   +-------------+-------------+----------------+-------------+
-   | Precision   | Model Size  | Quantization   | fp32 Size   |
-   |             | (MB)        | Meta Size (MB) | Percentage  |
-   +=============+=============+================+=============+
-   | 32-bit      | 5716.26     | 0.00           | 100.00%     |
-   | (fp32)      |             |                |             |
-   +-------------+-------------+----------------+-------------+
-   | 16-bit      | 2858.13     | 0.00           | 50.00%      |
-   | (fp16, bf16)|             |                |             |
-   +-------------+-------------+----------------+-------------+
-   | 8-bit       | 1429.06     | 1.54           | 25.03%      |
-   +-------------+-------------+----------------+-------------+
-   | 4-bit       | 714.53      | 89.33          | 14.06%      |
-   | (fp4, nf4)  |             |                |             |
-   +-------------+-------------+----------------+-------------+
+   +-------------+---------------+----------------+---------------+
+   | 精度        | モデルサイズ  | 量子化メタ     | fp32 サイズ   |
+   |             | (MB)          | サイズ (MB)    | の割合        |
+   +=============+===============+================+===============+
+   | 32-bit      | 5716.26       | 0.00           | 100.00%       |
+   | (fp32)      |               |                |               |
+   +-------------+---------------+----------------+---------------+
+   | 16-bit      | 2858.13       | 0.00           | 50.00%        |
+   | (fp16, bf16)|               |                |               |
+   +-------------+---------------+----------------+---------------+
+   | 8-bit       | 1429.06       | 1.54           | 25.03%        |
+   +-------------+---------------+----------------+---------------+
+   | 4-bit       | 714.53        | 89.33          | 14.06%        |
+   | (fp4, nf4)  |               |                |               |
+   +-------------+---------------+----------------+---------------+
 
-Performance Impact
-------------------
+性能への影響
+--------------------
 
-Message quantization does not sacrifice model convergence quality. As shown in the experiments with LLM Supervised Fine-Tuning (SFT), the training loss curves align well across different precision levels.
+メッセージ量子化はモデルの収束品質を損ないません。LLM の教師ありファインチューニング (SFT) を用いた実験で示されているとおり、学習の損失曲線は異なる精度レベル間でよく一致しています。
 
 .. image:: ../resources/quantization_loss.png
     :height: 300px
 
-Summary
--------
+まとめ
+--------------------
 
-Message quantization provides:
+メッセージ量子化がもたらすものは次のとおりです。
 
-* Significant bandwidth savings
-* No impact on model convergence
-* Support for various precision levels
-* Seamless integration with existing training scripts
-* Compatibility with both numpy and PyTorch
+* 帯域幅の大幅な削減
+* モデルの収束への影響がないこと
+* さまざまな精度レベルのサポート
+* 既存の学習スクリプトとのシームレスな統合
+* numpy と PyTorch の両方との互換性
 
-Examples
---------
+サンプル
+--------------------
 
-* `Federated LLM with Quantization (HuggingFace) <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/llm_hf>`_ -- End-to-end SFT/PEFT example with ``--quantize_mode`` option for fp16, 8-bit, and 4-bit communication
-* `Self-Paced Training: LLM Quantization (Chapter 8.4) <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/self-paced-training/part-4_advanced_federated_learning/chapter-8_federated_LLM_training/08.4_llm_quantization>`_ -- Step-by-step tutorial notebook on message quantization
+* `量子化を用いたフェデレーテッド LLM (HuggingFace) <https://github.com/NVIDIA/NVFlare/tree/main/examples/advanced/llm_hf>`_ -- fp16、8ビット、4ビット通信のための ``--quantize_mode`` オプションを備えたエンドツーエンドの SFT/PEFT サンプル
+* `セルフペース学習: LLM 量子化 (第8.4章) <https://github.com/NVIDIA/NVFlare/tree/main/examples/tutorials/self-paced-training/part-4_advanced_federated_learning/chapter-8_federated_LLM_training/08.4_llm_quantization>`_ -- メッセージ量子化に関するステップバイステップのチュートリアルノートブック

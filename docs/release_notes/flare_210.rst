@@ -1,8 +1,8 @@
-What's New in FLARE v2.1
-=========================
-FLARE 2.1 was the original release in June 2022 introducing HA and Multi-Job Execution:
+FLARE v2.1 の新機能
+====================================
+FLARE 2.1 は 2022 年 6 月にリリースされた最初のバージョンで、HA（高可用性）とマルチジョブ実行を導入しました。
 
-    - High Availability (HA) supports multiple FL servers and automatically fails over 
-      to another server when the currently active server becomes unavailable.
-    - :ref:`Multi-Job Execution <multi_job>` supports resource-based multi-job execution by allowing for concurrent runs
-      provided resources required by the jobs are satisfied.
+    - 高可用性（HA）は複数の FL サーバーをサポートし、現在アクティブなサーバーが利用不可になった際に、
+      自動的に別のサーバーへフェイルオーバーします。
+    - :ref:`マルチジョブ実行 <multi_job>` は、ジョブが必要とするリソースが満たされている限り
+      同時実行を可能にすることで、リソースベースのマルチジョブ実行をサポートします。

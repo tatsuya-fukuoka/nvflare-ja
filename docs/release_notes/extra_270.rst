@@ -2,72 +2,67 @@
 
 .. _extra_270:
 
-Extra Features in v2.7.0
+v2.7.0 における追加機能
 ==============================
 
-Memory Management Improvements
+メモリ管理の改善
 ------------------------------
 
-There are two main issues with sending large messages:
+大きなメッセージを送信する際には、主に 2 つの問題があります。
 
-- A large memory space is required to serialize the message into bytes before sending it. Once memory is saturated, everything becomes very slow.
-- A large byte array sent as one single message could cause the network to be saturated, which could also slow down the overall processing.
+- 送信前にメッセージをバイト列へシリアライズするために、大きなメモリ空間が必要になります。いったんメモリが飽和すると、あらゆる処理が非常に遅くなります。
+- 1 つのメッセージとして送信される大きなバイト配列は、ネットワークを飽和させる可能性があり、それによって全体の処理速度が低下することもあります。
 
-These issues exist regardless of whether the model is sent directly or via streaming. We have developed a few different ways to address these issues.
+これらの問題は、モデルを直接送信する場合でも、ストリーミング経由で送信する場合でも発生します。私たちはこれらの問題に対処するために、いくつかの異なる方法を開発しました。
 
-Another issue with LLM streaming is that it is limited by memory size; the model size must fit into the memory. File-based streaming is not limited by the memory size.
+LLM ストリーミングにおけるもう 1 つの問題は、メモリサイズによって制限されることです。つまり、モデルサイズがメモリに収まらなければなりません。ファイルベースのストリーミングであれば、メモリサイズによる制限を受けません。
 
-We introduced FileStreamer in the previous release :ref:`file_streaming`. We are now introducing FileDownloader.
+前回のリリースでは FileStreamer を導入しました（:ref:`file_streaming`）。今回は FileDownloader を新たに導入します。
 
-Push vs. Pull
-^^^^^^^^^^^^^
+プッシュ vs. プル
+^^^^^^^^^^^^^^^^^^^^^
 
-There are two ways to get the file sent from one place to other places: push and pull.
-With push, the file owner sends the file to recipient(s). The push process is somewhat strict in that if the file is
-sent to multiple recipients, all recipients must process the same chunks at the same time. If any one of them fails,
-then the whole sending process fails. Hence, in practice, it is most useful when sending the file to a single recipient.
+ある場所から他の場所へファイルを送るには、プッシュとプルという 2 つの方法があります。
+プッシュでは、ファイルの所有者が受信者にファイルを送信します。プッシュの処理はやや厳格であり、ファイルが
+複数の受信者に送信される場合、すべての受信者が同じチャンクを同時に処理しなければなりません。そのうちの 1 つでも失敗すると、
+送信処理全体が失敗します。したがって実際には、単一の受信者にファイルを送信する場合に最も有用です。
 
-The “push” method is implemented with the **FileStreamer** class ( Released in 2.6.0)
+「プッシュ」方式は **FileStreamer** クラスで実装されています（2.6.0 でリリース）。
 
-File Streaming
-^^^^^^^^^^^^^^
+ファイルストリーミング
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-File streaming is a function that allows a file to be shared with one or more receivers.
-The file owner could be the FL Server or any FL Client. File streaming could be a very effective alternative to sending
-large amounts of data with messages.
+ファイルストリーミングは、1 つ以上の受信者とファイルを共有できるようにする機能です。
+ファイルの所有者は FL サーバーでも、任意の FL クライアントでもかまいません。ファイルストリーミングは、
+大量のデータをメッセージで送信する方法に代わる、非常に効果的な手段となり得ます。
 
-File streaming, on the other hand, sends the big file with many small messages,
-each containing a chunk of file data. The big file is never loaded into memory completely.
-Since only small messages are sent over the network, it is less likely to completely bog down the network.
+一方でファイルストリーミングは、大きなファイルを多数の小さなメッセージに分けて送信します。
+各メッセージにはファイルデータのチャンクが 1 つ含まれます。大きなファイルが完全にメモリへ読み込まれることはありません。
+ネットワーク上を流れるのは小さなメッセージだけなので、ネットワークを完全に停滞させる可能性は低くなります。
 
 
-With pull, the file owner first prepares the file and gets the Reference ID (RID) for the file. It then sends the RID to all recipients in whatever way it wants (e.g., broadcast). Once the RID is received, each recipient then pulls the file chunk by chunk until the whole file is received.
+プルでは、ファイルの所有者がまずファイルを準備し、そのファイルの参照 ID（RID）を取得します。次に、任意の方法（例えばブロードキャスト）で、すべての受信者に RID を送信します。RID を受け取った各受信者は、ファイル全体を受信し終えるまで、チャンク単位でファイルをプルします。
 
-As you can see, pulling is much more relaxed in that recipients are not synchronized in any way.
-Each recipient can pull the file at its own pace. This is very useful when sharing a file with multiple recipients.
+このように、プルは受信者が何ら同期される必要がないという点で、はるかに緩やかです。
+各受信者は自分のペースでファイルをプルできます。これは、複数の受信者とファイルを共有する場合に非常に有用です。
 
-The “pull” method is implemented with the **FileDownloader** class.
+「プル」方式は **FileDownloader** クラスで実装されています。
 
 
 FileDownloader
 ^^^^^^^^^^^^^^
-The file downloading process requires three steps:
+ファイルのダウンロード処理には、次の 3 つのステップが必要です。
 
-1. The data owner prepares the file(s) to be shared with recipients, and obtains one reference ID (RID) for each file.
-2. The data owner sends the RID(s) to all recipients. This is usually done with a broadcast message.
-3. Recipients download the files one by one with received RIDs.
+1. データ所有者が受信者と共有するファイルを準備し、ファイルごとに 1 つの参照 ID（RID）を取得します。
+2. データ所有者がすべての受信者に RID を送信します。これは通常、ブロードキャストメッセージで行われます。
+3. 受信者は、受け取った RID を使ってファイルを 1 つずつダウンロードします。
 
 
-New documentations
-------------------
-Along with the new features, we add a lot documentations related to the features, in addition, we added the following
-new documentations:
+新しいドキュメント
+------------------------
+新機能に加えて、それらの機能に関するドキュメントを数多く追加しました。さらに、以下の
+新しいドキュメントも追加しました。
 
     - :ref:`flare_system_architecture`
     - :ref:`flare_security_overview`
     - :ref:`cellnet_architecture`
-
-
-
-
-

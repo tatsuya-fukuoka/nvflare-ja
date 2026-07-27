@@ -1,29 +1,26 @@
 .. _resource_manager_and_consumer:
 
-#######################################
-Resource Manager and Resource Consumer
-#######################################
-NVFlare introduced the concept of :ref:`job`, resource manager and resource consumer in version 2.1.
+#############################################
+リソースマネージャーとリソースコンシューマー
+#############################################
+NVFlare はバージョン 2.1 で :ref:`job`、リソースマネージャー、リソースコンシューマーという概念を導入しました。
 
-Each job has a meta.json that can specify "deploy_map", "min_clients", "mandatory_clients" and "resource_spec".
+各ジョブには meta.json があり、"deploy_map"、"min_clients"、"mandatory_clients"、"resource_spec" を指定できます。
 
-A user can specify the job resource requirement in meta.json and configure the corresponding resource manager and consumer.
+ユーザーは meta.json でジョブのリソース要件を指定し、対応するリソースマネージャーとリソースコンシューマーを設定できます。
 
 
-During :ref:`job scheduling <job_scheduler_configuration>`, the server side will ask each client if the resource requirement can be satisfied. Each client will call the check_resources
-method with their configured ResourceManager. The "resource_spec" specified in the job config will be passed in as an argument. Check resources should
-figure out if the local client site resources are enough to run this job. If it can, then this job will be scheduled; Otherwise, the job will stay in the queue.
+:ref:`ジョブスケジューリング <job_scheduler_configuration>` の際に、サーバー側は各クライアントにリソース要件を満たせるかどうかを問い合わせます。各クライアントは、設定されたリソースマネージャーの check_resources メソッドを呼び出します。ジョブ設定で指定された "resource_spec" が引数として渡されます。check_resources は、ローカルのクライアントサイトのリソースがこのジョブを実行するのに十分かどうかを判断する必要があります。十分であればこのジョブはスケジュールされ、そうでなければジョブはキューに留まります。
 
-Note that this check is solely done by the ResourceManager, so if the resource manager tells the FL server that the resource is enough, NVFlare will
-assume that it is OK to start the job on that site.
+なお、このチェックは完全にリソースマネージャーによって行われるため、リソースマネージャーが FL サーバーにリソースが十分であると伝えた場合、NVFlare はそのサイトでジョブを開始してよいと想定します。
 
-If outside of NVFlare another process occupied the resources and the resources became unavailable that might lead to the failure of job execution at runtime.
+NVFlare の外部にある別のプロセスがリソースを占有してリソースが利用できなくなった場合、実行時にジョブの実行が失敗する可能性があります。
 
-How to Specify the Job Resource Requirement
-===========================================
-With the job concept, users can specify how many resources this job requires at runtime.
+ジョブのリソース要件を指定する方法
+===================================
+ジョブの概念により、ユーザーはこのジョブが実行時にどれだけのリソースを必要とするかを指定できます。
 
-The resource spec is a dict that maps site name to require resources, for example:
+リソース仕様は、サイト名を必要なリソースにマッピングする dict です。例えば次のようになります。
 
 .. code-block::
 
@@ -34,7 +31,7 @@ The resource spec is a dict that maps site name to require resources, for exampl
         }
     }
 
-The full meta.json will then look like:
+完全な meta.json は次のようになります。
 
 .. code-block::
 
@@ -52,12 +49,12 @@ The full meta.json will then look like:
         }
     }
 
-How to Configure Resource Manager and Consumer
-==============================================
+リソースマネージャーとリソースコンシューマーを設定する方法
+============================================================
 
-Each site can configure its own resource manager and consumer using the "resources.json" inside the "local" folder.
+各サイトは、"local" フォルダー内の "resources.json" を使って、独自のリソースマネージャーとリソースコンシューマーを設定できます。
 
-For example, the default in POC looks like:
+例えば、POC におけるデフォルトは次のようになります。
 
 .. code-block::
 
@@ -81,30 +78,29 @@ For example, the default in POC looks like:
         ]
     }
 
-This means they specify this site has 1 GPU and memory per GPU is 1 GiB.
-If you do not have any GPU you can set the num_of_gpus and mem_per_gpu_in_GiB to 0.
+これは、このサイトが GPU を 1 基持ち、GPU あたりのメモリが 1 GiB であることを指定していることを意味します。
+GPU をまったく持っていない場合は、num_of_gpus と mem_per_gpu_in_GiB を 0 に設定できます。
 
-GPUResourceManager (:mod:`nvflare.app_common.resource_managers.gpu_resource_manager`) and GPUResourceConsumer (:mod:`nvflare.app_common.resource_consumers.gpu_resource_consumer`)
+GPUResourceManager (:mod:`nvflare.app_common.resource_managers.gpu_resource_manager`) および GPUResourceConsumer (:mod:`nvflare.app_common.resource_consumers.gpu_resource_consumer`)
 
 .. note::
 
-    Make sure each client has the same resource manager and resource consumer class, even though the arguments can be different.
+    引数は異なっていてもかまいませんが、各クライアントが同じリソースマネージャークラスとリソースコンシューマークラスを持つようにしてください。
 
-GPUResourceManager and GPUResourceConsumer
+GPUResourceManager と GPUResourceConsumer
 ==========================================
 
-During initialization, the GPUResourceManager will detect automatically (using nvidia-smi) if the managed GPU count
-and memory are enough. When ``CUDA_VISIBLE_DEVICES`` contains GPU IDs, the startup check is restricted to those GPUs.
+初期化中に、GPUResourceManager は (nvidia-smi を使用して) 管理対象の GPU 数とメモリが十分かどうかを自動的に検出します。``CUDA_VISIBLE_DEVICES`` に GPU ID が含まれている場合、起動時のチェックはそれらの GPU に限定されます。
 
-NOTE that the current implementation of GPUResourceManager will NOT keep updating the GPU count and memory usage. This means that it just checks using nvidia-smi at init time and then virtually assumes it has this much resources on site.
+なお、現在の GPUResourceManager の実装は、GPU 数とメモリ使用量を継続的に更新しません。つまり、初期化時に nvidia-smi を使ってチェックするだけで、その後はサイト上にこれだけのリソースがあると仮想的に想定します。
 
-If another process outside of NVFlare is occupying the GPU resource (after GPUResourceManger is initialized), GPUResourceManager is not responsible for that.
+(GPUResourceManager の初期化後に) NVFlare の外部の別のプロセスが GPU リソースを占有した場合、GPUResourceManager はその責任を負いません。
 
 
-How to Write Your Own Resource Manager and Consumer
-===================================================
+独自のリソースマネージャーとリソースコンシューマーを書く方法
+==============================================================
 
-You can easily write your own resource manager and consumer following the API specification:
+以下の API 仕様に従って、独自のリソースマネージャーとリソースコンシューマーを簡単に書くことができます。
 
 .. code-block:: python
 
@@ -170,7 +166,7 @@ You can easily write your own resource manager and consumer following the API sp
             pass
 
 
-A more friendly interface (AutoCleanResourceManager) is provided as well:
+より扱いやすいインターフェース (AutoCleanResourceManager) も提供されています。
 
 .. code-block:: python
 

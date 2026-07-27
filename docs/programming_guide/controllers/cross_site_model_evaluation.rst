@@ -1,28 +1,27 @@
 .. _cross_site_model_evaluation:
 
-Cross Site Model Evaluation / Federated Evaluation
---------------------------------------------------
-The :class:`cross site model evaluation workflow<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
-uses the data from clients to run evaluation with the models of other clients.
-Data is not shared, rather the collection of models is distributed to each client site to run local validation.  The
-results of local validation are collected by the server to construct an all-to-all matrix of model performance vs.
-client dataset.
+クロスサイトモデル評価／フェデレーテッド評価
+--------------------------------------------------------------
+:class:`クロスサイトモデル評価ワークフロー<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`
+は、クライアントのデータを使用して他のクライアントのモデルによる評価を実行します。
+データは共有されず、代わりにモデルの集合が各クライアントサイトへ配布され、ローカル検証が実行されます。ローカル検証の
+結果はサーバによって収集され、モデル性能とクライアントデータセットの全対全の行列が構築されます。
 
-The server's global model is also distributed to each client for evaluation on the client's local dataset for global
-model evaluation.
+サーバのグローバルモデルも各クライアントへ配布され、クライアントのローカルデータセット上でグローバルモデルの評価が
+行われます。
 
-The :github_nvflare_link:`hello-numpy-cross-val example <examples/hello-world/hello-numpy-cross-val>` is a simple
-example that implements the :class:`cross site model evaluation workflow<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>`.
+:github_nvflare_link:`hello-numpy-cross-val example <examples/hello-world/hello-numpy-cross-val>` は、
+:class:`クロスサイトモデル評価ワークフロー<nvflare.app_common.workflows.cross_site_model_eval.CrossSiteModelEval>` を実装したシンプルな例です。
 
 .. note::
 
-   Previously in NVFlare before version 2.0, cross-site validation was built into the framework itself, and there was an
-   admin command to retrieve cross-site validation results. In NVFlare 2.0, with the ability to have customized
-   workflows, cross-site validation is no longer in the NVFlare framework but is instead handled by the workflow.
-   The :github_nvflare_link:`cifar10 example <examples/advanced/cifar10>` is configured to run cross-site
-   model evaluation and ``config_fed_server.json`` is configured with :class:`ValidationJsonGenerator<nvflare.app_common.widgets.validation_json_generator.ValidationJsonGenerator>`
-   to write the results to a JSON file on the server.
+   バージョン 2.0 より前の NVFlare では、クロスサイト検証はフレームワーク自体に組み込まれており、クロスサイト検証の
+   結果を取得するための管理コマンドがありました。NVFlare 2.0 では、ワークフローをカスタマイズできるようになったことに伴い、
+   クロスサイト検証は NVFlare フレームワークには含まれず、代わりにワークフローによって処理されます。
+   :github_nvflare_link:`cifar10 example <examples/advanced/cifar10>` はクロスサイトモデル評価を実行するように
+   構成されており、``config_fed_server.json`` は :class:`ValidationJsonGenerator<nvflare.app_common.widgets.validation_json_generator.ValidationJsonGenerator>`
+   を用いて結果をサーバ上の JSON ファイルへ書き出すように構成されています。
 
-Examples with Cross Site Model Evaluation / Federated Evaluation Workflow
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-See :github_nvflare_link:`Hello Numpy Cross-Site Validation <examples/hello-world/hello-numpy-cross-val>` for examples using server-controlled cross-site evaluation workflows.
+クロスサイトモデル評価／フェデレーテッド評価ワークフローの例
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+サーバ制御によるクロスサイト評価ワークフローを使用する例については、:github_nvflare_link:`Hello Numpy Cross-Site Validation <examples/hello-world/hello-numpy-cross-val>` を参照してください。
